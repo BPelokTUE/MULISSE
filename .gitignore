@@ -1,0 +1,8 @@
+# Build files
+build/*
+
+# Development
+.vscode
+
+# OS-specific
+.DS_Store
