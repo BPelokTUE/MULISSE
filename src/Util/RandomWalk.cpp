@@ -7,9 +7,7 @@
 
 int create_random_walks(std::string dataset_path, float rw_noise, bool zero_start, unsigned num_series,
                         unsigned series_len, unsigned num_channels) {
-    namespace fs = std::filesystem;
-
-    if (fs::exists(dataset_path)) {
+    if (std::filesystem::exists(dataset_path)) {
         std::cerr << "Error: Dataset " << dataset_path << " already exists." << std::endl;
         return 1;
     }
