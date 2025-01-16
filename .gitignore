@@ -1,6 +1,9 @@
 # Build files
 build/*
 
+# Helper files
+DATA/*
+
 # Development
 .vscode
 
