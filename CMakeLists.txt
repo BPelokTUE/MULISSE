@@ -16,21 +16,30 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 # Add optimizations for release build
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
-# Add tests
-enable_testing()
-
+# Include directories
 include_directories(${CMAKE_SOURCE_DIR}/lib)
-
-file(GLOB SOURCES
-    src/*.cpp
-    src/Summarization/*.cpp
-    src/Search/*.cpp
-    src/Util/*.cpp
-)
 
 # Add CLI11 subdirectory
 add_subdirectory(extern/CLI11)
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+file(GLOB SOURCES src/*.cpp src/**/*.cpp)
 
+# Add main executable
+add_executable(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE CLI11::CLI11)
+
+# Add doctest submodule
+set(DOCTEST_LIB extern/doctest/doctest)
+set(doctest "${DOCTEST_LIB}/doctest.h")
+add_library(doctest INTERFACE)
+include_directories(${DOCTEST_LIB})
+
+# Gather test files
+file(GLOB TEST_SOURCES tests/*.cpp tests/**/*.cpp src/**/*.cpp)
+
+# Add test executable
+set(TEST_NAME ${PROJECT_NAME}_tests)
+add_executable(${TEST_NAME} ${TEST_SOURCES})
+target_link_libraries(${TEST_NAME} PRIVATE CLI11::CLI11)
+target_link_libraries(${TEST_NAME} PRIVATE doctest)
+add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
