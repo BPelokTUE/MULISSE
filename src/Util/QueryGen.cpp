@@ -7,7 +7,7 @@
 #include "Util/QueryGen.hpp"
 
 int create_queries(std::string dataset_path, std::string query_path, float noise, unsigned series_len,
-                   unsigned num_channels, unsigned num_queries, std::vector<unsigned> lengths) {
+                   unsigned num_channels, unsigned num_queries, vec<unsigned> lengths) {
     if (!std::filesystem::exists(dataset_path)) {
         std::cerr << "Error: Dataset " << dataset_path << " does not exist." << std::endl;
         return 1;
@@ -30,10 +30,10 @@ int create_queries(std::string dataset_path, std::string query_path, float noise
         channel_uniform_dist(1, num_channels);
 
     // vector of tuples of series index to extract from, length of the query, and channels to include
-    std::vector<std::tuple<unsigned, unsigned, std::vector<bool>>> query_descriptors(num_queries);
+    vec<std::tuple<unsigned, unsigned, vec<bool>>> query_descriptors(num_queries);
     for (unsigned i = 0; i < num_queries; ++i) {
         for (unsigned length : lengths) {
-            std::vector<bool> channels(num_channels, false);
+            vec<bool> channels(num_channels, false);
             unsigned included_channels = channel_uniform_dist(rng);
             std::fill(channels.begin(), channels.begin() + included_channels, true);
             std::shuffle(channels.begin(), channels.end(), rng);

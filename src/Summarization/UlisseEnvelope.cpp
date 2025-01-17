@@ -1,16 +1,15 @@
 #include "Summarization/UlisseEnvelope.hpp"
 
-std::vector<std::pair<float, float>> ulisse_envelope_raw(std::vector<float> const& ts, size_t ms_beg,
-                                                         unsigned ms_per_env, unsigned segment_len, unsigned l_min,
-                                                         unsigned l_max) {
+UlisseEnvelope ulisse_envelope_raw(vec<float> const& ts, size_t ms_beg, unsigned ms_per_env, unsigned segment_len,
+                                   unsigned l_min, unsigned l_max) {
     unsigned segments_per_env = l_max / segment_len;
     size_t ms_end = std::min(ts.size(), ms_beg + l_max + ms_per_env - 1);
     unsigned num_ms = std::min(ms_per_env, (unsigned)(ms_end - ms_beg) - l_min + 1);
-    std::vector<std::pair<float, float>> envelope(
-        segments_per_env, {std::numeric_limits<float>::max(), std::numeric_limits<float>::min()});
+    UlisseEnvelope envelope = {vec<float>(segments_per_env, std::numeric_limits<float>::max()),
+                               vec<float>(segments_per_env, std::numeric_limits<float>::min())};
 
     float paa_acc = 0.0;
-    std::vector<unsigned> segment_update_count(segments_per_env, 0);
+    vec<unsigned> segment_update_count(segments_per_env, 0);
 
     for (size_t i = ms_beg; i < ms_end; ++i) {
         paa_acc += ts[i];
@@ -23,8 +22,8 @@ std::vector<std::pair<float, float>> ulisse_envelope_raw(std::vector<float> cons
             if (segment_update_count[seg_ind] < num_ms) {
                 ++segment_update_count[seg_ind];
                 float paa_val = paa_acc / segment_len;
-                envelope[seg_ind].first = std::min(envelope[seg_ind].first, paa_val);
-                envelope[seg_ind].second = std::max(envelope[seg_ind].second, paa_val);
+                envelope.first[seg_ind] = std::min(envelope.first[seg_ind], paa_val);
+                envelope.second[seg_ind] = std::max(envelope.second[seg_ind], paa_val);
             }
         }
     }
@@ -32,16 +31,15 @@ std::vector<std::pair<float, float>> ulisse_envelope_raw(std::vector<float> cons
     return envelope;
 }
 
-std::vector<std::pair<float, float>> ulisse_envelope_normalized(std::vector<float> const& ts, size_t ms_beg,
-                                                                unsigned ms_per_env, unsigned segment_len,
-                                                                unsigned l_min, unsigned l_max) {
+UlisseEnvelope ulisse_envelope_normalized(vec<float> const& ts, size_t ms_beg, unsigned ms_per_env,
+                                          unsigned segment_len, unsigned l_min, unsigned l_max) {
     unsigned segments_per_env = l_max / segment_len;
     size_t ms_end = std::min(ts.size(), ms_beg + l_max + ms_per_env - 1);
     unsigned num_ms = std::min(ms_per_env, (unsigned)(ms_end - ms_beg) - l_min + 1);
-    std::vector<std::pair<float, float>> envelope(
-        segments_per_env, {std::numeric_limits<float>::max(), std::numeric_limits<float>::min()});
+    UlisseEnvelope envelope = {vec<float>(segments_per_env, std::numeric_limits<float>::max()),
+                               vec<float>(segments_per_env, std::numeric_limits<float>::min())};
 
-    std::vector<float> paa_accs(l_max + ms_per_env - segment_len, 0.0);
+    vec<float> paa_accs(l_max + ms_per_env - segment_len, 0.0);
 
     unsigned n_seg = 0;
     float sum_acc = 0.0, sq_sum_acc = 0.0;
@@ -77,8 +75,8 @@ std::vector<std::pair<float, float>> ulisse_envelope_normalized(std::vector<floa
                 for (unsigned seg_ind = 0; seg_ind < num_seg_in_suffix; ++seg_ind) {
                     float paa_val = paa_accs[i + seg_ind * segment_len] / segment_len;
                     paa_val = (paa_val - mu) / sigma;
-                    envelope[seg_ind].first = std::min(envelope[seg_ind].first, paa_val);
-                    envelope[seg_ind].second = std::max(envelope[seg_ind].second, paa_val);
+                    envelope.first[seg_ind] = std::min(envelope.first[seg_ind], paa_val);
+                    envelope.second[seg_ind] = std::max(envelope.second[seg_ind], paa_val);
                 }
             }
 

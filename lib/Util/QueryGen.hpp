@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "typedefs.hpp"
+
 /**
  * @brief Create queries from dataset by extracting subsequences and adding noise
  *
@@ -21,6 +23,6 @@
  * @return 0 on success, 1 if dataset does not exist, 2 if query already exists, 3 if query could not be created
  */
 int create_queries(std::string dataset_path, std::string query_path, float noise, unsigned num_series,
-                   unsigned num_channels, unsigned num_queries, std::vector<unsigned> lengths);
+                   unsigned num_channels, unsigned num_queries, vec<unsigned> lengths);
 
 #endif  // QUERY_GEN_HPP

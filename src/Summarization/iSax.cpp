@@ -1,6 +1,6 @@
 #include "Summarization/iSax.hpp"
 
-iSaxWord::iSaxWord(const std::vector<float>& paa, unsigned start_num_bits, std::vector<float> breakpoints) {
+iSaxWord::iSaxWord(const vec<float>& paa, unsigned start_num_bits, vec<float> breakpoints) {
     m_max_num_bits = start_num_bits;
     unsigned paa_len = paa.size();
     m_symbols.resize(paa_len);

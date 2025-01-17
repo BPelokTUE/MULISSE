@@ -1,5 +1,7 @@
 #include <vector>
 
+#include "typedefs.hpp"
+
 /**
  * @brief indexable Symbolic Aggregate approXimation (iSAX) word.
  */
@@ -12,7 +14,7 @@ class iSaxWord {
      * @param start_num_bits The number of bits to use initially for all symbols.
      * @param breakpoints The breakpoints to use for the symbols.
      */
-    iSaxWord(const std::vector<float>& paa, unsigned start_num_bits, std::vector<float> breakpoints);
+    iSaxWord(const vec<float>& paa, unsigned start_num_bits, vec<float> breakpoints);
 
     iSaxWord(const iSaxWord&) = default;
 
@@ -50,7 +52,7 @@ class iSaxWord {
     std::pair<iSaxWord, iSaxWord> split(unsigned index) const;
 
    private:
-    std::vector<unsigned> m_symbols;
-    std::vector<unsigned> m_num_bits;
+    vec<unsigned> m_symbols;
+    vec<unsigned> m_num_bits;
     unsigned m_max_num_bits;
 };

@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
             ->check(positive_int);
     }
 
-    std::vector<unsigned> lengths;
+    vec<unsigned> lengths;
     create_qs->add_option("-l,--lengths", lengths, "Query lengths")->required()->check(positive_int);
 
     unsigned num_queries;

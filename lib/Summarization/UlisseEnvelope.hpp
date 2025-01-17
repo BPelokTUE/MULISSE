@@ -1,5 +1,7 @@
 #include <vector>
 
+#include "typedefs.hpp"
+
 /**
  * @brief Compute the ULISSE envelopes of subsequences of a time series WITHOUT normalization.
  *
@@ -12,11 +14,10 @@
  * @param segment_len The length of each PAA segment
  * @param l_min The minimum length of a subsequence
  * @param l_max The maximum length of a subsequence
- * @return A vector of pairs of floats, where each pair represents the upper and lower bound of a subsequence.
+ * @return A pair of two vectors, containing the upper and lower bounds of the subsequences respectively.
  */
-std::vector<std::pair<float, float>> ulisse_envelope_raw(std::vector<float> const& ts, size_t ms_beg,
-                                                         unsigned ms_per_env, unsigned segment_len, unsigned l_min,
-                                                         unsigned l_max);
+UlisseEnvelope ulisse_envelope_raw(vec<float> const& ts, size_t ms_beg, unsigned ms_per_env, unsigned segment_len,
+                                   unsigned l_min, unsigned l_max);
 
 /**
  * @brief Compute the ULISSE envelopes of subsequences of a time series WITH normalization.
@@ -30,8 +31,7 @@ std::vector<std::pair<float, float>> ulisse_envelope_raw(std::vector<float> cons
  * @param segment_len The length of each PAA segment
  * @param l_min The minimum length of a subsequence
  * @param l_max The maximum length of a subsequence
- * @return A vector of pairs of floats, where each pair represents the upper and lower bound of a subsequence.
+ * @return A pair of two vectors, containing the upper and lower bounds of the subsequences respectively.
  */
-std::vector<std::pair<float, float>> ulisse_envelope_normalized(std::vector<float> const& ts, size_t ms_beg,
-                                                                unsigned ms_per_env, unsigned segment_len,
-                                                                unsigned l_min, unsigned l_max);
+UlisseEnvelope ulisse_envelope_normalized(vec<float> const& ts, size_t ms_beg, unsigned ms_per_env,
+                                          unsigned segment_len, unsigned l_min, unsigned l_max);

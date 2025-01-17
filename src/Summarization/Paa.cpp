@@ -1,8 +1,8 @@
 #include "Summarization/Paa.hpp"
 
-std::vector<float> paa(const std::vector<float> &ts, unsigned segment_len) {
+vec<float> paa(const vec<float> &ts, unsigned segment_len) {
     unsigned num_segments = ts.size() / segment_len;
-    std::vector<float> paa(num_segments);
+    vec<float> paa(num_segments);
 
     float sum;
     unsigned ind = 0, i, j;
