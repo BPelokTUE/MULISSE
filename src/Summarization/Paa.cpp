@@ -1,16 +1,17 @@
 #include "Summarization/Paa.hpp"
 
 std::vector<float> paa(const std::vector<float> &ts, unsigned segment_len) {
-    unsigned m = ts.size();
-    std::vector<float> paa(m / segment_len);
+    unsigned num_segments = ts.size() / segment_len;
+    std::vector<float> paa(num_segments);
 
     float sum;
-    for (unsigned i = 0; i < m; i += segment_len) {
+    unsigned ind = 0, i, j;
+    for (i = 0; i < num_segments; ++i) {
         sum = 0;
-        for (unsigned j = 0; j < segment_len; ++j) {
-            sum += ts[i + j];
+        for (j = 0; j < segment_len; ++j, ++ind) {
+            sum += ts[ind];
         }
-        paa[i / segment_len] = sum / segment_len;
+        paa[i] = sum / segment_len;
     }
     return paa;
 }
