@@ -1,6 +1,6 @@
-#include "Summarization/iSax.hpp"
+#include "Summarization/iSaxWord.hpp"
 
-iSaxWord::iSaxWord(const vec<float>& paa, unsigned start_num_bits, vec<float> breakpoints) {
+iSaxWord::iSaxWord(const vec<float>& paa, iSaxNumBitsT start_num_bits, vec<float> breakpoints) {
     m_max_num_bits = start_num_bits;
     unsigned paa_len = paa.size();
     m_symbols.resize(paa_len);
@@ -14,16 +14,20 @@ iSaxWord::iSaxWord(const vec<float>& paa, unsigned start_num_bits, vec<float> br
 
 const unsigned& iSaxWord::operator[](std::size_t index) const { return m_symbols[index]; }
 
-void iSaxWord::set_symbol(unsigned index, unsigned symbol) { m_symbols[index] = symbol; }
+void iSaxWord::set_symbol(iSaxSplitIndT index, iSaxSymbolT symbol) { m_symbols[index] = symbol; }
 
-void iSaxWord::set_symbol(unsigned index, unsigned symbol, unsigned bits) {
+void iSaxWord::set_symbol(iSaxSplitIndT index, iSaxSymbolT symbol, iSaxNumBitsT bits) {
     m_symbols[index] = symbol;
     m_num_bits[index] = bits;
 }
 
-std::pair<iSaxWord, iSaxWord> iSaxWord::split(unsigned index) const {
+std::pair<iSaxWord, iSaxWord> iSaxWord::split(iSaxSplitIndT index) const {
     iSaxWord left = *this;
-    left.set_symbol(index, m_symbols[index] << 1, left.m_num_bits[index] + 1);
+
+    iSaxNumBitsT new_num_bits = left.m_num_bits[index] + 1;
+    iSaxNumBitsT new_max_bits = std::max(new_num_bits, m_max_num_bits);
+
+    left.set_symbol(index, m_symbols[index] << 1, new_max_bits);
     iSaxWord right = *this;
     right.set_symbol(index, m_symbols[index] + 1);
 
