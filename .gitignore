@@ -3,6 +3,7 @@ build/*
 
 # Helper files
 DATA/*
+TESTING
 
 # Development
 .vscode
