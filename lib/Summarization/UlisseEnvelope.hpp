@@ -1,3 +1,6 @@
+#ifndef ULISSE_ENVELOPE_HPP
+#define ULISSE_ENVELOPE_HPP
+
 #include <vector>
 
 #include "typedefs.hpp"
@@ -35,3 +38,5 @@ UlisseEnvelope ulisse_envelope_raw(vec<float> const& ts, size_t ms_beg, unsigned
  */
 UlisseEnvelope ulisse_envelope_normalized(vec<float> const& ts, size_t ms_beg, unsigned ms_per_env,
                                           unsigned segment_len, unsigned l_min, unsigned l_max);
+
+#endif  // ULISSE_ENVELOPE_HPP

@@ -1,3 +1,6 @@
+#ifndef SEARCH_OPTIONS_HPP
+#define SEARCH_OPTIONS_HPP
+
 enum SearchType { KNN, R_RANGE };
 
 struct KnnParameters {
@@ -18,3 +21,5 @@ struct SearchOptions {
     SearchParameters search_parameters;
     bool exact = true, normalized = true;
 };
+
+#endif  // SEARCH_OPTIONS_HPP

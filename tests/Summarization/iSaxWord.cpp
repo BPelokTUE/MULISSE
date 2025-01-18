@@ -2,13 +2,24 @@
 
 #include "Summarization/iSaxWord.hpp"
 
-TEST_CASE("iSAX from PAA works") {
-    vec<float> paa = {0.9, 2.3, -3.0, -1.1, -5.0, 5.3}, breakpoints = {-2.0, 0.0, 2.0};
+TEST_CASE("split symbol happy-flow works") {
+    iSaxWord isax({1, 2, 0, 3, 1, 2}, 2);
 
-    iSaxWord isax(paa, 2, breakpoints);
-    vec<iSaxSymbolT> expected = {2, 3, 0, 1, 0, 3};
+    auto [left, right] = isax.split(2);
 
-    for (size_t i = 0; i < paa.size(); ++i) {
-        CHECK_EQ(isax[i], expected[i]);
+    for (auto i : {0, 1, 3, 4, 5}) {
+        CHECK(left[i] == isax[i]);
+        CHECK(right[i] == isax[i]);
+
+        CHECK(left.get_num_bits(i) == isax.get_num_bits(i));
+        CHECK(right.get_num_bits(i) == isax.get_num_bits(i));
     }
+
+    CHECK(isax[2] == 0);
+    CHECK(left[2] == 0);
+    CHECK(right[2] == 1);
+
+    CHECK(isax.get_num_bits(2) == 2);
+    CHECK(left.get_num_bits(2) == 3);
+    CHECK(right.get_num_bits(2) == 3);
 }

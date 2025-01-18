@@ -6,7 +6,7 @@
 class iSaxNode {};
 
 class iSaxInternalNode {
-    iSaxSplitIndT split_ind;
+    SaxSplitIndT split_ind;
     iSaxNode *left = nullptr, *right = nullptr;
 };
 

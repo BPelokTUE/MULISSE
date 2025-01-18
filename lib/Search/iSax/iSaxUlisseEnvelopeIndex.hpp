@@ -1,3 +1,6 @@
+#ifndef ISAX_ULISSE_ENVELOPE_INDEX_HPP
+#define ISAX_ULISSE_ENVELOPE_INDEX_HPP
+
 #include "Search/IUlisseEnvelopeIndex.hpp"
 #include "iSaxNode.hpp"
 #include "iSaxWord.hpp"
@@ -12,3 +15,5 @@ class iSaxUlisseEnvelopeIndex : IUlisseEnvelopeIndex {
     vec<iSaxNode *> m_first_layer_nodes;
     vec<iSaxWord> m_first_layer_words;
 };
+
+#endif  // ISAX_ULISSE_ENVELOPE_INDEX_HPP
