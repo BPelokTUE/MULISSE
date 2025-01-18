@@ -7,8 +7,8 @@
 class IUlisseEnvelopeIndex {
    public:
     virtual ~IUlisseEnvelopeIndex() = default;
-    virtual void insert(const vec<UlisseEnvelope> &envelopes, unsigned long long file_pos) = 0;
-    virtual vec<uint64_t> search(vec<vec<float>> mts, const SearchOptions *search_options) const = 0;
+    virtual void insert(const vec<UlisseEnvelope> &envelopes, FilePositionT file_pos) = 0;
+    virtual vec<FilePositionT> search(vec<vec<float>> mts, const SearchOptions &search_options) const = 0;
 };
 
 #endif  // I_ULISSE_ENVELOPE_INDEX_HPP

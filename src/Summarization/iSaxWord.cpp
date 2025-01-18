@@ -5,18 +5,21 @@ iSaxWord::iSaxWord(const vec<float> &paa, SaxNumBitsT start_num_bits, const vec<
 
 const SaxNumBitsT &iSaxWord::get_num_bits(SaxSplitIndT index) const { return m_num_bits[index]; }
 
+iSaxWord::iSaxWord(vec<SaxSymbolT> symbols, vec<SaxNumBitsT> num_bits, SaxNumBitsT max_num_bits)
+    : SaxWord(symbols, max_num_bits), m_num_bits(num_bits) {}
+
+iSaxWord::iSaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT max_num_bits)
+    : SaxWord(symbols, max_num_bits), m_num_bits(symbols.size(), max_num_bits) {}
+
 void iSaxWord::set_symbol_and_bits(SaxSplitIndT index, SaxSymbolT symbol, SaxNumBitsT bits) {
     m_symbols[index] = symbol;
     m_num_bits[index] = bits;
     m_max_num_bits = std::max(m_max_num_bits, bits);
 }
 
-std::pair<iSaxWord, iSaxWord> iSaxWord::split(SaxSplitIndT index) const {
-    iSaxWord left(*this);
-    left.set_symbol_and_bits(index, m_symbols[index] << 1, left.m_num_bits[index] + 1);
-
-    iSaxWord right(left);
-    right.set_symbol(index, m_symbols[index] + 1);
-
-    return std::make_pair(left, right);
+uint8_t iSaxWord::apply_split(const vec<float> &paa, const vec<float> &breakpoints, SaxSplitIndT split_ind) {
+    auto it = std::lower_bound(breakpoints.begin(), breakpoints.end(), paa[split_ind]);
+    SaxSymbolT prev_symbol = m_symbols[split_ind];
+    m_symbols[split_ind] = it - breakpoints.begin();
+    return m_symbols[split_ind] - (prev_symbol << 1);
 }

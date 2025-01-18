@@ -1,19 +1,33 @@
 #ifndef ISAX_ULISSE_ENVELOPE_INDEX_HPP
 #define ISAX_ULISSE_ENVELOPE_INDEX_HPP
 
+#include <unordered_map>
+
 #include "Search/IUlisseEnvelopeIndex.hpp"
-#include "iSaxNode.hpp"
-#include "iSaxWord.hpp"
+#include "Search/iSax/iSaxNode.hpp"
+#include "Search/iSax/iSaxSplitStrategy.hpp"
+#include "Summarization/iSaxWord.hpp"
+#include "Summarization/iSaxBreakpointStrategy.hpp"
 
 class iSaxUlisseEnvelopeIndex : IUlisseEnvelopeIndex {
    public:
+    iSaxUlisseEnvelopeIndex(SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
+                            std::unique_ptr<IiSaxBreakpointStrategy> breakpoint_strategy,
+                            std::unique_ptr<IiSaxSplitStrategy> split_strategy);
+
     ~iSaxUlisseEnvelopeIndex() = default;
-    void insert(const vec<UlisseEnvelope> &envelopes, unsigned long long file_pos) override;
-    vec<uint64_t> search(vec<vec<float>> mts, const SearchOptions *search_options) const override;
+
+    void insert(const vec<UlisseEnvelope> &envelopes, FilePositionT file_pos) override;
+
+    vec<FilePositionT> search(vec<vec<float>> mts, const SearchOptions &search_options) const override;
 
    private:
-    vec<iSaxNode *> m_first_layer_nodes;
-    vec<iSaxWord> m_first_layer_words;
+    std::unordered_map<SaxWord, std::unique_ptr<iSaxNode>> m_first_layer;
+    SaxNumBitsT m_first_layer_num_bits;
+    size_t m_leaf_capacity;
+    std::unique_ptr<IiSaxBreakpointStrategy> m_breakpoint_strategy;
+    vec<float> m_breakpoints;
+    std::unique_ptr<IiSaxSplitStrategy> m_split_strategy;
 };
 
 #endif  // ISAX_ULISSE_ENVELOPE_INDEX_HPP

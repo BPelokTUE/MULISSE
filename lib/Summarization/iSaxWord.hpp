@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "SaxWord.hpp"
+#include "Summarization/SaxWord.hpp"
 
 /**
  * @brief indexable Symbolic Aggregate approXimation (iSAX) word.
@@ -31,19 +31,17 @@ class iSaxWord : public SaxWord {
      *
      * @param symbols The symbols of the word.
      * @param num_bits The number of bits to use for the symbols.
-     * @param max_num_bits The maximum number of bits to use for the symbols.
+     * @param max_num_bits The maximum number of bits used for the symbols.
      */
-    iSaxWord(vec<SaxSymbolT> symbols, vec<SaxNumBitsT> num_bits, SaxNumBitsT max_num_bits)
-        : SaxWord(symbols, max_num_bits), m_num_bits(num_bits) {}
+    iSaxWord(vec<SaxSymbolT> symbols, vec<SaxNumBitsT> num_bits, SaxNumBitsT max_num_bits);
 
     /**
      * @brief Construct a new iSaxWord object.
      *
      * @param symbols The symbols of the word.
-     * @param num_bits The number of bits to use for the symbols. All symbols will have the same number of bits.
+     * @param max_num_bits The number of bits to use for the symbols. All symbols will have the same number of bits.
      */
-    iSaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT num_bits)
-        : SaxWord(symbols, num_bits), m_num_bits(symbols.size(), num_bits) {}
+    iSaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT max_num_bits);
 
     /**
      * @brief Get the number of bits used for the symbol at the given index.
@@ -63,12 +61,16 @@ class iSaxWord : public SaxWord {
     void set_symbol_and_bits(SaxSplitIndT index, SaxSymbolT symbol, SaxNumBitsT bits);
 
     /**
-     * @brief Get a pair of iSaxWords by splitting the current iSaxWord at the given index.
+     * @brief Apply a split to the word. Updates the iSAX word inplace.
      *
-     * @param index The index at which to split the iSaxWord.
-     * @return A pair of iSaxWords.
+     * Updates the symbol specified by the split index after a split, based on the PAA and the breakpoints.
+     *
+     * @param paa The Piecewise Aggregate Approximation (PAA) of a time series.
+     * @param breakpoints The breakpoints to use for the symbols.
+     * @param split_ind The index of the symbol to update.
+     * @return The bit that was appended to the symbol.
      */
-    std::pair<iSaxWord, iSaxWord> split(SaxSplitIndT index) const;
+    uint8_t apply_split(const vec<float> &paa, const vec<float> &breakpoints, SaxSplitIndT split_ind);
 
    private:
     vec<SaxNumBitsT> m_num_bits;

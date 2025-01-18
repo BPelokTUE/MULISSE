@@ -3,6 +3,9 @@
 
 #include "typedefs.hpp"
 
+#include <functional>
+#include <boost/functional/hash.hpp>
+
 /**
  * @brief Symbolic Aggregate approXimation (SAX) word.
  */
@@ -43,9 +46,38 @@ class SaxWord {
      */
     void set_symbol(SaxSplitIndT index, SaxSymbolT symbol);
 
+    /**
+     * @brief Equality operator.
+     *
+     * @param other The other SaxWord to compare to. Assumed to be of the same length.
+     * @return `True` if `this` is equal to the `other`.
+     */
+    bool operator==(const SaxWord& other) const;
+
+    /**
+     * @brief Get the length of the word.
+     *
+     * @return The length of the word.
+     */
+    size_t size() const;
+
    protected:
     vec<SaxSymbolT> m_symbols;
     SaxNumBitsT m_max_num_bits;
 };
+
+// Specialization of std::hash for SaxWord
+namespace std {
+template <>
+struct hash<SaxWord> {
+    std::size_t operator()(const SaxWord& sax) const {
+        std::size_t seed = 0, num_symbols = sax.size();
+        for (size_t i = 0; i < num_symbols; ++i) {
+            boost::hash_combine(seed, sax[i]);
+        }
+        return seed;
+    }
+};
+}  // namespace std
 
 #endif  // SAX_WORD_HPP
