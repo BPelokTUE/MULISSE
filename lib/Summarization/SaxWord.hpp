@@ -55,6 +55,13 @@ class SaxWord {
     bool operator==(const SaxWord& other) const;
 
     /**
+     * @brief Get the number of bits
+     *
+     * @return The number of bits
+     */
+    SaxNumBitsT get_max_num_bits() const;
+
+    /**
      * @brief Get the length of the word.
      *
      * @return The length of the word.

@@ -2,6 +2,8 @@
 #include "Search/iSax/iSaxNode.hpp"
 #include "Summarization/iSaxWord.hpp"
 
+#include <iostream>
+
 iSaxUlisseEnvelopeIndex::iSaxUlisseEnvelopeIndex(SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
                                                  std::unique_ptr<IiSaxBreakpointStrategy> breakpoint_strategy,
                                                  std::unique_ptr<IiSaxSplitStrategy> split_strategy)
@@ -9,55 +11,56 @@ iSaxUlisseEnvelopeIndex::iSaxUlisseEnvelopeIndex(SaxNumBitsT first_layer_num_bit
       m_leaf_capacity(leaf_capacity),
       m_breakpoint_strategy(std::move(breakpoint_strategy)),
       m_split_strategy(std::move(split_strategy)),
-      m_breakpoints(m_breakpoint_strategy->get_breakpoints(1 << m_first_layer_num_bits)) {}
+      m_breakpoints(m_breakpoint_strategy->get_breakpoints(1 << m_first_layer_num_bits)),
+      m_first_layer_breakpoints(m_breakpoints) {}
 
 void iSaxUlisseEnvelopeIndex::insert(const vec<UlisseEnvelope> &envelopes, FilePositionT file_pos) {
     size_t num_symbols = envelopes.size() * envelopes[0].first.size();
-    vec<float> env_min(num_symbols), env_max(num_symbols);
+    vec<float> env_min, env_max;
 
     for (auto &[channel_min, channel_max] : envelopes) {
         env_min.insert(env_min.end(), channel_min.begin(), channel_min.end());
         env_max.insert(env_max.end(), channel_max.begin(), channel_max.end());
     }
 
-    iSaxWord isax_min(env_min, m_first_layer_num_bits, m_breakpoints),
-        isax_max(env_max, m_first_layer_num_bits, m_breakpoints);
+    SaxWord sax_min(env_min, m_first_layer_num_bits, m_first_layer_breakpoints);
 
-    auto node_it = m_first_layer.find(isax_min);
+    auto node_it = m_first_layer.find(sax_min);
     if (node_it == m_first_layer.end()) {
-        m_first_layer.emplace(isax_min,
-                              std::make_unique<iSaxNode>(iSaxSplittableLeaf({file_pos}, {{env_min, env_max}})));
+        m_first_layer.emplace(sax_min, std::make_unique<iSaxSplittableLeaf>(vec<FilePositionT>{file_pos},
+                                                                            vec<UlisseEnvelope>{{env_min, env_max}}));
     } else {
-        iSaxNode *node = node_it->second.get();
+        iSaxWord isax_min(env_min, m_first_layer_num_bits, m_breakpoints);
+
+        auto node = node_it->second.get();
         iSaxInternalNode *parent = nullptr;
         uint8_t new_bit = 0;
         // Traverse tree until a leaf is reached
         while (auto *internal = dynamic_cast<iSaxInternalNode *>(node)) {
             SaxSplitIndT split_ind = internal->m_split_ind;
             new_bit = isax_min.apply_split(env_min, m_breakpoints, split_ind);
-            isax_max.apply_split(env_max, m_breakpoints, split_ind);
-
-            parent = internal;
             node = new_bit ? internal->right.get() : internal->left.get();
         }
-        // Reached a leaf => insert and check if split is needed
-        auto *leaf = dynamic_cast<iSaxSplittableLeaf *>(node);
-        if (leaf->m_file_positions.size() < m_leaf_capacity) {
-            leaf->m_file_positions.push_back(file_pos);
-        } else {
+        // Reached a leaf => insert
+        auto *leaf = static_cast<iSaxSplittableLeaf *>(node);
+        leaf->m_file_positions.push_back(file_pos);
+        leaf->m_envelopes.push_back({env_min, env_max});
+
+        // Check if split is needed
+        if (leaf->m_file_positions.size() > m_leaf_capacity) {
             // Split the leaf
             SaxSplitIndT split_ind = m_split_strategy->get_split_ind();
 
             // Find the breakpoint in the middle of the symbol at the split index
             SaxNumBitsT num_bits = isax_min.get_num_bits(split_ind);
-            SaxSymbolT breakpoint_alphabet_size = (m_breakpoints.size() - 1);
+            SaxSymbolT breakpoint_alphabet_size = (m_breakpoints.size() + 1);
             SaxSymbolT alphabet_size_ratio = breakpoint_alphabet_size / (1 << num_bits);
 
             if (alphabet_size_ratio == 1) {
                 m_breakpoints = m_breakpoint_strategy->get_breakpoints(breakpoint_alphabet_size * 2);
                 alphabet_size_ratio = 2;
             }
-            auto mid_breakpoint = m_breakpoints[(isax_min[split_ind] * 2 + 1) * (alphabet_size_ratio >> 1)];
+            auto mid_breakpoint = m_breakpoints[(isax_min[split_ind] * 2 + 1) * (alphabet_size_ratio >> 1) - 1];
 
             // Distribute the envelopes across the two new leaves
             vec<FilePositionT> left_file_positions, right_file_positions;
@@ -75,27 +78,15 @@ void iSaxUlisseEnvelopeIndex::insert(const vec<UlisseEnvelope> &envelopes, FileP
             }
 
             // Create new nodes
-            iSaxInternalNode *new_internal = new iSaxInternalNode(split_ind);
-            // Reuse the old leaf for the left child
-            leaf->m_file_positions = std::move(left_file_positions);
-            leaf->m_envelopes = std::move(left_envelopes);
-            new_internal->left = std::unique_ptr<iSaxNode>(leaf);
-            // Create a new leaf for the right child
-            new_internal->right = std::make_unique<iSaxNode>(
-                iSaxSplittableLeaf(std::move(right_file_positions), std::move(right_envelopes)));
+            auto new_internal = std::make_unique<iSaxInternalNode>(split_ind);
+            new_internal->left =
+                std::make_unique<iSaxSplittableLeaf>(std::move(left_file_positions), std::move(left_envelopes));
+            new_internal->right =
+                std::make_unique<iSaxSplittableLeaf>(std::move(right_file_positions), std::move(right_envelopes));
 
-            // Cast to iSaxNode
-            auto new_internal_as_base = std::unique_ptr<iSaxNode>(new_internal);
-            // Insert the new node into the tree
-            if (parent) {
-                if (new_bit) {
-                    parent->right = std::move(new_internal_as_base);
-                } else {
-                    parent->left = std::move(new_internal_as_base);
-                }
-            } else {
-                m_first_layer[isax_min] = std::move(new_internal_as_base);
-            }
+            // Replace the leaf with the new internal node
+            auto &node_ref = parent ? (new_bit ? parent->right : parent->left) : node_it->second;
+            node_ref = std::move(new_internal);
         }
     }
 }
@@ -103,3 +94,8 @@ void iSaxUlisseEnvelopeIndex::insert(const vec<UlisseEnvelope> &envelopes, FileP
 vec<FilePositionT> iSaxUlisseEnvelopeIndex::search(vec<vec<float>> mts, const SearchOptions &search_options) const {
     return {};
 };
+
+const iSaxNode *iSaxUlisseEnvelopeIndex::get_first_layer_node(const SaxWord &sax_min) const {
+    auto node_it = m_first_layer.find(sax_min);
+    return node_it == m_first_layer.end() ? nullptr : node_it->second.get();
+}

@@ -3,13 +3,13 @@
 iSaxWord::iSaxWord(const vec<float> &paa, SaxNumBitsT start_num_bits, const vec<float> &breakpoints)
     : SaxWord(paa, start_num_bits, breakpoints), m_num_bits(paa.size(), start_num_bits) {}
 
-const SaxNumBitsT &iSaxWord::get_num_bits(SaxSplitIndT index) const { return m_num_bits[index]; }
-
 iSaxWord::iSaxWord(vec<SaxSymbolT> symbols, vec<SaxNumBitsT> num_bits, SaxNumBitsT max_num_bits)
     : SaxWord(symbols, max_num_bits), m_num_bits(num_bits) {}
 
 iSaxWord::iSaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT max_num_bits)
     : SaxWord(symbols, max_num_bits), m_num_bits(symbols.size(), max_num_bits) {}
+
+const SaxNumBitsT &iSaxWord::get_num_bits(SaxSplitIndT index) const { return m_num_bits[index]; }
 
 void iSaxWord::set_symbol_and_bits(SaxSplitIndT index, SaxSymbolT symbol, SaxNumBitsT bits) {
     m_symbols[index] = symbol;

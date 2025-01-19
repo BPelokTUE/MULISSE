@@ -15,9 +15,13 @@ class iSaxUlisseEnvelopeIndex : IUlisseEnvelopeIndex {
                             std::unique_ptr<IiSaxBreakpointStrategy> breakpoint_strategy,
                             std::unique_ptr<IiSaxSplitStrategy> split_strategy);
 
+    iSaxUlisseEnvelopeIndex() = default;
+
     ~iSaxUlisseEnvelopeIndex() = default;
 
     void insert(const vec<UlisseEnvelope> &envelopes, FilePositionT file_pos) override;
+
+    const iSaxNode *get_first_layer_node(const SaxWord &sax_min) const;
 
     vec<FilePositionT> search(vec<vec<float>> mts, const SearchOptions &search_options) const override;
 
@@ -26,7 +30,7 @@ class iSaxUlisseEnvelopeIndex : IUlisseEnvelopeIndex {
     SaxNumBitsT m_first_layer_num_bits;
     size_t m_leaf_capacity;
     std::unique_ptr<IiSaxBreakpointStrategy> m_breakpoint_strategy;
-    vec<float> m_breakpoints;
+    vec<float> m_breakpoints, m_first_layer_breakpoints;
     std::unique_ptr<IiSaxSplitStrategy> m_split_strategy;
 };
 

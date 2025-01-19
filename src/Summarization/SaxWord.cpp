@@ -27,3 +27,5 @@ bool SaxWord::operator==(const SaxWord &other) const {
 }
 
 size_t SaxWord::size() const { return m_symbols.size(); }
+
+SaxNumBitsT SaxWord::get_max_num_bits() const { return m_max_num_bits; }
