@@ -36,10 +36,9 @@ void iSaxUlisseEnvelopeIndex::insert(const vec<UlisseEnvelope> &envelopes, FileP
         iSaxInternalNode *parent = nullptr;
         uint8_t new_bit = 0;
         // Traverse tree until a leaf is reached
-        while (auto *internal = dynamic_cast<iSaxInternalNode *>(node)) {
-            SaxSplitIndT split_ind = internal->m_split_ind;
-            new_bit = isax_min.apply_split(env_min, m_breakpoints, split_ind);
-            node = new_bit ? internal->right.get() : internal->left.get();
+        while (!(node->is_leaf())) {
+            new_bit = isax_min.apply_split(env_min, m_breakpoints, node->get_split_ind());
+            node = const_cast<iSaxNode *>(new_bit ? node->get_children().second : node->get_children().first);
         }
         // Reached a leaf => insert
         auto *leaf = static_cast<iSaxSplittableLeaf *>(node);
