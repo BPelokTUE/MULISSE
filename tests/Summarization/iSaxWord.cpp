@@ -1,3 +1,3 @@
-#include "doctest.h"
+#include "doctest/doctest.h"
 
 #include "Summarization/iSaxWord.hpp"

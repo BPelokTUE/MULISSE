@@ -2,7 +2,7 @@
 #include <string>
 #include <fstream>
 
-#include <CLI/CLI.hpp>
+#include "CLI11/CLI11.hpp"
 #include "Util/RandomWalk.hpp"
 #include "Util/QueryGen.hpp"
 
