@@ -32,6 +32,8 @@ class iSaxUlisseEnvelopeIndex : IUlisseEnvelopeIndex {
     std::unique_ptr<IiSaxBreakpointStrategy> m_breakpoint_strategy;
     vec<float> m_breakpoints;
     std::unique_ptr<IiSaxSplitStrategy> m_split_strategy;
+
+    void split_leaf(iSaxWord &isax_min, vec<float> &env_min, std::unique_ptr<iSaxNode> &node_ref);
 };
 
 #endif  // ISAX_ULISSE_ENVELOPE_INDEX_HPP

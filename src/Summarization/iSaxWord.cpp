@@ -29,3 +29,8 @@ void iSaxWord::append_to_symbol(SaxSplitIndT index, uint8_t bit) {
     m_num_bits[index]++;
     m_alphabet_num_bits = std::max(m_alphabet_num_bits, m_num_bits[index]);
 }
+
+void iSaxWord::remove_from_symbol(SaxSplitIndT index) {
+    m_symbols[index] >>= 1;
+    m_num_bits[index]--;
+}

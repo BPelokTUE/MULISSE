@@ -81,6 +81,14 @@ class iSaxWord : public SaxWord {
      */
     void append_to_symbol(SaxSplitIndT index, uint8_t bit);
 
+    /**
+     * @brief Removes a bit from the symbol at the given index. Updates the iSAX word inplace.
+     *
+     * @param index The index of the symbol.
+     * @param bit The bit to append.
+     */
+    void remove_from_symbol(SaxSplitIndT index);
+
    private:
     vec<SaxNumBitsT> m_num_bits;
 };
