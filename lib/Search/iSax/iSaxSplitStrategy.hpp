@@ -6,13 +6,13 @@ class IiSaxSplitStrategy {
     virtual SaxSplitIndT get_split_ind() = 0;
 };
 
-class RoundRobinSplitStrategy : public IiSaxSplitStrategy {
+class DoubleRoundRobinStrategy : public IiSaxSplitStrategy {
    public:
-    RoundRobinSplitStrategy(SaxNumBitsT num_bits) : m_num_bits(num_bits) {}
+    DoubleRoundRobinStrategy(SaxSegIndT num_seg_per_channel, MtsNumChannelsT num_channels);
 
     SaxSplitIndT get_split_ind() override;
 
    private:
-    SaxNumBitsT m_num_bits;
-    SaxSplitIndT m_current_split = 0;
+    SaxSegIndT m_num_seg_per_channel, m_current_split = 0;
+    MtsNumChannelsT m_num_channels, m_current_channel = 0;
 };

@@ -22,6 +22,11 @@ class iSaxWord : public SaxWord {
              const vec<float> &breakpoints);
 
     /**
+     * @brief Default constructor
+     */
+    iSaxWord() = default;
+
+    /**
      * @brief Copy constructor.
      *
      * @param other The iSaxWord to copy.
@@ -71,7 +76,7 @@ class iSaxWord : public SaxWord {
      * @param split_ind The index of the symbol to update.
      * @return The bit that was appended to the symbol.
      */
-    uint8_t apply_split(SaxSplitIndT split_ind);
+    uint8_t apply_split(SaxSegIndT split_ind);
 
     /**
      * @brief Appends a bit to the symbol at the given index. Updates the iSAX word inplace.
@@ -79,7 +84,7 @@ class iSaxWord : public SaxWord {
      * @param index The index of the symbol.
      * @param bit The bit to append.
      */
-    void append_to_symbol(SaxSplitIndT index, uint8_t bit);
+    void append_to_symbol(SaxSegIndT index, uint8_t bit);
 
     /**
      * @brief Removes a bit from the symbol at the given index. Updates the iSAX word inplace.
@@ -87,7 +92,7 @@ class iSaxWord : public SaxWord {
      * @param index The index of the symbol.
      * @param bit The bit to append.
      */
-    void remove_from_symbol(SaxSplitIndT index);
+    void remove_from_symbol(SaxSegIndT index);
 
    private:
     vec<SaxNumBitsT> m_num_bits;

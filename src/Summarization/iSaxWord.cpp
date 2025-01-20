@@ -17,20 +17,20 @@ SaxSymbolT iSaxWord::operator[](std::size_t index) const {
 
 const vec<SaxNumBitsT> &iSaxWord::get_num_bits() const { return m_num_bits; }
 
-uint8_t iSaxWord::apply_split(SaxSplitIndT split_ind) {
+uint8_t iSaxWord::apply_split(SaxSegIndT split_ind) {
     assert(m_num_bits[split_ind] < m_alphabet_num_bits);
 
     ++m_num_bits[split_ind];
     return operator[](split_ind) & 1;
 }
 
-void iSaxWord::append_to_symbol(SaxSplitIndT index, uint8_t bit) {
+void iSaxWord::append_to_symbol(SaxSegIndT index, uint8_t bit) {
     m_symbols[index] = (m_symbols[index] << 1) | bit;
     m_num_bits[index]++;
     m_alphabet_num_bits = std::max(m_alphabet_num_bits, m_num_bits[index]);
 }
 
-void iSaxWord::remove_from_symbol(SaxSplitIndT index) {
+void iSaxWord::remove_from_symbol(SaxSegIndT index) {
     m_symbols[index] >>= 1;
     m_num_bits[index]--;
 }

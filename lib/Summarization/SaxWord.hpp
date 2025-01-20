@@ -20,6 +20,16 @@ class SaxWord {
      */
     SaxWord(const vec<float>& paa, SaxNumBitsT num_bits, const vec<float>& breakpoints);
 
+    /**
+     * @brief Default constructor
+     */
+    SaxWord() = default;
+
+    /**
+     * @brief Copy constructor.
+     *
+     * @param other The SaxWord to copy.
+     */
     SaxWord(const SaxWord&) = default;
 
     /**
@@ -73,6 +83,17 @@ struct hash<SaxWord> {
         std::size_t seed = 0, num_symbols = sax.size();
         for (size_t i = 0; i < num_symbols; ++i) {
             boost::hash_combine(seed, sax[i]);
+        }
+        return seed;
+    }
+};
+
+template <typename T>
+struct hash<vec<T>> : std::enable_if<std::is_base_of<SaxWord, T>::value, std::size_t> {
+    std::size_t operator()(const vec<T>& sax_vec) const {
+        std::size_t seed = 0;
+        for (const auto& sax : sax_vec) {
+            boost::hash_combine(seed, std::hash<SaxWord>{}(sax));
         }
         return seed;
     }

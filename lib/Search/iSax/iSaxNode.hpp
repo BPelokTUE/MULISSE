@@ -8,7 +8,7 @@ class iSaxNode {
     virtual ~iSaxNode() = default;
     virtual std::pair<const iSaxNode *, const iSaxNode *> get_children() const = 0;
     virtual vec<FilePositionT> get_file_positions() const = 0;
-    virtual vec<UlisseEnvelope> get_envelopes() const = 0;
+    virtual vec<vec<UlisseEnvelope>> get_envelopes() const = 0;
     virtual SaxSplitIndT get_split_ind() const = 0;
     virtual bool is_leaf() const = 0;
 };
@@ -21,7 +21,7 @@ class iSaxInternalNode : public iSaxNode {
 
     std::pair<const iSaxNode *, const iSaxNode *> get_children() const override;
     vec<FilePositionT> get_file_positions() const override;
-    vec<UlisseEnvelope> get_envelopes() const override;
+    vec<vec<UlisseEnvelope>> get_envelopes() const override;
     SaxSplitIndT get_split_ind() const override;
     bool is_leaf() const override;
 
@@ -38,7 +38,7 @@ class iSaxLeaf : public iSaxNode {
 
     std::pair<const iSaxNode *, const iSaxNode *> get_children() const override;
     vec<FilePositionT> get_file_positions() const override;
-    vec<UlisseEnvelope> get_envelopes() const override;
+    vec<vec<UlisseEnvelope>> get_envelopes() const override;
     SaxSplitIndT get_split_ind() const override;
     bool is_leaf() const override;
 
@@ -50,12 +50,12 @@ class iSaxSplittableLeaf : public iSaxLeaf {
     friend class iSaxUlisseEnvelopeIndex;
 
    public:
-    iSaxSplittableLeaf(vec<FilePositionT> file_positions, vec<UlisseEnvelope> envelopes);
+    iSaxSplittableLeaf(vec<FilePositionT> file_positions, vec<vec<UlisseEnvelope>> envelopes);
 
-    vec<UlisseEnvelope> get_envelopes() const override;
+    vec<vec<UlisseEnvelope>> get_envelopes() const override;
 
    private:
-    vec<UlisseEnvelope> m_envelopes;
+    vec<vec<UlisseEnvelope>> m_envelopes;
 };
 
 #endif  // ISAX_NODE_HPP
