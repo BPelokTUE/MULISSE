@@ -3,7 +3,7 @@
 #include "Summarization/SaxWord.hpp"
 
 SaxWord::SaxWord(const vec<float> &paa, SaxNumBitsT num_bits, const vec<float> &breakpoints) {
-    m_max_num_bits = num_bits;
+    m_alphabet_num_bits = num_bits;
     unsigned paa_len = paa.size();
     m_symbols.resize(paa_len);
 
@@ -13,9 +13,7 @@ SaxWord::SaxWord(const vec<float> &paa, SaxNumBitsT num_bits, const vec<float> &
     }
 }
 
-const unsigned &SaxWord::operator[](std::size_t index) const { return m_symbols[index]; }
-
-void SaxWord::set_symbol(SaxSplitIndT index, SaxSymbolT symbol) { m_symbols[index] = symbol; }
+SaxSymbolT SaxWord::operator[](std::size_t index) const { return m_symbols[index]; }
 
 bool SaxWord::operator==(const SaxWord &other) const {
     assert(size() == other.size());
@@ -28,4 +26,4 @@ bool SaxWord::operator==(const SaxWord &other) const {
 
 size_t SaxWord::size() const { return m_symbols.size(); }
 
-SaxNumBitsT SaxWord::get_max_num_bits() const { return m_max_num_bits; }
+SaxNumBitsT SaxWord::get_alphabet_num_bits() const { return m_alphabet_num_bits; }

@@ -28,7 +28,7 @@ class SaxWord {
      * @param symbols The symbols of the word.
      * @param num_bits The number of bits to use for the symbols.
      */
-    SaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT num_bits) : m_symbols(symbols), m_max_num_bits(num_bits) {};
+    SaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT num_bits) : m_symbols(symbols), m_alphabet_num_bits(num_bits) {};
 
     /**
      * @brief Get the symbol at the given index.
@@ -36,15 +36,7 @@ class SaxWord {
      * @param index The index of the symbol.
      * @return The symbol at the given index.
      */
-    const SaxSymbolT& operator[](std::size_t index) const;
-
-    /**
-     * @brief Set the symbol at the given index without setting the number of bits.
-     *
-     * @param index The index of the symbol.
-     * @param symbol The symbol to set.
-     */
-    void set_symbol(SaxSplitIndT index, SaxSymbolT symbol);
+    virtual SaxSymbolT operator[](std::size_t index) const;
 
     /**
      * @brief Equality operator.
@@ -55,11 +47,11 @@ class SaxWord {
     bool operator==(const SaxWord& other) const;
 
     /**
-     * @brief Get the number of bits
+     * @brief Get the number of bits of the alphabet.
      *
      * @return The number of bits
      */
-    SaxNumBitsT get_max_num_bits() const;
+    SaxNumBitsT get_alphabet_num_bits() const;
 
     /**
      * @brief Get the length of the word.
@@ -70,7 +62,7 @@ class SaxWord {
 
    protected:
     vec<SaxSymbolT> m_symbols;
-    SaxNumBitsT m_max_num_bits;
+    SaxNumBitsT m_alphabet_num_bits;
 };
 
 // Specialization of std::hash for SaxWord

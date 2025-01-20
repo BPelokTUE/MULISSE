@@ -108,42 +108,43 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
                 vec<UlisseEnvelope>{{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}, {{-0.6, 1.3, -10.6}, {1.8, 3.1, -5.6}}});
     }
 
-    // SUBCASE("inserting envelope into non-first-layer node with splitting works") {
-    //     index->insert({{{-3.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13);
-    //     index->insert({{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269);
-    //     // Triggers first split
-    //     index->insert({{{-4.1, 1.5, -1.6}, {-1.8, 6.9, -0.6}}}, 7891);
-    //     // Insert into right leaf
-    //     index->insert({{{-2.6, 5.3, -10.6}, {1.8, 3.1, -5.6}}}, 555);
+    // SUBCASE("inserting envelope into non-first-layer node with one extra split works") {}
 
-    //     auto sax_min = SaxWord({0, 1, 0}, 1);
-    //     const iSaxNode *node = index->get_first_layer_node(sax_min);
-    //     REQUIRE(node != nullptr);
+    SUBCASE("inserting envelope successfully triggers two splits") {
+        index->insert({{{-3.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13);
+        index->insert({{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269);
+        // Triggers two splits
+        index->insert({{{-4.1, 1.5, -1.6}, {-1.8, 6.9, -0.6}}}, 7891);
+        // Insert into left->right leaf
+        index->insert({{{-2.6, 5.3, -10.6}, {1.8, 3.1, -5.6}}}, 555);
 
-    //     auto *internal = dynamic_cast<const iSaxInternalNode *>(node);
-    //     REQUIRE(internal != nullptr);
+        auto sax_min = SaxWord({0, 1, 0}, 1);
+        const iSaxNode *node = index->get_first_layer_node(sax_min);
+        REQUIRE(node != nullptr);
+        REQUIRE(!(node->is_leaf()));
 
-    //     auto children = internal->get_children();
-    //     auto left = children.first;
-    //     REQUIRE(left != nullptr);
+        auto children = node->get_children();
+        auto left = children.first;
+        REQUIRE(left != nullptr);
 
-    //     auto *left_internal = dynamic_cast<const iSaxSplittableLeaf *>(left);
-    //     REQUIRE(left_internal != nullptr);
-    //     children = left_internal->get_children();
+        REQUIRE(!(left->is_leaf()));
+        children = left->get_children();
 
-    //     left = children.first;
-    //     REQUIRE(left != nullptr);
-    //     auto right = children.second;
-    //     REQUIRE(right != nullptr);
+        left = children.first;
+        REQUIRE(left != nullptr);
+        auto right = children.second;
+        REQUIRE(right != nullptr);
 
-    //     auto *left_leaf = dynamic_cast<const iSaxSplittableLeaf *>(left);
-    //     REQUIRE(left_leaf != nullptr);
-    //     REQUIRE(left_leaf->get_file_positions() == vec<FilePositionT>{13, 7891});
-    //     REQUIRE(left_leaf->get_envelopes() ==
-    //             vec<UlisseEnvelope>{{{-3.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}, {{-4.1, 1.5, -1.6}, {-1.8, 6.9, -0.6}}});
+        REQUIRE(left->is_leaf());
+        REQUIRE(left != nullptr);
+        REQUIRE(left->get_file_positions() == vec<FilePositionT>{13, 7891});
+        REQUIRE(left->get_envelopes() ==
+                vec<UlisseEnvelope>{{{-3.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}, {{-4.1, 1.5, -1.6}, {-1.8, 6.9, -0.6}}});
 
-    //     REQUIRE(right_leaf->get_file_positions() == vec<FilePositionT>{13, 555});
-    //     REQUIRE(right_leaf->get_envelopes() ==
-    //             vec<UlisseEnvelope>{{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}, {{-0.6, 1.3, -10.6}, {1.8, 3.1, -5.6}}});
-    // }
+        REQUIRE(right->is_leaf());
+        REQUIRE(right != nullptr);
+        REQUIRE(right->get_file_positions() == vec<FilePositionT>{1269, 555});
+        REQUIRE(right->get_envelopes() ==
+                vec<UlisseEnvelope>{{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}, {{-2.6, 5.3, -10.6}, {1.8, 3.1, -5.6}}});
+    }
 }

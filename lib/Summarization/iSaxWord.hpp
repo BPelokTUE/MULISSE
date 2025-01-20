@@ -14,10 +14,12 @@ class iSaxWord : public SaxWord {
      * @brief Construct a new iSaxWord object.
      *
      * @param paa The Piecewise Aggregate Approximation (PAA) of a time series.
-     * @param start_num_bits The number of bits to use initially for all symbols.
+     * @param num_bits The number of bits to use for the symbols.
+     * @param alphabet_num_bits The number of bits to use for the alphabet.
      * @param breakpoints The breakpoints to use for the symbols.
      */
-    iSaxWord(const vec<float> &paa, SaxNumBitsT start_num_bits, const vec<float> &breakpoints);
+    iSaxWord(const vec<float> &paa, vec<SaxNumBitsT> num_bits, SaxNumBitsT alphabet_num_bits,
+             const vec<float> &breakpoints);
 
     /**
      * @brief Copy constructor.
@@ -30,47 +32,54 @@ class iSaxWord : public SaxWord {
      * @brief Construct a new iSaxWord object.
      *
      * @param symbols The symbols of the word.
-     * @param num_bits The number of bits to use for the symbols.
-     * @param max_num_bits The maximum number of bits used for the symbols.
+     * @param alphabet_num_bits The number of bits to use for the symbols. All symbols will have the same number of
+     * bits.
      */
-    iSaxWord(vec<SaxSymbolT> symbols, vec<SaxNumBitsT> num_bits, SaxNumBitsT max_num_bits);
+    iSaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT alphabet_num_bits);
 
     /**
      * @brief Construct a new iSaxWord object.
      *
      * @param symbols The symbols of the word.
-     * @param max_num_bits The number of bits to use for the symbols. All symbols will have the same number of bits.
+     * @param num_bits The number of bits to use for the symbols.
+     * @param alphabet_num_bits The number of bits used by alphabet.
      */
-    iSaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT max_num_bits);
+    iSaxWord(vec<SaxSymbolT> symbols, vec<SaxNumBitsT> num_bits, SaxNumBitsT alphabet_num_bits);
+
+    /**
+     * @brief Get the symbol at the given index.
+     *
+     * @param index The index of the symbol.
+     * @return The symbol at the given index.
+     */
+    SaxSymbolT operator[](std::size_t index) const override;
 
     /**
      * @brief Get the number of bits used for the symbol at the given index.
      *
      * @param index The index of the symbol.
-     * @return The number of bits used for the symbol at the given index.
+     * @return The (reference to) the number of bits vector.
      */
-    const SaxNumBitsT &get_num_bits(SaxSplitIndT index) const;
-
-    /**
-     * @brief Set the symbol at the given index with the given number of bits.
-     *
-     * @param index The index of the symbol.
-     * @param symbol The symbol to set.
-     * @param bits The number of bits to use for the symbol.
-     */
-    void set_symbol_and_bits(SaxSplitIndT index, SaxSymbolT symbol, SaxNumBitsT bits);
+    const vec<SaxNumBitsT> &get_num_bits() const;
 
     /**
      * @brief Apply a split to the word. Updates the iSAX word inplace.
      *
-     * Updates the symbol specified by the split index after a split, based on the PAA and the breakpoints.
+     * Updates the symbol specified by the split index after a split. Assumes that the number of bits of the segment is
+     * less than the alphabet's.
      *
-     * @param paa The Piecewise Aggregate Approximation (PAA) of a time series.
-     * @param breakpoints The breakpoints to use for the symbols.
      * @param split_ind The index of the symbol to update.
      * @return The bit that was appended to the symbol.
      */
-    uint8_t apply_split(const vec<float> &paa, const vec<float> &breakpoints, SaxSplitIndT split_ind);
+    uint8_t apply_split(SaxSplitIndT split_ind);
+
+    /**
+     * @brief Appends a bit to the symbol at the given index. Updates the iSAX word inplace.
+     *
+     * @param index The index of the symbol.
+     * @param bit The bit to append.
+     */
+    void append_to_symbol(SaxSplitIndT index, uint8_t bit);
 
    private:
     vec<SaxNumBitsT> m_num_bits;

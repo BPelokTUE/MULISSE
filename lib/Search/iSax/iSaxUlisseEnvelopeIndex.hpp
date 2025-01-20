@@ -27,10 +27,10 @@ class iSaxUlisseEnvelopeIndex : IUlisseEnvelopeIndex {
 
    private:
     std::unordered_map<SaxWord, std::unique_ptr<iSaxNode>> m_first_layer;
-    SaxNumBitsT m_first_layer_num_bits;
+    SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
     size_t m_leaf_capacity;
     std::unique_ptr<IiSaxBreakpointStrategy> m_breakpoint_strategy;
-    vec<float> m_breakpoints, m_first_layer_breakpoints;
+    vec<float> m_breakpoints;
     std::unique_ptr<IiSaxSplitStrategy> m_split_strategy;
 };
 
