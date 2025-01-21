@@ -9,6 +9,10 @@
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/iSaxBreakpointStrategy.hpp"
 
+struct iSaxWordVecHash {
+    std::size_t operator()(const vec<iSaxWord> &isax_mins) const;
+};
+
 class iSaxUlisseEnvelopeIndex : IUlisseEnvelopeIndex {
    public:
     iSaxUlisseEnvelopeIndex(SaxSegIndT num_seg_per_channel, MtsNumChannelsT num_channels,
@@ -28,7 +32,7 @@ class iSaxUlisseEnvelopeIndex : IUlisseEnvelopeIndex {
     vec<FilePositionT> search(vec<vec<float>> mts, const SearchOptions &search_options) const override;
 
    private:
-    std::unordered_map<vec<iSaxWord>, std::unique_ptr<iSaxNode>> m_first_layer;
+    std::unordered_map<vec<iSaxWord>, std::unique_ptr<iSaxNode>, iSaxWordVecHash> m_first_layer;
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits, m_num_bits_limit;
     SaxSegIndT m_num_seg_per_channel;
     MtsNumChannelsT m_num_channels;

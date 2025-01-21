@@ -4,6 +4,16 @@
 
 #include <iostream>
 
+std::size_t iSaxWordVecHash::operator()(const vec<iSaxWord> &isax_mins) const {
+    std::size_t seed = 0, num_symbols = isax_mins[0].size();
+    for (auto isax_min : isax_mins) {
+        for (size_t i = 0; i < num_symbols; ++i) {
+            boost::hash_combine(seed, isax_min[i]);
+        }
+    }
+    return seed;
+}
+
 iSaxUlisseEnvelopeIndex::iSaxUlisseEnvelopeIndex(SaxSegIndT num_seg_per_channel, MtsNumChannelsT num_channels,
                                                  SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
                                                  std::unique_ptr<IiSaxBreakpointStrategy> breakpoint_strategy,
@@ -57,7 +67,7 @@ void iSaxUlisseEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<Uli
 
     auto *leaf = static_cast<iSaxSplittableLeaf *>(node_ref.get());
     for (size_t i = 0; i < leaf->m_file_positions.size(); ++i) {
-        auto &seg_min = leaf->m_envelopes[channel_ind][i].first;
+        auto &seg_min = leaf->m_envelopes[i][channel_ind].first;
         if (seg_min[segment_ind] <= mid_breakpoint) {
             left_file_positions.push_back(leaf->m_file_positions[i]);
             left_envelopes.push_back(leaf->m_envelopes[i]);
