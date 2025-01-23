@@ -13,11 +13,11 @@ class iSaxNode {
     virtual bool is_leaf() const = 0;
 };
 
-class iSaxInternalNode : public iSaxNode {
+class iSaxSplittableInternal : public iSaxNode {
     friend class iSaxUlisseEnvelopeIndex;
 
    public:
-    iSaxInternalNode(SaxSplitIndT split_ind);
+    iSaxSplittableInternal(SaxSplitIndT split_ind);
 
     std::pair<const iSaxNode *, const iSaxNode *> get_children() const override;
     vec<FilePositionT> get_file_positions() const override;
@@ -28,6 +28,11 @@ class iSaxInternalNode : public iSaxNode {
    private:
     SaxSplitIndT m_split_ind;
     std::unique_ptr<iSaxNode> left = nullptr, right = nullptr;
+};
+
+class iSaxInternal : public iSaxSplittableInternal {
+   private:
+    SaxSymbolT m_isax_max_left, m_isax_max_right;
 };
 
 class iSaxLeaf : public iSaxNode {

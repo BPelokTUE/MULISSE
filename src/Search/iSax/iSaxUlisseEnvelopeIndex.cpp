@@ -1,4 +1,5 @@
 #include "Search/iSax/iSaxUlisseEnvelopeIndex.hpp"
+#include "Search/iSax/iSaxFinalizedUliEnvIndex.hpp"
 #include "Search/iSax/iSaxNode.hpp"
 #include "Summarization/iSaxWord.hpp"
 
@@ -27,7 +28,12 @@ iSaxUlisseEnvelopeIndex::iSaxUlisseEnvelopeIndex(SaxSegIndT num_seg_per_channel,
       m_leaf_capacity(leaf_capacity),
       m_breakpoint_strategy(std::move(breakpoint_strategy)),
       m_split_strategy(std::move(split_strategy)),
-      m_breakpoints(m_breakpoint_strategy->get_breakpoints(1 << m_alphabet_num_bits)) {}
+      m_breakpoints(m_breakpoint_strategy->get_breakpoints(1 << m_alphabet_num_bits)) {
+    assert(num_seg_per_channel > 0);
+    assert(num_channels > 0);
+    assert(first_layer_num_bits > 0);
+    assert(num_bits_limit >= first_layer_num_bits);
+}
 
 void iSaxUlisseEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<UlisseEnvelope> &envelopes,
                                          std::unique_ptr<iSaxNode> &node_ref) {
@@ -79,7 +85,7 @@ void iSaxUlisseEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<Uli
 
     // Create new nodes
     size_t left_size = left_file_positions.size(), right_size = right_file_positions.size();
-    auto new_internal = std::make_unique<iSaxInternalNode>(SaxSplitIndT{segment_ind, channel_ind});
+    auto new_internal = std::make_unique<iSaxSplittableInternal>(SaxSplitIndT{segment_ind, channel_ind});
     new_internal->left =
         std::make_unique<iSaxSplittableLeaf>(std::move(left_file_positions), std::move(left_envelopes));
     new_internal->right =
@@ -98,8 +104,7 @@ void iSaxUlisseEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<Uli
                     iSaxWord(envelopes[c].first, isax_mins[c].get_num_bits(), m_alphabet_num_bits, m_breakpoints);
             }
         }
-
-        auto &parent = reinterpret_cast<std::unique_ptr<iSaxInternalNode> &>(node_ref);
+        auto &parent = reinterpret_cast<std::unique_ptr<iSaxSplittableInternal> &>(node_ref);
 
         if (split_left) {
             uint8_t new_bit = 0;
@@ -119,6 +124,9 @@ void iSaxUlisseEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<Uli
 }
 
 void iSaxUlisseEnvelopeIndex::insert(const vec<UlisseEnvelope> &envelopes, FilePositionT file_pos) {
+    assert(envelopes.size() == m_num_channels);
+    assert(envelopes[0].first.size() == m_num_seg_per_channel);
+
     vec<iSaxWord> isax_mins(envelopes.size());
     for (size_t i = 0; i < envelopes.size(); ++i) {
         auto env_min = envelopes[i].first;
@@ -132,11 +140,11 @@ void iSaxUlisseEnvelopeIndex::insert(const vec<UlisseEnvelope> &envelopes, FileP
                                                                               vec<vec<UlisseEnvelope>>{envelopes}));
     } else {
         auto node = node_it->second.get();
-        iSaxInternalNode *parent = nullptr;
+        iSaxSplittableInternal *parent = nullptr;
         uint8_t new_bit = 0;
         // Traverse tree until a leaf is reached
         while (!(node->is_leaf())) {
-            parent = static_cast<iSaxInternalNode *>(node);
+            parent = static_cast<iSaxSplittableInternal *>(node);
             auto [segment_ind, channel_ind] = node->get_split_ind();
             new_bit = isax_mins[channel_ind].apply_split(segment_ind);
             node = const_cast<iSaxNode *>(new_bit ? node->get_children().second : node->get_children().first);
@@ -152,6 +160,16 @@ void iSaxUlisseEnvelopeIndex::insert(const vec<UlisseEnvelope> &envelopes, FileP
             split_leaf(isax_mins, envelopes, node_ref);
         }
     }
+}
+
+std::unique_ptr<IFinalizedUliEnvIndex> iSaxUlisseEnvelopeIndex::finalize() {
+    // I. Go over each entry in `m_first_layer_nodes`
+    //     1. `auto [new_node, isax_max] = node->finalize()`; PROBLEM: `iSaxInternal` will have a `finalize` method
+    //     2. Set `node = new_node`
+    //     3. Save `isax_max` into the `m_first_layer_isax_max` vector
+    // `node->finalize()`:
+
+    return std::make_unique<iSaxFinalizedUliEnvIndex>();
 }
 
 vec<FilePositionT> iSaxUlisseEnvelopeIndex::search(vec<vec<float>> mts, const SearchOptions &search_options) const {

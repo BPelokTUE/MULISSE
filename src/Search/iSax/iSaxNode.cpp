@@ -2,21 +2,21 @@
 
 #include "Search/iSax/iSaxNode.hpp"
 
-// iSaxInternalNode
+// iSaxSplittableInternal
 
-iSaxInternalNode::iSaxInternalNode(SaxSplitIndT split_ind) : m_split_ind(split_ind) {}
+iSaxSplittableInternal::iSaxSplittableInternal(SaxSplitIndT split_ind) : m_split_ind(split_ind) {}
 
-std::pair<const iSaxNode *, const iSaxNode *> iSaxInternalNode::get_children() const {
+std::pair<const iSaxNode *, const iSaxNode *> iSaxSplittableInternal::get_children() const {
     return {left.get(), right.get()};
 }
 
-vec<FilePositionT> iSaxInternalNode::get_file_positions() const { return {}; }
+vec<FilePositionT> iSaxSplittableInternal::get_file_positions() const { return {}; }
 
-vec<vec<UlisseEnvelope>> iSaxInternalNode::get_envelopes() const { return {}; }
+vec<vec<UlisseEnvelope>> iSaxSplittableInternal::get_envelopes() const { return {}; }
 
-SaxSplitIndT iSaxInternalNode::get_split_ind() const { return m_split_ind; }
+SaxSplitIndT iSaxSplittableInternal::get_split_ind() const { return m_split_ind; }
 
-bool iSaxInternalNode::is_leaf() const { return false; }
+bool iSaxSplittableInternal::is_leaf() const { return false; }
 
 // iSaxLeaf
 
