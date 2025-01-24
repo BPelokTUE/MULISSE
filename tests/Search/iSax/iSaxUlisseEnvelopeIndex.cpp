@@ -22,7 +22,7 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
     SUBCASE("inserting first envelope works") {
         index->insert({{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13);
         auto isax_min = iSaxWord({0, 1, 0}, 1);
-        const iSaxNode *node = index->get_first_layer_node({isax_min});
+        const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
         REQUIRE(node != nullptr);
 
         REQUIRE(node->is_leaf());
@@ -35,7 +35,7 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
 
         index->insert({{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269);
         auto isax_min = iSaxWord({0, 1, 0}, 1);
-        const iSaxNode *node = index->get_first_layer_node({isax_min});
+        const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
         REQUIRE(node != nullptr);
 
         REQUIRE(node->is_leaf());
@@ -50,7 +50,7 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
 
         index->insert({{{4.2, 2.4, -5.7}, {8.8, 3.8, 5.3}}}, 352);
         auto isax_min = iSaxWord({1, 1, 0}, 1);
-        const iSaxNode *node = index->get_first_layer_node({isax_min});
+        const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
         REQUIRE(node != nullptr);
 
         REQUIRE(node->is_leaf());
@@ -65,7 +65,7 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
         index->insert({{{-4.1, 4.5, -1.6}, {-1.8, 6.9, -0.6}}}, 7891);
 
         auto isax_min = iSaxWord({0, 1, 0}, 1);
-        const iSaxNode *node = index->get_first_layer_node({isax_min});
+        const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
         REQUIRE(node != nullptr);
 
         REQUIRE(!(node->is_leaf()));
@@ -94,7 +94,7 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
         index->insert({{{-0.6, 1.3, -10.6}, {1.8, 3.1, -5.6}}}, 555);
 
         auto isax_min = iSaxWord({0, 1, 0}, 1);
-        const iSaxNode *node = index->get_first_layer_node({isax_min});
+        const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
         REQUIRE(node != nullptr);
 
         REQUIRE(!(node->is_leaf()));
@@ -116,7 +116,7 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
         index->insert({{{-1.6, 5.3, -10.6}, {1.8, 3.1, -5.6}}}, 555);
 
         auto isax_min = iSaxWord({0, 1, 0}, 1);
-        const iSaxNode *node = index->get_first_layer_node({isax_min});
+        const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
         REQUIRE(node != nullptr);
         REQUIRE(!(node->is_leaf()));
 
@@ -170,7 +170,7 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
         index->insert({{{-2.6, 5.3, -10.6}, {1.8, 3.1, -5.6}}}, 555);
 
         auto isax_min = iSaxWord({0, 1, 0}, 1);
-        const iSaxNode *node = index->get_first_layer_node({isax_min});
+        const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
         REQUIRE(node != nullptr);
         REQUIRE(!(node->is_leaf()));
 
@@ -206,7 +206,7 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
         index->insert(envelope, 300);
 
         auto isax_min = iSaxWord({1, 1, 1}, 1);
-        const iSaxNode *node = index->get_first_layer_node({isax_min});
+        const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
         REQUIRE(node != nullptr);
         REQUIRE(!(node->is_leaf()));
 
@@ -243,7 +243,7 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert MTS envelope works") {
         index->insert({{{0.2, -5.5}, {1.1, -3.1}}, {{-1.9, 2.7}, {-0.6, 3.8}}, {{1.9, 2.7}, {3.1, 5.7}}}, 64);
 
         vec<iSaxWord> isax_mins = {iSaxWord({1, 0}, 1), iSaxWord({0, 1}, 1), iSaxWord({1, 1}, 1)};
-        const iSaxNode *node = index->get_first_layer_node(isax_mins);
+        const iSaxSplittableNode *node = index->get_first_layer_node(isax_mins);
 
         REQUIRE(node != nullptr);
         REQUIRE(node->is_leaf());
@@ -259,7 +259,7 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert MTS envelope works") {
         index->insert({{{0.5, -0.3}, {0.6, 1.1}}, {{-1.1, 1.3}, {0.3, 1.7}}, {{1.1, 1.3}, {2.1, 3.3}}}, 256);
 
         vec<iSaxWord> isax_mins = {iSaxWord({1, 0}, 1), iSaxWord({0, 1}, 1), iSaxWord({1, 1}, 1)};
-        const iSaxNode *node = index->get_first_layer_node(isax_mins);
+        const iSaxSplittableNode *node = index->get_first_layer_node(isax_mins);
 
         REQUIRE(node != nullptr);
         REQUIRE(!(node->is_leaf()));

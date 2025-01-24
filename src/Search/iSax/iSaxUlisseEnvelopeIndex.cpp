@@ -1,6 +1,6 @@
 #include "Search/iSax/iSaxUlisseEnvelopeIndex.hpp"
 #include "Search/iSax/iSaxFinalizedUliEnvIndex.hpp"
-#include "Search/iSax/iSaxNode.hpp"
+#include "Search/iSax/iSaxSplittableNode.hpp"
 #include "Summarization/iSaxWord.hpp"
 
 #include <iostream>
@@ -36,7 +36,7 @@ iSaxUlisseEnvelopeIndex::iSaxUlisseEnvelopeIndex(SaxSegIndT num_seg_per_channel,
 }
 
 void iSaxUlisseEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<UlisseEnvelope> &envelopes,
-                                         std::unique_ptr<iSaxNode> &node_ref) {
+                                         std::unique_ptr<iSaxSplittableNode> &node_ref) {
     // Split the leaf
     auto [segment_ind, channel_ind] = m_split_strategy->get_split_ind();
     SaxNumBitsT split_seg_bits = isax_mins[channel_ind].get_num_bits()[segment_ind];
@@ -147,7 +147,7 @@ void iSaxUlisseEnvelopeIndex::insert(const vec<UlisseEnvelope> &envelopes, FileP
             parent = static_cast<iSaxSplittableInternal *>(node);
             auto [segment_ind, channel_ind] = node->get_split_ind();
             new_bit = isax_mins[channel_ind].apply_split(segment_ind);
-            node = const_cast<iSaxNode *>(new_bit ? node->get_children().second : node->get_children().first);
+            node = const_cast<iSaxSplittableNode *>(new_bit ? node->get_children().second : node->get_children().first);
         }
         // Reached a leaf => insert
         auto *leaf = static_cast<iSaxSplittableLeaf *>(node);
@@ -168,7 +168,6 @@ std::unique_ptr<IFinalizedUliEnvIndex> iSaxUlisseEnvelopeIndex::finalize() {
     //     2. Set `node = new_node`
     //     3. Save `isax_max` into the `m_first_layer_isax_max` vector
     // `node->finalize()`:
-
     return std::make_unique<iSaxFinalizedUliEnvIndex>();
 }
 
@@ -176,7 +175,7 @@ vec<FilePositionT> iSaxUlisseEnvelopeIndex::search(vec<vec<float>> mts, const Se
     return {};
 };
 
-const iSaxNode *iSaxUlisseEnvelopeIndex::get_first_layer_node(const vec<iSaxWord> &isax_mins) const {
+const iSaxSplittableNode *iSaxUlisseEnvelopeIndex::get_first_layer_node(const vec<iSaxWord> &isax_mins) const {
     auto node_it = m_first_layer.find(isax_mins);
     return node_it == m_first_layer.end() ? nullptr : node_it->second.get();
 }

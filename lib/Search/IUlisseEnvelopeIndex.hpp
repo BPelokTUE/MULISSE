@@ -2,7 +2,8 @@
 #define I_ULISSE_ENVELOPE_INDEX_HPP
 
 #include "typedefs.hpp"
-#include "SearchOptions.hpp"
+#include "Search/SearchOptions.hpp"
+#include "Summarization/iSaxWord.hpp"
 
 #include <fstream>
 

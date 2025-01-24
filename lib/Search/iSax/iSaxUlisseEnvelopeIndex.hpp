@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "Search/IUlisseEnvelopeIndex.hpp"
-#include "Search/iSax/iSaxNode.hpp"
+#include "Search/iSax/iSaxSplittableNode.hpp"
 #include "Search/iSax/iSaxSplitStrategy.hpp"
 #include "Search/iSax/iSaxFinalizedUliEnvIndex.hpp"
 #include "Summarization/iSaxWord.hpp"
@@ -30,24 +30,22 @@ class iSaxUlisseEnvelopeIndex : IUlisseEnvelopeIndex {
 
     std::unique_ptr<IFinalizedUliEnvIndex> finalize() override;
 
-    const iSaxNode *get_first_layer_node(const vec<iSaxWord> &isax_mins) const;
+    const iSaxSplittableNode *get_first_layer_node(const vec<iSaxWord> &isax_mins) const;
 
     vec<FilePositionT> search(vec<vec<float>> mts, const SearchOptions &search_options) const override;
 
    private:
-    std::unordered_map<vec<iSaxWord>, std::unique_ptr<iSaxNode>, iSaxWordVecHash>
-        m_first_layer;  // not needed for final
-    // Instead, use: `vec<iSaxWord> first_isax_mins, first_isax_maxs; vec<std::unique_ptr<iSaxNode>> first_nodes;`
-    SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits,
-        m_num_bits_limit;  // `m_num_bits_limit` is not needed for final
+    std::unordered_map<vec<iSaxWord>, std::unique_ptr<iSaxSplittableNode>, iSaxWordVecHash> m_first_layer;
+    SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits, m_num_bits_limit;
     SaxSegIndT m_num_seg_per_channel;
     MtsNumChannelsT m_num_channels;
-    size_t m_leaf_capacity;  // not needed for final
+    size_t m_leaf_capacity;
     std::unique_ptr<IiSaxBreakpointStrategy> m_breakpoint_strategy;
     vec<float> m_breakpoints;
-    std::unique_ptr<IiSaxSplitStrategy> m_split_strategy;  // not needed for final
+    std::unique_ptr<IiSaxSplitStrategy> m_split_strategy;
 
-    void split_leaf(vec<iSaxWord> &isax_min, const vec<UlisseEnvelope> &envelopes, std::unique_ptr<iSaxNode> &node_ref);
+    void split_leaf(vec<iSaxWord> &isax_min, const vec<UlisseEnvelope> &envelopes,
+                    std::unique_ptr<iSaxSplittableNode> &node_ref);
 };
 
 #endif  // ISAX_ULISSE_ENVELOPE_INDEX_HPP
