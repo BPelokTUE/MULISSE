@@ -14,7 +14,7 @@ struct iSaxWordVecHash {
     std::size_t operator()(const vec<iSaxWord> &isax_mins) const;
 };
 
-class iSaxUlisseEnvelopeIndex : IUlisseEnvelopeIndex {
+class iSaxUlisseEnvelopeIndex : public IUlisseEnvelopeIndex {
    public:
     iSaxUlisseEnvelopeIndex(SaxSegIndT num_seg_per_channel, MtsNumChannelsT num_channels,
                             SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,

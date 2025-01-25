@@ -12,8 +12,8 @@ struct RRangeParameters {
 };
 
 union SearchParameters {
-    KnnParameters knn_parameters;
-    RRangeParameters r_range_parameters;
+    KnnParameters knn_param;
+    RRangeParameters r_range_param;
 };
 
 struct SearchOptions {

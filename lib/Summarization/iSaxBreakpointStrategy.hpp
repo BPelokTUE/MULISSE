@@ -5,6 +5,8 @@
 
 #include "typedefs.hpp"
 
+enum iSaxBreakpointStrategyType { EQUIPROBABLE };
+
 /**
  * @brief Interface for breakpoints strategies
  *
@@ -20,9 +22,9 @@ class IiSaxBreakpointStrategy {
     virtual vec<float> get_breakpoints(SaxSymbolT alphabet_size) const = 0;
 };
 
-class EquiprobableStrategy : public IiSaxBreakpointStrategy {
+class EquiprobableBreakpointStrategy : public IiSaxBreakpointStrategy {
    public:
-    EquiprobableStrategy(float standard_deviation = 1.0);
+    EquiprobableBreakpointStrategy(float standard_deviation = 1.0);
 
     vec<float> get_breakpoints(SaxSymbolT alphabet_size) const override;
 

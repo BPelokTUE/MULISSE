@@ -1,9 +1,6 @@
 #ifndef QUERY_GEN_HPP
 #define QUERY_GEN_HPP
 
-#include <string>
-#include <vector>
-
 #include "typedefs.hpp"
 
 /**

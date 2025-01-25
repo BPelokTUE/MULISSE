@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
     s          |           |              |   X   |        |
     n_start    |           |              |   X   |        |
     leaf_th    |           |              |   X   |        |
-    query_path |           |              |   X   |   X    |
+    query_path |           |       X      |       |   X    |
     approx/ex  |           |              |       |   X    |
     kNN/r-ran  |           |              |       |   X    |
     k(NN)      |           |              |       |   X    |

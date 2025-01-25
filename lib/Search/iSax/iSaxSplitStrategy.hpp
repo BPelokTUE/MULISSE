@@ -1,4 +1,9 @@
+#ifndef ISAX_SPLIT_STRATEGY_HPP
+#define ISAX_SPLIT_STRATEGY_HPP
+
 #include "typedefs.hpp"
+
+enum iSaxSplitStrategyType { DOUBLE_ROUND_ROBIN };
 
 class IiSaxSplitStrategy {
    public:
@@ -16,3 +21,5 @@ class DoubleRoundRobinStrategy : public IiSaxSplitStrategy {
     SaxSegIndT m_num_seg_per_channel, m_current_split = 0;
     MtsNumChannelsT m_num_channels, m_current_channel = 0;
 };
+
+#endif  // ISAX_SPLIT_STRATEGY_HPP
