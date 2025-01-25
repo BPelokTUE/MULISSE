@@ -1,8 +1,13 @@
 #include <cassert>
+#include <algorithm>
 
 #include "Summarization/SaxWord.hpp"
 
 SaxWord::SaxWord(const vec<float> &paa, SaxNumBitsT num_bits, const vec<float> &breakpoints) {
+    assert(num_bits > 0);
+    assert(breakpoints.size() == (1 << num_bits) - 1);
+    assert(std::is_sorted(breakpoints.begin(), breakpoints.end()));
+
     m_alphabet_num_bits = num_bits;
     unsigned paa_len = paa.size();
     m_symbols.resize(paa_len);
@@ -12,6 +17,10 @@ SaxWord::SaxWord(const vec<float> &paa, SaxNumBitsT num_bits, const vec<float> &
         m_symbols[i] = it - breakpoints.begin();
     }
 }
+
+SaxWord::SaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT num_bits) : m_symbols(symbols), m_alphabet_num_bits(num_bits) {
+    assert(num_bits > 0);
+};
 
 SaxSymbolT SaxWord::operator[](std::size_t index) const { return m_symbols[index]; }
 

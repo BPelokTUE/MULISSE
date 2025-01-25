@@ -5,6 +5,12 @@
 
 #include "Summarization/SaxWord.hpp"
 
+struct iSaxWordSettings {
+    vec<SaxNumBitsT> num_bits;
+    SaxNumBitsT alphabet_num_bits;
+    vec<float> breakpoints;
+};
+
 /**
  * @brief indexable Symbolic Aggregate approXimation (iSAX) word.
  */
@@ -14,12 +20,10 @@ class iSaxWord : public SaxWord {
      * @brief Construct a new iSaxWord object.
      *
      * @param paa The Piecewise Aggregate Approximation (PAA) of a time series.
-     * @param num_bits The number of bits to use for the symbols.
-     * @param alphabet_num_bits The number of bits to use for the alphabet.
-     * @param breakpoints The breakpoints to use for the symbols.
+     * @param settings iSAX word settings containing the number of bits per symbol, the number
+     *        of bits for the alphabet and the breakpoints.
      */
-    iSaxWord(const vec<float> &paa, vec<SaxNumBitsT> num_bits, SaxNumBitsT alphabet_num_bits,
-             const vec<float> &breakpoints);
+    iSaxWord(const vec<float> &paa, const iSaxWordSettings &settings);
 
     /**
      * @brief Default constructor
@@ -93,6 +97,13 @@ class iSaxWord : public SaxWord {
      * @param bit The bit to append.
      */
     void remove_from_symbol(SaxSegIndT index);
+
+    /**
+     * @brief For each segment, set the symbols to the maximum of two words
+     *
+     * @param other The other iSaxWord to compare to. Assumed to be of the same length.
+     */
+    void select_max_symbols(const iSaxWord &other);
 
    private:
     vec<SaxNumBitsT> m_num_bits;

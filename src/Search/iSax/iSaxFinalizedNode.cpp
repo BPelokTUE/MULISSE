@@ -3,11 +3,16 @@
 // iSaxFinalizedInternal
 
 iSaxFinalizedInternal::iSaxFinalizedInternal(SaxSplitIndT split_ind, SaxSymbolT isax_max_left,
-                                             SaxSymbolT isax_min_right)
-    : m_split_ind(split_ind), m_isax_max_left(isax_max_left), m_isax_min_right(isax_min_right) {}
+                                             SaxSymbolT isax_min_right, iSaxFinalizedNode *left,
+                                             iSaxFinalizedNode *right)
+    : m_split_ind(split_ind),
+      m_max_symbol_left(isax_max_left),
+      m_max_symbol_right(isax_min_right),
+      m_left(std::move(left)),
+      m_right(std::move(right)) {}
 
 std::pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> iSaxFinalizedInternal::get_children() const {
-    return {left.get(), right.get()};
+    return {m_left.get(), m_right.get()};
 }
 
 SaxSplitIndT iSaxFinalizedInternal::get_split_ind() const { return m_split_ind; }

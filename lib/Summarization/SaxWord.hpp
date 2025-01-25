@@ -38,7 +38,7 @@ class SaxWord {
      * @param symbols The symbols of the word.
      * @param num_bits The number of bits to use for the symbols.
      */
-    SaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT num_bits) : m_symbols(symbols), m_alphabet_num_bits(num_bits) {};
+    SaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT num_bits);
 
     /**
      * @brief Get the symbol at the given index.

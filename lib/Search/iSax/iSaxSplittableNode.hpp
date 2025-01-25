@@ -4,13 +4,15 @@
 #include "typedefs.hpp"
 #include "Search/iSax/iSaxNode.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
+#include "Summarization/iSaxWord.hpp"
 
 class iSaxSplittableNode : public iSaxNode {
    public:
     virtual ~iSaxSplittableNode() = default;
     virtual std::pair<const iSaxSplittableNode *, const iSaxSplittableNode *> get_children() const = 0;
     virtual vec<vec<UlisseEnvelope>> get_envelopes() const = 0;
-    virtual std::unique_ptr<iSaxFinalizedNode> finalize() const = 0;
+    virtual std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(
+        const iSaxWordSettings &isax_word_settings) const = 0;
 };
 
 class iSaxSplittableInternal : public iSaxSplittableNode {
@@ -18,6 +20,8 @@ class iSaxSplittableInternal : public iSaxSplittableNode {
 
    public:
     iSaxSplittableInternal(SaxSplitIndT split_ind);
+
+    iSaxSplittableInternal(SaxSplitIndT split_ind, iSaxSplittableNode *left, iSaxSplittableNode *right);
 
     std::pair<const iSaxSplittableNode *, const iSaxSplittableNode *> get_children() const override;
 
@@ -29,11 +33,12 @@ class iSaxSplittableInternal : public iSaxSplittableNode {
 
     vec<vec<UlisseEnvelope>> get_envelopes() const override;
 
-    std::unique_ptr<iSaxFinalizedNode> finalize() const override;
+    std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(
+        const iSaxWordSettings &isax_word_settings) const override;
 
    private:
     SaxSplitIndT m_split_ind;
-    std::unique_ptr<iSaxSplittableNode> left = nullptr, right = nullptr;
+    std::unique_ptr<iSaxSplittableNode> m_left = nullptr, m_right = nullptr;
 };
 
 class iSaxSplittableLeaf : public iSaxSplittableNode {
@@ -52,7 +57,8 @@ class iSaxSplittableLeaf : public iSaxSplittableNode {
 
     vec<vec<UlisseEnvelope>> get_envelopes() const override;
 
-    std::unique_ptr<iSaxFinalizedNode> finalize() const override;
+    std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(
+        const iSaxWordSettings &isax_word_settings) const override;
 
    private:
     vec<vec<UlisseEnvelope>> m_envelopes;
