@@ -3,7 +3,7 @@
 #include <iostream>
 #include <random>
 
-#include "Util/RandomWalk.hpp"
+#include "Modules/RandomWalk.hpp"
 
 int create_random_walks(std::string dataset_path, float rw_noise, bool zero_start, unsigned num_series,
                         unsigned series_len, unsigned num_channels) {

@@ -3,8 +3,8 @@
 #include <fstream>
 
 #include "CLI11/CLI11.hpp"
-#include "Util/RandomWalk.hpp"
-#include "Util/QueryGen.hpp"
+#include "Modules/RandomWalk.hpp"
+#include "Modules/QueryGen.hpp"
 
 using namespace std;
 
