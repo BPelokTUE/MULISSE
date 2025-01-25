@@ -162,12 +162,30 @@ void iSaxUlisseEnvelopeIndex::insert(const vec<UlisseEnvelope> &envelopes, FileP
 }
 
 std::unique_ptr<IFinalizedUliEnvIndex> iSaxUlisseEnvelopeIndex::finalize() {
-    // I. Go over each entry in `m_first_layer_nodes`
-    //     1. `auto [new_node, isax_max] = node->finalize()`; PROBLEM: `iSaxInternal` will have a `finalize` method
-    //     2. Set `node = new_node`
-    //     3. Save `isax_max` into the `m_first_layer_isax_max` vector
-    // `node->finalize()`:
-    return std::make_unique<iSaxFinalizedUliEnvIndex>();
+    size_t size_first_layer = m_first_layer.size();
+    vec<vec<iSaxWord>> first_layer_isax_mins(size_first_layer), first_layer_isax_maxs(size_first_layer);
+    vec<std::unique_ptr<iSaxFinalizedNode>> finalized_nodes(size_first_layer);
+
+    iSaxWordSettings isax_word_settings = {vec<SaxNumBitsT>(m_first_layer_num_bits), m_alphabet_num_bits,
+                                           m_breakpoints};
+
+    size_t i = 0;
+    for (auto it = m_first_layer.begin(); it != m_first_layer.end(); ++it) {
+        const auto &isax_min = it->first;
+        auto &node = it->second;
+
+        auto [finalized_node, isax_max] = node->finalize(isax_word_settings);
+        first_layer_isax_mins[i] = isax_min;
+        first_layer_isax_maxs[i] = isax_max;
+        finalized_nodes[i] = std::move(finalized_node);
+        ++i;
+
+        node = nullptr;
+    }
+
+    return std::make_unique<iSaxFinalizedUliEnvIndex>(std::move(first_layer_isax_mins),
+                                                      std::move(first_layer_isax_maxs), std::move(finalized_nodes),
+                                                      m_first_layer_num_bits, m_alphabet_num_bits, m_breakpoints);
 }
 
 vec<FilePositionT> iSaxUlisseEnvelopeIndex::search(vec<vec<float>> mts, const SearchOptions &search_options) const {

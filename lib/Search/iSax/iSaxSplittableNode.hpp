@@ -12,7 +12,7 @@ class iSaxSplittableNode : public iSaxNode {
     virtual std::pair<const iSaxSplittableNode *, const iSaxSplittableNode *> get_children() const = 0;
     virtual vec<vec<UlisseEnvelope>> get_envelopes() const = 0;
     virtual std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(
-        const iSaxWordSettings &isax_word_settings) const = 0;
+        const iSaxWordSettings &isax_word_settings) = 0;
 };
 
 class iSaxSplittableInternal : public iSaxSplittableNode {
@@ -34,7 +34,7 @@ class iSaxSplittableInternal : public iSaxSplittableNode {
     vec<vec<UlisseEnvelope>> get_envelopes() const override;
 
     std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(
-        const iSaxWordSettings &isax_word_settings) const override;
+        const iSaxWordSettings &isax_word_settings) override;
 
    private:
     SaxSplitIndT m_split_ind;
@@ -58,7 +58,7 @@ class iSaxSplittableLeaf : public iSaxSplittableNode {
     vec<vec<UlisseEnvelope>> get_envelopes() const override;
 
     std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(
-        const iSaxWordSettings &isax_word_settings) const override;
+        const iSaxWordSettings &isax_word_settings) override;
 
    private:
     vec<vec<UlisseEnvelope>> m_envelopes;

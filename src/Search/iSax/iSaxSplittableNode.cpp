@@ -23,7 +23,7 @@ vec<vec<UlisseEnvelope>> iSaxSplittableInternal::get_envelopes() const { return 
 bool iSaxSplittableInternal::is_leaf() const { return false; }
 
 std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> iSaxSplittableInternal::finalize(
-    const iSaxWordSettings &isax_word_settings) const {
+    const iSaxWordSettings &isax_word_settings) {
     assert(m_left && m_right);
 
     auto [finalized_left, isax_max_left] = m_left->finalize(isax_word_settings);
@@ -39,7 +39,10 @@ std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> iSaxSplittableInter
     for (size_t c = 0; c < isax_max_left.size(); ++c) {
         isax_max_left[c].select_max_symbols(isax_max_right[c]);
     }
-    return std::make_pair(std::move(finalized), isax_max_left);
+
+    m_left = nullptr;
+    m_right = nullptr;
+    return std::make_pair(std::move(finalized), std::move(isax_max_left));
 };
 
 // iSaxSplittableLeaf
@@ -60,7 +63,7 @@ bool iSaxSplittableLeaf::is_leaf() const { return true; }
 vec<vec<UlisseEnvelope>> iSaxSplittableLeaf::get_envelopes() const { return m_envelopes; }
 
 std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> iSaxSplittableLeaf::finalize(
-    const iSaxWordSettings &isax_word_settings) const {
+    const iSaxWordSettings &isax_word_settings) {
     assert(m_envelopes.size() > 0);
     assert(m_envelopes[0].size() > 0);
 
