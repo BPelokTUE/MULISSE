@@ -2,7 +2,8 @@
 #include <fstream>
 #include <iostream>
 
-#include "Modules/Indexing.hpp"
+#include "Modules/Indexing/Indexing.hpp"
+#include "Modules/Indexing/EnvelopeGenerator.hpp"
 #include "Search/IUlisseEnvelopeIndex.hpp"
 #include "Search/iSax/iSaxUlisseEnvelopeIndex.hpp"
 
@@ -40,30 +41,42 @@ std::unique_ptr<IUlisseEnvelopeIndex> get_index(const IndexOptions &opts) {
     return nullptr;
 }
 
+std::unique_ptr<IEnvelopeGenerator> get_envelope_generator(const IndexOptions &opts) {
+    switch (opts.index_params->get_type()) {
+        case ISAX_ENVELOPE:
+            return std::make_unique<iSaxEnvelopeGenerator>(opts);
+    }
+}
+
 int create_index(const IndexOptions &opts) {
     if (!std::filesystem::exists(opts.dataset_path)) {
         std::cerr << "Error: Dataset " << opts.dataset_path << " does not exist." << std::endl;
         return 1;
     }
 
-    std::ifstream data_file(opts.dataset_path, std::ios::binary);
+    std::ifstream data_stream(opts.dataset_path, std::ios::binary);
 
-    unsigned num_series = data_file.tellg() / (opts.num_channels * opts.series_len * sizeof(float));
+    unsigned num_series = data_stream.tellg() / (opts.num_channels * opts.series_len * sizeof(float));
 
     auto index = get_index(opts);
 
-    for (size_t i = 0; i < num_series; ++i) {
-        vec<vec<float>> mts(opts.num_channels, vec<float>(opts.series_len));
-        vec<UlisseEnvelope> envelopes(opts.num_channels);
+    if (std::ranges::find(ENVELOPE_TYPES, opts.index_params->get_type()) != ENVELOPE_TYPES.end()) {
+        auto envelope_generator = get_envelope_generator(opts);
 
-        for (MtsNumChannelsT c = 0; c < opts.num_channels; ++c) {
-            // 1. Read data into channel (enough to create next envelope)
-            // 2. Create next envelope
+        for (size_t i = 0; i < num_series; ++i) {
+            vec<vec<float>> mts(opts.num_channels, vec<float>(opts.series_len));
+            for (MtsNumChannelsT c = 0; c < opts.num_channels; ++c) {
+                data_stream.read(reinterpret_cast<char *>(mts[c].data()), opts.series_len * sizeof(float));
+            }
+
+            envelope_generator->set_mts(&mts);
+            while (auto entry = envelope_generator->generate_entry()) {
+                index->insert(entry);
+            }
         }
-        // 3. Insert envelope into index
     }
-    // 4. Finalize index
-    // 5. Serialize index
+
+    index->finalize()->serialize(std::ofstream(opts.index_path, std::ios::binary));
 
     return 0;
 }

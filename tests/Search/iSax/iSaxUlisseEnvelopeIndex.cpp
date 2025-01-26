@@ -20,7 +20,8 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
     fakeit::When(Method(split_strategy_mock, get_split_ind)).Return(split1, split2, split3);
 
     SUBCASE("inserting first envelope works") {
-        index->insert({{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13);
+        EnvelopeEntry entry = {{{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13};
+        index->insert(entry);
         auto isax_min = iSaxWord({0, 1, 0}, 1);
         const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
         REQUIRE(node != nullptr);
@@ -31,9 +32,11 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
     }
 
     SUBCASE("inserting envelope with existing iSAX without splitting works") {
-        index->insert({{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13);
+        EnvelopeEntry entry = {{{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13};
+        index->insert(entry);
 
-        index->insert({{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269);
+        entry = {{{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269};
+        index->insert(entry);
         auto isax_min = iSaxWord({0, 1, 0}, 1);
         const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
         REQUIRE(node != nullptr);
@@ -45,10 +48,13 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
     }
 
     SUBCASE("inserting envelope with new iSAX works") {
-        index->insert({{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13);
-        index->insert({{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269);
+        EnvelopeEntry entry = {{{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13};
+        index->insert(entry);
+        entry = {{{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269};
+        index->insert(entry);
 
-        index->insert({{{4.2, 2.4, -5.7}, {8.8, 3.8, 5.3}}}, 352);
+        entry = {{{{4.2, 2.4, -5.7}, {8.8, 3.8, 5.3}}}, 352};
+        index->insert(entry);
         auto isax_min = iSaxWord({1, 1, 0}, 1);
         const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
         REQUIRE(node != nullptr);
@@ -59,10 +65,13 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
     }
 
     SUBCASE("inserting envelope with existing iSAX with splitting works") {
-        index->insert({{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13);
-        index->insert({{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269);
+        EnvelopeEntry entry = {{{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13};
+        index->insert(entry);
+        entry = {{{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269};
+        index->insert(entry);
 
-        index->insert({{{-4.1, 4.5, -1.6}, {-1.8, 6.9, -0.6}}}, 7891);
+        entry = {{{{-4.1, 4.5, -1.6}, {-1.8, 6.9, -0.6}}}, 7891};
+        index->insert(entry);
 
         auto isax_min = iSaxWord({0, 1, 0}, 1);
         const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
@@ -86,12 +95,16 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
     }
 
     SUBCASE("inserting envelope into non-first-layer node without splitting works") {
-        index->insert({{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13);
-        index->insert({{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269);
+        EnvelopeEntry entry = {{{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13};
+        index->insert(entry);
+        entry = {{{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269};
+        index->insert(entry);
         // Triggers first split
-        index->insert({{{-4.1, 4.5, -1.6}, {-1.8, 6.9, -0.6}}}, 7891);
+        entry = {{{{-4.1, 4.5, -1.6}, {-1.8, 6.9, -0.6}}}, 7891};
+        index->insert(entry);
         // Insert into right leaf
-        index->insert({{{-0.6, 1.3, -10.6}, {1.8, 3.1, -5.6}}}, 555);
+        entry = {{{{-0.6, 1.3, -10.6}, {1.8, 3.1, -5.6}}}, 555};
+        index->insert(entry);
 
         auto isax_min = iSaxWord({0, 1, 0}, 1);
         const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
@@ -110,10 +123,13 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
     }
 
     SUBCASE("inserting envelope into non-first-layer node with one extra split works") {
-        index->insert({{{-3.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13);
-        index->insert({{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269);
+        EnvelopeEntry entry = {{{{-3.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13};
+        index->insert(entry);
+        entry = {{{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269};
+        index->insert(entry);
         // Triggers first split
-        index->insert({{{-1.6, 5.3, -10.6}, {1.8, 3.1, -5.6}}}, 555);
+        entry = {{{{-1.6, 5.3, -10.6}, {1.8, 3.1, -5.6}}}, 555};
+        index->insert(entry);
 
         auto isax_min = iSaxWord({0, 1, 0}, 1);
         const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
@@ -131,7 +147,8 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
         REQUIRE(right->get_envelopes() == vec<vec<UlisseEnvelope>>{{{{-1.6, 5.3, -10.6}, {1.8, 3.1, -5.6}}}});
 
         // Trigger second split
-        index->insert({{{-4.1, 1.5, -1.6}, {-1.8, 6.9, -0.6}}}, 7891);
+        entry = {{{{-4.1, 1.5, -1.6}, {-1.8, 6.9, -0.6}}}, 7891};
+        index->insert(entry);
 
         node = index->get_first_layer_node({isax_min});
         REQUIRE(node != nullptr);
@@ -162,12 +179,16 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
     }
 
     SUBCASE("inserting envelope successfully triggers two splits") {
-        index->insert({{{-3.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13);
-        index->insert({{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269);
+        EnvelopeEntry entry = {{{{-3.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}, 13};
+        index->insert(entry);
+        entry = {{{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}, 1269};
+        index->insert(entry);
         // Triggers two splits
-        index->insert({{{-4.1, 1.5, -1.6}, {-1.8, 6.9, -0.6}}}, 7891);
+        entry = {{{{-4.1, 1.5, -1.6}, {-1.8, 6.9, -0.6}}}, 7891};
+        index->insert(entry);
         // Insert into left->right leaf
-        index->insert({{{-2.6, 5.3, -10.6}, {1.8, 3.1, -5.6}}}, 555);
+        entry = {{{{-2.6, 5.3, -10.6}, {1.8, 3.1, -5.6}}}, 555};
+        index->insert(entry);
 
         auto isax_min = iSaxWord({0, 1, 0}, 1);
         const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
@@ -201,9 +222,12 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert UTS envelope works") {
 
     SUBCASE("inserting the same envelope multiple times triggers splits until max resolution is reached") {
         vec<UlisseEnvelope> envelope = {{{0.5, 3.1, 2.8}, {1.8, 4.3, 6.8}}};
-        index->insert(envelope, 100);
-        index->insert(envelope, 200);
-        index->insert(envelope, 300);
+        EnvelopeEntry entry = {envelope, 100};
+        index->insert(entry);
+        entry = {envelope, 200};
+        index->insert(entry);
+        entry = {envelope, 300};
+        index->insert(entry);
 
         auto isax_min = iSaxWord({1, 1, 1}, 1);
         const iSaxSplittableNode *node = index->get_first_layer_node({isax_min});
@@ -240,7 +264,8 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert MTS envelope works") {
     fakeit::When(Method(split_strategy_mock, get_split_ind)).Return(split1, split2);
 
     SUBCASE("inserting one envelope works") {
-        index->insert({{{0.2, -5.5}, {1.1, -3.1}}, {{-1.9, 2.7}, {-0.6, 3.8}}, {{1.9, 2.7}, {3.1, 5.7}}}, 64);
+        EnvelopeEntry entry = {{{{0.2, -5.5}, {1.1, -3.1}}, {{-1.9, 2.7}, {-0.6, 3.8}}, {{1.9, 2.7}, {3.1, 5.7}}}, 64};
+        index->insert(entry);
 
         vec<iSaxWord> isax_mins = {iSaxWord({1, 0}, 1), iSaxWord({0, 1}, 1), iSaxWord({1, 1}, 1)};
         const iSaxSplittableNode *node = index->get_first_layer_node(isax_mins);
@@ -254,9 +279,12 @@ TEST_CASE("iSaxUlisseEnvelopeIndex insert MTS envelope works") {
     }
 
     SUBCASE("inserting multiple envelopes works") {
-        index->insert({{{0.2, -5.5}, {1.1, -3.1}}, {{-1.9, 2.7}, {-0.6, 3.8}}, {{1.9, 2.7}, {3.1, 5.7}}}, 64);
-        index->insert({{{0.1, -0.5}, {0.8, 1.3}}, {{-1.3, 1.7}, {0.6, 2.3}}, {{1.3, 1.7}, {2.3, 3.7}}}, 128);
-        index->insert({{{0.5, -0.3}, {0.6, 1.1}}, {{-1.1, 1.3}, {0.3, 1.7}}, {{1.1, 1.3}, {2.1, 3.3}}}, 256);
+        EnvelopeEntry entry = {{{{0.2, -5.5}, {1.1, -3.1}}, {{-1.9, 2.7}, {-0.6, 3.8}}, {{1.9, 2.7}, {3.1, 5.7}}}, 64};
+        index->insert(entry);
+        entry = {{{{0.1, -0.5}, {0.8, 1.3}}, {{-1.3, 1.7}, {0.6, 2.3}}, {{1.3, 1.7}, {2.3, 3.7}}}, 128};
+        index->insert(entry);
+        entry = {{{{0.5, -0.3}, {0.6, 1.1}}, {{-1.1, 1.3}, {0.3, 1.7}}, {{1.1, 1.3}, {2.1, 3.3}}}, 256};
+        index->insert(entry);
 
         vec<iSaxWord> isax_mins = {iSaxWord({1, 0}, 1), iSaxWord({0, 1}, 1), iSaxWord({1, 1}, 1)};
         const iSaxSplittableNode *node = index->get_first_layer_node(isax_mins);

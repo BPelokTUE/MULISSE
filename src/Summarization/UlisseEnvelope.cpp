@@ -1,7 +1,8 @@
 #include "Summarization/UlisseEnvelope.hpp"
 
-UlisseEnvelope ulisse_envelope_raw(std::span<float> const& ts, unsigned ms_per_env, unsigned segment_len,
-                                   unsigned l_min, unsigned l_max) {
+UlisseEnvelope ulisse_envelope_raw(std::span<const float> const& ts, const UlisseEnvelopeParams& env_params) {
+    auto [ms_per_env, segment_len, l_min, l_max] = env_params;
+
     unsigned segments_per_env = l_max / segment_len;
     size_t ms_end = std::min(ts.size(), (size_t)(l_max + ms_per_env - 1));
     unsigned num_ms = std::min(ms_per_env, (unsigned)ms_end - l_min + 1);
@@ -31,8 +32,9 @@ UlisseEnvelope ulisse_envelope_raw(std::span<float> const& ts, unsigned ms_per_e
     return envelope;
 }
 
-UlisseEnvelope ulisse_envelope_normalized(std::span<float> const& ts, unsigned ms_per_env, unsigned segment_len,
-                                          unsigned l_min, unsigned l_max) {
+UlisseEnvelope ulisse_envelope_normalized(std::span<const float> const& ts, const UlisseEnvelopeParams& env_params) {
+    auto [ms_per_env, segment_len, l_min, l_max] = env_params;
+
     unsigned segments_per_env = l_max / segment_len;
     size_t ms_end = std::min(ts.size(), (size_t)(l_max + ms_per_env - 1));
     unsigned num_ms = std::min(ms_per_env, (unsigned)ms_end - l_min + 1);

@@ -35,7 +35,7 @@ iSaxUlisseEnvelopeIndex::iSaxUlisseEnvelopeIndex(SaxSegIndT num_seg_per_channel,
     assert(num_bits_limit >= first_layer_num_bits);
 }
 
-void iSaxUlisseEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<UlisseEnvelope> &envelopes,
+void iSaxUlisseEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<UlisseEnvelope> &mts_envelope,
                                          std::unique_ptr<iSaxSplittableNode> &node_ref) {
     // Split the leaf
     auto [segment_ind, channel_ind] = m_split_strategy->get_split_ind();
@@ -67,19 +67,19 @@ void iSaxUlisseEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<Uli
     auto symbol = isax_mins[channel_ind][segment_ind];
     auto mid_breakpoint = m_breakpoints[(symbol * 2 + 1) * (alphabet_size_ratio >> 1) - 1];
 
-    // Distribute the envelopes across the two new leaves
+    // Distribute the mts_envelope across the two new leaves
     vec<FilePositionT> left_file_positions, right_file_positions;
-    vec<vec<UlisseEnvelope>> left_envelopes, right_envelopes;
+    vec<vec<UlisseEnvelope>> left_mts_envelope, right_mts_envelope;
 
     auto *leaf = static_cast<iSaxSplittableLeaf *>(node_ref.get());
     for (size_t i = 0; i < leaf->m_file_positions.size(); ++i) {
         auto &seg_min = leaf->m_envelopes[i][channel_ind].first;
         if (seg_min[segment_ind] <= mid_breakpoint) {
             left_file_positions.push_back(leaf->m_file_positions[i]);
-            left_envelopes.push_back(leaf->m_envelopes[i]);
+            left_mts_envelope.push_back(leaf->m_envelopes[i]);
         } else {
             right_file_positions.push_back(leaf->m_file_positions[i]);
-            right_envelopes.push_back(leaf->m_envelopes[i]);
+            right_mts_envelope.push_back(leaf->m_envelopes[i]);
         }
     }
 
@@ -87,9 +87,9 @@ void iSaxUlisseEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<Uli
     size_t left_size = left_file_positions.size(), right_size = right_file_positions.size();
     auto new_internal = std::make_unique<iSaxSplittableInternal>(SaxSplitIndT{segment_ind, channel_ind});
     new_internal->m_left =
-        std::make_unique<iSaxSplittableLeaf>(std::move(left_file_positions), std::move(left_envelopes));
+        std::make_unique<iSaxSplittableLeaf>(std::move(left_file_positions), std::move(left_mts_envelope));
     new_internal->m_right =
-        std::make_unique<iSaxSplittableLeaf>(std::move(right_file_positions), std::move(right_envelopes));
+        std::make_unique<iSaxSplittableLeaf>(std::move(right_file_positions), std::move(right_mts_envelope));
 
     // Replace the leaf with the new internal node
     node_ref = std::move(new_internal);
@@ -100,7 +100,7 @@ void iSaxUlisseEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<Uli
         if (isax_update_required) {
             for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
                 isax_mins[c] =
-                    iSaxWord(envelopes[c].first, {isax_mins[c].get_num_bits(), m_alphabet_num_bits, m_breakpoints});
+                    iSaxWord(mts_envelope[c].first, {isax_mins[c].get_num_bits(), m_alphabet_num_bits, m_breakpoints});
             }
         }
         auto &parent = reinterpret_cast<std::unique_ptr<iSaxSplittableInternal> &>(node_ref);
@@ -109,26 +109,27 @@ void iSaxUlisseEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<Uli
             uint8_t new_bit = 0;
             isax_mins[channel_ind].append_to_symbol(segment_ind, new_bit);
             leaf = static_cast<iSaxSplittableLeaf *>(parent->m_left.get());
-            split_leaf(isax_mins, envelopes, parent->m_left);
+            split_leaf(isax_mins, mts_envelope, parent->m_left);
             isax_mins[channel_ind].remove_from_symbol(segment_ind);
         }
         if (split_right) {
             uint8_t new_bit = 1;
             isax_mins[channel_ind].append_to_symbol(segment_ind, new_bit);
             leaf = static_cast<iSaxSplittableLeaf *>(parent->m_right.get());
-            split_leaf(isax_mins, envelopes, parent->m_right);
+            split_leaf(isax_mins, mts_envelope, parent->m_right);
             isax_mins[channel_ind].remove_from_symbol(segment_ind);
         }
     }
 }
 
-void iSaxUlisseEnvelopeIndex::insert(const vec<UlisseEnvelope> &envelopes, FilePositionT file_pos) {
-    assert(envelopes.size() == m_num_channels);
-    assert(envelopes[0].first.size() == m_num_seg_per_channel);
+void iSaxUlisseEnvelopeIndex::insert(const EnvelopeEntry &entry) {
+    auto [mts_envelope, file_pos] = entry;
+    assert(mts_envelope.size() == m_num_channels);
+    assert(mts_envelope[0].first.size() == m_num_seg_per_channel);
 
-    vec<iSaxWord> isax_mins(envelopes.size());
-    for (size_t i = 0; i < envelopes.size(); ++i) {
-        auto env_min = envelopes[i].first;
+    vec<iSaxWord> isax_mins(mts_envelope.size());
+    for (size_t i = 0; i < mts_envelope.size(); ++i) {
+        auto env_min = mts_envelope[i].first;
         isax_mins[i] = iSaxWord(
             env_min, {vec<SaxNumBitsT>(env_min.size(), m_first_layer_num_bits), m_alphabet_num_bits, m_breakpoints});
     }
@@ -136,7 +137,7 @@ void iSaxUlisseEnvelopeIndex::insert(const vec<UlisseEnvelope> &envelopes, FileP
     auto node_it = m_first_layer.find(isax_mins);
     if (node_it == m_first_layer.end()) {
         m_first_layer.emplace(isax_mins, std::make_unique<iSaxSplittableLeaf>(vec<FilePositionT>{file_pos},
-                                                                              vec<vec<UlisseEnvelope>>{envelopes}));
+                                                                              vec<vec<UlisseEnvelope>>{mts_envelope}));
     } else {
         auto node = node_it->second.get();
         iSaxSplittableInternal *parent = nullptr;
@@ -151,12 +152,12 @@ void iSaxUlisseEnvelopeIndex::insert(const vec<UlisseEnvelope> &envelopes, FileP
         // Reached a leaf => insert
         auto *leaf = static_cast<iSaxSplittableLeaf *>(node);
         leaf->m_file_positions.push_back(file_pos);
-        leaf->m_envelopes.push_back(envelopes);
+        leaf->m_envelopes.push_back(mts_envelope);
 
         // Split if needed
         if (leaf->m_file_positions.size() > m_leaf_capacity) {
             auto &node_ref = parent ? (new_bit ? parent->m_right : parent->m_left) : node_it->second;
-            split_leaf(isax_mins, envelopes, node_ref);
+            split_leaf(isax_mins, mts_envelope, node_ref);
         }
     }
 }

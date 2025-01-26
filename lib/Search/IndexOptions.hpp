@@ -6,13 +6,15 @@
 
 enum IndexType { ISAX_ENVELOPE };
 
+const vec<IndexType> ENVELOPE_TYPES = {ISAX_ENVELOPE};
+
 struct IIndexParams {
     virtual ~IIndexParams() = default;
     virtual IndexType get_type() const = 0;
 };
 
 struct EnvelopeIndexParams : IIndexParams {
-    unsigned position_group_size;
+    unsigned pos_per_env;
 };
 
 struct iSaxIndexParams {
@@ -29,8 +31,9 @@ struct iSaxEnvelopeIndexParams : EnvelopeIndexParams, iSaxIndexParams {
 };
 
 struct IndexOptions {
-    std::string dataset_path;
+    std::string dataset_path, index_path;
     unsigned l_min, l_max, series_len, num_channels;
+    bool normalized;
     std::unique_ptr<IIndexParams> index_params;
 };
 

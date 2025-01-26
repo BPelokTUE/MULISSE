@@ -3,8 +3,8 @@
 #include "Summarization/UlisseEnvelope.hpp"
 
 TEST_CASE("ULISSE raw happy-flow works") {
-    vec<float> ts = {1, 3.5, 1, 4, 2, 8, 10, -3.5, 2.5, 12};
-    std::span<float> ts_view(ts);
+    const vec<float> ts = {1, 3.5, 1, 4, 2, 8, 10, -3.5, 2.5, 12};
+    std::span<const float> ts_view(ts);
     unsigned ms_per_env = 4;
     unsigned segment_len = 2;
     unsigned l_min = 3;
@@ -16,7 +16,7 @@ TEST_CASE("ULISSE raw happy-flow works") {
     5.5,  9,    3.25, -0.5 -> (-0.5, 9)
     */
 
-    auto envelope = ulisse_envelope_raw(ts_view, ms_per_env, segment_len, l_min, l_max);
+    auto envelope = ulisse_envelope_raw(ts_view, {ms_per_env, segment_len, l_min, l_max});
     UlisseEnvelope expected = {{2.25, 2.5, -0.5}, {3, 9, 9}};
 
     CHECK_EQ(envelope.first.size(), expected.first.size());
@@ -27,8 +27,8 @@ TEST_CASE("ULISSE raw happy-flow works") {
 }
 
 TEST_CASE("ULISSE normalized happy-flow works") {
-    vec<float> ts = {1, 3.5, 1, 4, 2, 8, 10, -3.5, 2.5, 12};
-    std::span<float> ts_view(ts);
+    const vec<float> ts = {1, 3.5, 1, 4, 2, 8, 10, -3.5, 2.5, 12};
+    std::span<const float> ts_view(ts);
     unsigned ms_per_env = 4;
     unsigned segment_len = 2;
     unsigned l_min = 3;
@@ -39,7 +39,7 @@ TEST_CASE("ULISSE normalized happy-flow works") {
     [0.35355339059327384, 1.1835854998978794, 1.323448205074589]
     */
 
-    auto envelope = ulisse_envelope_normalized(ts_view, ms_per_env, segment_len, l_min, l_max);
+    auto envelope = ulisse_envelope_normalized(ts_view, {ms_per_env, segment_len, l_min, l_max});
     UlisseEnvelope expected = {{-0.9486832980505138, -0.5449492609130661, -1.1111677990074318},
                                {0.35355339059327384, 1.1835854998978794, 1.323448205074589}};
 

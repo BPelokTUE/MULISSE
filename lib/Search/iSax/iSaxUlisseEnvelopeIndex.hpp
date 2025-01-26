@@ -26,7 +26,7 @@ class iSaxUlisseEnvelopeIndex : public IUlisseEnvelopeIndex {
 
     ~iSaxUlisseEnvelopeIndex() = default;
 
-    void insert(const vec<UlisseEnvelope> &envelopes, FilePositionT file_pos) override;
+    void insert(const EnvelopeEntry &entry) override;
 
     std::unique_ptr<IFinalizedUliEnvIndex> finalize() override;
 
