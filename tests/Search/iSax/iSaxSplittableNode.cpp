@@ -5,7 +5,7 @@
 
 TEST_CASE("iSAX leaf finalization works") {
     vec<FilePositionT> file_positions{10001, 2057, 798};
-    vec<vec<UlisseEnvelope>> envelopes = {{{{-1.5, 2.3}, {-0.1, 4.9}}, {{-7.9, 0.5}, {-3.3, 2.7}}},
+    vec<vec<Envelope>> envelopes = {{{{-1.5, 2.3}, {-0.1, 4.9}}, {{-7.9, 0.5}, {-3.3, 2.7}}},
                                           {{{-2.3, 3.6}, {0.6, 9.7}}, {{-8.1, -0.5}, {-1.5, 6.3}}},
                                           {{{-1.9, 1.9}, {1.9, 7.1}}, {{-10, -0.9}, {-9, 1.9}}}};
 

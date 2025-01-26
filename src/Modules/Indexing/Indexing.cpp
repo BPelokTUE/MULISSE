@@ -4,8 +4,8 @@
 
 #include "Modules/Indexing/Indexing.hpp"
 #include "Modules/Indexing/EnvelopeGenerator.hpp"
-#include "Search/IUlisseEnvelopeIndex.hpp"
-#include "Search/iSax/iSaxUlisseEnvelopeIndex.hpp"
+#include "Search/IEnvelopeIndex.hpp"
+#include "Search/iSax/iSaxEnvelopeIndex.hpp"
 
 std::unique_ptr<IiSaxBreakpointStrategy> get_breakpoint_strategy(const iSaxIndexParams *params) {
     switch (params->breakpoint_strategy_type) {
@@ -24,7 +24,7 @@ std::unique_ptr<IiSaxSplitStrategy> get_split_strategy(const iSaxIndexParams *pa
     return nullptr;
 }
 
-std::unique_ptr<IUlisseEnvelopeIndex> get_index(const IndexOptions &opts) {
+std::unique_ptr<IEnvelopeIndex> get_index(const IndexOptions &opts) {
     switch (opts.index_params->get_type()) {
         case ISAX_ENVELOPE:
             auto *params = static_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
@@ -33,10 +33,10 @@ std::unique_ptr<IUlisseEnvelopeIndex> get_index(const IndexOptions &opts) {
             auto breakpoint_strategy = get_breakpoint_strategy(params);
             auto split_strategy = get_split_strategy(params, num_seg_per_channel, opts.num_channels);
 
-            auto *index = new iSaxUlisseEnvelopeIndex(
-                num_seg_per_channel, opts.num_channels, params->first_layer_num_bits, params->leaf_capacity,
-                std::move(breakpoint_strategy), std::move(split_strategy), params->num_bits_limit);
-            return std::unique_ptr<IUlisseEnvelopeIndex>(index);
+            auto *index = new iSaxEnvelopeIndex(num_seg_per_channel, opts.num_channels, params->first_layer_num_bits,
+                                                params->leaf_capacity, std::move(breakpoint_strategy),
+                                                std::move(split_strategy), params->num_bits_limit);
+            return std::unique_ptr<IEnvelopeIndex>(index);
     }
     return nullptr;
 }
@@ -76,7 +76,7 @@ int create_index(const IndexOptions &opts) {
         }
     }
 
-    index->finalize()->serialize(std::ofstream(opts.index_path, std::ios::binary));
+    index->finalize()->save(std::ofstream(opts.index_path, std::ios::binary));
 
     return 0;
 }

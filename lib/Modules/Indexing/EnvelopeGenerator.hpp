@@ -3,7 +3,7 @@
 
 #include "typedefs.hpp"
 
-#include "Search/IUlisseEnvelopeIndex.hpp"
+#include "Search/IEnvelopeIndex.hpp"
 #include "Search/IndexOptions.hpp"
 #include "Summarization/UlisseEnvelope.hpp"
 
@@ -26,7 +26,7 @@ class iSaxEnvelopeGenerator : public IEnvelopeGenerator {
     const vec<vec<float>> *m_mts;
     const IndexOptions &m_opts;
     UlisseEnvelopeParams m_uli_params;
-    UlisseEnvelope (*m_envelope_func)(std::span<const float> const &, const UlisseEnvelopeParams &);
+    Envelope (*m_envelope_func)(std::span<const float> const &, const UlisseEnvelopeParams &);
 
     FilePositionT m_position;
 };

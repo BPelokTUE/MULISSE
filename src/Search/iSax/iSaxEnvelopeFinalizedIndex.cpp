@@ -1,8 +1,8 @@
 #include <fstream>
 
-#include "Search/iSax/iSaxFinalizedUliEnvIndex.hpp"
+#include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
 
-iSaxFinalizedUliEnvIndex::iSaxFinalizedUliEnvIndex(vec<vec<iSaxWord>> first_isax_mins,
+iSaxEnvelopeFinalizedIndex::iSaxEnvelopeFinalizedIndex(vec<vec<iSaxWord>> first_isax_mins,
                                                    vec<vec<iSaxWord>> first_isax_maxs,
                                                    vec<std::unique_ptr<iSaxFinalizedNode>> first_layer_nodes,
                                                    SaxNumBitsT first_layer_num_bits, SaxNumBitsT alphabet_num_bits,
@@ -15,6 +15,6 @@ iSaxFinalizedUliEnvIndex::iSaxFinalizedUliEnvIndex(vec<vec<iSaxWord>> first_isax
       m_num_seg_per_channel(m_first_isax_mins[0][0].size()),
       m_num_channels(m_first_isax_mins[0].size()) {}
 
-void iSaxFinalizedUliEnvIndex::serialize(std::ofstream ofs) {}
+void iSaxEnvelopeFinalizedIndex::save(std::ofstream ofs) {}
 
-void iSaxFinalizedUliEnvIndex::deserialize(std::ifstream ifs) {}
+void iSaxEnvelopeFinalizedIndex::load(std::ifstream ifs) {}

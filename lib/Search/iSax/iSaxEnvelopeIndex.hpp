@@ -3,10 +3,11 @@
 
 #include <unordered_map>
 
-#include "Search/IUlisseEnvelopeIndex.hpp"
+#include "Search/IEnvelopeIndex.hpp"
 #include "Search/iSax/iSaxSplittableNode.hpp"
 #include "Search/iSax/iSaxSplitStrategy.hpp"
-#include "Search/iSax/iSaxFinalizedUliEnvIndex.hpp"
+#include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
+#include "Summarization/Envelope.hpp"
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/iSaxBreakpointStrategy.hpp"
 
@@ -14,21 +15,20 @@ struct iSaxWordVecHash {
     std::size_t operator()(const vec<iSaxWord> &isax_mins) const;
 };
 
-class iSaxUlisseEnvelopeIndex : public IUlisseEnvelopeIndex {
+class iSaxEnvelopeIndex : public IEnvelopeIndex {
    public:
-    iSaxUlisseEnvelopeIndex(SaxSegIndT num_seg_per_channel, MtsNumChannelsT num_channels,
-                            SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
-                            std::unique_ptr<IiSaxBreakpointStrategy> breakpoint_strategy,
-                            std::unique_ptr<IiSaxSplitStrategy> split_strategy,
-                            SaxNumBitsT num_bits_limit = DEFAULT_NUM_BIT_LIMIT);
+    iSaxEnvelopeIndex(SaxSegIndT num_seg_per_channel, MtsNumChannelsT num_channels, SaxNumBitsT first_layer_num_bits,
+                      size_t leaf_capacity, std::unique_ptr<IiSaxBreakpointStrategy> breakpoint_strategy,
+                      std::unique_ptr<IiSaxSplitStrategy> split_strategy,
+                      SaxNumBitsT num_bits_limit = DEFAULT_NUM_BIT_LIMIT);
 
-    iSaxUlisseEnvelopeIndex() = default;
+    iSaxEnvelopeIndex() = default;
 
-    ~iSaxUlisseEnvelopeIndex() = default;
+    ~iSaxEnvelopeIndex() = default;
 
     void insert(const EnvelopeEntry &entry) override;
 
-    std::unique_ptr<IFinalizedUliEnvIndex> finalize() override;
+    std::unique_ptr<IFinalizedEnvelopeIndex> finalize() override;
 
     const iSaxSplittableNode *get_first_layer_node(const vec<iSaxWord> &isax_mins) const;
 
@@ -44,7 +44,7 @@ class iSaxUlisseEnvelopeIndex : public IUlisseEnvelopeIndex {
     vec<float> m_breakpoints;
     std::unique_ptr<IiSaxSplitStrategy> m_split_strategy;
 
-    void split_leaf(vec<iSaxWord> &isax_min, const vec<UlisseEnvelope> &envelopes,
+    void split_leaf(vec<iSaxWord> &isax_min, const vec<Envelope> &envelopes,
                     std::unique_ptr<iSaxSplittableNode> &node_ref);
 };
 

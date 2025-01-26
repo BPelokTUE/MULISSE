@@ -8,9 +8,6 @@
 template <typename T>
 using vec = std::vector<T>;
 
-// first = lower, second = upper
-using UlisseEnvelope = std::pair<vec<float>, vec<float>>;
-
 using SaxNumBitsT = uint8_t;
 using SaxSegIndT = uint16_t;
 using SaxSymbolT = uint16_t;

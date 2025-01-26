@@ -18,7 +18,7 @@ void iSaxEnvelopeGenerator::set_mts(const vec<vec<float>> *mts) {
 }
 
 EnvelopeEntry iSaxEnvelopeGenerator::generate_entry() {
-    vec<UlisseEnvelope> mts_envelope(m_opts.num_channels);
+    vec<Envelope> mts_envelope(m_opts.num_channels);
 
     for (MtsNumChannelsT c = 0; c < m_opts.num_channels; ++c) {
         auto &channel = m_mts->at(c);

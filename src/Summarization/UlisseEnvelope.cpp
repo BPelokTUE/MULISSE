@@ -1,13 +1,13 @@
 #include "Summarization/UlisseEnvelope.hpp"
 
-UlisseEnvelope ulisse_envelope_raw(std::span<const float> const& ts, const UlisseEnvelopeParams& env_params) {
+Envelope ulisse_envelope_raw(std::span<const float> const& ts, const UlisseEnvelopeParams& env_params) {
     auto [ms_per_env, segment_len, l_min, l_max] = env_params;
 
     unsigned segments_per_env = l_max / segment_len;
     size_t ms_end = std::min(ts.size(), (size_t)(l_max + ms_per_env - 1));
     unsigned num_ms = std::min(ms_per_env, (unsigned)ms_end - l_min + 1);
-    UlisseEnvelope envelope = {vec<float>(segments_per_env, std::numeric_limits<float>::max()),
-                               vec<float>(segments_per_env, std::numeric_limits<float>::min())};
+    Envelope envelope = {vec<float>(segments_per_env, std::numeric_limits<float>::max()),
+                         vec<float>(segments_per_env, std::numeric_limits<float>::min())};
 
     float paa_acc = 0.0;
     vec<unsigned> segment_update_count(segments_per_env, 0);
@@ -23,8 +23,8 @@ UlisseEnvelope ulisse_envelope_raw(std::span<const float> const& ts, const Uliss
             if (segment_update_count[seg_ind] < num_ms) {
                 ++segment_update_count[seg_ind];
                 float paa_val = paa_acc / segment_len;
-                envelope.first[seg_ind] = std::min(envelope.first[seg_ind], paa_val);
-                envelope.second[seg_ind] = std::max(envelope.second[seg_ind], paa_val);
+                envelope.lower[seg_ind] = std::min(envelope.lower[seg_ind], paa_val);
+                envelope.upper[seg_ind] = std::max(envelope.upper[seg_ind], paa_val);
             }
         }
     }
@@ -32,14 +32,14 @@ UlisseEnvelope ulisse_envelope_raw(std::span<const float> const& ts, const Uliss
     return envelope;
 }
 
-UlisseEnvelope ulisse_envelope_normalized(std::span<const float> const& ts, const UlisseEnvelopeParams& env_params) {
+Envelope ulisse_envelope_normalized(std::span<const float> const& ts, const UlisseEnvelopeParams& env_params) {
     auto [ms_per_env, segment_len, l_min, l_max] = env_params;
 
     unsigned segments_per_env = l_max / segment_len;
     size_t ms_end = std::min(ts.size(), (size_t)(l_max + ms_per_env - 1));
     unsigned num_ms = std::min(ms_per_env, (unsigned)ms_end - l_min + 1);
-    UlisseEnvelope envelope = {vec<float>(segments_per_env, std::numeric_limits<float>::max()),
-                               vec<float>(segments_per_env, std::numeric_limits<float>::min())};
+    Envelope envelope = {vec<float>(segments_per_env, std::numeric_limits<float>::max()),
+                         vec<float>(segments_per_env, std::numeric_limits<float>::min())};
 
     vec<float> paa_accs(l_max + ms_per_env - segment_len, 0.0);
 
@@ -77,8 +77,8 @@ UlisseEnvelope ulisse_envelope_normalized(std::span<const float> const& ts, cons
                 for (unsigned seg_ind = 0; seg_ind < num_seg_in_suffix; ++seg_ind) {
                     float paa_val = paa_accs[i + seg_ind * segment_len] / segment_len;
                     paa_val = (paa_val - mu) / sigma;
-                    envelope.first[seg_ind] = std::min(envelope.first[seg_ind], paa_val);
-                    envelope.second[seg_ind] = std::max(envelope.second[seg_ind], paa_val);
+                    envelope.lower[seg_ind] = std::min(envelope.lower[seg_ind], paa_val);
+                    envelope.upper[seg_ind] = std::max(envelope.upper[seg_ind], paa_val);
                 }
             }
 

@@ -18,7 +18,7 @@ SaxSplitIndT iSaxSplittableInternal::get_split_ind() const { return m_split_ind;
 
 vec<FilePositionT> iSaxSplittableInternal::get_file_positions() const { return {}; }
 
-vec<vec<UlisseEnvelope>> iSaxSplittableInternal::get_envelopes() const { return {}; };
+vec<vec<Envelope>> iSaxSplittableInternal::get_envelopes() const { return {}; };
 
 bool iSaxSplittableInternal::is_leaf() const { return false; }
 
@@ -47,7 +47,7 @@ std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> iSaxSplittableInter
 
 // iSaxSplittableLeaf
 
-iSaxSplittableLeaf::iSaxSplittableLeaf(vec<FilePositionT> file_positions, vec<vec<UlisseEnvelope>> envelopes)
+iSaxSplittableLeaf::iSaxSplittableLeaf(vec<FilePositionT> file_positions, vec<vec<Envelope>> envelopes)
     : m_file_positions(file_positions), m_envelopes(envelopes) {}
 
 std::pair<const iSaxSplittableNode *, const iSaxSplittableNode *> iSaxSplittableLeaf::get_children() const {
@@ -60,7 +60,7 @@ vec<FilePositionT> iSaxSplittableLeaf::get_file_positions() const { return m_fil
 
 bool iSaxSplittableLeaf::is_leaf() const { return true; }
 
-vec<vec<UlisseEnvelope>> iSaxSplittableLeaf::get_envelopes() const { return m_envelopes; }
+vec<vec<Envelope>> iSaxSplittableLeaf::get_envelopes() const { return m_envelopes; }
 
 std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> iSaxSplittableLeaf::finalize(
     const iSaxWordSettings &isax_word_settings) {
@@ -68,14 +68,14 @@ std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> iSaxSplittableLeaf:
     assert(m_envelopes[0].size() > 0);
 
     size_t num_envelopes = m_envelopes.size(), num_channels = m_envelopes[0].size(),
-           num_segments = m_envelopes[0][0].second.size();
+           num_segments = m_envelopes[0][0].upper.size();
 
     vec<iSaxWord> isax_max(num_channels);
 
     for (size_t c = 0; c < num_channels; ++c) {
-        isax_max[c] = iSaxWord(m_envelopes[0][c].second, isax_word_settings);
+        isax_max[c] = iSaxWord(m_envelopes[0][c].upper, isax_word_settings);
         for (size_t i = 1; i < num_envelopes; ++i) {
-            isax_max[c].select_max_symbols(iSaxWord(m_envelopes[i][c].second, isax_word_settings));
+            isax_max[c].select_max_symbols(iSaxWord(m_envelopes[i][c].upper, isax_word_settings));
         }
     }
 

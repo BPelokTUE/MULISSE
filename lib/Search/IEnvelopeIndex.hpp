@@ -3,33 +3,34 @@
 
 #include "typedefs.hpp"
 #include "Search/SearchOptions.hpp"
+#include "Summarization/Envelope.hpp"
 #include "Summarization/iSaxWord.hpp"
 
 #include <fstream>
 
-class IFinalizedUliEnvIndex {
+class IFinalizedEnvelopeIndex {
    public:
-    virtual ~IFinalizedUliEnvIndex() = default;
+    virtual ~IFinalizedEnvelopeIndex() = default;
 
-    virtual void serialize(std::ofstream ofs) = 0;
+    virtual void save(std::ofstream ofs) = 0;
 
-    virtual void deserialize(std::ifstream ifs) = 0;
+    virtual void load(std::ifstream ifs) = 0;
 };
 
 struct EnvelopeEntry {
-    vec<UlisseEnvelope> mts_envelope;
+    vec<Envelope> mts_envelope;
     FilePositionT file_position;
 
     explicit operator bool() const { return !mts_envelope.empty(); }
 };
 
-class IUlisseEnvelopeIndex {
+class IEnvelopeIndex {
    public:
-    virtual ~IUlisseEnvelopeIndex() = default;
+    virtual ~IEnvelopeIndex() = default;
 
     virtual void insert(const EnvelopeEntry &entry) = 0;
 
-    virtual std::unique_ptr<IFinalizedUliEnvIndex> finalize() = 0;
+    virtual std::unique_ptr<IFinalizedEnvelopeIndex> finalize() = 0;
 
     virtual vec<FilePositionT> search(vec<vec<float>> mts, const SearchOptions &search_options) const = 0;
 };

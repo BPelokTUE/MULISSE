@@ -4,19 +4,20 @@
 #include "typedefs.hpp"
 #include "Search/iSax/iSaxNode.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
+#include "Summarization/Envelope.hpp"
 #include "Summarization/iSaxWord.hpp"
 
 class iSaxSplittableNode : public iSaxNode {
    public:
     virtual ~iSaxSplittableNode() = default;
     virtual std::pair<const iSaxSplittableNode *, const iSaxSplittableNode *> get_children() const = 0;
-    virtual vec<vec<UlisseEnvelope>> get_envelopes() const = 0;
+    virtual vec<vec<Envelope>> get_envelopes() const = 0;
     virtual std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(
         const iSaxWordSettings &isax_word_settings) = 0;
 };
 
 class iSaxSplittableInternal : public iSaxSplittableNode {
-    friend class iSaxUlisseEnvelopeIndex;
+    friend class iSaxEnvelopeIndex;
 
    public:
     iSaxSplittableInternal(SaxSplitIndT split_ind);
@@ -31,7 +32,7 @@ class iSaxSplittableInternal : public iSaxSplittableNode {
 
     bool is_leaf() const override;
 
-    vec<vec<UlisseEnvelope>> get_envelopes() const override;
+    vec<vec<Envelope>> get_envelopes() const override;
 
     std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(
         const iSaxWordSettings &isax_word_settings) override;
@@ -42,10 +43,10 @@ class iSaxSplittableInternal : public iSaxSplittableNode {
 };
 
 class iSaxSplittableLeaf : public iSaxSplittableNode {
-    friend class iSaxUlisseEnvelopeIndex;
+    friend class iSaxEnvelopeIndex;
 
    public:
-    iSaxSplittableLeaf(vec<FilePositionT> file_positions, vec<vec<UlisseEnvelope>> envelopes);
+    iSaxSplittableLeaf(vec<FilePositionT> file_positions, vec<vec<Envelope>> envelopes);
 
     virtual std::pair<const iSaxSplittableNode *, const iSaxSplittableNode *> get_children() const override;
 
@@ -55,13 +56,13 @@ class iSaxSplittableLeaf : public iSaxSplittableNode {
 
     bool is_leaf() const override;
 
-    vec<vec<UlisseEnvelope>> get_envelopes() const override;
+    vec<vec<Envelope>> get_envelopes() const override;
 
     std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(
         const iSaxWordSettings &isax_word_settings) override;
 
    private:
-    vec<vec<UlisseEnvelope>> m_envelopes;
+    vec<vec<Envelope>> m_envelopes;
     vec<FilePositionT> m_file_positions;
 };
 
