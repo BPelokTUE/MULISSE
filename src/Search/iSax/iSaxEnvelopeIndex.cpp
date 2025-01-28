@@ -38,6 +38,7 @@ void iSaxEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<Envelope>
                                    std::unique_ptr<iSaxSplittableNode> &node_ref) {
     // Split the leaf
     auto [segment_ind, channel_ind] = m_split_strategy->get_split_ind();
+    segment_ind = segment_ind % mts_envelope[0].size();
     SaxNumBitsT split_seg_bits = isax_mins[channel_ind].get_num_bits()[segment_ind];
     // If cannot split further, return
     if (split_seg_bits == m_num_bits_limit) return;
@@ -124,7 +125,9 @@ void iSaxEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<Envelope>
 void iSaxEnvelopeIndex::insert(const EnvelopeEntry &entry) {
     auto [mts_envelope, file_pos] = entry;
     assert(mts_envelope.size() == m_num_channels);
-    assert(mts_envelope[0].size() == m_num_seg_per_channel);
+    assert(mts_envelope[0].size() <= m_num_seg_per_channel);  // TODO: Double check
+
+    size_t true_size = mts_envelope[0].size();
 
     vec<iSaxWord> isax_mins(mts_envelope.size());
     for (size_t i = 0; i < mts_envelope.size(); ++i) {
@@ -166,8 +169,7 @@ std::unique_ptr<IFinalizedEnvelopeIndex> iSaxEnvelopeIndex::finalize() {
     vec<vec<iSaxWord>> first_layer_isax_mins(size_first_layer), first_layer_isax_maxs(size_first_layer);
     vec<std::unique_ptr<iSaxFinalizedNode>> finalized_nodes(size_first_layer);
 
-    iSaxWordSettings isax_word_settings = {vec<SaxNumBitsT>(m_first_layer_num_bits), m_alphabet_num_bits,
-                                           m_breakpoints};
+    iSaxWordSettings isax_word_settings = {vec<SaxNumBitsT>(m_num_seg_per_channel), m_alphabet_num_bits, m_breakpoints};
 
     size_t i = 0;
     for (auto it = m_first_layer.begin(); it != m_first_layer.end(); ++it) {

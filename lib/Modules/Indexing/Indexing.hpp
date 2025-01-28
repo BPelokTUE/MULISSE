@@ -5,6 +5,6 @@
 
 #include "Search/IndexOptions.hpp"
 
-int create_index(std::string dataset_path, unsigned series_len, unsigned num_channels, IndexOptions index_options);
+int create_index(const IndexOptions &index_options);
 
 #endif  // INDEXING_HPP

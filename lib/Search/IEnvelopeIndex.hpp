@@ -21,7 +21,7 @@ struct EnvelopeEntry {
     vec<Envelope> mts_envelope;
     FilePositionT file_position;
 
-    explicit operator bool() const { return !mts_envelope.empty(); }
+    explicit operator bool() const { return mts_envelope[0].size() > 0; }
 };
 
 class IEnvelopeIndex {

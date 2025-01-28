@@ -2,7 +2,7 @@
 
 iSaxWord::iSaxWord(const vec<float> &paa, const iSaxWordSettings &settings)
     : SaxWord(paa, settings.alphabet_num_bits, settings.breakpoints), m_num_bits(settings.num_bits) {
-    assert(paa.size() == settings.num_bits.size());
+    assert(paa.size() <= settings.num_bits.size());  // TODO: Double check this
     assert(m_alphabet_num_bits >= *std::max_element(settings.num_bits.begin(), settings.num_bits.end()));
 }
 

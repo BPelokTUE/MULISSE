@@ -2,8 +2,12 @@
 #define ISAX_SPLIT_STRATEGY_HPP
 
 #include "typedefs.hpp"
+#include "util.hpp"
 
 enum iSaxSplitStrategyType { DOUBLE_ROUND_ROBIN };
+
+const umap<str, iSaxSplitStrategyType> STR_TO_ISAX_SPLIT_STRATEGY = {{"double_round_robin", DOUBLE_ROUND_ROBIN}};
+const vec<str> ISAX_SPLIT_STRATEGY_STRS = get_keys(STR_TO_ISAX_SPLIT_STRATEGY);
 
 class IiSaxSplitStrategy {
    public:

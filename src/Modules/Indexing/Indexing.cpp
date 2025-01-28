@@ -28,7 +28,7 @@ std::unique_ptr<IEnvelopeIndex> get_index(const IndexOptions &opts) {
     switch (opts.index_params->get_type()) {
         case ISAX_ENVELOPE:
             auto *params = static_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
-            SaxSegIndT num_seg_per_channel = opts.series_len / params->segment_len;
+            SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
 
             auto breakpoint_strategy = get_breakpoint_strategy(params);
             auto split_strategy = get_split_strategy(params, num_seg_per_channel, opts.num_channels);
@@ -56,7 +56,8 @@ int create_index(const IndexOptions &opts) {
 
     std::ifstream data_stream(opts.dataset_path, std::ios::binary);
 
-    unsigned num_series = data_stream.tellg() / (opts.num_channels * opts.series_len * sizeof(float));
+    unsigned N = get_dataset_size(opts.dataset_path);
+    unsigned num_series = N / (opts.num_channels * opts.series_len * sizeof(float));
 
     auto index = get_index(opts);
 

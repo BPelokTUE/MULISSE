@@ -2,11 +2,17 @@
 #define TYPEDEFS_HPP
 
 #include <vector>
+#include <unordered_map>
 #include <cstdint>
 #include <cassert>
 
 template <typename T>
 using vec = std::vector<T>;
+
+template <typename K, typename V>
+using umap = std::unordered_map<K, V>;
+
+using str = std::string;
 
 using SaxNumBitsT = uint8_t;
 using SaxSegIndT = uint16_t;

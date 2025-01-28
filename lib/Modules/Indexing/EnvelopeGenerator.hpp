@@ -25,6 +25,7 @@ class iSaxEnvelopeGenerator : public IEnvelopeGenerator {
    private:
     const vec<vec<float>> *m_mts;
     const IndexOptions &m_opts;
+    size_t series_len;
     UlisseEnvelopeParams m_uli_params;
     Envelope (*m_envelope_func)(std::span<const float> const &, const UlisseEnvelopeParams &);
 

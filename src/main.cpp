@@ -7,16 +7,16 @@
 #include "Modules/QueryGen.hpp"
 #include "Modules/Indexing/Indexing.hpp"
 
-using namespace std;
+using std::string, std::print, std::println;
 
 int main(int argc, char **argv) {
     CLI::App app{"Run ULISSE-MTS"};
 
     // Add subcommands
-    auto create_ds = app.add_subcommand("create_ds", "Create random walk dataset");
-    auto create_qs = app.add_subcommand("create_qs", "Create queries from dataset");
-    auto index = app.add_subcommand("index", "Construct ULISSE MTS index");
-    auto search = app.add_subcommand("search", "Search using ULISSE MTS");
+    auto ds_subcommand = app.add_subcommand("create_ds", "Create random walk dataset");
+    auto qs_subcommand = app.add_subcommand("create_qs", "Create queries from dataset");
+    auto index_subcommand = app.add_subcommand("index", "Construct ULISSE MTS index");
+    auto search_subcommand = app.add_subcommand("search", "Search using ULISSE MTS");
     app.require_subcommand(1);
 
     // Define custom validators
@@ -37,64 +37,128 @@ int main(int argc, char **argv) {
 
     // Add arguments
     /*
-               | create_ds | create_query | index | search |
-    dataset    |     X     |       X      |   X   |        |
-    noise      |     X     |       X      |       |        |
-    zero_start |     X     |              |       |        |
-    n          |     X     |              |       |        |
-    m          |     X     |       X      |   X   |        |
-    c          |     X     |       X      |   X   |        |
-    n_q        |           |       X      |       |        |
-    lengths    |           |       X      |       |        |
-    query_path |           |       X      |       |   X    |
-    l_min      |           |              |   X   |        |
-    l_max      |           |              |   X   |        |
-    s          |           |              |   X   |        |
-    n_start    |           |              |   X   |        |
-    leaf_th    |           |              |   X   |        |
-    index_path |           |              |   X   |   X    |
-    approx/ex  |           |              |       |   X    |
-    kNN/r-ran  |           |              |       |   X    |
-    k(NN)      |           |              |       |   X    |
-    r(range)   |           |              |       |   X    |
-    normalize  |           |              |       |   X    |
-    out        |           |              |       |   X    |
+                | create_ds | create_query | index | search |
+    dataset     |     X     |       X      |   X   |        |
+    noise       |     X     |       X      |       |        |
+    zero_start  |     X     |              |       |        |
+    n           |     X     |              |       |        |
+    m           |     X     |       X      |   X   |        |
+    c           |     X     |       X      |   X   |        |
+    Q           |           |       X      |       |        |
+    lengths     |           |       X      |       |        |
+    query_path  |           |       X      |       |   X    |
+    index_type  |           |              |   X   |   X    |
+    sps_type    |           |              |   X   |        |
+    bps_type    |           |              |   X   |        |
+    l_min       |           |              |   X   |        |
+    l_max       |           |              |   X   |        |
+    s           |           |              |   X   |        |
+    pos_per_env |           |              |   X   |        |
+    leaf_th     |           |              |   X   |        |
+    index_path  |           |              |   X   |   X    |
+    approx/ex   |           |              |       |   X    |
+    kNN/r-ran   |           |              |       |   X    |
+    k(NN)       |           |              |       |   X    |
+    r(range)    |           |              |       |   X    |
+    normalize   |           |              |       |   X    |
+    out         |           |              |       |   X    |
     */
 
-    string dataset_path, query_path, index_path;
+    string dataset_path, query_path, index_path, index_type_str = INDEX_TYPE_STRS[0],
+                                                 split_strategy_str = ISAX_SPLIT_STRATEGY_STRS[0],
+                                                 breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0];
     float noise = 1.0;
-    unsigned num_series, series_len, num_queries, l_min, l_max;
+    unsigned num_series, series_len, num_queries, l_min, l_max, segment_len, pos_per_env;
+    size_t leaf_capacity;
     vec<unsigned> lengths;
     MtsNumChannelsT num_channels;
-    bool zero_start = false;
+    bool zero_start = false, unnormalized = false;
 
     // Options for creating dataset
-    create_ds->add_option("-d,--dataset", dataset_path, "Output dataset path")->required();
-    create_ds->add_option("--noise", noise, "Random walk standard deviation")->capture_default_str();
-    create_ds->add_flag("-z,--zero_start", zero_start, "Start the random walk from zero");
-    create_ds->add_option("-n,--num_series", num_series, "Number of series")->required()->check(positive_int);
-    create_ds->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
-    create_ds->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
+    ds_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path")->required();
+    ds_subcommand->add_option("--noise", noise, "Random walk standard deviation")->capture_default_str();
+    ds_subcommand->add_flag("-z,--zero_start", zero_start, "Start the random walk from zero");
+    ds_subcommand->add_option("-n,--num_series", num_series, "Number of series")->required()->check(positive_int);
+    ds_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
+    ds_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
 
     // Options for creating queries
-    create_qs->add_option("-d,--dataset", dataset_path, "Dataset to use")->required()->check(CLI::ExistingFile);
-    create_qs->add_option("-q,--query", query_path, "Output query path")->required();
-    create_qs->add_option("--noise", noise, "Query noise")->capture_default_str();
-    create_qs->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
-    create_qs->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
-    create_qs->add_option("-Q,--num_queries", num_queries, "Number of queries")->required()->check(positive_int);
-    create_qs->add_option("-l,--lengths", lengths, "Query lengths")->required()->check(positive_int);
+    qs_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required()->check(CLI::ExistingFile);
+    qs_subcommand->add_option("-q,--query", query_path, "Output query path")->required();
+    qs_subcommand->add_option("--noise", noise, "Query noise")->capture_default_str();
+    qs_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
+    qs_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
+    qs_subcommand->add_option("-Q,--num_queries", num_queries, "Number of queries")->required()->check(positive_int);
+    qs_subcommand->add_option("-l,--lengths", lengths, "Query lengths")->required()->check(positive_int);
+
+    // Options for indexing
+    index_subcommand->add_option("-i,--index", index_path, "Output index path")->required();
+    index_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required()->check(CLI::ExistingFile);
+    index_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
+    index_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
+        ->required()
+        ->check(positive_int);
+    index_subcommand->add_option("-t,--index_type", index_type_str, "Index type")
+        ->capture_default_str()
+        ->check(CLI::IsMember(INDEX_TYPE_STRS));
+    index_subcommand->add_option("-S,--split_strategy", split_strategy_str, "Split strategy")
+        ->capture_default_str()
+        ->check(CLI::IsMember(ISAX_SPLIT_STRATEGY_STRS));
+    index_subcommand->add_option("-B,--breakpoint_strategy", breakpoint_strategy_str, "Breakpoint strategy")
+        ->capture_default_str()
+        ->check(CLI::IsMember(ISAX_BREAKPOINT_STRATEGY_STRS));
+    index_subcommand->add_option("-l,--l_min", l_min, "Minimum length of subsequences")
+        ->required()
+        ->check(positive_int);
+    index_subcommand->add_option("-L,--l_max", l_max, "Maximum length of subsequences")
+        ->required()
+        ->check(positive_int);
+    index_subcommand->add_option("-s,--segment_len", segment_len, "Segment length")->required()->check(positive_int);
+    index_subcommand->add_option("-p,--pos_per_env", pos_per_env, "Positions per envelope")
+        ->required()
+        ->check(positive_int);
+    index_subcommand->add_option("-C,--leaf_capacity", leaf_capacity, "Leaf capacity")->required()->check(positive_int);
+    index_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
 
     // Execute command
     CLI11_PARSE(app, argc, argv);
 
-    if (create_ds->parsed()) {
+    if (ds_subcommand->parsed()) {
         create_random_walks(dataset_path, noise, zero_start, num_series, series_len, num_channels);
-    } else if (create_qs->parsed()) {
+    } else if (qs_subcommand->parsed()) {
         create_queries(dataset_path, query_path, noise, series_len, num_channels, num_queries, lengths);
-    } else if (index->parsed()) {
-        // create_index();
-    } else if (search->parsed()) {
+    } else if (index_subcommand->parsed()) {
+        IndexType index_type = STR_TO_INDEX_TYPE.at(index_type_str);
+        IIndexParams *index_params;
+        switch (index_type) {
+            case ISAX_ENVELOPE:
+                index_params = new iSaxEnvelopeIndexParams{
+                    pos_per_env,
+                    segment_len,
+                    2,  // first_layer_num_bits,
+                    leaf_capacity,
+                    STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str),
+                    STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str),
+                    DEFAULT_NUM_BIT_LIMIT,
+                };
+                break;
+            default:
+                println("Index {} type not implemented", index_type_str);
+                return 1;
+        }
+
+        IndexOptions index_options{
+            .l_min = l_min,
+            .l_max = l_max,
+            .series_len = series_len,
+            .num_channels = num_channels,
+            .dataset_path = dataset_path,
+            .index_path = index_path,
+            .normalized = !unnormalized,
+            .index_params = std::unique_ptr<IIndexParams>(index_params),
+        };
+        create_index(index_options);
+    } else if (search_subcommand->parsed()) {
         println("Search not implemented");
     }
 

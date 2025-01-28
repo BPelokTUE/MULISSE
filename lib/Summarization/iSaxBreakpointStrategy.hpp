@@ -4,8 +4,12 @@
 #include <boost/math/distributions/normal.hpp>
 
 #include "typedefs.hpp"
+#include "util.hpp"
 
 enum iSaxBreakpointStrategyType { EQUIPROBABLE };
+
+const umap<str, iSaxBreakpointStrategyType> STR_TO_ISAX_BREAKPOINT_STRATEGY = {{"equiprobable", EQUIPROBABLE}};
+const vec<str> ISAX_BREAKPOINT_STRATEGY_STRS = get_keys(STR_TO_ISAX_BREAKPOINT_STRATEGY);
 
 /**
  * @brief Interface for breakpoints strategies
