@@ -20,10 +20,11 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
 # Include header files
 include_directories(${CMAKE_SOURCE_DIR}/lib)
 # Include external header files
-# - CLI11: 2.4.2:   https://github.com/CLIUtils/CLI11/releases
-# - doctest:2.4.11: https://github.com/doctest/doctest/tree/master/doctest/doctest.h
-include_directories(${CMAKE_SOURCE_DIR}/extern/doctest) # Required for Fake-it to detect doctest
-# - Fake-it 2.4.1:  https://github.com/eranpeer/FakeIt/tree/master/single_header/doctest/fakeit.h 
+# - CLI11: 2.4.2:    https://github.com/CLIUtils/CLI11/releases
+# - doctest: 2.4.11: https://github.com/doctest/doctest/tree/master/doctest/doctest.h
+# - Fake-it 2.4.1:   https://github.com/eranpeer/FakeIt/tree/master/single_header/doctest/fakeit.h 
+# - cereal: 1.3.2    https://github.com/USCiLab/cereal
+include_directories(${CMAKE_SOURCE_DIR}/extern/doctest) # Required for fake-it
 include_directories(${CMAKE_SOURCE_DIR}/extern)
 
 # Add Boost

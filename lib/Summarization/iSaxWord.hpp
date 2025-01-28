@@ -3,6 +3,9 @@
 
 #include <vector>
 
+#include <cereal/types/polymorphic.hpp>
+#include <cereal/types/base_class.hpp>
+
 #include "Summarization/SaxWord.hpp"
 
 struct iSaxWordSettings {
@@ -107,6 +110,13 @@ class iSaxWord : public SaxWord {
 
    private:
     vec<SaxNumBitsT> m_num_bits;
+
+    friend class cereal::access;
+
+    template <class Archive>
+    void serialize(Archive &ar) {
+        ar(cereal::base_class<SaxWord>(this), m_num_bits);
+    }
 };
 
 #endif  // ISAX_WORD_HPP
