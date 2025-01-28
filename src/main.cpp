@@ -5,6 +5,7 @@
 #include "CLI11/CLI11.hpp"
 #include "Modules/RandomWalk.hpp"
 #include "Modules/QueryGen.hpp"
+#include "Modules/Indexing/Indexing.hpp"
 
 using namespace std;
 
@@ -43,15 +44,15 @@ int main(int argc, char **argv) {
     n          |     X     |              |       |        |
     m          |     X     |       X      |   X   |        |
     c          |     X     |       X      |   X   |        |
-    m_q        |           |       X      |       |        |
-    q_noise    |           |       X      |       |        |
+    n_q        |           |       X      |       |        |
     lengths    |           |       X      |       |        |
+    query_path |           |       X      |       |   X    |
     l_min      |           |              |   X   |        |
     l_max      |           |              |   X   |        |
     s          |           |              |   X   |        |
     n_start    |           |              |   X   |        |
     leaf_th    |           |              |   X   |        |
-    query_path |           |       X      |       |   X    |
+    index_path |           |              |   X   |   X    |
     approx/ex  |           |              |       |   X    |
     kNN/r-ran  |           |              |       |   X    |
     k(NN)      |           |              |       |   X    |
@@ -60,36 +61,29 @@ int main(int argc, char **argv) {
     out        |           |              |       |   X    |
     */
 
-    string dataset_path, query_path;
-    create_ds->add_option("-d,--dataset", dataset_path, "Output dataset path")->required();
-    for (auto subcommand : {create_qs, index}) {
-        subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required()->check(CLI::ExistingFile);
-    }
-    create_qs->add_option("-q,--query", query_path, "Output query path")->required();
-    search->add_option("-q,--query", query_path, "Query file")->required()->check(CLI::ExistingFile);
-
+    string dataset_path, query_path, index_path;
     float noise = 1.0;
-    create_ds->add_option("--noise", noise, "Random walk standard deviation")->capture_default_str();
-    create_qs->add_option("--noise", noise, "Query noise")->capture_default_str();
-
-    bool zero_start = false;
-    create_ds->add_flag("-z,--zero_start", zero_start, "Start the random walk from zero");
-
-    unsigned num_series, series_len, num_channels;
-
-    create_ds->add_option("-n,--num_series", num_series, "Number of series")->required()->check(positive_int);
-    for (auto subcommand : {create_ds, create_qs, index}) {
-        subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
-        subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
-            ->required()
-            ->check(positive_int);
-    }
-
+    unsigned num_series, series_len, num_queries, l_min, l_max;
     vec<unsigned> lengths;
-    create_qs->add_option("-l,--lengths", lengths, "Query lengths")->required()->check(positive_int);
+    MtsNumChannelsT num_channels;
+    bool zero_start = false;
 
-    unsigned num_queries;
-    create_qs->add_option("--nq,--num_queries", num_queries, "Number of queries")->required()->check(positive_int);
+    // Options for creating dataset
+    create_ds->add_option("-d,--dataset", dataset_path, "Output dataset path")->required();
+    create_ds->add_option("--noise", noise, "Random walk standard deviation")->capture_default_str();
+    create_ds->add_flag("-z,--zero_start", zero_start, "Start the random walk from zero");
+    create_ds->add_option("-n,--num_series", num_series, "Number of series")->required()->check(positive_int);
+    create_ds->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
+    create_ds->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
+
+    // Options for creating queries
+    create_qs->add_option("-d,--dataset", dataset_path, "Dataset to use")->required()->check(CLI::ExistingFile);
+    create_qs->add_option("-q,--query", query_path, "Output query path")->required();
+    create_qs->add_option("--noise", noise, "Query noise")->capture_default_str();
+    create_qs->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
+    create_qs->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
+    create_qs->add_option("-Q,--num_queries", num_queries, "Number of queries")->required()->check(positive_int);
+    create_qs->add_option("-l,--lengths", lengths, "Query lengths")->required()->check(positive_int);
 
     // Execute command
     CLI11_PARSE(app, argc, argv);
@@ -99,7 +93,7 @@ int main(int argc, char **argv) {
     } else if (create_qs->parsed()) {
         create_queries(dataset_path, query_path, noise, series_len, num_channels, num_queries, lengths);
     } else if (index->parsed()) {
-        println("Index creation not implemented");
+        // create_index();
     } else if (search->parsed()) {
         println("Search not implemented");
     }
