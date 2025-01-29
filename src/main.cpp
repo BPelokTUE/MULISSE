@@ -56,6 +56,7 @@ int main(int argc, char **argv) {
     pos_per_env |           |              |   X   |        |
     leaf_th     |           |              |   X   |        |
     index_path  |           |              |   X   |   X    |
+    format      |           |              |   X   |   X    |
     approx/ex   |           |              |       |   X    |
     kNN/r-ran   |           |              |       |   X    |
     k(NN)       |           |              |       |   X    |
@@ -64,9 +65,9 @@ int main(int argc, char **argv) {
     out         |           |              |       |   X    |
     */
 
-    string dataset_path, query_path, index_path, index_type_str = INDEX_TYPE_STRS[0],
-                                                 split_strategy_str = ISAX_SPLIT_STRATEGY_STRS[0],
-                                                 breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0];
+    string dataset_path, query_path, index_path,
+        index_type_str = INDEX_TYPE_STRS[0], split_strategy_str = ISAX_SPLIT_STRATEGY_STRS[0],
+        breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0], index_format_str = ARCHIVE_TYPE_STRS[0];
     float noise = 1.0;
     unsigned num_series, series_len, num_queries, l_min, l_max, segment_len, pos_per_env;
     size_t leaf_capacity;
@@ -98,6 +99,9 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
         ->required()
         ->check(positive_int);
+    index_subcommand->add_option("-f,--format", index_format_str, "Index format")
+        ->capture_default_str()
+        ->check(CLI::IsMember(ARCHIVE_TYPE_STRS));
     index_subcommand->add_option("-t,--index_type", index_type_str, "Index type")
         ->capture_default_str()
         ->check(CLI::IsMember(INDEX_TYPE_STRS));
@@ -150,6 +154,7 @@ int main(int argc, char **argv) {
         IndexOptions index_options{
             .dataset_path = dataset_path,
             .index_path = index_path,
+            .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
             .l_min = l_min,
             .l_max = l_max,
             .series_len = series_len,

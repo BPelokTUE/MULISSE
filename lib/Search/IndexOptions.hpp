@@ -46,8 +46,13 @@ struct iSaxEnvelopeIndexParams : EnvelopeIndexParams, iSaxIndexParams {
     }
 };
 
+enum ArchiveType { BINARY, JSON };
+const umap<str, ArchiveType> STR_TO_ARCHIVE_TYPE = {{"binary", BINARY}, {"json", JSON}};
+const vec<str> ARCHIVE_TYPE_STRS = get_keys(STR_TO_ARCHIVE_TYPE);
+
 struct IndexOptions {
     std::string dataset_path, index_path;
+    ArchiveType index_format;
     unsigned l_min, l_max, series_len, num_channels;
     bool normalized;
     std::unique_ptr<IIndexParams> index_params;

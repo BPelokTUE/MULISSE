@@ -4,7 +4,6 @@
 #include "typedefs.hpp"
 
 #include <boost/functional/hash.hpp>
-#include <cereal/types/vector.hpp>
 
 #include <functional>
 
@@ -75,13 +74,6 @@ class SaxWord {
    protected:
     vec<SaxSymbolT> m_symbols;
     SaxNumBitsT m_alphabet_num_bits;
-
-    friend class cereal::access;
-
-    template <class Archive>
-    void serialize(Archive& ar) {
-        ar(m_symbols, m_alphabet_num_bits);
-    }
 };
 
 #endif  // SAX_WORD_HPP

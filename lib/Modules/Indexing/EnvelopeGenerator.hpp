@@ -10,14 +10,14 @@
 class IEnvelopeGenerator {
    public:
     virtual ~IEnvelopeGenerator() = default;
-    virtual vec<EnvelopeEntry> get_entries(const vec<vec<float>> &mts) = 0;
+    virtual vec<EnvelopeEntry> get_entries(const vec<vec<float>> &mts, size_t series_ind) = 0;
 };
 
 class iSaxEnvelopeGenerator : public IEnvelopeGenerator {
    public:
     iSaxEnvelopeGenerator(const IndexOptions &opts);
 
-    vec<EnvelopeEntry> get_entries(const vec<vec<float>> &mts) override;
+    vec<EnvelopeEntry> get_entries(const vec<vec<float>> &mts, size_t series_ind) override;
 
    private:
     const IndexOptions &m_opts;

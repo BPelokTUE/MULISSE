@@ -3,9 +3,6 @@
 
 #include <vector>
 
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/types/base_class.hpp>
-
 #include "Summarization/SaxWord.hpp"
 
 struct iSaxWordSettings {
@@ -108,15 +105,15 @@ class iSaxWord : public SaxWord {
      */
     void select_max_symbols(const iSaxWord &other);
 
+    /**
+     * @brief Get the non-shifted symbols of the word.
+     *
+     * @return The non-shifted symbols.
+     */
+    const vec<SaxSymbolT> &get_symbols_no_shift() const;
+
    private:
     vec<SaxNumBitsT> m_num_bits;
-
-    friend class cereal::access;
-
-    template <class Archive>
-    void serialize(Archive &ar) {
-        ar(cereal::base_class<SaxWord>(this), m_num_bits);
-    }
 };
 
 #endif  // ISAX_WORD_HPP

@@ -71,7 +71,7 @@ int create_index(const IndexOptions &opts) {
                 data_stream.read(reinterpret_cast<char *>(mts[c].data()), opts.series_len * sizeof(float));
             }
 
-            auto entries = envelope_generator->get_entries(mts);
+            auto entries = envelope_generator->get_entries(mts, i);
 #pragma omp critical
             {
                 for (auto entry : entries) {
@@ -81,7 +81,7 @@ int create_index(const IndexOptions &opts) {
         }
     }
 
-    index->finalize()->save(std::ofstream(opts.index_path, std::ios::binary));
+    index->finalize()->save(std::ofstream(opts.index_path, std::ios::binary), opts.index_format);
 
     return 0;
 }

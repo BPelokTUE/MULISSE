@@ -14,17 +14,23 @@ class iSaxEnvelopeFinalizedIndex : public IFinalizedEnvelopeIndex {
 
     ~iSaxEnvelopeFinalizedIndex() = default;
 
-    void save(std::ofstream ofs) override;
+    void save(std::ofstream ofs, ArchiveType ar_type) override;
 
-    void load(std::ifstream ifs) override;
+    void load(std::ifstream ifs, ArchiveType ar_type) override;
 
    private:
-    vec<vec<iSaxWord>> m_first_isax_mins, m_first_isax_maxs;
+    vec<vec<vec<SaxSymbolT>>> m_first_sax_mins, m_first_sax_maxs;
     vec<std::unique_ptr<iSaxFinalizedNode>> m_first_layer_nodes;
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
     SaxSegIndT m_num_seg_per_channel;
     MtsNumChannelsT m_num_channels;
     vec<float> m_breakpoints;
+
+    template <typename Archive>
+    void serialize(Archive& ar);
+
+    template <typename Archive>
+    void deserialize(Archive& ar);
 };
 
 #endif  // I_SAX_FINALIZED_ULI_ENV_INDEX_HPP

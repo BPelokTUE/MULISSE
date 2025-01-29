@@ -12,31 +12,23 @@ iSaxEnvelopeGenerator::iSaxEnvelopeGenerator(const IndexOptions &opts) : m_opts(
     m_envelope_func = opts.normalized ? ulisse_envelope_normalized : ulisse_envelope_raw;
 }
 
-vec<EnvelopeEntry> iSaxEnvelopeGenerator::get_entries(const vec<vec<float>> &mts) {
+vec<EnvelopeEntry> iSaxEnvelopeGenerator::get_entries(const vec<vec<float>> &mts, size_t series_ind) {
     unsigned series_len = mts[0].size();
     unsigned num_env = (series_len - m_uli_params.l_min + m_uli_params.pos_per_env) / m_uli_params.pos_per_env;
     vec<EnvelopeEntry> entries(num_env);
 
-    auto channel_envs = m_envelope_func(mts[0], m_uli_params);
-    for (size_t i = 0; i < channel_envs.size(); ++i) {
-        size_t file_pos = i * m_uli_params.pos_per_env;
-
-        unsigned remaining_segments = (series_len - file_pos) / m_uli_params.segment_len;
-        if (remaining_segments < channel_envs[i].size()) channel_envs[i].resize(remaining_segments);
-
-        entries[i].mts_envelope.resize(m_opts.num_channels);
-        entries[i].mts_envelope[0] = std::move(channel_envs[i]);
-        entries[i].file_position = file_pos;
-    }
-
-    for (MtsNumChannelsT c = 1; c < m_opts.num_channels; ++c) {
-        channel_envs = m_envelope_func(mts[c], m_uli_params);
+    for (MtsNumChannelsT c = 0; c < m_opts.num_channels; ++c) {
+        auto channel_envs = m_envelope_func(mts[c], m_uli_params);
         for (size_t i = 0; i < channel_envs.size(); ++i) {
-            size_t file_pos = i * m_uli_params.pos_per_env;
+            size_t series_pos = i * m_uli_params.pos_per_env;
 
-            unsigned remaining_segments = (series_len - file_pos) / m_uli_params.segment_len;
+            unsigned remaining_segments = (series_len - series_pos) / m_uli_params.segment_len;
             if (remaining_segments < channel_envs[i].size()) channel_envs[i].resize(remaining_segments);
 
+            if (c == 0) {
+                entries[i].file_position = series_ind * m_opts.num_channels * series_len + series_pos;
+                entries[i].mts_envelope.resize(m_opts.num_channels);
+            }
             entries[i].mts_envelope[c] = std::move(channel_envs[i]);
         }
     }
