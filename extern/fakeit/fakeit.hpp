@@ -10,7 +10,10 @@
 #ifndef fakeit_h__
 #define fakeit_h__
 
-
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-template-arg-list-after-template-kw"
+#endif
 
 #include <functional>
 #include <memory>

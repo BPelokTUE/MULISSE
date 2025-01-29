@@ -64,13 +64,19 @@ int create_index(const IndexOptions &opts) {
     if (std::ranges::find(ENVELOPE_TYPES, opts.index_params->get_type()) != ENVELOPE_TYPES.end()) {
         auto envelope_generator = get_envelope_generator(opts);
 
+#pragma omp parallel for
         for (size_t i = 0; i < num_series; ++i) {
             vec<vec<float>> mts(opts.num_channels, vec<float>(opts.series_len));
             for (MtsNumChannelsT c = 0; c < opts.num_channels; ++c) {
                 data_stream.read(reinterpret_cast<char *>(mts[c].data()), opts.series_len * sizeof(float));
             }
-            for (auto entry : envelope_generator->get_entries(mts)) {
-                index->insert(entry);
+
+            auto entries = envelope_generator->get_entries(mts);
+#pragma omp critical
+            {
+                for (auto entry : entries) {
+                    index->insert(entry);
+                }
             }
         }
     }

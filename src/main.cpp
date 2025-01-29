@@ -1,4 +1,4 @@
-#include <print>
+#include <iostream>
 #include <string>
 #include <fstream>
 
@@ -7,7 +7,7 @@
 #include "Modules/QueryGen.hpp"
 #include "Modules/Indexing/Indexing.hpp"
 
-using std::string, std::print, std::println;
+using std::string, std::cout;
 
 int main(int argc, char **argv) {
     CLI::App app{"Run ULISSE-MTS"};
@@ -143,23 +143,23 @@ int main(int argc, char **argv) {
                 };
                 break;
             default:
-                println("Index {} type not implemented", index_type_str);
+                cout << "Index " << index_type_str << " type not implemented\n";
                 return 1;
         }
 
         IndexOptions index_options{
+            .dataset_path = dataset_path,
+            .index_path = index_path,
             .l_min = l_min,
             .l_max = l_max,
             .series_len = series_len,
             .num_channels = num_channels,
-            .dataset_path = dataset_path,
-            .index_path = index_path,
             .normalized = !unnormalized,
             .index_params = std::unique_ptr<IIndexParams>(index_params),
         };
         create_index(index_options);
     } else if (search_subcommand->parsed()) {
-        println("Search not implemented");
+        cout << "Search not implemented\n";
     }
 
     return 0;

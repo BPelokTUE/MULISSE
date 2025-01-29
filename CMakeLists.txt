@@ -25,11 +25,32 @@ include_directories(${CMAKE_SOURCE_DIR}/lib)
 # - Fake-it 2.4.1:   https://github.com/eranpeer/FakeIt/tree/master/single_header/doctest/fakeit.h 
 # - cereal: 1.3.2    https://github.com/USCiLab/cereal
 include_directories(${CMAKE_SOURCE_DIR}/extern/doctest) # Required for fake-it
-include_directories(${CMAKE_SOURCE_DIR}/extern)
+include_directories(${CMAKE_SOURCE_DIR}/extern SYSTEM GLAD)
 
 # Add Boost
 find_package(Boost 1.87 REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
+
+# Add OpenMP
+# Apple settings from: https://stackoverflow.com/a/60198415/27492177
+if(APPLE)
+    set(CMAKE_C_COMPILER clang)
+    set(CMAKE_CXX_COMPILER clang++)
+
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang\$")
+        set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp")
+        set(OpenMP_C_LIB_NAMES "omp")
+        set(OpenMP_omp_LIBRARY omp)
+    endif()
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang\$")
+        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp")
+        set(OpenMP_CXX_LIB_NAMES "omp")
+        set(OpenMP_omp_LIBRARY omp)
+    endif()
+endif()
+
+find_package(OpenMP REQUIRED)
 
 # Add main executable
 file(GLOB_RECURSE SOURCES src/*.cpp)
@@ -42,3 +63,9 @@ file(GLOB_RECURSE TEST_SOURCES tests/*.cpp src/**/*.cpp src/util.cpp)
 set(TEST_NAME ${PROJECT_NAME}_tests)
 add_executable(${TEST_NAME} ${TEST_SOURCES})
 add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+
+# Link OpenMP
+if (OpenMP_CXX_FOUND)
+    target_link_libraries(${PROJECT_NAME} OpenMP::OpenMP_CXX)
+    target_link_libraries(${TEST_NAME} OpenMP::OpenMP_CXX)
+endif()

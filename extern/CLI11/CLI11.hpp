@@ -33,6 +33,11 @@
 
 #pragma once
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 // Standard combined includes:
 #include <algorithm>
 #include <array>
