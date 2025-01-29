@@ -45,6 +45,6 @@ vec<Envelope> ulisse_envelope_raw(const vec<float>& ts, const UlisseEnvelopePara
  * @param env_params The parameters for the envelope computation.
  * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively.
  */
-Envelope ulisse_envelope_normalized(std::span<const float> const& ts, const UlisseEnvelopeParams& env_params);
+vec<Envelope> ulisse_envelope_normalized(const vec<float>& ts, const UlisseEnvelopeParams& env_params);
 
 #endif  // ULISSE_ENVELOPE_HPP

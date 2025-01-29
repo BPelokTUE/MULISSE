@@ -9,8 +9,7 @@ iSaxEnvelopeGenerator::iSaxEnvelopeGenerator(const IndexOptions &opts) : m_opts(
         m_opts.l_min,
         m_opts.l_max,
     };
-    // m_envelope_func = opts.normalized ? ulisse_envelope_normalized : ulisse_envelope_raw;
-    m_envelope_func = ulisse_envelope_raw;
+    m_envelope_func = opts.normalized ? ulisse_envelope_normalized : ulisse_envelope_raw;
 }
 
 vec<EnvelopeEntry> iSaxEnvelopeGenerator::get_entries(const vec<vec<float>> &mts) {
