@@ -22,9 +22,6 @@ vec<EnvelopeEntry> iSaxEnvelopeGenerator::get_entries(const vec<vec<float>> &mts
         for (size_t i = 0; i < channel_envs.size(); ++i) {
             size_t series_pos = i * m_uli_params.pos_per_env;
 
-            unsigned remaining_segments = (series_len - series_pos) / m_uli_params.segment_len;
-            if (remaining_segments < channel_envs[i].size()) channel_envs[i].resize(remaining_segments);
-
             if (c == 0) {
                 entries[i].file_position = series_ind * m_opts.num_channels * series_len + series_pos;
                 entries[i].mts_envelope.resize(m_opts.num_channels);

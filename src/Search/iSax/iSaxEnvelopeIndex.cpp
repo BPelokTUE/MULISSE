@@ -125,7 +125,7 @@ void iSaxEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<Envelope>
 void iSaxEnvelopeIndex::insert(const EnvelopeEntry &entry) {
     auto [mts_envelope, file_pos] = entry;
     assert(mts_envelope.size() == m_num_channels);
-    assert(mts_envelope[0].size() <= m_num_seg_per_channel);  // TODO: Double check
+    assert(mts_envelope[0].size() == m_num_seg_per_channel);
 
     size_t true_size = mts_envelope[0].size();
 
