@@ -169,9 +169,10 @@ std::unique_ptr<IFinalizedEnvelopeIndex> iSaxEnvelopeIndex::finalize() {
     vec<vec<iSaxWord>> first_layer_isax_mins(size_first_layer), first_layer_isax_maxs(size_first_layer);
     vec<std::unique_ptr<iSaxFinalizedNode>> finalized_nodes(size_first_layer);
 
-    iSaxWordSettings isax_word_settings = {vec<SaxNumBitsT>(m_num_seg_per_channel), m_alphabet_num_bits, m_breakpoints};
+    iSaxWordSettings isax_word_settings = {vec<SaxNumBitsT>(m_num_seg_per_channel, m_alphabet_num_bits),
+                                           m_alphabet_num_bits, m_breakpoints};
 
-    size_t i = 0;
+    size_t i = 0, first_layer_size = m_first_layer.size();
     for (auto it = m_first_layer.begin(); it != m_first_layer.end(); ++it) {
         const auto &isax_min = it->first;
         auto &node = it->second;

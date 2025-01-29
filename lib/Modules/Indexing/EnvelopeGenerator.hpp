@@ -10,26 +10,19 @@
 class IEnvelopeGenerator {
    public:
     virtual ~IEnvelopeGenerator() = default;
-    virtual EnvelopeEntry generate_entry() = 0;
-    virtual void set_mts(const vec<vec<float>> *mts) = 0;
+    virtual vec<EnvelopeEntry> get_entries(const vec<vec<float>> &mts) = 0;
 };
 
 class iSaxEnvelopeGenerator : public IEnvelopeGenerator {
    public:
     iSaxEnvelopeGenerator(const IndexOptions &opts);
 
-    EnvelopeEntry generate_entry() override;
-
-    void set_mts(const vec<vec<float>> *mts) override;
+    vec<EnvelopeEntry> get_entries(const vec<vec<float>> &mts) override;
 
    private:
-    const vec<vec<float>> *m_mts;
     const IndexOptions &m_opts;
-    size_t series_len;
     UlisseEnvelopeParams m_uli_params;
-    Envelope (*m_envelope_func)(std::span<const float> const &, const UlisseEnvelopeParams &);
-
-    FilePositionT m_position;
+    vec<Envelope> (*m_envelope_func)(const vec<float> &, const UlisseEnvelopeParams &);
 };
 
 #endif  // ENVELOPE_GENERATOR_HPP

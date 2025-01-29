@@ -1,10 +1,10 @@
 #ifndef ULISSE_ENVELOPE_HPP
 #define ULISSE_ENVELOPE_HPP
 
+#include <span>
+
 #include "typedefs.hpp"
 #include "Summarization/Envelope.hpp"
-
-#include <span>
 
 /**
  * @brief Parameters for the ULISSE envelope computation.
@@ -31,9 +31,9 @@ struct UlisseEnvelopeParams {
  *
  * @param ts The (subsequence of the) time series.
  * @param env_params The parameters for the envelope computation.
- * @return A pair of two vectors, containing the upper and lower bounds of the subsequences respectively.
+ * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively.
  */
-Envelope ulisse_envelope_raw(std::span<const float> const& ts, const UlisseEnvelopeParams& env_params);
+vec<Envelope> ulisse_envelope_raw(const vec<float>& ts, const UlisseEnvelopeParams& env_params);
 
 /**
  * @brief Compute the ULISSE envelopes of subsequences of a time series WITH normalization.
@@ -43,7 +43,7 @@ Envelope ulisse_envelope_raw(std::span<const float> const& ts, const UlisseEnvel
  *
  * @param ts The (subsequence of the) time series.
  * @param env_params The parameters for the envelope computation.
- * @return A pair of two vectors, containing the upper and lower bounds of the subsequences respectively.
+ * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively.
  */
 Envelope ulisse_envelope_normalized(std::span<const float> const& ts, const UlisseEnvelopeParams& env_params);
 

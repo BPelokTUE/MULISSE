@@ -9,6 +9,8 @@ class Envelope {
 
     size_t size() const;
 
+    void resize(size_t new_size);
+
     bool operator==(const Envelope& other) const;
 };
 

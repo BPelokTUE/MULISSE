@@ -16,7 +16,7 @@ class iSaxFinalizedInternal : public iSaxFinalizedNode {
    public:
     iSaxFinalizedInternal() = default;
     iSaxFinalizedInternal(SaxSplitIndT split_ind, SaxSymbolT isax_max_left, SaxSymbolT isax_min_right,
-                          iSaxFinalizedNode *left, iSaxFinalizedNode *right);
+                          uptr<iSaxFinalizedNode> left, uptr<iSaxFinalizedNode> right);
 
     std::pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> get_children() const override;
 

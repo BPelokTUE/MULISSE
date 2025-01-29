@@ -69,9 +69,7 @@ int create_index(const IndexOptions &opts) {
             for (MtsNumChannelsT c = 0; c < opts.num_channels; ++c) {
                 data_stream.read(reinterpret_cast<char *>(mts[c].data()), opts.series_len * sizeof(float));
             }
-
-            envelope_generator->set_mts(&mts);
-            while (auto entry = envelope_generator->generate_entry()) {
+            for (auto entry : envelope_generator->get_entries(mts)) {
                 index->insert(entry);
             }
         }

@@ -3,8 +3,8 @@
 // iSaxFinalizedInternal
 
 iSaxFinalizedInternal::iSaxFinalizedInternal(SaxSplitIndT split_ind, SaxSymbolT isax_max_left,
-                                             SaxSymbolT isax_min_right, iSaxFinalizedNode *left,
-                                             iSaxFinalizedNode *right)
+                                             SaxSymbolT isax_min_right, uptr<iSaxFinalizedNode> left,
+                                             uptr<iSaxFinalizedNode> right)
     : m_split_ind(split_ind),
       m_max_symbol_left(isax_max_left),
       m_max_symbol_right(isax_min_right),
