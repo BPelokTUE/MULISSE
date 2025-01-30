@@ -6,9 +6,13 @@
 #include "typedefs.hpp"
 #include "util.hpp"
 
+/** @brief Enum type for IiSaxBreakpointStrategy */
 enum iSaxBreakpointStrategyType { EQUIPROBABLE };
 
+/** @brief Map from strings to iSaxBreakpointStrategyType */
 const umap<str, iSaxBreakpointStrategyType> STR_TO_ISAX_BREAKPOINT_STRATEGY = {{"equiprobable", EQUIPROBABLE}};
+
+/** @brief Vector of accepted strings for STR_TO_ISAX_BREAKPOINT_STRATEGY */
 const vec<str> ISAX_BREAKPOINT_STRATEGY_STRS = get_keys(STR_TO_ISAX_BREAKPOINT_STRATEGY);
 
 /**
@@ -23,12 +27,30 @@ const vec<str> ISAX_BREAKPOINT_STRATEGY_STRS = get_keys(STR_TO_ISAX_BREAKPOINT_S
 class IiSaxBreakpointStrategy {
    public:
     virtual ~IiSaxBreakpointStrategy() = default;
+
+    /**
+     * @brief Get the breakpoints for the given alphabet size
+     *
+     * @param alphabet_size The size of the alphabet; assumed to be a power of two
+     * @return Vector of breakpoints
+     */
     virtual vec<float> get_breakpoints(SaxSymbolT alphabet_size) const = 0;
 };
 
+/**
+ * @brief Equiprobable breakpoints strategy
+ *
+ * Breakpoints strategy that returns breakpoints that divide the normal distribution into equal probability intervals
+ */
 class EquiprobableBreakpointStrategy : public IiSaxBreakpointStrategy {
    public:
-    EquiprobableBreakpointStrategy(float standard_deviation = 1.0);
+    /**
+     * @brief Constructor
+     *
+     * @param mean Mean of the normal distribution
+     * @param standard_deviation Standard deviation of the normal distribution
+     */
+    EquiprobableBreakpointStrategy(float mean = 0.0, float standard_deviation = 1.0);
 
     vec<float> get_breakpoints(SaxSymbolT alphabet_size) const override;
 

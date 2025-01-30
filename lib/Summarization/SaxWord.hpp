@@ -7,9 +7,7 @@
 
 #include <functional>
 
-/**
- * @brief Symbolic Aggregate approXimation (SAX) word.
- */
+/** @brief Symbolic Aggregate approXimation (SAX) word */
 class SaxWord {
    public:
     /**

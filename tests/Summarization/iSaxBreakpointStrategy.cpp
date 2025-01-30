@@ -3,7 +3,7 @@
 #include "Summarization/iSaxBreakpointStrategy.hpp"
 
 TEST_CASE("Equiprobable strategy works for standard normal") {
-    EquiprobableBreakpointStrategy strategy(1.0);
+    EquiprobableBreakpointStrategy strategy(0.0, 1.0);
     auto breakpoints = strategy.get_breakpoints(4);
     CHECK(breakpoints.size() == 3);
 

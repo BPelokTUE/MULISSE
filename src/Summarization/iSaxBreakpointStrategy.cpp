@@ -5,8 +5,8 @@
 
 #include "Summarization/iSaxBreakpointStrategy.hpp"
 
-EquiprobableBreakpointStrategy::EquiprobableBreakpointStrategy(float standard_deviation)
-    : m_distribution(0.0, standard_deviation) {};
+EquiprobableBreakpointStrategy::EquiprobableBreakpointStrategy(float mean, float standard_deviation)
+    : m_distribution(mean, standard_deviation) {};
 
 vec<float> EquiprobableBreakpointStrategy::get_breakpoints(SaxSymbolT alphabet_size) const {
     vec<float> thresholds(alphabet_size - 1);

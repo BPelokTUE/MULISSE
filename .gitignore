@@ -10,3 +10,8 @@ TESTING
 
 # OS-specific
 .DS_Store
+
+# Doxygen
+docs/*
+html
+latex

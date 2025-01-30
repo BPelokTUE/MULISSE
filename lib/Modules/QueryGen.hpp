@@ -13,13 +13,13 @@
  * @param dataset_path Path to dataset
  * @param query_path Path to save queries
  * @param noise Noise to add to the queries
- * @param series_len Length of the series
- * @param num_channels Number of channels in the dataset
- * @param num_queries Number of queries to generate
- * @param lengths Lengths of the queries
+ * @param num_series Number of series in the dataset
+ * @param num_channels Number of channels in each series
+ * @param num_queries Number of queries to generate per length in `lengths`
+ * @param lengths Lengths of the queries. For each length `num_queries` queries will be generated.
  * @return 0 on success, 1 if dataset does not exist, 2 if query already exists, 3 if query could not be created
  */
-int create_queries(std::string dataset_path, std::string query_path, float noise, unsigned num_series,
-                   unsigned num_channels, unsigned num_queries, vec<unsigned> lengths);
+int create_queries(str dataset_path, str query_path, float noise, unsigned num_series, unsigned num_channels,
+                   unsigned num_queries, vec<unsigned> lengths);
 
 #endif  // QUERY_GEN_HPP

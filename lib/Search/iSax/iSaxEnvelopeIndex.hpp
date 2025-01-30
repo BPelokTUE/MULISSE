@@ -32,8 +32,6 @@ class iSaxEnvelopeIndex : public IEnvelopeIndex {
 
     const iSaxSplittableNode *get_first_layer_node(const vec<iSaxWord> &isax_mins) const;
 
-    vec<FilePositionT> search(vec<vec<float>> mts, const SearchOptions &search_options) const override;
-
    private:
     std::unordered_map<vec<iSaxWord>, std::unique_ptr<iSaxSplittableNode>, iSaxWordVecHash> m_first_layer;
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits, m_num_bits_limit;

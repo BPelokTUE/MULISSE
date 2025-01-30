@@ -1,23 +1,23 @@
 #ifndef RANDOMWALK_HPP
 #define RANDOMWALK_HPP
 
-#include <string>
+#include "typedefs.hpp"
 
 /**
- * @brief Creates random walks and writes them to a binary file.
+ * @brief Creates random walks and writes them to a binary file
  *
  * This function generates multiple time series of random walks and writes them
  * to a specified binary file. Run with `num_channels=1` for generating UTS.
  *
- * @param dataset_path The path to the binary file where the time series will be saved.
- * @param rw_noise The standard deviation of the normal distribution used to generate noise.
- * @param zero_start If true, the random walk starts at zero; otherwise, it starts with a random value.
- * @param num_series The number of time series to generate.
- * @param series_len The length of each time series.
- * @param num_channels The number of channels in each time series.
+ * @param dataset_path The path to the binary file where the time series will be saved
+ * @param rw_noise The standard deviation of the normal distribution used to generate noise
+ * @param zero_start If true, the random walk starts at zero; otherwise, it starts with a random value
+ * @param num_series The number of time series to generate
+ * @param series_len The length of each time series
+ * @param num_channels The number of channels in each time series
  * @return 0 on success, 1 if the dataset file already exists, 2 if the file could not be created.
  */
-int create_random_walks(std::string dataset_path, float rw_noise, bool zero_start, unsigned num_series,
-                        unsigned series_len, unsigned num_channels);
+int create_random_walks(str dataset_path, float rw_noise, bool zero_start, unsigned num_series, unsigned series_len,
+                        unsigned num_channels);
 
 #endif  // RANDOMWALK_HPP

@@ -191,10 +191,6 @@ std::unique_ptr<IFinalizedEnvelopeIndex> iSaxEnvelopeIndex::finalize() {
                                                         m_first_layer_num_bits, m_alphabet_num_bits, m_breakpoints);
 }
 
-vec<FilePositionT> iSaxEnvelopeIndex::search(vec<vec<float>> mts, const SearchOptions &search_options) const {
-    return {};
-};
-
 const iSaxSplittableNode *iSaxEnvelopeIndex::get_first_layer_node(const vec<iSaxWord> &isax_mins) const {
     auto node_it = m_first_layer.find(isax_mins);
     return node_it == m_first_layer.end() ? nullptr : node_it->second.get();

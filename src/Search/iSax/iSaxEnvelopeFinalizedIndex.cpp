@@ -73,3 +73,8 @@ void iSaxEnvelopeFinalizedIndex::load(std::ifstream ifs, ArchiveType ar_type) {
         }
     }
 }
+
+vec<FilePositionT> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& mts,
+                                                      const SearchOptions& search_options) const {
+    return {};
+};

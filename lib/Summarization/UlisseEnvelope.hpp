@@ -7,9 +7,9 @@
 #include "Summarization/Envelope.hpp"
 
 /**
- * @brief Parameters for the ULISSE envelope computation.
+ * @brief Parameters for the ULISSE Envelope computation
  *
- * This struct contains the parameters needed to compute the ULISSE envelopes of (a subsequences of) a time series.
+ * This struct contains the parameters needed to compute the ULISSE envelopes of (a subsequences of) a time series
  *
  * @param pos_per_env The (max) number of master series in each envelope
  * @param segment_len The length of each PAA segment
@@ -24,26 +24,26 @@ struct UlisseEnvelopeParams {
 };
 
 /**
- * @brief Compute the ULISSE envelopes of subsequences of a time series WITHOUT normalization.
+ * @brief Compute the ULISSE envelopes of subsequences of a time series WITHOUT normalization
  *
  * This function computes the ULISSE envelopes of subsequences of a time series between a
  * given range of start indices WITHOUT normalization. The envelopes are not discretized with iSAX.
  *
- * @param ts The (subsequence of the) time series.
- * @param env_params The parameters for the envelope computation.
- * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively.
+ * @param ts The (subsequence of the) univariate time series / channel
+ * @param env_params The parameters for the envelope computation
+ * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively
  */
 vec<Envelope> ulisse_envelope_raw(const vec<float>& ts, const UlisseEnvelopeParams& env_params);
 
 /**
- * @brief Compute the ULISSE envelopes of subsequences of a time series WITH normalization.
+ * @brief Compute the ULISSE envelopes of subsequences of a time series WITH normalization
  *
  * This function computes the ULISSE envelopes of subsequences of a time series between a
  * given range of start indices WITH normalization. The envelopes are not discretized with iSAX.
  *
- * @param ts The (subsequence of the) time series.
- * @param env_params The parameters for the envelope computation.
- * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively.
+ * @param ts The (subsequence of the) univariate time series / channel
+ * @param env_params The parameters for the envelope computation
+ * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively
  */
 vec<Envelope> ulisse_envelope_normalized(const vec<float>& ts, const UlisseEnvelopeParams& env_params);
 
