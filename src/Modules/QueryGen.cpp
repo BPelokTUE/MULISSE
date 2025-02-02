@@ -8,7 +8,7 @@
 #include "util.hpp"
 
 int create_queries(str dataset_path, str query_path, float noise, unsigned series_len, unsigned num_channels,
-                   unsigned num_queries, vec<unsigned> lengths) {
+                   unsigned num_queries, vec<unsigned> lengths, int seed) {
     if (!std::filesystem::exists(dataset_path)) {
         std::cerr << "Error: Dataset " << dataset_path << " does not exist." << std::endl;
         return 1;
@@ -21,7 +21,7 @@ int create_queries(str dataset_path, str query_path, float noise, unsigned serie
 
     // Extract time series from dataset
 
-    std::default_random_engine rng;
+    std::default_random_engine rng(seed);
     std::normal_distribution<float> noise_normal_dist(0.0, noise);
 
     unsigned num_series = get_dataset_size(dataset_path) / (num_channels * series_len * sizeof(float));

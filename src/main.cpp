@@ -39,6 +39,7 @@ int main(int argc, char **argv) {
     /*
                 | create_ds | create_query | index | search |
     dataset     |     X     |       X      |   X   |        |
+    seed        |     X     |       X      |       |        |
     noise       |     X     |       X      |       |        |
     zero_start  |     X     |              |       |        |
     n           |     X     |              |       |        |
@@ -70,6 +71,7 @@ int main(int argc, char **argv) {
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0], index_format_str = ARCHIVE_TYPE_STRS[0];
     float noise = 1.0;
     unsigned num_series, series_len, num_queries, l_min, l_max, segment_len, pos_per_env;
+    int seed = 0;
     size_t leaf_capacity;
     vec<unsigned> lengths;
     MtsNumChannelsT num_channels;
@@ -82,6 +84,7 @@ int main(int argc, char **argv) {
     ds_subcommand->add_option("-n,--num_series", num_series, "Number of series")->required()->check(positive_int);
     ds_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
     ds_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
+    ds_subcommand->add_option("-s,--seed", seed, "Random seed")->capture_default_str();
 
     // Options for creating queries
     qs_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required()->check(CLI::ExistingFile);
@@ -91,6 +94,7 @@ int main(int argc, char **argv) {
     qs_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
     qs_subcommand->add_option("-Q,--num_queries", num_queries, "Number of queries")->required()->check(positive_int);
     qs_subcommand->add_option("-l,--lengths", lengths, "Query lengths")->required()->check(positive_int);
+    qs_subcommand->add_option("-s,--seed", seed, "Random seed")->capture_default_str();
 
     // Options for indexing
     index_subcommand->add_option("-i,--index", index_path, "Output index path")->required();
@@ -128,9 +132,9 @@ int main(int argc, char **argv) {
     CLI11_PARSE(app, argc, argv);
 
     if (ds_subcommand->parsed()) {
-        create_random_walks(dataset_path, noise, zero_start, num_series, series_len, num_channels);
+        create_random_walks(dataset_path, noise, zero_start, num_series, series_len, num_channels, seed);
     } else if (qs_subcommand->parsed()) {
-        create_queries(dataset_path, query_path, noise, series_len, num_channels, num_queries, lengths);
+        create_queries(dataset_path, query_path, noise, series_len, num_channels, num_queries, lengths, seed);
     } else if (index_subcommand->parsed()) {
         IndexType index_type = STR_TO_INDEX_TYPE.at(index_type_str);
         IIndexParams *index_params;

@@ -6,7 +6,7 @@
 #include "Modules/RandomWalk.hpp"
 
 int create_random_walks(std::string dataset_path, float rw_noise, bool zero_start, unsigned num_series,
-                        unsigned series_len, unsigned num_channels) {
+                        unsigned series_len, unsigned num_channels, int seed) {
     if (std::filesystem::exists(dataset_path)) {
         std::cerr << "Error: Dataset " << dataset_path << " already exists." << std::endl;
         return 1;
@@ -20,7 +20,7 @@ int create_random_walks(std::string dataset_path, float rw_noise, bool zero_star
         return 2;
     }
 
-    std::default_random_engine generator;
+    std::default_random_engine generator(seed);
     std::normal_distribution<float> distribution(0.0, rw_noise);
 
     for (unsigned i = 0; i < num_series; ++i) {

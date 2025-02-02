@@ -55,8 +55,6 @@ int create_index(const IndexOptions &opts) {
         return 1;
     }
 
-    std::ifstream data_stream(opts.dataset_path, std::ios::binary);
-
     unsigned N = get_dataset_size(opts.dataset_path), series_size = opts.num_channels * opts.series_len * sizeof(float);
     unsigned num_series = N / series_size;
 
@@ -65,25 +63,28 @@ int create_index(const IndexOptions &opts) {
     if (std::ranges::find(ENVELOPE_TYPES, opts.index_params->get_type()) != ENVELOPE_TYPES.end()) {
         auto envelope_generator = get_envelope_generator(opts);
 
-        // #pragma omp parallel for private(data_stream)
-        for (size_t i = 0; i < num_series; ++i) {
-            vec<vec<float>> mts(opts.num_channels, vec<float>(opts.series_len));
-            data_stream.seekg(i * series_size);
-            for (MtsNumChannelsT c = 0; c < opts.num_channels; ++c) {
-                data_stream.read(reinterpret_cast<char *>(mts[c].data()), opts.series_len * sizeof(float));
-            }
+#pragma omp parallel
+        {
+            std::ifstream data_stream(opts.dataset_path, std::ios::binary);
+#pragma omp for
+            for (size_t i = 0; i < num_series; ++i) {
+                vec<vec<float>> mts(opts.num_channels, vec<float>(opts.series_len));
+                data_stream.seekg(i * series_size);
+                for (MtsNumChannelsT c = 0; c < opts.num_channels; ++c) {
+                    data_stream.read(reinterpret_cast<char *>(mts[c].data()), opts.series_len * sizeof(float));
+                }
 
-            auto entries = envelope_generator->get_entries(mts, i);
-            // #pragma omp critical
-            {
-                for (auto entry : entries) {
-                    index->insert(entry);
+                auto entries = envelope_generator->get_entries(mts, i);
+#pragma omp critical
+                {
+                    for (auto entry : entries) {
+                        index->insert(entry);
+                    }
                 }
             }
         }
+
+        index->finalize()->save(std::ofstream(opts.index_path, std::ios::binary), opts.index_format);
     }
-
-    index->finalize()->save(std::ofstream(opts.index_path, std::ios::binary), opts.index_format);
-
     return 0;
 }
