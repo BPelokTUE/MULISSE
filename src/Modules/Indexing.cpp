@@ -2,9 +2,8 @@
 #include <fstream>
 #include <iostream>
 
-#include "Modules/Indexing/Indexing.hpp"
-#include "Modules/Indexing/EnvelopeGenerator.hpp"
-#include "Search/IEnvelopeIndex.hpp"
+#include "Modules/Indexing.hpp"
+#include "Search/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxEnvelopeIndex.hpp"
 
 std::unique_ptr<IiSaxBreakpointStrategy> get_breakpoint_strategy(const iSaxIndexParams *params) {
@@ -45,7 +44,14 @@ std::unique_ptr<IEnvelopeIndex> get_index(const IndexOptions &opts) {
 std::unique_ptr<IEnvelopeGenerator> get_envelope_generator(const IndexOptions &opts) {
     switch (opts.index_params->get_type()) {
         case ISAX_ENVELOPE:
-            return std::make_unique<iSaxEnvelopeGenerator>(opts);
+            auto *params = static_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
+            UlisseEnvelopeParams uli_params = {
+                .pos_per_env = params->pos_per_env,
+                .segment_len = params->segment_len,
+                .l_min = opts.l_min,
+                .l_max = opts.l_max,
+            };
+            return std::make_unique<iSaxEnvelopeGenerator>(opts.num_channels, opts.normalized, uli_params);
     }
 }
 
@@ -55,35 +61,11 @@ int create_index(const IndexOptions &opts) {
         return 1;
     }
 
-    unsigned N = get_dataset_size(opts.dataset_path), series_size = opts.num_channels * opts.series_len * sizeof(float);
-    unsigned num_series = N / series_size;
-
     auto index = get_index(opts);
 
     if (std::ranges::find(ENVELOPE_TYPES, opts.index_params->get_type()) != ENVELOPE_TYPES.end()) {
         auto envelope_generator = get_envelope_generator(opts);
-
-#pragma omp parallel
-        {
-            std::ifstream data_stream(opts.dataset_path, std::ios::binary);
-#pragma omp for
-            for (size_t i = 0; i < num_series; ++i) {
-                vec<vec<float>> mts(opts.num_channels, vec<float>(opts.series_len));
-                data_stream.seekg(i * series_size);
-                for (MtsNumChannelsT c = 0; c < opts.num_channels; ++c) {
-                    data_stream.read(reinterpret_cast<char *>(mts[c].data()), opts.series_len * sizeof(float));
-                }
-
-                auto entries = envelope_generator->get_entries(mts, i);
-#pragma omp critical
-                {
-                    for (auto entry : entries) {
-                        index->insert(entry);
-                    }
-                }
-            }
-        }
-
+        index->construct(opts.dataset_path, envelope_generator.get(), opts.num_channels, opts.series_len);
         index->finalize()->save(std::ofstream(opts.index_path, std::ios::binary), opts.index_format);
     }
     return 0;

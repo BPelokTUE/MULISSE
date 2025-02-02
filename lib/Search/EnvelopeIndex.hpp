@@ -91,25 +91,13 @@ class IFinalizedEnvelopeIndex {
         SERIALIZATION_MACRO(ar_type, ifs, deserialize, InputArchive); \
     }
 
-/** @brief Entry to insert into the envelope index */
-struct EnvelopeEntry {
-    /** @brief Multivariate time series envelope */
-    vec<Envelope> mts_envelope;
-    /** @brief Starting position of the first channel of the time series in the file */
-    FilePositionT file_position;
-};
-
 /** @brief Interface for envelope indexes */
 class IEnvelopeIndex {
    public:
     virtual ~IEnvelopeIndex() = default;
 
-    /**
-     * @brief Insert an envelope entry into the index
-     *
-     * @param entry The envelope entry to insert
-     */
-    virtual void insert(const EnvelopeEntry &entry) = 0;
+    void construct(const str &dataset_path, IEnvelopeGenerator *generator, MtsNumChannelsT num_channels,
+                   unsigned series_len);
 
     /**
      * @brief Finalize the index
@@ -119,6 +107,16 @@ class IEnvelopeIndex {
      * @return A unique pointer to the finalized envelope index
      */
     virtual std::unique_ptr<IFinalizedEnvelopeIndex> finalize() = 0;
+
+   private:
+    /**
+     * @brief Insert an envelope entry into the index
+     *
+     * @param entry The envelope entry to insert
+     */
+    virtual void insert(const EnvelopeEntry &entry) = 0;
+
+    str m_dataset_path;
 };
 
 #endif  // I_ULISSE_ENVELOPE_INDEX_HPP

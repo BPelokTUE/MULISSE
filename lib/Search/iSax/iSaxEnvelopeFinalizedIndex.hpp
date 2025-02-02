@@ -4,7 +4,7 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/memory.hpp>
 
-#include "Search/IEnvelopeIndex.hpp"
+#include "Search/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
 
 /** @brief Finalized iSAX (ULISSE) index */

@@ -3,7 +3,7 @@
 
 #include <unordered_map>
 
-#include "Search/IEnvelopeIndex.hpp"
+#include "Search/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxSplittableNode.hpp"
 #include "Search/iSax/iSaxSplitStrategy.hpp"
 #include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"

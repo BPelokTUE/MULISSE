@@ -1,6 +1,6 @@
 #include "doctest/doctest.h"
 
-#include "Summarization/UlisseEnvelope.hpp"
+#include "Summarization/Envelope.hpp"
 
 TEST_CASE("ULISSE raw happy-flow works") {
     const vec<float> ts = {1, 3.5, 1, 4, 2, 8, 10, -3.5, 2.5, 12, -9};

@@ -29,4 +29,97 @@ struct Envelope {
     void resize(size_t new_size);
 };
 
+/** @brief Entry to insert into the envelope index */
+struct EnvelopeEntry {
+    /** @brief Multivariate time series envelope */
+    vec<Envelope> mts_envelope;
+    /** @brief Starting position of the first channel of the time series in the file */
+    FilePositionT file_position;
+};
+
+/** @brief Interface for envelope generators */
+class IEnvelopeGenerator {
+   public:
+    virtual ~IEnvelopeGenerator() = default;
+
+    /**
+     * @brief Generate envelopes for a given time series
+     *
+     * @param mts Multivariate time series
+     * @param series_ind Index of the time series within the dataset
+     * @return Envelope entries ()
+     */
+    virtual vec<EnvelopeEntry> get_entries(const vec<vec<float>> &mts, size_t series_ind) = 0;
+};
+
+// ----------------------------------------------- //
+// --------------- ULISSE ENVELOPE --------------- //
+// ----------------------------------------------- //
+
+/**
+ * @brief Parameters for the ULISSE Envelope computation
+ *
+ * This struct contains the parameters needed to compute the ULISSE envelopes of (a subsequences of) a time series
+ *
+ * @param pos_per_env The (max) number of master series in each envelope
+ * @param segment_len The length of each PAA segment
+ * @param l_min The minimum length of a subsequence
+ * @param l_max The maximum length of a subsequence
+ */
+struct UlisseEnvelopeParams {
+    unsigned pos_per_env;
+    unsigned segment_len;
+    unsigned l_min;
+    unsigned l_max;
+};
+
+/**
+ * @brief Compute the ULISSE envelopes of subsequences of a time series WITHOUT normalization
+ *
+ * This function computes the ULISSE envelopes of subsequences of a time series between a
+ * given range of start indices WITHOUT normalization. The envelopes are not discretized with iSAX.
+ *
+ * @param ts The (subsequence of the) univariate time series / channel
+ * @param env_params The parameters for the envelope computation
+ * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively
+ */
+vec<Envelope> ulisse_envelope_raw(const vec<float> &ts, const UlisseEnvelopeParams &env_params);
+
+/**
+ * @brief Compute the ULISSE envelopes of subsequences of a time series WITH normalization
+ *
+ * This function computes the ULISSE envelopes of subsequences of a time series between a
+ * given range of start indices WITH normalization. The envelopes are not discretized with iSAX.
+ *
+ * @param ts The (subsequence of the) univariate time series / channel
+ * @param env_params The parameters for the envelope computation
+ * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively
+ */
+vec<Envelope> ulisse_envelope_normalized(const vec<float> &ts, const UlisseEnvelopeParams &env_params);
+
+/** @brief Envelope generator for iSAX (ULISSE) envelopes */
+class iSaxEnvelopeGenerator : public IEnvelopeGenerator {
+   public:
+    /**
+     * @brief Construct a new iSaxEnvelopeGenerator object
+     *
+     * @param opts Indexing options
+     */
+    iSaxEnvelopeGenerator(MtsNumChannelsT num_channels, bool normalized, const UlisseEnvelopeParams &uli_params);
+
+    /**
+     * @brief Generate envelopes for a given time series
+     *
+     * @param mts Multivariate time series to get the envelope entries from
+     * @param series_ind Index of the time series within the dataset
+     */
+    vec<EnvelopeEntry> get_entries(const vec<vec<float>> &mts, size_t series_ind) override;
+
+   private:
+    MtsNumChannelsT m_num_channels;
+    bool m_normalized;
+    UlisseEnvelopeParams m_uli_params;
+    vec<Envelope> (*m_envelope_func)(const vec<float> &, const UlisseEnvelopeParams &);
+};
+
 #endif  // ENVELOPE_HPP

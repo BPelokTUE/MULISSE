@@ -5,7 +5,7 @@
 #include "CLI11/CLI11.hpp"
 #include "Modules/RandomWalk.hpp"
 #include "Modules/QueryGen.hpp"
-#include "Modules/Indexing/Indexing.hpp"
+#include "Modules/Indexing.hpp"
 
 using std::string, std::cout;
 
