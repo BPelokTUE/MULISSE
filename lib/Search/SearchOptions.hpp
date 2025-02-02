@@ -1,35 +1,11 @@
 #ifndef SEARCH_OPTIONS_HPP
 #define SEARCH_OPTIONS_HPP
 
-/** @brief Types of  */
+#include "Search/DistanceMeasure.hpp"
+#include "Search/ResultSet.hpp"
+
+/** @brief Types of similarity search */
 enum SearchType { KNN, R_RANGE };
-
-/** @brief Interface for search parameters */
-struct ISearchParams {
-    virtual ~ISearchParams() = default;
-
-    /**
-     * @brief Get the type of the search parameters
-     *
-     * @return The type of the search parameters
-     */
-    virtual SearchType get_type() const = 0;
-};
-
-/** @brief Parameters for k Nearest Neighbor (kNN) search */
-struct KnnParameters : ISearchParams {
-    /** @brief Number of neighbors to retrieve */
-    unsigned k;
-
-    SearchType get_type() const override { return KNN; }
-};
-
-struct RRangeParameters : ISearchParams {
-    /** @brief Range to find neighbors within */
-    float r;
-
-    SearchType get_type() const override { return R_RANGE; }
-};
 
 /** @brief Options for searching */
 struct SearchOptions {
@@ -37,8 +13,10 @@ struct SearchOptions {
     bool exact = true;
     /** @brief Whether to Z-normalize or not */
     bool normalized = true;
-    /** @brief Search parameters */
-    uptr<ISearchParams> search_params;
+    /** @brief Result set */
+    uptr<IResultSet> result_set;
+    /** @brief Distance measure to use */
+    uptr<IDistanceMeasure> distance_measure;
 };
 
 #endif  // SEARCH_OPTIONS_HPP

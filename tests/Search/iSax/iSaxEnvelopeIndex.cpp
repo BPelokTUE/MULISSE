@@ -25,7 +25,7 @@ TEST_CASE("iSaxEnvelopeIndex insert UTS envelope works") {
     fakeit::When(Method(breakpoint_strategy_mock, get_breakpoints)(2)).AlwaysReturn(vec<float>{0.0});
     fakeit::When(Method(breakpoint_strategy_mock, get_breakpoints)(4)).AlwaysReturn(vec<float>{-2.0, 0.0, 2.0});
     index = std::make_unique<iSaxEnvelopeIndex>(
-        3, 1, 1, 2, std::unique_ptr<IiSaxBreakpointStrategy>(&breakpoint_strategy_mock.get()),
+        3, 100, 3, 1, 1, 2, std::unique_ptr<IiSaxBreakpointStrategy>(&breakpoint_strategy_mock.get()),
         std::unique_ptr<IiSaxSplitStrategy>(&split_strategy_mock.get()), 2);
 
     fakeit::Fake(Method(split_strategy_mock, get_split_ind));
@@ -269,7 +269,7 @@ TEST_CASE("iSaxEnvelopeIndex insert MTS envelope works") {
     fakeit::When(Method(breakpoint_strategy_mock, get_breakpoints)(2)).AlwaysReturn(vec<float>{0.0});
     fakeit::When(Method(breakpoint_strategy_mock, get_breakpoints)(4)).AlwaysReturn(vec<float>{-2.0, 0.0, 2.0});
     index = std::make_unique<iSaxEnvelopeIndex>(
-        2, 3, 1, 2, std::unique_ptr<IiSaxBreakpointStrategy>(&breakpoint_strategy_mock.get()),
+        4, 812, 2, 3, 1, 2, std::unique_ptr<IiSaxBreakpointStrategy>(&breakpoint_strategy_mock.get()),
         std::unique_ptr<IiSaxSplitStrategy>(&split_strategy_mock.get()), 2);
 
     fakeit::Fake(Method(split_strategy_mock, get_split_ind));

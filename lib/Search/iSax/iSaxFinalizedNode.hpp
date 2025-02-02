@@ -6,6 +6,8 @@
 
 #include "Search/iSax/iSaxNode.hpp"
 
+using std::pair;
+
 /**
  * @brief Base class for nodes in a iSaxEnvelopeFinalizedIndex
  *
@@ -20,7 +22,14 @@ class iSaxFinalizedNode : public iSaxNode {
      *
      * @return Pointers (constant raw) to the left and right children
      */
-    virtual std::pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> get_children() const = 0;
+    virtual pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> get_children() const = 0;
+
+    /**
+     * @brief Get the iSAX max symbols of the children on the split index
+     *
+     * @return The iSAX max symbols of the children on the split index
+     */
+    virtual pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols() const = 0;
 };
 
 /** @brief Finalized internal node */
@@ -40,7 +49,9 @@ class iSaxFinalizedInternal : public iSaxFinalizedNode {
     iSaxFinalizedInternal(SaxSplitIndT split_ind, SaxSymbolT isax_max_left, SaxSymbolT isax_min_right,
                           uptr<iSaxFinalizedNode> left, uptr<iSaxFinalizedNode> right);
 
-    std::pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> get_children() const override;
+    pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> get_children() const override;
+
+    pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols() const override;
 
     SaxSplitIndT get_split_ind() const override;
 
@@ -51,7 +62,7 @@ class iSaxFinalizedInternal : public iSaxFinalizedNode {
    private:
     SaxSplitIndT m_split_ind;
     SaxSymbolT m_max_symbol_left, m_max_symbol_right;
-    std::unique_ptr<iSaxFinalizedNode> m_left = nullptr, m_right = nullptr;
+    uptr<iSaxFinalizedNode> m_left = nullptr, m_right = nullptr;
 
     // Required for Cereal (de)serialization
     friend class cereal::access;
@@ -79,7 +90,9 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode {
      */
     iSaxFinalizedLeaf(vec<FilePositionT> file_positions);
 
-    std::pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> get_children() const override;
+    pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> get_children() const override;
+
+    pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols() const override;
 
     SaxSplitIndT get_split_ind() const override;
 

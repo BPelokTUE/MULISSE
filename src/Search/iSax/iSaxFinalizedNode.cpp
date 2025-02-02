@@ -15,6 +15,10 @@ std::pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> iSaxFinalizedInt
     return {m_left.get(), m_right.get()};
 }
 
+pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedInternal::get_children_max_symbols() const {
+    return {m_max_symbol_left, m_max_symbol_right};
+}
+
 SaxSplitIndT iSaxFinalizedInternal::get_split_ind() const { return m_split_ind; }
 
 vec<FilePositionT> iSaxFinalizedInternal::get_file_positions() const { return {}; }
@@ -28,6 +32,8 @@ iSaxFinalizedLeaf::iSaxFinalizedLeaf(vec<FilePositionT> file_positions) : m_file
 std::pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> iSaxFinalizedLeaf::get_children() const {
     return {nullptr, nullptr};
 };
+
+pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedLeaf::get_children_max_symbols() const { return {-1, -1}; }
 
 SaxSplitIndT iSaxFinalizedLeaf::get_split_ind() const { return {-1, -1}; }
 

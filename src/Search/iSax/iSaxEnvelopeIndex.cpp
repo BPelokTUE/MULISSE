@@ -15,12 +15,14 @@ std::size_t iSaxWordVecHash::operator()(const vec<iSaxWord> &isax_mins) const {
     return seed;
 }
 
-iSaxEnvelopeIndex::iSaxEnvelopeIndex(SaxSegIndT num_seg_per_channel, MtsNumChannelsT num_channels,
-                                     SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
-                                     std::unique_ptr<IiSaxBreakpointStrategy> breakpoint_strategy,
+iSaxEnvelopeIndex::iSaxEnvelopeIndex(unsigned segment_len, unsigned series_len, SaxSegIndT num_seg_per_channel,
+                                     MtsNumChannelsT num_channels, SaxNumBitsT first_layer_num_bits,
+                                     size_t leaf_capacity, std::unique_ptr<IiSaxBreakpointStrategy> breakpoint_strategy,
                                      std::unique_ptr<IiSaxSplitStrategy> split_strategy, SaxNumBitsT num_bits_limit)
-    : m_num_seg_per_channel(num_seg_per_channel),
+    : m_segment_len(segment_len),
+      m_series_len(series_len),
       m_num_channels(num_channels),
+      m_num_seg_per_channel(num_seg_per_channel),
       m_first_layer_num_bits(first_layer_num_bits),
       m_alphabet_num_bits(first_layer_num_bits),
       m_num_bits_limit(num_bits_limit),
@@ -28,7 +30,7 @@ iSaxEnvelopeIndex::iSaxEnvelopeIndex(SaxSegIndT num_seg_per_channel, MtsNumChann
       m_breakpoint_strategy(std::move(breakpoint_strategy)),
       m_split_strategy(std::move(split_strategy)),
       m_breakpoints(m_breakpoint_strategy->get_breakpoints(1 << m_alphabet_num_bits)) {
-    assert(num_seg_per_channel > 0);
+    assert(segment_len > 0);
     assert(num_channels > 0);
     assert(first_layer_num_bits > 0);
     assert(num_bits_limit >= first_layer_num_bits);
@@ -186,7 +188,7 @@ std::unique_ptr<IFinalizedEnvelopeIndex> iSaxEnvelopeIndex::finalize() {
         node = nullptr;
     }
 
-    return std::make_unique<iSaxEnvelopeFinalizedIndex>(std::move(first_layer_isax_mins),
+    return std::make_unique<iSaxEnvelopeFinalizedIndex>(m_segment_len, m_series_len, std::move(first_layer_isax_mins),
                                                         std::move(first_layer_isax_maxs), std::move(finalized_nodes),
                                                         m_first_layer_num_bits, m_alphabet_num_bits, m_breakpoints);
 }

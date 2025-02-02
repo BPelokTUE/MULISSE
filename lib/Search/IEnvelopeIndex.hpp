@@ -40,7 +40,7 @@ class IFinalizedEnvelopeIndex {
      * @param search_options Search options
      * @return The start positions of the subsequences in the result set
      */
-    virtual vec<FilePositionT> search(const vec<vec<float>> &query, const SearchOptions &search_options) const = 0;
+    virtual vec<SearchResult> search(const vec<vec<float>> &query, const SearchOptions &search_options) const = 0;
 };
 
 /**

@@ -17,8 +17,22 @@ struct iSaxWordVecHash {
 
 class iSaxEnvelopeIndex : public IEnvelopeIndex {
    public:
-    iSaxEnvelopeIndex(SaxSegIndT num_seg_per_channel, MtsNumChannelsT num_channels, SaxNumBitsT first_layer_num_bits,
-                      size_t leaf_capacity, std::unique_ptr<IiSaxBreakpointStrategy> breakpoint_strategy,
+    /**
+     * @brief Construct a new iSaxEnvelopeIndex object
+     *
+     * @param segment_len Length of the segments
+     * @param series_len Length of the time series in the dataset
+     * @param num_seg_per_channel Number of segments per channel
+     * @param num_channels Number of channels in the dataset
+     * @param first_layer_num_bits Number of bits used for symbols in the first layer
+     * @param leaf_capacity Capacity of the leaf nodes
+     * @param breakpoint_strategy Breakpoint strategy
+     * @param split_strategy Split strategy
+     * @param num_bits_limit Maximum number of bits used for any symbol in any node of the index
+     */
+    iSaxEnvelopeIndex(unsigned segment_len, unsigned series_len, SaxSegIndT num_seg_per_channel,
+                      MtsNumChannelsT num_channels, SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
+                      std::unique_ptr<IiSaxBreakpointStrategy> breakpoint_strategy,
                       std::unique_ptr<IiSaxSplitStrategy> split_strategy,
                       SaxNumBitsT num_bits_limit = DEFAULT_NUM_BIT_LIMIT);
 
@@ -35,6 +49,7 @@ class iSaxEnvelopeIndex : public IEnvelopeIndex {
    private:
     std::unordered_map<vec<iSaxWord>, std::unique_ptr<iSaxSplittableNode>, iSaxWordVecHash> m_first_layer;
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits, m_num_bits_limit;
+    unsigned m_segment_len, m_series_len;
     SaxSegIndT m_num_seg_per_channel;
     MtsNumChannelsT m_num_channels;
     size_t m_leaf_capacity;

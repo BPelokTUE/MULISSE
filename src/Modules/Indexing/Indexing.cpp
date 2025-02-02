@@ -33,9 +33,10 @@ std::unique_ptr<IEnvelopeIndex> get_index(const IndexOptions &opts) {
             auto breakpoint_strategy = get_breakpoint_strategy(params);
             auto split_strategy = get_split_strategy(params, num_seg_per_channel, opts.num_channels);
 
-            auto *index = new iSaxEnvelopeIndex(num_seg_per_channel, opts.num_channels, params->first_layer_num_bits,
-                                                params->leaf_capacity, std::move(breakpoint_strategy),
-                                                std::move(split_strategy), params->num_bits_limit);
+            auto *index = new iSaxEnvelopeIndex(params->segment_len, opts.series_len, num_seg_per_channel,
+                                                opts.num_channels, params->first_layer_num_bits, params->leaf_capacity,
+                                                std::move(breakpoint_strategy), std::move(split_strategy),
+                                                params->num_bits_limit);
             return std::unique_ptr<IEnvelopeIndex>(index);
     }
     return nullptr;
@@ -56,23 +57,24 @@ int create_index(const IndexOptions &opts) {
 
     std::ifstream data_stream(opts.dataset_path, std::ios::binary);
 
-    unsigned N = get_dataset_size(opts.dataset_path);
-    unsigned num_series = N / (opts.num_channels * opts.series_len * sizeof(float));
+    unsigned N = get_dataset_size(opts.dataset_path), series_size = opts.num_channels * opts.series_len * sizeof(float);
+    unsigned num_series = N / series_size;
 
     auto index = get_index(opts);
 
     if (std::ranges::find(ENVELOPE_TYPES, opts.index_params->get_type()) != ENVELOPE_TYPES.end()) {
         auto envelope_generator = get_envelope_generator(opts);
 
-#pragma omp parallel for
+        // #pragma omp parallel for private(data_stream)
         for (size_t i = 0; i < num_series; ++i) {
             vec<vec<float>> mts(opts.num_channels, vec<float>(opts.series_len));
+            data_stream.seekg(i * series_size);
             for (MtsNumChannelsT c = 0; c < opts.num_channels; ++c) {
                 data_stream.read(reinterpret_cast<char *>(mts[c].data()), opts.series_len * sizeof(float));
             }
 
             auto entries = envelope_generator->get_entries(mts, i);
-#pragma omp critical
+            // #pragma omp critical
             {
                 for (auto entry : entries) {
                     index->insert(entry);

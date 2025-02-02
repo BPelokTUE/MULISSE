@@ -98,6 +98,15 @@ class iSaxWord : public SaxWord {
     void remove_from_symbol(SaxSegIndT index);
 
     /**
+     * @brief Set the symbol at the given index
+     *
+     * @param index The index of the symbol
+     * @param num_bits Number of bits to use for the symbol
+     * @param symbol Symbol (represented using `num_bits` bits)
+     */
+    void set_symbol(SaxSegIndT index, SaxNumBitsT num_bits, SaxSymbolT symbol);
+
+    /**
      * @brief For each segment, set the symbols to the maximum of two words
      *
      * @param other The other iSaxWord to compare to. Assumed to be of the same length.

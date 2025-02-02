@@ -39,6 +39,12 @@ void iSaxWord::remove_from_symbol(SaxSegIndT index) {
     m_num_bits[index]--;
 }
 
+void iSaxWord::set_symbol(SaxSegIndT index, SaxNumBitsT num_bits, SaxSymbolT symbol) {
+    m_alphabet_num_bits = std::max(m_alphabet_num_bits, num_bits);
+    m_symbols[index] = symbol << (m_alphabet_num_bits - num_bits);
+    m_num_bits[index] = num_bits;
+}
+
 void iSaxWord::select_max_symbols(const iSaxWord &other) {
     assert(m_alphabet_num_bits == other.m_alphabet_num_bits);
 
