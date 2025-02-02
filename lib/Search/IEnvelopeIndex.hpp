@@ -3,6 +3,9 @@
 
 #include <fstream>
 
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/json.hpp>
+
 #include "typedefs.hpp"
 #include "Search/IndexOptions.hpp"
 #include "Search/SearchOptions.hpp"
@@ -33,12 +36,60 @@ class IFinalizedEnvelopeIndex {
     /**
      * @brief Search for multivariate subsequence using the index
      *
-     * @param mts Multivariate subsequence to search for
+     * @param query Multivariate subsequence to search for
      * @param search_options Search options
      * @return The start positions of the subsequences in the result set
      */
-    virtual vec<FilePositionT> search(const vec<vec<float>> &mts, const SearchOptions &search_options) const = 0;
+    virtual vec<FilePositionT> search(const vec<vec<float>> &query, const SearchOptions &search_options) const = 0;
 };
+
+/**
+ * @brief Macro to serializable / deserialize. Not intended to be used directly, but through MAKE_SERIALIZABLE.
+ *
+ * @param archive_type Archive type, should be an ArchiveType enum value
+ * @param stream Stream to serialize / deserialize to / from, should be an std::ofstream or std::ifstream
+ * @param operation Operation to perform on the archive, should be a function that takes an archive as an argument
+ * @param archive Archive type, should be either "InputArchive" or "OutputArchive"
+ */
+#define SERIALIZATION_MACRO(archive_type, stream, operation, archive) \
+    switch (archive_type) {                                           \
+        case JSON: {                                                  \
+            cereal::JSON##archive archive(stream);                    \
+            operation(archive);                                       \
+            break;                                                    \
+        }                                                             \
+        case BINARY: {                                                \
+            cereal::Binary##archive archive(stream);                  \
+            operation(archive);                                       \
+            break;                                                    \
+        }                                                             \
+            /* Add new archive types here */                          \
+    }
+
+/**
+ * @brief Macro to make a class (de)serializable. Intended to be used in classes that inherit from
+ * IFinalizedEnvelopeIndex.
+ *
+ * @param members Members of the class to be serialized
+ */
+#define MAKE_SERIALIZABLE(members)                                    \
+   private:                                                           \
+    template <typename Archive>                                       \
+    void serialize(Archive &ar) {                                     \
+        ar members;                                                   \
+    }                                                                 \
+    template <typename Archive>                                       \
+    void deserialize(Archive &ar) {                                   \
+        ar members;                                                   \
+    }                                                                 \
+                                                                      \
+   public:                                                            \
+    void save(std::ofstream ofs, ArchiveType ar_type) override {      \
+        SERIALIZATION_MACRO(ar_type, ofs, serialize, OutputArchive);  \
+    }                                                                 \
+    void load(std::ifstream ifs, ArchiveType ar_type) override {      \
+        SERIALIZATION_MACRO(ar_type, ifs, deserialize, InputArchive); \
+    }
 
 /** @brief Entry to insert into the envelope index */
 struct EnvelopeEntry {

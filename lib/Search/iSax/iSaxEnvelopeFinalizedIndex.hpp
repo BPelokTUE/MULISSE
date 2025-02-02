@@ -1,6 +1,9 @@
 #ifndef I_SAX_FINALIZED_ULI_ENV_INDEX_HPP
 #define I_SAX_FINALIZED_ULI_ENV_INDEX_HPP
 
+#include <cereal/types/vector.hpp>
+#include <cereal/types/memory.hpp>
+
 #include "Search/IEnvelopeIndex.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
 
@@ -26,11 +29,7 @@ class iSaxEnvelopeFinalizedIndex : public IFinalizedEnvelopeIndex {
 
     ~iSaxEnvelopeFinalizedIndex() = default;
 
-    void save(std::ofstream ofs, ArchiveType ar_type) override;
-
-    void load(std::ifstream ifs, ArchiveType ar_type) override;
-
-    vec<FilePositionT> search(const vec<vec<float>>& mts, const SearchOptions& search_options) const override;
+    vec<FilePositionT> search(const vec<vec<float>>& query, const SearchOptions& search_options) const override;
 
    private:
     vec<vec<vec<SaxSymbolT>>> m_first_sax_mins, m_first_sax_maxs;
@@ -40,11 +39,8 @@ class iSaxEnvelopeFinalizedIndex : public IFinalizedEnvelopeIndex {
     MtsNumChannelsT m_num_channels;
     vec<float> m_breakpoints;
 
-    template <typename Archive>
-    void serialize(Archive& ar);
-
-    template <typename Archive>
-    void deserialize(Archive& ar);
+    MAKE_SERIALIZABLE((m_first_sax_mins, m_first_sax_maxs, m_first_layer_nodes, m_first_layer_num_bits,
+                       m_alphabet_num_bits, m_num_seg_per_channel, m_num_channels, m_breakpoints));
 };
 
 #endif  // I_SAX_FINALIZED_ULI_ENV_INDEX_HPP
