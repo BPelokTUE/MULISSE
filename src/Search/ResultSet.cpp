@@ -2,10 +2,10 @@
 
 // RRangeResultSet
 
-void RRangeResultSet::insert(SearchResult result) {
-    assert(result.distance <= m_r);
+RRangeResultSet::RRangeResultSet(DistanceT r) : m_r(r) {};
 
-    m_results.push_back(result);
+void RRangeResultSet::insert(SearchResult result) {
+    if (result.distance <= m_r) m_results.push_back(result);
 };
 
 vec<SearchResult> RRangeResultSet::get_results() const { return m_results; };
@@ -13,6 +13,8 @@ vec<SearchResult> RRangeResultSet::get_results() const { return m_results; };
 DistanceT RRangeResultSet::get_distance_lb() const { return m_r; };
 
 // KnnResultSet
+
+KnnResultSet::KnnResultSet(unsigned k) : m_k(k) {};
 
 void KnnResultSet::insert(SearchResult result) {
     auto it = std::lower_bound(m_results.begin(), m_results.end(), result);

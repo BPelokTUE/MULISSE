@@ -6,7 +6,7 @@
 #include "Search/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxEnvelopeIndex.hpp"
 
-std::unique_ptr<IiSaxBreakpointStrategy> get_breakpoint_strategy(const iSaxIndexParams *params) {
+uptr<IiSaxBreakpointStrategy> get_breakpoint_strategy(const iSaxIndexParams *params) {
     switch (params->breakpoint_strategy_type) {
         case EQUIPROBABLE:
             return std::make_unique<EquiprobableBreakpointStrategy>();
@@ -14,8 +14,8 @@ std::unique_ptr<IiSaxBreakpointStrategy> get_breakpoint_strategy(const iSaxIndex
     return nullptr;
 }
 
-std::unique_ptr<IiSaxSplitStrategy> get_split_strategy(const iSaxIndexParams *params, SaxSegIndT num_seg_per_channel,
-                                                       MtsNumChannelsT num_channels) {
+uptr<IiSaxSplitStrategy> get_split_strategy(const iSaxIndexParams *params, SaxSegIndT num_seg_per_channel,
+                                            MtsNumChannelsT num_channels) {
     switch (params->split_strategy_type) {
         case DOUBLE_ROUND_ROBIN:
             return std::make_unique<DoubleRoundRobinStrategy>(num_seg_per_channel, num_channels);
@@ -23,7 +23,7 @@ std::unique_ptr<IiSaxSplitStrategy> get_split_strategy(const iSaxIndexParams *pa
     return nullptr;
 }
 
-std::unique_ptr<IEnvelopeIndex> get_index(const IndexOptions &opts) {
+uptr<IEnvelopeIndex> get_index(const IndexOptions &opts) {
     switch (opts.index_params->get_type()) {
         case ISAX_ENVELOPE:
             auto *params = static_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
@@ -39,12 +39,12 @@ std::unique_ptr<IEnvelopeIndex> get_index(const IndexOptions &opts) {
             auto *index = new iSaxEnvelopeIndex(series_isax_prop, params->first_layer_num_bits, params->leaf_capacity,
                                                 std::move(breakpoint_strategy), std::move(split_strategy),
                                                 params->num_bits_limit);
-            return std::unique_ptr<IEnvelopeIndex>(index);
+            return uptr<IEnvelopeIndex>(index);
     }
     return nullptr;
 }
 
-std::unique_ptr<IEnvelopeGenerator> get_envelope_generator(const IndexOptions &opts) {
+uptr<IEnvelopeGenerator> get_envelope_generator(const IndexOptions &opts) {
     switch (opts.index_params->get_type()) {
         case ISAX_ENVELOPE:
             auto *params = static_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
@@ -69,7 +69,8 @@ int create_index(const IndexOptions &opts) {
     if (std::ranges::find(ENVELOPE_TYPES, opts.index_params->get_type()) != ENVELOPE_TYPES.end()) {
         auto envelope_generator = get_envelope_generator(opts);
         index->construct(opts.dataset_path, envelope_generator.get(), opts.num_channels, opts.series_len);
-        index->finalize()->save(std::ofstream(opts.index_path, std::ios::binary), opts.index_format);
+        std::ofstream index_stream(opts.index_path, std::ios::binary);
+        index->finalize()->save(index_stream, opts.index_format);
     }
     return 0;
 }

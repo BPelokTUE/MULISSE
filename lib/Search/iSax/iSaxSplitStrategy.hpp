@@ -2,7 +2,7 @@
 #define ISAX_SPLIT_STRATEGY_HPP
 
 #include "typedefs.hpp"
-#include "util.hpp"
+#include "utilities.hpp"
 
 /** @brief Enum for IiSaxSplitStrategy implementations */
 enum iSaxSplitStrategyType { DOUBLE_ROUND_ROBIN };

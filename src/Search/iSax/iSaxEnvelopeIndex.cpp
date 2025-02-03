@@ -162,7 +162,7 @@ void iSaxEnvelopeIndex::insert(const EnvelopeEntry &entry) {
     }
 }
 
-std::unique_ptr<IFinalizedEnvelopeIndex> iSaxEnvelopeIndex::finalize() {
+std::unique_ptr<IEnvelopeFinalizedIndex> iSaxEnvelopeIndex::finalize() {
     size_t size_first_layer = m_first_layer.size();
     vec<vec<iSaxWord>> first_layer_isax_mins(size_first_layer), first_layer_isax_maxs(size_first_layer);
     vec<std::unique_ptr<iSaxFinalizedNode>> finalized_nodes(size_first_layer);

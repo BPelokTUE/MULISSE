@@ -11,16 +11,17 @@ iSaxEnvelopeFinalizedIndex::iSaxEnvelopeFinalizedIndex(const SeriesISaxPropertie
                                                        SaxNumBitsT first_layer_num_bits, SaxNumBitsT alphabet_num_bits,
                                                        vec<float> breakpoints, const str& dataset_path)
     : m_segment_len(series_isax_prop.segment_len),
-      m_series_len(series_isax_prop.series_len),
-      m_pos_per_env(series_isax_prop.pos_per_env),
       m_first_layer_nodes(std::move(first_layer_nodes)),
       m_first_layer_num_bits(first_layer_num_bits),
       m_alphabet_num_bits(alphabet_num_bits),
       m_num_seg_per_channel(first_isax_mins[0][0].size()),
-      m_num_channels(first_isax_mins[0].size()),
       m_breakpoints(std::move(breakpoints)),
       m_dataset_path(dataset_path) {
     assert(m_segment_len > 0);
+
+    IEnvelopeFinalizedIndex::m_series_len = series_isax_prop.series_len;
+    IEnvelopeFinalizedIndex::m_pos_per_env = series_isax_prop.pos_per_env;
+    IEnvelopeFinalizedIndex::m_num_channels = series_isax_prop.num_channels;
 
     size_t size_first_layer = first_isax_mins.size();
 
@@ -118,7 +119,8 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
             vec<FilePositionT> file_positions = node->get_file_positions();
             for (FilePositionT file_pos : file_positions) {
                 size_t data_remaining = m_series_len - (file_pos % m_series_len);
-                size_t data_to_read = std::min(query[0].size() + m_pos_per_env - 1, data_remaining);
+                size_t data_to_read =
+                    std::min(query[0].size() + IEnvelopeFinalizedIndex::m_pos_per_env - 1, data_remaining);
 
                 vec<vec<float>> subsequence(m_num_channels, vec<float>(data_to_read));
                 for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {

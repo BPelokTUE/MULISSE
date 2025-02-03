@@ -13,9 +13,9 @@
 #include "Summarization/iSaxWord.hpp"
 
 /** @brief Interface for finalized envelope indexes */
-class IFinalizedEnvelopeIndex {
+class IEnvelopeFinalizedIndex {
    public:
-    virtual ~IFinalizedEnvelopeIndex() = default;
+    virtual ~IEnvelopeFinalizedIndex() = default;
 
     /**
      * @brief Save the index into a file
@@ -23,7 +23,7 @@ class IFinalizedEnvelopeIndex {
      * @param ofs Output file stream
      * @param ar_type Archive type
      */
-    virtual void save(std::ofstream ofs, ArchiveType ar_type) = 0;
+    virtual void save(std::ofstream &ofs, ArchiveType ar_type) = 0;
 
     /**
      * @brief Load the index from a file
@@ -31,7 +31,7 @@ class IFinalizedEnvelopeIndex {
      * @param ifs Input file stream
      * @param ar_type Archive type
      */
-    virtual void load(std::ifstream ifs, ArchiveType ar_type) = 0;
+    virtual void load(std::ifstream &ifs, ArchiveType ar_type) = 0;
 
     /**
      * @brief Search for multivariate subsequence using the index
@@ -41,6 +41,31 @@ class IFinalizedEnvelopeIndex {
      * @return The start positions of the subsequences in the result set
      */
     virtual vec<SearchResult> search(const vec<vec<float>> &query, const SearchOptions &search_options) const = 0;
+
+    /**
+     * @brief Get the length of the series in the index
+     *
+     * @return The length of the series
+     */
+    unsigned get_series_len() const;
+
+    /**
+     * @brief Get the number of positions per envelope in the index
+     *
+     * @return The number of positions per envelope
+     */
+    unsigned get_pos_per_env() const;
+
+    /**
+     * @brief Get the number of channels in the index
+     *
+     * @return The number of channels
+     */
+    MtsNumChannelsT get_num_channels() const;
+
+   protected:
+    unsigned m_series_len, m_pos_per_env;
+    MtsNumChannelsT m_num_channels;
 };
 
 /**
@@ -68,7 +93,7 @@ class IFinalizedEnvelopeIndex {
 
 /**
  * @brief Macro to make a class (de)serializable. Intended to be used in classes that inherit from
- * IFinalizedEnvelopeIndex.
+ * IEnvelopeFinalizedIndex.
  *
  * @param members Members of the class to be serialized
  */
@@ -84,10 +109,10 @@ class IFinalizedEnvelopeIndex {
     }                                                                 \
                                                                       \
    public:                                                            \
-    void save(std::ofstream ofs, ArchiveType ar_type) override {      \
+    void save(std::ofstream &ofs, ArchiveType ar_type) override {     \
         SERIALIZATION_MACRO(ar_type, ofs, serialize, OutputArchive);  \
     }                                                                 \
-    void load(std::ifstream ifs, ArchiveType ar_type) override {      \
+    void load(std::ifstream &ifs, ArchiveType ar_type) override {     \
         SERIALIZATION_MACRO(ar_type, ifs, deserialize, InputArchive); \
     }
 
@@ -106,7 +131,7 @@ class IEnvelopeIndex {
      *
      * @return A unique pointer to the finalized envelope index
      */
-    virtual std::unique_ptr<IFinalizedEnvelopeIndex> finalize() = 0;
+    virtual std::unique_ptr<IEnvelopeFinalizedIndex> finalize() = 0;
 
    protected:
     str m_dataset_path;

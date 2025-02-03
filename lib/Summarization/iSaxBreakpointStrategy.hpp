@@ -4,7 +4,7 @@
 #include <boost/math/distributions/normal.hpp>
 
 #include "typedefs.hpp"
-#include "util.hpp"
+#include "utilities.hpp"
 
 /** @brief Enum type for IiSaxBreakpointStrategy */
 enum iSaxBreakpointStrategyType { EQUIPROBABLE };

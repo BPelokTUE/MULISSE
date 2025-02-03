@@ -1,5 +1,11 @@
 #include "Search/EnvelopeIndex.hpp"
 
+unsigned IEnvelopeFinalizedIndex::get_series_len() const { return m_series_len; };
+
+unsigned IEnvelopeFinalizedIndex::get_pos_per_env() const { return m_pos_per_env; };
+
+MtsNumChannelsT IEnvelopeFinalizedIndex::get_num_channels() const { return m_num_channels; };
+
 void IEnvelopeIndex::construct(const str &dataset_path, IEnvelopeGenerator *generator, MtsNumChannelsT num_channels,
                                unsigned series_len) {
     m_dataset_path = dataset_path;

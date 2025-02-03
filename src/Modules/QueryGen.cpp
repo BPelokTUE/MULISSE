@@ -5,7 +5,7 @@
 #include <random>
 
 #include "Modules/QueryGen.hpp"
-#include "util.hpp"
+#include "utilities.hpp"
 
 int create_queries(str dataset_path, str query_path, float noise, unsigned series_len, unsigned num_channels,
                    unsigned num_queries, vec<unsigned> lengths, int seed) {

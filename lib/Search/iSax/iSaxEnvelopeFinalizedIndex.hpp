@@ -22,7 +22,7 @@ struct SeriesISaxProperties {
 };
 
 /** @brief Finalized iSAX (ULISSE) index */
-class iSaxEnvelopeFinalizedIndex : public IFinalizedEnvelopeIndex {
+class iSaxEnvelopeFinalizedIndex : public IEnvelopeFinalizedIndex {
    public:
     iSaxEnvelopeFinalizedIndex() = default;
 
@@ -50,12 +50,11 @@ class iSaxEnvelopeFinalizedIndex : public IFinalizedEnvelopeIndex {
     vec<SearchResult> search(const vec<vec<float>>& query, const SearchOptions& search_options) const override;
 
    private:
-    unsigned m_segment_len, m_series_len, m_pos_per_env;
+    unsigned m_segment_len;
     vec<vec<vec<SaxSymbolT>>> m_first_sax_mins, m_first_sax_maxs;
     vec<std::unique_ptr<iSaxFinalizedNode>> m_first_layer_nodes;
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
     SaxSegIndT m_num_seg_per_channel;
-    MtsNumChannelsT m_num_channels;
     vec<float> m_breakpoints;
     str m_dataset_path;
 

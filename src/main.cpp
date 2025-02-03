@@ -3,9 +3,11 @@
 #include <fstream>
 
 #include "CLI11/CLI11.hpp"
+
 #include "Modules/RandomWalk.hpp"
 #include "Modules/QueryGen.hpp"
 #include "Modules/Indexing.hpp"
+#include "Modules/Searching.hpp"
 
 using std::string, std::cout;
 
@@ -34,6 +36,21 @@ int main(int argc, char **argv) {
             }
         },
         "POSITIVE_INTEGER", "Positive Integer");
+
+    auto positive_float = CLI::Validator(
+        [](std::string &input) {
+            try {
+                float value = std::stof(input);
+                if (value > 0.0) {
+                    return "";
+                } else {
+                    return "Value must be greater than 0";
+                }
+            } catch (const std::exception &) {
+                return "Could not convert";
+            }
+        },
+        "POSITIVE_FLOAT", "Positive Float");
 
     // Add arguments
     /*
@@ -66,16 +83,18 @@ int main(int argc, char **argv) {
     out         |           |              |       |   X    |
     */
 
-    string dataset_path, query_path, index_path,
+    string dataset_path, query_path, index_path, results_path,
         index_type_str = INDEX_TYPE_STRS[0], split_strategy_str = ISAX_SPLIT_STRATEGY_STRS[0],
-        breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0], index_format_str = ARCHIVE_TYPE_STRS[0];
+        breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0], index_format_str = ARCHIVE_TYPE_STRS[0],
+        search_type_str = SEARCH_TYPE_STRS[0], distance_measure_str = DISTANCE_TYPE_STRS[0];
     float noise = 1.0;
-    unsigned num_series, series_len, num_queries, l_min, l_max, segment_len, pos_per_env;
+    unsigned num_series, series_len, num_queries, l_min, l_max, segment_len, pos_per_env, knn_k;
+    DistanceT r_range_r;
     int seed = 0;
     size_t leaf_capacity;
     vec<unsigned> lengths;
     MtsNumChannelsT num_channels;
-    bool zero_start = false, unnormalized = false;
+    bool zero_start = false, unnormalized = false, approximate = false;
 
     // Options for creating dataset
     ds_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path")->required();
@@ -128,6 +147,33 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-C,--leaf_capacity", leaf_capacity, "Leaf capacity")->required()->check(positive_int);
     index_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
 
+    // Options for searching
+    search_subcommand->add_option("-i,--index", index_path, "Index file path")->required()->check(CLI::ExistingFile);
+    search_subcommand->add_option("-q,--query", query_path, "Query file path")->required()->check(CLI::ExistingFile);
+    search_subcommand->add_option("-o,--out", results_path, "Output file path")->required();
+    search_subcommand->add_option("-t,--index_type", index_type_str, "Index type")
+        ->capture_default_str()
+        ->check(CLI::IsMember(INDEX_TYPE_STRS));
+    search_subcommand->add_option("-f,--format", index_format_str, "Index format")
+        ->capture_default_str()
+        ->check(CLI::IsMember(ARCHIVE_TYPE_STRS));
+    search_subcommand->add_option("-d,--distance", distance_measure_str, "Distance measure")
+        ->capture_default_str()
+        ->check(CLI::IsMember(DISTANCE_TYPE_STRS));
+    search_subcommand->add_flag("--approx", approximate, "Approximate search");
+    search_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
+    search_subcommand->add_option("-T,--search_type", search_type_str, "Search type")
+        ->capture_default_str()
+        ->check(CLI::IsMember(SEARCH_TYPE_STRS));
+    //      Search type-specific options
+    auto knn_group = search_subcommand->add_option_group("knn_group", "Options for kNN search");
+    knn_group->add_option("-k,--k", knn_k, "Number of nearest neighbors for kNN")->check(positive_int)->required();
+    knn_group->needs(search_subcommand->get_option("-T")->check(CLI::IsMember({"knn"})));
+
+    auto r_range_group = search_subcommand->add_option_group("r_range_group", "Options for range search");
+    r_range_group->add_option("-r,--range", r_range_r, "Range for range search")->check(positive_float)->required();
+    r_range_group->needs(search_subcommand->get_option("-T")->check(CLI::IsMember({"r_range"})));
+
     // Execute command
     CLI11_PARSE(app, argc, argv);
 
@@ -151,10 +197,9 @@ int main(int argc, char **argv) {
                 };
                 break;
             default:
-                cout << "Index " << index_type_str << " type not implemented\n";
+                cout << "Index type \"" << index_type_str << "\" is not implemented\n";
                 return 1;
         }
-
         IndexOptions index_options{
             .dataset_path = dataset_path,
             .index_path = index_path,
@@ -168,7 +213,40 @@ int main(int argc, char **argv) {
         };
         create_index(index_options);
     } else if (search_subcommand->parsed()) {
-        cout << "Search not implemented\n";
+        SearchType search_type = STR_TO_SEARCH_TYPE.at(search_type_str);
+        IDistanceMeasure *distance_measure;
+        switch (STR_TO_DISTANCE_TYPE.at(distance_measure_str)) {
+            case ED:
+                distance_measure = new EuclideanDistance();
+                break;
+            default:
+                cout << "Distance measure \"" << distance_measure_str << "\" is not implemented\n";
+                return 1;
+        }
+        IResultSet *result_set;
+        switch (search_type) {
+            case KNN:
+                result_set = new KnnResultSet(knn_k);
+                break;
+            case R_RANGE:
+                result_set = new RRangeResultSet(r_range_r);
+                break;
+            default:
+                cout << "Search type \"" << search_type_str << "\" is not implemented\n";
+                return 1;
+        }
+        SearchOptions search_options = {
+            .index_path = index_path,
+            .query_path = query_path,
+            .results_path = results_path,
+            .index_type = STR_TO_INDEX_TYPE.at(index_type_str),
+            .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
+            .exact = !approximate,
+            .normalized = !unnormalized,
+            .result_set = uptr<IResultSet>(result_set),
+            .distance_measure = uptr<IDistanceMeasure>(distance_measure),
+        };
+        search(search_options);
     }
 
     return 0;

@@ -38,7 +38,7 @@ class iSaxEnvelopeIndex : public IEnvelopeIndex {
 
     void insert(const EnvelopeEntry &entry) override;
 
-    std::unique_ptr<IFinalizedEnvelopeIndex> finalize() override;
+    std::unique_ptr<IEnvelopeFinalizedIndex> finalize() override;
 
     const iSaxSplittableNode *get_first_layer_node(const vec<iSaxWord> &isax_mins) const;
 
