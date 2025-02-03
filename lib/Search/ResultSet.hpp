@@ -9,6 +9,14 @@ struct SearchResult {
     FilePositionT file_position;
     /** @brief Distance of the result to the query */
     DistanceT distance;
+
+    /**
+     * @brief Less than operator
+     *
+     * @param other The other SearchResult to compare to
+     * @return `true` if the distance of this result is less than the distance of the other result
+     */
+    bool operator<(const SearchResult &other) const { return distance < other.distance; }
 };
 
 /** @brief Interface for result sets */
@@ -48,11 +56,11 @@ class RRangeResultSet : public IResultSet {
      */
     RRangeResultSet(DistanceT r);
 
-    void insert(SearchResult result) override {};
+    void insert(SearchResult result) override;
 
-    vec<SearchResult> get_results() const override { return m_results; };
+    vec<SearchResult> get_results() const override;
 
-    DistanceT get_distance_lb() const override { return m_r; };
+    DistanceT get_distance_lb() const override;
 
    private:
     vec<SearchResult> m_results;
@@ -69,11 +77,11 @@ class KnnResultSet : public IResultSet {
      */
     KnnResultSet(unsigned k);
 
-    void insert(SearchResult result) override {};
+    void insert(SearchResult result) override;
 
-    vec<SearchResult> get_results() const override { return m_results; };
+    vec<SearchResult> get_results() const override;
 
-    DistanceT get_distance_lb() const override { return m_results.empty() ? 0 : m_results.back().distance; };
+    DistanceT get_distance_lb() const override;
 
    private:
     vec<SearchResult> m_results;

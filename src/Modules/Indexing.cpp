@@ -32,8 +32,11 @@ std::unique_ptr<IEnvelopeIndex> get_index(const IndexOptions &opts) {
             auto breakpoint_strategy = get_breakpoint_strategy(params);
             auto split_strategy = get_split_strategy(params, num_seg_per_channel, opts.num_channels);
 
-            auto *index = new iSaxEnvelopeIndex(params->segment_len, opts.series_len, num_seg_per_channel,
-                                                opts.num_channels, params->first_layer_num_bits, params->leaf_capacity,
+            SeriesISaxProperties series_isax_prop = {
+                params->segment_len, opts.series_len, params->pos_per_env, opts.num_channels, num_seg_per_channel,
+            };
+
+            auto *index = new iSaxEnvelopeIndex(series_isax_prop, params->first_layer_num_bits, params->leaf_capacity,
                                                 std::move(breakpoint_strategy), std::move(split_strategy),
                                                 params->num_bits_limit);
             return std::unique_ptr<IEnvelopeIndex>(index);

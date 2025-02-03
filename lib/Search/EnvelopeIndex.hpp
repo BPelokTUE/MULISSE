@@ -108,6 +108,9 @@ class IEnvelopeIndex {
      */
     virtual std::unique_ptr<IFinalizedEnvelopeIndex> finalize() = 0;
 
+   protected:
+    str m_dataset_path;
+
    private:
     /**
      * @brief Insert an envelope entry into the index
@@ -115,8 +118,6 @@ class IEnvelopeIndex {
      * @param entry The envelope entry to insert
      */
     virtual void insert(const EnvelopeEntry &entry) = 0;
-
-    str m_dataset_path;
 };
 
 #endif  // I_ULISSE_ENVELOPE_INDEX_HPP

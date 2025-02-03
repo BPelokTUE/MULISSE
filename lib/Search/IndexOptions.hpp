@@ -111,7 +111,7 @@ struct IndexOptions {
     /** @brief Length time series in the dataset */
     unsigned series_len;
     /** @brief Number of channels of each series */
-    unsigned num_channels;
+    MtsNumChannelsT num_channels;
     /** @brief Whether to Z-normalize the subsequences */
     bool normalized;
     /** @brief Unique pointer to the index parameters */

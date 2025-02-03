@@ -7,6 +7,7 @@ TESTING
 
 # Development
 .vscode
+.editorconfig
 
 # OS-specific
 .DS_Store
