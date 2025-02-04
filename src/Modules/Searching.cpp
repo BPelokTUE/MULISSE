@@ -42,13 +42,21 @@ int search(const SearchOptions &opts) {
         str line;
         std::getline(query_stream, line);
         std::istringstream iss(line);
-        float value;
+        float value, sum = 0, sq_sum = 0;
 
         query[c].clear();
         while (iss >> value) {
             query[c].push_back(value);
+            sum += value;
+            sq_sum += value * value;
         }
+        if (query[c].size() > 0) {
+            float mu = sum / query[c].size(), sigma = sq_sum / query[c].size() - mu * mu;
+            for (size_t i = 0; i < query[c].size(); ++i) query[c][i] = (query[c][i] - mu) / std::sqrt(sigma);
+        }
+
         if (c == num_channels - 1) {
+            opts.result_set->clear();
             vec<SearchResult> results = index->search(query, opts);
             result_stream << "Results for query " << ++query_count << ":\n";
             for (auto &result : results)

@@ -60,7 +60,16 @@ class iSaxWord : public SaxWord {
      * @param index The index of the symbol
      * @return The symbol at the given index
      */
-    SaxSymbolT operator[](std::size_t index) const override;
+    SaxSymbolT operator[](SaxSegIndT index) const override;
+
+    /**
+     * @brief Get the symbol at the given index without shifting; TODO: this should be removed, and the iSAX symbol
+     * access logic reworked
+     *
+     * @param index The index of the symbol
+     * @return The symbol at the given index without shifting
+     */
+    SaxSymbolT symbol_no_shift(SaxSegIndT index) const;
 
     /**
      * @brief Get the number of bits used for the symbol at the given index

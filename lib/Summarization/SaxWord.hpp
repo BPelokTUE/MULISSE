@@ -45,7 +45,7 @@ class SaxWord {
      * @param index The index of the symbol.
      * @return The symbol at the given index.
      */
-    virtual SaxSymbolT operator[](std::size_t index) const;
+    virtual SaxSymbolT operator[](SaxSegIndT index) const;
 
     /**
      * @brief Equality operator.

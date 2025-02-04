@@ -71,14 +71,11 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
                 auto [lower, upper] = get_segment_limits(m_first_layer_num_bits, m_first_layer_min_symbols[i][c][s],
                                                          m_first_layer_max_symbols[i][c][s]);
                 min_dist_squared += distance_measure->min_dist_squared(query_paa[c][s], lower, upper);
-                if (lower == upper) {
-                    std::cout << "AAAAAAAAAAAAA\n";
-                }
             }
             isax_mins[c] = iSaxWord(m_first_layer_min_symbols[i][c], m_first_layer_num_bits);
             isax_maxs[c] = iSaxWord(m_first_layer_max_symbols[i][c], m_first_layer_num_bits);
         }
-        pq.push({m_segment_len * min_dist_squared, isax_mins, isax_maxs, m_first_layer_nodes[i].get()});
+        pq.push({min_dist_squared * m_segment_len, isax_mins, isax_maxs, m_first_layer_nodes[i].get()});
     }
 
     while (!pq.empty()) {
@@ -96,17 +93,19 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
                 pq.push({min_dist_squared, isax_mins, isax_maxs, right});
             } else {
                 unsigned num_bits = isax_mins[c].get_num_bits()[s];
-                auto limits = get_segment_limits(num_bits, isax_mins[c][s], isax_maxs[c][s]);
+                auto limits1 =
+                    get_segment_limits(num_bits, isax_mins[c].symbol_no_shift(s), isax_maxs[c].symbol_no_shift(s));
                 auto [max_symbol_left, max_symbol_right] =
                     node->get_children_max_symbols(num_bits, m_alphabet_num_bits);
-                float prev_dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
+                float prev_dist = distance_measure->min_dist_squared(query_paa[c][s], limits1.first, limits1.second);
                 ++num_bits;
 
                 // Left child
                 vec<iSaxWord> left_isax_mins = isax_mins, left_isax_maxs = isax_maxs;
                 left_isax_mins[c].append_to_symbol(s, 0);
                 left_isax_maxs[c].set_symbol(s, num_bits, max_symbol_left);
-                limits = get_segment_limits(num_bits, left_isax_mins[c][s], left_isax_maxs[c][s]);
+                auto limits = get_segment_limits(num_bits, left_isax_mins[c].symbol_no_shift(s),
+                                                 left_isax_maxs[c].symbol_no_shift(s));
                 float dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
                 pq.push({min_dist_squared + m_segment_len * (dist - prev_dist), left_isax_mins, left_isax_maxs, left});
 
@@ -114,7 +113,8 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
                 vec<iSaxWord> right_isax_mins = std::move(isax_mins), right_isax_maxs = std::move(isax_maxs);
                 right_isax_mins[c].append_to_symbol(s, 1);
                 right_isax_maxs[c].set_symbol(s, num_bits, max_symbol_right);
-                limits = get_segment_limits(num_bits, right_isax_mins[c][s], right_isax_maxs[c][s]);
+                limits = get_segment_limits(num_bits, right_isax_mins[c].symbol_no_shift(s),
+                                            right_isax_maxs[c].symbol_no_shift(s));
                 dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
                 pq.push(
                     {min_dist_squared + m_segment_len * (dist - prev_dist), right_isax_mins, right_isax_maxs, right});

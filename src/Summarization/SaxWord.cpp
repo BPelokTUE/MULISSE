@@ -22,7 +22,7 @@ SaxWord::SaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT num_bits) : m_symbols(symb
     assert(num_bits > 0);
 };
 
-SaxSymbolT SaxWord::operator[](std::size_t index) const { return m_symbols[index]; }
+SaxSymbolT SaxWord::operator[](SaxSegIndT index) const { return m_symbols[index]; }
 
 bool SaxWord::operator==(const SaxWord &other) const {
     assert(size() == other.size());

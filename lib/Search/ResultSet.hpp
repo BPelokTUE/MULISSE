@@ -44,6 +44,9 @@ class IResultSet {
      * @return The lower bound distance of the result set; No result with a greater distance should be considered
      */
     virtual DistanceT get_distance_lb() const = 0;
+
+    /** @brief Clear the result set */
+    virtual void clear() = 0;
 };
 
 /** @brief R-range result set */
@@ -61,6 +64,8 @@ class RRangeResultSet : public IResultSet {
     vec<SearchResult> get_results() const override;
 
     DistanceT get_distance_lb() const override;
+
+    void clear() override;
 
    private:
     vec<SearchResult> m_results;
@@ -82,6 +87,8 @@ class KnnResultSet : public IResultSet {
     vec<SearchResult> get_results() const override;
 
     DistanceT get_distance_lb() const override;
+
+    void clear() override;
 
    private:
     vec<SearchResult> m_results;

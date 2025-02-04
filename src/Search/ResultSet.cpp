@@ -12,6 +12,8 @@ vec<SearchResult> RRangeResultSet::get_results() const { return m_results; };
 
 DistanceT RRangeResultSet::get_distance_lb() const { return m_r; };
 
+void RRangeResultSet::clear() { m_results.clear(); }
+
 // KnnResultSet
 
 KnnResultSet::KnnResultSet(unsigned k) : m_k(k) {};
@@ -25,3 +27,5 @@ void KnnResultSet::insert(SearchResult result) {
 vec<SearchResult> KnnResultSet::get_results() const { return m_results; };
 
 DistanceT KnnResultSet::get_distance_lb() const { return m_results.size() < m_k ? INF : m_results[m_k - 1].distance; };
+
+void KnnResultSet::clear() { m_results.clear(); }

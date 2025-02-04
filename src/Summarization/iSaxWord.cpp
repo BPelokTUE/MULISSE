@@ -15,9 +15,11 @@ iSaxWord::iSaxWord(vec<SaxSymbolT> symbols, vec<SaxNumBitsT> num_bits, SaxNumBit
     assert(alphabet_num_bits >= *std::max_element(num_bits.begin(), num_bits.end()));
 }
 
-SaxSymbolT iSaxWord::operator[](std::size_t index) const {
+SaxSymbolT iSaxWord::operator[](SaxSegIndT index) const {
     return m_symbols[index] >> (m_alphabet_num_bits - m_num_bits[index]);
 }
+
+SaxSymbolT iSaxWord::symbol_no_shift(SaxSegIndT index) const { return m_symbols[index]; }
 
 const vec<SaxNumBitsT> &iSaxWord::get_num_bits() const { return m_num_bits; }
 
