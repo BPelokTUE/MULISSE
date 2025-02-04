@@ -60,7 +60,8 @@ int search(const SearchOptions &opts) {
             vec<SearchResult> results = index->search(query, opts);
             result_stream << "Results for query " << ++query_count << ":\n";
             for (auto &result : results)
-                result_stream << "Position: " << result.file_position << "; Distance: " << result.distance << '\n';
+                result_stream << "Distance: " << std::sqrt(result.distance) << ", Location: " << result.file_position
+                              << '\n';
             result_stream << '\n';
         }
     }

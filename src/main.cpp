@@ -177,14 +177,14 @@ int main(int argc, char **argv) {
         ->check(positive_float);
 
     // For debugging (Clang 19 + Code LLDB + CLI11 don't like each other for some reason)
-    dataset_path = "DATA/test_s.bin";
-    query_path = "DATA/test_s_query.txt";
-    index_path = "DATA/test_s_ind.bin";
-    results_path = "DATA/test_s_results.txt";
+    dataset_path = "DATA/test.bin";
+    query_path = "DATA/test_query.txt";
+    index_path = "DATA/test_ind.bin";
+    results_path = "DATA/test_results.txt";
     search_type_str = "knn";
     knn_k = 5;
     series_len = 4096;
-    num_channels = 2;
+    num_channels = 1;
     l_min = 256;
     l_max = 1024;
     segment_len = 64;
@@ -229,7 +229,7 @@ int main(int argc, char **argv) {
             .index_params = std::unique_ptr<IIndexParams>(index_params),
         };
         create_index(index_options);
-    } else {  // if (search_subcommand->parsed()) {
+    } else if (search_subcommand->parsed()) {
         SearchType search_type = STR_TO_SEARCH_TYPE.at(search_type_str);
         IDistanceMeasure *distance_measure;
         switch (STR_TO_DISTANCE_TYPE.at(distance_measure_str)) {

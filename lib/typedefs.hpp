@@ -27,6 +27,7 @@ const uint8_t DEFAULT_NUM_BIT_LIMIT = 12;
 static_assert(DEFAULT_NUM_BIT_LIMIT <= sizeof(SaxSymbolT) * 8, "DEFAULT_NUM_BIT_LIMIT exceeds the size of SaxSymbolT");
 
 const float INF = std::numeric_limits<float>::max();
+const double EPS = std::numeric_limits<double>::epsilon();
 
 using FilePositionT = uint64_t;
 
