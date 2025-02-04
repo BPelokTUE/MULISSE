@@ -53,5 +53,3 @@ void iSaxWord::select_max_symbols(const iSaxWord &other) {
         m_symbols[i] = std::max(m_symbols[i], other.m_symbols[i]);
     }
 }
-
-const vec<SaxSymbolT> &iSaxWord::get_symbols_no_shift() const { return m_symbols; }

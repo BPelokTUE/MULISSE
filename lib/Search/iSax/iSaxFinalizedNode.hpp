@@ -27,9 +27,13 @@ class iSaxFinalizedNode : public iSaxNode {
     /**
      * @brief Get the iSAX max symbols of the children on the split index
      *
+     * @param split_num_bits The number of bits of the split segment before the split
+     * @param symbol_num_bits The number of bits used to represent the symbols. If the finalized index was created using
+     *        iSaxEnvelopeIndex::finalize, this should be the same as number of bits of the alphabet.
      * @return The iSAX max symbols of the children on the split index
      */
-    virtual pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols() const = 0;
+    virtual pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols(SaxNumBitsT split_num_bits,
+                                                                  SaxNumBitsT symbol_num_bits) const = 0;
 };
 
 /** @brief Finalized internal node */
@@ -51,7 +55,8 @@ class iSaxFinalizedInternal : public iSaxFinalizedNode {
 
     pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> get_children() const override;
 
-    pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols() const override;
+    pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols(SaxNumBitsT split_num_bits,
+                                                          SaxNumBitsT symbol_num_bits) const override;
 
     SaxSplitIndT get_split_ind() const override;
 
@@ -92,7 +97,8 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode {
 
     pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> get_children() const override;
 
-    pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols() const override;
+    pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols(SaxNumBitsT split_num_bits,
+                                                          SaxNumBitsT symbol_num_bits) const override;
 
     SaxSplitIndT get_split_ind() const override;
 

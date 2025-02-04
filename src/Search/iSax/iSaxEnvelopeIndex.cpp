@@ -5,11 +5,11 @@
 
 #include <iostream>
 
-std::size_t iSaxWordVecHash::operator()(const vec<iSaxWord> &isax_mins) const {
-    std::size_t seed = 0, num_symbols = isax_mins[0].size();
-    for (auto isax_min : isax_mins) {
-        for (size_t i = 0; i < num_symbols; ++i) {
-            boost::hash_combine(seed, isax_min[i]);
+std::size_t SaxSymbolsHash::operator()(const vec<vec<SaxSymbolT>> &symbols) const {
+    std::size_t seed = 0, num_symbols = symbols[0].size();
+    for (auto channel : symbols) {
+        for (SaxSymbolT symbol : channel) {
+            boost::hash_combine(seed, symbol);
         }
     }
     return seed;
@@ -125,19 +125,19 @@ void iSaxEnvelopeIndex::insert(const EnvelopeEntry &entry) {
     assert(mts_envelope.size() == m_num_channels);
     assert(mts_envelope[0].size() == m_num_seg_per_channel);
 
-    size_t true_size = mts_envelope[0].size();
-
-    vec<iSaxWord> isax_mins(mts_envelope.size());
-    for (size_t i = 0; i < mts_envelope.size(); ++i) {
-        auto env_min = mts_envelope[i].lower;
-        isax_mins[i] = iSaxWord(
+    vec<iSaxWord> isax_mins(m_num_channels);
+    vec<vec<SaxSymbolT>> symbols(m_num_channels, vec<SaxSymbolT>(m_num_seg_per_channel));
+    for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
+        auto env_min = mts_envelope[c].lower;
+        isax_mins[c] = iSaxWord(
             env_min, {vec<SaxNumBitsT>(env_min.size(), m_first_layer_num_bits), m_alphabet_num_bits, m_breakpoints});
+        for (SaxSegIndT s = 0; s < m_num_seg_per_channel; ++s) symbols[c][s] = isax_mins[c][s];
     }
 
-    auto node_it = m_first_layer.find(isax_mins);
+    auto node_it = m_first_layer.find(symbols);
     if (node_it == m_first_layer.end()) {
-        m_first_layer.emplace(isax_mins, std::make_unique<iSaxSplittableLeaf>(vec<FilePositionT>{file_pos},
-                                                                              vec<vec<Envelope>>{mts_envelope}));
+        m_first_layer.emplace(symbols, std::make_unique<iSaxSplittableLeaf>(vec<FilePositionT>{file_pos},
+                                                                            vec<vec<Envelope>>{mts_envelope}));
     } else {
         auto node = node_it->second.get();
         iSaxSplittableInternal *parent = nullptr;
@@ -164,7 +164,7 @@ void iSaxEnvelopeIndex::insert(const EnvelopeEntry &entry) {
 
 std::unique_ptr<IEnvelopeFinalizedIndex> iSaxEnvelopeIndex::finalize() {
     size_t size_first_layer = m_first_layer.size();
-    vec<vec<iSaxWord>> first_layer_isax_mins(size_first_layer), first_layer_isax_maxs(size_first_layer);
+    vec<vec<vec<SaxSymbolT>>> first_layer_min_symbols(size_first_layer), first_layer_max_symbols(size_first_layer);
     vec<std::unique_ptr<iSaxFinalizedNode>> finalized_nodes(size_first_layer);
 
     iSaxWordSettings isax_word_settings = {vec<SaxNumBitsT>(m_num_seg_per_channel, m_alphabet_num_bits),
@@ -172,12 +172,18 @@ std::unique_ptr<IEnvelopeFinalizedIndex> iSaxEnvelopeIndex::finalize() {
 
     size_t i = 0;
     for (auto it = m_first_layer.begin(); it != m_first_layer.end(); ++it) {
-        const auto &isax_min = it->first;
+        const auto &min_symbols = it->first;
         auto &node = it->second;
 
         auto [finalized_node, isax_max] = node->finalize(isax_word_settings);
-        first_layer_isax_mins[i] = isax_min;
-        first_layer_isax_maxs[i] = isax_max;
+        vec<vec<SaxSymbolT>> max_symbols(m_num_channels, vec<SaxSymbolT>(m_num_seg_per_channel));
+
+        SaxNumBitsT shift = m_alphabet_num_bits - m_first_layer_num_bits;
+        for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
+            for (SaxSegIndT s = 0; s < m_num_seg_per_channel; ++s) max_symbols[c][s] = isax_max[c][s] >> shift;
+        }
+        first_layer_min_symbols[i] = min_symbols;
+        first_layer_max_symbols[i] = max_symbols;
         finalized_nodes[i] = std::move(finalized_node);
         ++i;
 
@@ -186,12 +192,16 @@ std::unique_ptr<IEnvelopeFinalizedIndex> iSaxEnvelopeIndex::finalize() {
 
     SeriesISaxProperties series_isax_prop = {m_segment_len, m_series_len, m_pos_per_env, m_num_channels,
                                              m_num_seg_per_channel};
-    return std::make_unique<iSaxEnvelopeFinalizedIndex>(series_isax_prop, std::move(first_layer_isax_mins),
-                                                        std::move(first_layer_isax_maxs), std::move(finalized_nodes),
+    return std::make_unique<iSaxEnvelopeFinalizedIndex>(series_isax_prop, std::move(first_layer_min_symbols),
+                                                        std::move(first_layer_max_symbols), std::move(finalized_nodes),
                                                         m_first_layer_num_bits, m_alphabet_num_bits, m_breakpoints);
 }
 
 const iSaxSplittableNode *iSaxEnvelopeIndex::get_first_layer_node(const vec<iSaxWord> &isax_mins) const {
-    auto node_it = m_first_layer.find(isax_mins);
+    vec<vec<SaxSymbolT>> symbols(m_num_channels, vec<SaxSymbolT>(m_num_seg_per_channel));
+    for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
+        for (SaxSegIndT s = 0; s < m_num_seg_per_channel; ++s) symbols[c][s] = isax_mins[c][s];
+    }
+    auto node_it = m_first_layer.find(symbols);
     return node_it == m_first_layer.end() ? nullptr : node_it->second.get();
 }

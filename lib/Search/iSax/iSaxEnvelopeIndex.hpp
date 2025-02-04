@@ -11,8 +11,8 @@
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/iSaxBreakpointStrategy.hpp"
 
-struct iSaxWordVecHash {
-    std::size_t operator()(const vec<iSaxWord> &isax_mins) const;
+struct SaxSymbolsHash {
+    std::size_t operator()(const vec<vec<SaxSymbolT>> &symbols) const;
 };
 
 class iSaxEnvelopeIndex : public IEnvelopeIndex {
@@ -43,7 +43,7 @@ class iSaxEnvelopeIndex : public IEnvelopeIndex {
     const iSaxSplittableNode *get_first_layer_node(const vec<iSaxWord> &isax_mins) const;
 
    private:
-    std::unordered_map<vec<iSaxWord>, std::unique_ptr<iSaxSplittableNode>, iSaxWordVecHash> m_first_layer;
+    std::unordered_map<vec<vec<SaxSymbolT>>, std::unique_ptr<iSaxSplittableNode>, SaxSymbolsHash> m_first_layer;
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits, m_num_bits_limit;
     unsigned m_segment_len, m_series_len, m_pos_per_env;
     SaxSegIndT m_num_seg_per_channel;

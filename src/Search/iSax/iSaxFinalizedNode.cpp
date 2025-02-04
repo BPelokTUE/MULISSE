@@ -2,12 +2,12 @@
 
 // iSaxFinalizedInternal
 
-iSaxFinalizedInternal::iSaxFinalizedInternal(SaxSplitIndT split_ind, SaxSymbolT isax_max_left,
-                                             SaxSymbolT isax_min_right, uptr<iSaxFinalizedNode> left,
+iSaxFinalizedInternal::iSaxFinalizedInternal(SaxSplitIndT split_ind, SaxSymbolT max_symbol_left,
+                                             SaxSymbolT max_symbol_right, uptr<iSaxFinalizedNode> left,
                                              uptr<iSaxFinalizedNode> right)
     : m_split_ind(split_ind),
-      m_max_symbol_left(isax_max_left),
-      m_max_symbol_right(isax_min_right),
+      m_max_symbol_left(max_symbol_left),
+      m_max_symbol_right(max_symbol_right),
       m_left(std::move(left)),
       m_right(std::move(right)) {}
 
@@ -15,8 +15,11 @@ std::pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> iSaxFinalizedInt
     return {m_left.get(), m_right.get()};
 }
 
-pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedInternal::get_children_max_symbols() const {
-    return {m_max_symbol_left, m_max_symbol_right};
+pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedInternal::get_children_max_symbols(SaxNumBitsT split_num_bits,
+                                                                             SaxNumBitsT symbol_num_bits) const {
+    SaxNumBitsT shift = symbol_num_bits - split_num_bits - 1;
+    assert(shift >= 0);
+    return {m_max_symbol_left >> shift, m_max_symbol_right >> shift};
 }
 
 SaxSplitIndT iSaxFinalizedInternal::get_split_ind() const { return m_split_ind; }
@@ -33,7 +36,10 @@ std::pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> iSaxFinalizedLea
     return {nullptr, nullptr};
 };
 
-pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedLeaf::get_children_max_symbols() const { return {-1, -1}; }
+pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedLeaf::get_children_max_symbols(SaxNumBitsT split_num_bits,
+                                                                         SaxNumBitsT symbol_num_bits) const {
+    return {-1, -1};
+}
 
 SaxSplitIndT iSaxFinalizedLeaf::get_split_ind() const { return {-1, -1}; }
 

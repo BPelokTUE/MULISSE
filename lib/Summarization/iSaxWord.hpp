@@ -113,13 +113,6 @@ class iSaxWord : public SaxWord {
      */
     void select_max_symbols(const iSaxWord &other);
 
-    /**
-     * @brief Get the non-shifted symbols of the word
-     *
-     * @return The non-shifted symbols
-     */
-    const vec<SaxSymbolT> &get_symbols_no_shift() const;
-
    private:
     vec<SaxNumBitsT> m_num_bits;
 };

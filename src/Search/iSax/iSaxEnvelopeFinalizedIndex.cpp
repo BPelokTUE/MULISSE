@@ -5,46 +5,34 @@
 #include "Summarization/Paa.hpp"
 
 iSaxEnvelopeFinalizedIndex::iSaxEnvelopeFinalizedIndex(const SeriesISaxProperties& series_isax_prop,
-                                                       vec<vec<iSaxWord>> first_isax_mins,
-                                                       vec<vec<iSaxWord>> first_isax_maxs,
+                                                       vec<vec<vec<SaxSymbolT>>> first_layer_min_symbols,
+                                                       vec<vec<vec<SaxSymbolT>>> first_layer_max_symbols,
                                                        vec<std::unique_ptr<iSaxFinalizedNode>> first_layer_nodes,
                                                        SaxNumBitsT first_layer_num_bits, SaxNumBitsT alphabet_num_bits,
                                                        vec<float> breakpoints)
     : m_segment_len(series_isax_prop.segment_len),
+      m_first_layer_min_symbols(std::move(first_layer_min_symbols)),
+      m_first_layer_max_symbols(std::move(first_layer_max_symbols)),
       m_first_layer_nodes(std::move(first_layer_nodes)),
       m_first_layer_num_bits(first_layer_num_bits),
       m_alphabet_num_bits(alphabet_num_bits),
-      m_num_seg_per_channel(first_isax_mins[0][0].size()),
       m_breakpoints(std::move(breakpoints)) {
     assert(m_segment_len > 0);
+    assert(m_first_layer_min_symbols.size() > 0);
+    assert(m_first_layer_min_symbols.size() == m_first_layer_max_symbols.size());
 
+    m_num_seg_per_channel = m_first_layer_max_symbols[0][0].size();
     IEnvelopeFinalizedIndex::m_series_len = series_isax_prop.series_len;
     IEnvelopeFinalizedIndex::m_pos_per_env = series_isax_prop.pos_per_env;
     IEnvelopeFinalizedIndex::m_num_channels = series_isax_prop.num_channels;
-
-    size_t size_first_layer = first_isax_mins.size();
-
-    m_first_sax_mins = vec<vec<vec<SaxSymbolT>>>(
-        size_first_layer, vec<vec<SaxSymbolT>>(m_num_channels, vec<SaxSymbolT>(m_num_seg_per_channel)));
-
-    m_first_sax_maxs = vec<vec<vec<SaxSymbolT>>>(
-        size_first_layer, vec<vec<SaxSymbolT>>(m_num_channels, vec<SaxSymbolT>(m_num_seg_per_channel)));
-
-    for (size_t i = 0; i < size_first_layer; ++i) {
-        for (size_t j = 0; j < m_num_channels; ++j) {
-            m_first_sax_mins[i][j] = first_isax_mins[i][j].get_symbols_no_shift();
-            m_first_sax_maxs[i][j] = first_isax_maxs[i][j].get_symbols_no_shift();
-        }
-    }
 }
 
 std::pair<float, float> iSaxEnvelopeFinalizedIndex::get_segment_limits(SaxNumBitsT num_bits, SaxSymbolT min_symbol,
                                                                        SaxSymbolT max_symbol) const {
     unsigned num_shift = m_alphabet_num_bits - num_bits;
-    int lower_ind = ((min_symbol >> num_shift) << num_shift) - 1;
-    int upper_ind = (((max_symbol >> num_shift) + 1) << num_shift) - 1;
+    int lower_ind = (min_symbol << num_shift) - 1, upper_ind = ((max_symbol + 1) << num_shift) - 1;
     return {
-        lower_ind == -1 ? NEG_INF : m_breakpoints[lower_ind],
+        lower_ind == -1 ? -INF : m_breakpoints[lower_ind],
         upper_ind == m_breakpoints.size() ? INF : m_breakpoints[upper_ind],
     };
 }
@@ -74,18 +62,21 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
     IResultSet* result_set = opts.result_set.get();
 
     // Go over first layer, calculate MINDIST and iSAX words, push to priority queue
-    for (size_t i = 0; i < m_first_sax_mins.size(); ++i) {
+    for (size_t i = 0; i < m_first_layer_min_symbols.size(); ++i) {
         DistanceT min_dist_squared = 0;
         vec<iSaxWord> isax_mins(m_num_channels), isax_maxs(m_num_channels);
 
         for (size_t c = 0; c < m_num_channels; ++c) {
             for (size_t s = 0; s < query_paa[c].size(); ++s) {
-                auto [lower, upper] =
-                    get_segment_limits(m_first_layer_num_bits, m_first_sax_mins[i][c][s], m_first_sax_maxs[i][c][s]);
+                auto [lower, upper] = get_segment_limits(m_first_layer_num_bits, m_first_layer_min_symbols[i][c][s],
+                                                         m_first_layer_max_symbols[i][c][s]);
                 min_dist_squared += distance_measure->min_dist_squared(query_paa[c][s], lower, upper);
+                if (lower == upper) {
+                    std::cout << "AAAAAAAAAAAAA\n";
+                }
             }
-            isax_mins[c] = iSaxWord(m_first_sax_mins[i][c], m_first_layer_num_bits);
-            isax_maxs[c] = iSaxWord(m_first_sax_maxs[i][c], m_first_layer_num_bits);
+            isax_mins[c] = iSaxWord(m_first_layer_min_symbols[i][c], m_first_layer_num_bits);
+            isax_maxs[c] = iSaxWord(m_first_layer_max_symbols[i][c], m_first_layer_num_bits);
         }
         pq.push({m_segment_len * min_dist_squared, isax_mins, isax_maxs, m_first_layer_nodes[i].get()});
     }
@@ -106,7 +97,8 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
             } else {
                 unsigned num_bits = isax_mins[c].get_num_bits()[s];
                 auto limits = get_segment_limits(num_bits, isax_mins[c][s], isax_maxs[c][s]);
-                auto [max_symbol_left, max_symbol_right] = node->get_children_max_symbols();
+                auto [max_symbol_left, max_symbol_right] =
+                    node->get_children_max_symbols(num_bits, m_alphabet_num_bits);
                 float prev_dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
                 ++num_bits;
 
