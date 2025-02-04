@@ -186,9 +186,9 @@ std::unique_ptr<IEnvelopeFinalizedIndex> iSaxEnvelopeIndex::finalize() {
 
     SeriesISaxProperties series_isax_prop = {m_segment_len, m_series_len, m_pos_per_env, m_num_channels,
                                              m_num_seg_per_channel};
-    return std::make_unique<iSaxEnvelopeFinalizedIndex>(
-        series_isax_prop, std::move(first_layer_isax_mins), std::move(first_layer_isax_maxs),
-        std::move(finalized_nodes), m_first_layer_num_bits, m_alphabet_num_bits, m_breakpoints, m_dataset_path);
+    return std::make_unique<iSaxEnvelopeFinalizedIndex>(series_isax_prop, std::move(first_layer_isax_mins),
+                                                        std::move(first_layer_isax_maxs), std::move(finalized_nodes),
+                                                        m_first_layer_num_bits, m_alphabet_num_bits, m_breakpoints);
 }
 
 const iSaxSplittableNode *iSaxEnvelopeIndex::get_first_layer_node(const vec<iSaxWord> &isax_mins) const {

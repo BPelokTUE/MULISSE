@@ -133,9 +133,6 @@ class IEnvelopeIndex {
      */
     virtual std::unique_ptr<IEnvelopeFinalizedIndex> finalize() = 0;
 
-   protected:
-    str m_dataset_path;
-
    private:
     /**
      * @brief Insert an envelope entry into the index

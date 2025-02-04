@@ -37,13 +37,11 @@ class iSaxEnvelopeFinalizedIndex : public IEnvelopeFinalizedIndex {
      * @param alphabet_num_bits The maximum number of bits used for any symbol in any node of the index
      * @param breakpoints Breakpoints used for the iSAX index; assumed to be `2^alphabet_num_bits-1` long;
      *        does not include `-inf` and `inf`
-     * @param dataset_path Path to the dataset
      */
     iSaxEnvelopeFinalizedIndex(const SeriesISaxProperties& series_isax_prop, vec<vec<iSaxWord>> first_isax_mins,
                                vec<vec<iSaxWord>> first_isax_maxs,
                                vec<std::unique_ptr<iSaxFinalizedNode>> first_layer_nodes,
-                               SaxNumBitsT first_layer_num_bits, SaxNumBitsT alphabet_num_bits, vec<float> breakpoints,
-                               const str& dataset_path);
+                               SaxNumBitsT first_layer_num_bits, SaxNumBitsT alphabet_num_bits, vec<float> breakpoints);
 
     ~iSaxEnvelopeFinalizedIndex() = default;
 
@@ -56,7 +54,6 @@ class iSaxEnvelopeFinalizedIndex : public IEnvelopeFinalizedIndex {
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
     SaxSegIndT m_num_seg_per_channel;
     vec<float> m_breakpoints;
-    str m_dataset_path;
 
     std::pair<float, float> get_segment_limits(SaxNumBitsT num_bits, SaxSymbolT min_symbol,
                                                SaxSymbolT max_symbol) const;

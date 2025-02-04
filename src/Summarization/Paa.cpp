@@ -1,10 +1,9 @@
 #include <cassert>
+#include <iostream>
 
 #include "Summarization/Paa.hpp"
 
 vec<float> paa(const vec<float> &ts, unsigned segment_len) {
-    assert(ts.size() > 0);
-
     unsigned num_segments = ts.size() / segment_len;
     vec<float> paa(num_segments);
 

@@ -24,4 +24,4 @@ void KnnResultSet::insert(SearchResult result) {
 
 vec<SearchResult> KnnResultSet::get_results() const { return m_results; };
 
-DistanceT KnnResultSet::get_distance_lb() const { return m_results.empty() ? 0 : m_results.back().distance; };
+DistanceT KnnResultSet::get_distance_lb() const { return m_results.size() < m_k ? INF : m_results[m_k - 1].distance; };

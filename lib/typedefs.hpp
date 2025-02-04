@@ -30,6 +30,6 @@ const float INF = std::numeric_limits<float>::max(), NEG_INF = std::numeric_limi
 
 using FilePositionT = uint64_t;
 
-using DistanceT = float;
+using DistanceT = double;
 
 #endif  // TYPEDEFS_HPP

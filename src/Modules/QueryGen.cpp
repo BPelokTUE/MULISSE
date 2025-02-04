@@ -48,9 +48,9 @@ int create_queries(str dataset_path, str query_path, float noise, unsigned serie
     for (size_t q = 0; q < query_descriptors.size(); ++q) {
         const auto &[series_idx, length, channels] = query_descriptors[q];
         unsigned long long start_offset = series_idx * num_channels * series_len * sizeof(float);
-        for (unsigned i = 0; i < num_channels; ++i) {
-            if (channels[i]) {
-                data_file.seekg(start_offset + i * series_len * sizeof(float));
+        for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+            if (channels[c]) {
+                data_file.seekg(start_offset + c * series_len * sizeof(float));
                 float value;
                 for (unsigned j = 0; j < length; ++j) {
                     data_file.read(reinterpret_cast<char *>(&value), sizeof(value));
@@ -59,7 +59,7 @@ int create_queries(str dataset_path, str query_path, float noise, unsigned serie
                     if (j < length - 1) query_file << ' ';
                 }
             }
-            if (q < query_descriptors.size() - 1 || i < num_channels - 1) {
+            if (q < query_descriptors.size() - 1 || c < num_channels - 1) {
                 query_file << '\n';
             }
         }

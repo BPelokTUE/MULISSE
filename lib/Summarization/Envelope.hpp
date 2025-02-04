@@ -33,7 +33,7 @@ struct Envelope {
 struct EnvelopeEntry {
     /** @brief Multivariate time series envelope */
     vec<Envelope> mts_envelope;
-    /** @brief Starting position of the first channel of the time series in the file */
+    /** @brief Starting position of the first channel of the time series in the file (in number of floats) */
     FilePositionT file_position;
 };
 

@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
     // Add arguments
     /*
                 | create_ds | create_query | index | search |
-    dataset     |     X     |       X      |   X   |        |
+    dataset     |     X     |       X      |   X   |   X    |
     seed        |     X     |       X      |       |        |
     noise       |     X     |       X      |       |        |
     zero_start  |     X     |              |       |        |
@@ -86,10 +86,10 @@ int main(int argc, char **argv) {
     string dataset_path, query_path, index_path, results_path,
         index_type_str = INDEX_TYPE_STRS[0], split_strategy_str = ISAX_SPLIT_STRATEGY_STRS[0],
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0], index_format_str = ARCHIVE_TYPE_STRS[0],
-        search_type_str = SEARCH_TYPE_STRS[0], distance_measure_str = DISTANCE_TYPE_STRS[0];
+        search_type_str, distance_measure_str = DISTANCE_TYPE_STRS[0];
     float noise = 1.0;
-    unsigned num_series, series_len, num_queries, l_min, l_max, segment_len, pos_per_env, knn_k;
-    DistanceT r_range_r;
+    unsigned num_series, series_len, num_queries, l_min, l_max, segment_len, pos_per_env, knn_k = 1;
+    DistanceT r_range_r = 1.0;
     int seed = 0;
     size_t leaf_capacity;
     vec<unsigned> lengths;
@@ -149,6 +149,9 @@ int main(int argc, char **argv) {
 
     // Options for searching
     search_subcommand->add_option("-i,--index", index_path, "Index file path")->required()->check(CLI::ExistingFile);
+    search_subcommand->add_option("-d,--dataset", dataset_path, "Dataset file path")
+        ->required()
+        ->check(CLI::ExistingFile);
     search_subcommand->add_option("-q,--query", query_path, "Query file path")->required()->check(CLI::ExistingFile);
     search_subcommand->add_option("-o,--out", results_path, "Output file path")->required();
     search_subcommand->add_option("-t,--index_type", index_type_str, "Index type")
@@ -157,22 +160,36 @@ int main(int argc, char **argv) {
     search_subcommand->add_option("-f,--format", index_format_str, "Index format")
         ->capture_default_str()
         ->check(CLI::IsMember(ARCHIVE_TYPE_STRS));
-    search_subcommand->add_option("-d,--distance", distance_measure_str, "Distance measure")
+    search_subcommand->add_option("-D,--distance", distance_measure_str, "Distance measure")
         ->capture_default_str()
         ->check(CLI::IsMember(DISTANCE_TYPE_STRS));
     search_subcommand->add_flag("--approx", approximate, "Approximate search");
     search_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
-    search_subcommand->add_option("-T,--search_type", search_type_str, "Search type")
-        ->capture_default_str()
-        ->check(CLI::IsMember(SEARCH_TYPE_STRS));
     //      Search type-specific options
-    auto knn_group = search_subcommand->add_option_group("knn_group", "Options for kNN search");
-    knn_group->add_option("-k,--k", knn_k, "Number of nearest neighbors for kNN")->check(positive_int)->required();
-    knn_group->needs(search_subcommand->get_option("-T")->check(CLI::IsMember({"knn"})));
+    search_subcommand->add_option("-T,--search_type", search_type_str, "Search type")
+        ->required()
+        ->check(CLI::IsMember(SEARCH_TYPE_STRS));
+    search_subcommand->add_option("-k,--k", knn_k, "Number of nearest neighbors for kNN")
+        ->capture_default_str()
+        ->check(positive_int);
+    search_subcommand->add_option("-r,--range", r_range_r, "Range for range search")
+        ->capture_default_str()
+        ->check(positive_float);
 
-    auto r_range_group = search_subcommand->add_option_group("r_range_group", "Options for range search");
-    r_range_group->add_option("-r,--range", r_range_r, "Range for range search")->check(positive_float)->required();
-    r_range_group->needs(search_subcommand->get_option("-T")->check(CLI::IsMember({"r_range"})));
+    // For debugging (Clang 19 + Code LLDB + CLI11 don't like each other for some reason)
+    dataset_path = "DATA/test_s.bin";
+    query_path = "DATA/test_s_query.txt";
+    index_path = "DATA/test_s_ind.bin";
+    results_path = "DATA/test_s_results.txt";
+    search_type_str = "knn";
+    knn_k = 5;
+    series_len = 4096;
+    num_channels = 2;
+    l_min = 256;
+    l_max = 1024;
+    segment_len = 64;
+    pos_per_env = 16;
+    leaf_capacity = 50;
 
     // Execute command
     CLI11_PARSE(app, argc, argv);
@@ -189,7 +206,7 @@ int main(int argc, char **argv) {
                 index_params = new iSaxEnvelopeIndexParams{
                     pos_per_env,
                     segment_len,
-                    2,  // first_layer_num_bits,
+                    1,  // first_layer_num_bits,
                     leaf_capacity,
                     STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str),
                     STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str),
@@ -212,7 +229,7 @@ int main(int argc, char **argv) {
             .index_params = std::unique_ptr<IIndexParams>(index_params),
         };
         create_index(index_options);
-    } else if (search_subcommand->parsed()) {
+    } else {  // if (search_subcommand->parsed()) {
         SearchType search_type = STR_TO_SEARCH_TYPE.at(search_type_str);
         IDistanceMeasure *distance_measure;
         switch (STR_TO_DISTANCE_TYPE.at(distance_measure_str)) {
@@ -237,6 +254,7 @@ int main(int argc, char **argv) {
         }
         SearchOptions search_options = {
             .index_path = index_path,
+            .dataset_path = dataset_path,
             .query_path = query_path,
             .results_path = results_path,
             .index_type = STR_TO_INDEX_TYPE.at(index_type_str),

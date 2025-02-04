@@ -18,6 +18,8 @@ const vec<str> SEARCH_TYPE_STRS = get_keys(STR_TO_SEARCH_TYPE);
 struct SearchOptions {
     /** @brief Path to the index file to use */
     str index_path;
+    /** @brief Path to the dataset file to use; Assumed to be the source of the index */
+    str dataset_path;
     /** @brief Path to the file containing the queries to answer */
     str query_path;
     /** @brief Path to the file to save the results into */

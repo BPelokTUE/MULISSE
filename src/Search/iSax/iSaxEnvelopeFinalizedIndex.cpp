@@ -9,14 +9,13 @@ iSaxEnvelopeFinalizedIndex::iSaxEnvelopeFinalizedIndex(const SeriesISaxPropertie
                                                        vec<vec<iSaxWord>> first_isax_maxs,
                                                        vec<std::unique_ptr<iSaxFinalizedNode>> first_layer_nodes,
                                                        SaxNumBitsT first_layer_num_bits, SaxNumBitsT alphabet_num_bits,
-                                                       vec<float> breakpoints, const str& dataset_path)
+                                                       vec<float> breakpoints)
     : m_segment_len(series_isax_prop.segment_len),
       m_first_layer_nodes(std::move(first_layer_nodes)),
       m_first_layer_num_bits(first_layer_num_bits),
       m_alphabet_num_bits(alphabet_num_bits),
       m_num_seg_per_channel(first_isax_mins[0][0].size()),
-      m_breakpoints(std::move(breakpoints)),
-      m_dataset_path(dataset_path) {
+      m_breakpoints(std::move(breakpoints)) {
     assert(m_segment_len > 0);
 
     IEnvelopeFinalizedIndex::m_series_len = series_isax_prop.series_len;
@@ -42,7 +41,8 @@ iSaxEnvelopeFinalizedIndex::iSaxEnvelopeFinalizedIndex(const SeriesISaxPropertie
 std::pair<float, float> iSaxEnvelopeFinalizedIndex::get_segment_limits(SaxNumBitsT num_bits, SaxSymbolT min_symbol,
                                                                        SaxSymbolT max_symbol) const {
     unsigned num_shift = m_alphabet_num_bits - num_bits;
-    int lower_ind = (min_symbol << num_shift) - 1, upper_ind = ((max_symbol + 1) << num_shift) - 1;
+    int lower_ind = ((min_symbol >> num_shift) << num_shift) - 1;
+    int upper_ind = (((max_symbol >> num_shift) + 1) << num_shift) - 1;
     return {
         lower_ind == -1 ? NEG_INF : m_breakpoints[lower_ind],
         upper_ind == m_breakpoints.size() ? INF : m_breakpoints[upper_ind],
@@ -59,12 +59,16 @@ struct PQueueEntry {
 vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& query, const SearchOptions& opts) const {
     assert(query.size() == m_num_channels);
 
-    std::ifstream data_stream(m_dataset_path, std::ios::binary);
+    std::ifstream data_stream(opts.dataset_path, std::ios::binary);
 
     std::priority_queue<PQueueEntry> pq;
 
     vec<vec<float>> query_paa(m_num_channels);
-    for (size_t i = 0; i < m_num_channels; ++i) query_paa[i] = paa(query[i], m_segment_len);
+    size_t query_len = 0;
+    for (size_t c = 0; c < m_num_channels; ++c) {
+        query_paa[c] = paa(query[c], m_segment_len);
+        query_len = std::max(query_len, query[c].size());
+    }
 
     IDistanceMeasure* distance_measure = opts.distance_measure.get();
     IResultSet* result_set = opts.result_set.get();
@@ -83,7 +87,7 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
             isax_mins[c] = iSaxWord(m_first_sax_mins[i][c], m_first_layer_num_bits);
             isax_maxs[c] = iSaxWord(m_first_sax_maxs[i][c], m_first_layer_num_bits);
         }
-        pq.push({min_dist_squared, isax_mins, isax_maxs, m_first_layer_nodes[i].get()});
+        pq.push({m_segment_len * min_dist_squared, isax_mins, isax_maxs, m_first_layer_nodes[i].get()});
     }
 
     while (!pq.empty()) {
@@ -93,38 +97,52 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
         if (min_dist_squared > result_set->get_distance_lb()) break;
 
         if (!(node->is_leaf())) {
-            auto [c, s] = node->get_split_ind();
-            unsigned num_bits = isax_mins[c].get_num_bits()[s];
-            auto limits = get_segment_limits(num_bits, isax_mins[c][s], isax_maxs[c][s]);
+            auto [s, c] = node->get_split_ind();
             auto [left, right] = node->get_children();
-            auto [max_symbol_left, max_symbol_right] = node->get_children_max_symbols();
-            float prev_dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
-            ++num_bits;
 
-            // Left child
-            vec<iSaxWord> left_isax_mins = isax_mins, left_isax_maxs = isax_maxs;
-            left_isax_mins[c].append_to_symbol(s, 0);
-            left_isax_maxs[c].set_symbol(s, num_bits, max_symbol_left);
-            limits = get_segment_limits(num_bits, left_isax_mins[c][s], left_isax_maxs[c][s]);
-            float dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
-            pq.push({min_dist_squared - prev_dist + dist, left_isax_mins, left_isax_maxs, left});
+            if (query[c].empty()) {
+                pq.push({min_dist_squared, isax_mins, isax_maxs, left});
+                pq.push({min_dist_squared, isax_mins, isax_maxs, right});
+            } else {
+                unsigned num_bits = isax_mins[c].get_num_bits()[s];
+                auto limits = get_segment_limits(num_bits, isax_mins[c][s], isax_maxs[c][s]);
+                auto [max_symbol_left, max_symbol_right] = node->get_children_max_symbols();
+                float prev_dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
+                ++num_bits;
 
-            // Right child
-            isax_mins[c].append_to_symbol(s, 1);
-            isax_maxs[c].set_symbol(s, num_bits, max_symbol_right);
-            limits = get_segment_limits(num_bits, isax_mins[c][s], isax_maxs[c][s]);
-            dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
-            pq.push({min_dist_squared - prev_dist + dist, isax_mins, isax_maxs, right});
+                // Left child
+                vec<iSaxWord> left_isax_mins = isax_mins, left_isax_maxs = isax_maxs;
+                left_isax_mins[c].append_to_symbol(s, 0);
+                left_isax_maxs[c].set_symbol(s, num_bits, max_symbol_left);
+                limits = get_segment_limits(num_bits, left_isax_mins[c][s], left_isax_maxs[c][s]);
+                float dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
+                pq.push({min_dist_squared + m_segment_len * (dist - prev_dist), left_isax_mins, left_isax_maxs, left});
+
+                // Right child
+                vec<iSaxWord> right_isax_mins = std::move(isax_mins), right_isax_maxs = std::move(isax_maxs);
+                right_isax_mins[c].append_to_symbol(s, 1);
+                right_isax_maxs[c].set_symbol(s, num_bits, max_symbol_right);
+                limits = get_segment_limits(num_bits, right_isax_mins[c][s], right_isax_maxs[c][s]);
+                dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
+                pq.push(
+                    {min_dist_squared + m_segment_len * (dist - prev_dist), right_isax_mins, right_isax_maxs, right});
+            }
         } else {
             vec<FilePositionT> file_positions = node->get_file_positions();
             for (FilePositionT file_pos : file_positions) {
                 size_t data_remaining = m_series_len - (file_pos % m_series_len);
-                size_t data_to_read =
-                    std::min(query[0].size() + IEnvelopeFinalizedIndex::m_pos_per_env - 1, data_remaining);
+                if (data_remaining < query_len) {
+                    continue;
+                }
 
-                vec<vec<float>> subsequence(m_num_channels, vec<float>(data_to_read));
+                size_t data_to_read = std::min(query_len + IEnvelopeFinalizedIndex::m_pos_per_env - 1, data_remaining);
+                vec<vec<float>> subsequence(m_num_channels);
                 for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
-                    data_stream.seekg(file_pos + c * m_series_len * sizeof(float));
+                    if (query[c].empty()) continue;
+
+                    subsequence[c].resize(data_to_read);
+                    FilePositionT start_byte = (file_pos + c * m_series_len) * sizeof(float);
+                    data_stream.seekg(start_byte);
                     data_stream.read(reinterpret_cast<char*>(subsequence[c].data()), data_to_read * sizeof(float));
                 }
                 distance_measure->update_result_set(result_set, file_pos, query, subsequence);

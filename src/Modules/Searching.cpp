@@ -32,24 +32,27 @@ int search(const SearchOptions &opts) {
 
     std::ifstream query_stream(opts.query_path);
     std::ofstream result_stream(opts.results_path);
+    result_stream << std::fixed << std::setprecision(6);
 
     MtsNumChannelsT num_channels = index->get_num_channels();
     vec<vec<float>> query(num_channels);
 
-    MtsNumChannelsT c = 0;
     size_t query_count = 0;
-
-    for (str line; std::getline(query_stream, line); c = (c + 1) % num_channels) {
+    for (MtsNumChannelsT c = 0; !query_stream.eof(); c = (c + 1) % num_channels) {
+        str line;
+        std::getline(query_stream, line);
         std::istringstream iss(line);
         float value;
+
+        query[c].clear();
         while (iss >> value) {
             query[c].push_back(value);
         }
-
         if (c == num_channels - 1) {
             vec<SearchResult> results = index->search(query, opts);
             result_stream << "Results for query " << ++query_count << ":\n";
-            for (auto &result : results) result_stream << result.file_position << ' ' << result.distance << '\n';
+            for (auto &result : results)
+                result_stream << "Position: " << result.file_position << "; Distance: " << result.distance << '\n';
             result_stream << '\n';
         }
     }
