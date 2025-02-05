@@ -88,24 +88,24 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
             auto [s, c] = node->get_split_ind();
             auto [left, right] = node->get_children();
 
-            if (query[c].empty()) {
+            if (query[c].empty() || query_paa[c].size() <= s) {
                 pq.push({min_dist_squared, isax_mins, isax_maxs, left});
                 pq.push({min_dist_squared, isax_mins, isax_maxs, right});
             } else {
                 unsigned num_bits = isax_mins[c].get_num_bits()[s];
-                auto limits1 =
+                auto limits =
                     get_segment_limits(num_bits, isax_mins[c].symbol_no_shift(s), isax_maxs[c].symbol_no_shift(s));
                 auto [max_symbol_left, max_symbol_right] =
                     node->get_children_max_symbols(num_bits, m_alphabet_num_bits);
-                float prev_dist = distance_measure->min_dist_squared(query_paa[c][s], limits1.first, limits1.second);
+                float prev_dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
                 ++num_bits;
 
                 // Left child
                 vec<iSaxWord> left_isax_mins = isax_mins, left_isax_maxs = isax_maxs;
                 left_isax_mins[c].append_to_symbol(s, 0);
                 left_isax_maxs[c].set_symbol(s, num_bits, max_symbol_left);
-                auto limits = get_segment_limits(num_bits, left_isax_mins[c].symbol_no_shift(s),
-                                                 left_isax_maxs[c].symbol_no_shift(s));
+                limits = get_segment_limits(num_bits, left_isax_mins[c].symbol_no_shift(s),
+                                            left_isax_maxs[c].symbol_no_shift(s));
                 float dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
                 pq.push({min_dist_squared + m_segment_len * (dist - prev_dist), left_isax_mins, left_isax_maxs, left});
 
@@ -123,9 +123,8 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
             vec<FilePositionT> file_positions = node->get_file_positions();
             for (FilePositionT file_pos : file_positions) {
                 size_t data_remaining = m_series_len - (file_pos % m_series_len);
-                if (data_remaining < query_len) {
-                    continue;
-                }
+
+                if (data_remaining < query_len) continue;
 
                 size_t data_to_read = std::min(query_len + IEnvelopeFinalizedIndex::m_pos_per_env - 1, data_remaining);
                 vec<vec<float>> subsequence(m_num_channels);

@@ -180,14 +180,15 @@ std::unique_ptr<IEnvelopeFinalizedIndex> iSaxEnvelopeIndex::finalize() {
 
         SaxNumBitsT shift = m_alphabet_num_bits - m_first_layer_num_bits;
         for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
-            for (SaxSegIndT s = 0; s < m_num_seg_per_channel; ++s) max_symbols[c][s] = isax_max[c][s] >> shift;
+            for (SaxSegIndT s = 0; s < m_num_seg_per_channel; ++s)
+                max_symbols[c][s] = isax_max[c].symbol_no_shift(s) >> shift;
         }
         first_layer_min_symbols[i] = min_symbols;
         first_layer_max_symbols[i] = max_symbols;
         finalized_nodes[i] = std::move(finalized_node);
         ++i;
 
-        node = nullptr;
+        node.reset();
     }
 
     SeriesISaxProperties series_isax_prop = {m_segment_len, m_series_len, m_pos_per_env, m_num_channels,

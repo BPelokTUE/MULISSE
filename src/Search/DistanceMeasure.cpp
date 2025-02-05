@@ -11,7 +11,7 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT 
             query_len = query[c].size();
             num_start_pos = mts[c].size() - query_len + 1;
 
-            for (size_t i = 0; i < mts[c].size(); ++i) {
+            for (size_t i = 0; i < query[c].size(); ++i) {
                 sums[c] += mts[c][i];
                 sq_sums[c] += mts[c][i] * mts[c][i];
             }
@@ -21,8 +21,7 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT 
     for (int start_pos = 0; start_pos < num_start_pos; ++start_pos) {
         DistanceT dist_squared = 0;
         for (size_t c = 0; c < query.size(); ++c) {
-            DistanceT mu = sums[c] / query_len,
-                      sigma = std::sqrt(std::max((sq_sums[c] - (sums[c] * sums[c]) / query_len) / query_len, EPS));
+            DistanceT mu = sums[c] / query_len, sigma = std::sqrt(std::max(sq_sums[c] / query_len - mu * mu, EPS));
             for (size_t i = 0; i < query[c].size(); ++i) {
                 DistanceT diff = (mts[c][start_pos + i] - mu) / sigma - query[c][i];
                 dist_squared += diff * diff;

@@ -25,10 +25,10 @@ void flip_env_infinities(vec<Envelope>& envelopes) {
 }
 
 vec<Envelope> ulisse_envelope_raw(const vec<float>& ts, const UlisseEnvelopeParams& env_params) {
-    auto [ms_per_env, segment_len, l_min, l_max] = env_params;
+    auto [pos_per_env, segment_len, l_min, l_max] = env_params;
 
     unsigned segments_per_env = l_max / segment_len;
-    unsigned num_env = (ts.size() - l_min + ms_per_env) / ms_per_env;
+    unsigned num_env = (ts.size() - l_min + pos_per_env) / pos_per_env;
     vec<Envelope> envelopes(num_env, {vec<float>(segments_per_env, INF), vec<float>(segments_per_env, -INF)});
 
     float paa_acc = 0.0;
@@ -44,7 +44,7 @@ vec<Envelope> ulisse_envelope_raw(const vec<float>& ts, const UlisseEnvelopePara
         for (unsigned seg_ind = 0; seg_ind < segments_in_subs; ++seg_ind) {
             size_t first_ind = last_ind - (seg_ind + 1) * segment_len + 1;
             if (ts.size() - first_ind >= l_min) {
-                auto& envelope = envelopes[first_ind / ms_per_env];
+                auto& envelope = envelopes[first_ind / pos_per_env];
                 envelope.lower[seg_ind] = std::min(envelope.lower[seg_ind], paa_val);
                 envelope.upper[seg_ind] = std::max(envelope.upper[seg_ind], paa_val);
             }
@@ -55,11 +55,11 @@ vec<Envelope> ulisse_envelope_raw(const vec<float>& ts, const UlisseEnvelopePara
 }
 
 vec<Envelope> ulisse_envelope_normalized(const vec<float>& ts, const UlisseEnvelopeParams& env_params) {
-    unsigned ms_per_env = env_params.pos_per_env, segment_len = env_params.segment_len, l_min = env_params.l_min,
+    unsigned pos_per_env = env_params.pos_per_env, segment_len = env_params.segment_len, l_min = env_params.l_min,
              l_max = env_params.l_max;
 
     unsigned segments_per_env = l_max / segment_len;
-    unsigned num_env = (ts.size() - l_min + ms_per_env) / ms_per_env;
+    unsigned num_env = (ts.size() - l_min + pos_per_env) / pos_per_env;
     vec<Envelope> envelopes(num_env, {vec<float>(segments_per_env, INF), vec<float>(segments_per_env, -INF)});
 
     vec<float> sum_accs(ts.size() + 1, 0.0), sq_sum_accs(ts.size() + 1, 0.0);
@@ -83,7 +83,7 @@ vec<Envelope> ulisse_envelope_normalized(const vec<float>& ts, const UlisseEnvel
                     segment_len;
                 paa_val = (paa_val - mu) / sigma;
 
-                auto& envelope = envelopes[start / ms_per_env];
+                auto& envelope = envelopes[start / pos_per_env];
                 envelope.lower[seg_ind] = std::min(envelope.lower[seg_ind], paa_val);
                 envelope.upper[seg_ind] = std::max(envelope.upper[seg_ind], paa_val);
             }
@@ -107,10 +107,10 @@ vec<EnvelopeEntry> iSaxEnvelopeGenerator::get_entries(const vec<vec<float>>& mts
     for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
         auto channel_envs = m_envelope_func(mts[c], m_uli_params);
         for (size_t i = 0; i < channel_envs.size(); ++i) {
-            size_t series_pos = i * m_uli_params.pos_per_env;
+            size_t start_pos = i * m_uli_params.pos_per_env;
 
             if (c == 0) {
-                entries[i].file_position = series_ind * m_num_channels * series_len + series_pos;
+                entries[i].file_position = series_ind * m_num_channels * series_len + start_pos;
                 entries[i].mts_envelope.resize(m_num_channels);
             }
             entries[i].mts_envelope[c] = std::move(channel_envs[i]);

@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
     ds_subcommand->add_option("-n,--num_series", num_series, "Number of series")->required()->check(positive_int);
     ds_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
     ds_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
-    ds_subcommand->add_option("-s,--seed", seed, "Random seed")->capture_default_str();
+    ds_subcommand->add_option("-S,--seed", seed, "Random seed")->capture_default_str();
 
     // Options for creating queries
     qs_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required()->check(CLI::ExistingFile);
@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
     qs_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
     qs_subcommand->add_option("-Q,--num_queries", num_queries, "Number of queries")->required()->check(positive_int);
     qs_subcommand->add_option("-l,--lengths", lengths, "Query lengths")->required()->check(positive_int);
-    qs_subcommand->add_option("-s,--seed", seed, "Random seed")->capture_default_str();
+    qs_subcommand->add_option("-S,--seed", seed, "Random seed")->capture_default_str();
 
     // Options for indexing
     index_subcommand->add_option("-i,--index", index_path, "Output index path")->required();
@@ -177,10 +177,10 @@ int main(int argc, char **argv) {
         ->check(positive_float);
 
     // For debugging (Clang 19 + Code LLDB + CLI11 don't like each other for some reason)
-    dataset_path = "DATA/test.bin";
-    query_path = "DATA/test_query.txt";
-    index_path = "DATA/test_ind.bin";
-    results_path = "DATA/test_results.txt";
+    dataset_path = "DATA/small/test.bin";
+    index_path = "DATA/small/test_ind.bin";
+    query_path = "DATA/query1.txt";
+    results_path = "DATA/results_q1.txt";
     search_type_str = "knn";
     knn_k = 5;
     series_len = 4096;
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
     l_max = 1024;
     segment_len = 64;
     pos_per_env = 16;
-    leaf_capacity = 50;
+    leaf_capacity = 16;
 
     // Execute command
     CLI11_PARSE(app, argc, argv);

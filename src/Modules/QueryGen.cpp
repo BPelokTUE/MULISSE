@@ -14,40 +14,39 @@ int create_queries(str dataset_path, str query_path, float noise, unsigned serie
         return 1;
     }
 
-    if (std::filesystem::exists(query_path)) {
-        std::cerr << "Error: Query file " << query_path << " already exists." << std::endl;
-        return 2;
-    }
-
     // Extract time series from dataset
-
     std::default_random_engine rng(seed);
     std::normal_distribution<float> noise_normal_dist(0.0, noise);
 
     unsigned num_series = get_dataset_size(dataset_path) / (num_channels * series_len * sizeof(float));
     std::uniform_int_distribution<unsigned> series_uniform_dist(0, num_series - 1),
         channel_uniform_dist(1, num_channels);
+    vec<std::uniform_int_distribution<unsigned>> start_pos_dists(lengths.size());
+    for (unsigned i = 0; i < lengths.size(); ++i) {
+        start_pos_dists[i] = std::uniform_int_distribution<unsigned>(0, series_len - lengths[i]);
+    }
 
     std::ifstream data_file(dataset_path, std::ios::binary);
     std::ofstream query_file(query_path);
 
-    // vector of tuples of series index to extract from, length of the query, and channels to include
-    vec<std::tuple<unsigned, unsigned, vec<bool>>> query_descriptors(num_queries);
+    // vector of tuples of start position to extract from, length of the query, and channels to include
+    vec<std::tuple<FilePositionT, unsigned, vec<bool>>> query_descriptors(lengths.size() * num_queries);
     for (unsigned i = 0; i < num_queries; ++i) {
-        for (unsigned length : lengths) {
+        for (unsigned j = 0; j < lengths.size(); ++j) {
             vec<bool> channels(num_channels, false);
             unsigned included_channels = channel_uniform_dist(rng);
             std::fill(channels.begin(), channels.begin() + included_channels, true);
             std::shuffle(channels.begin(), channels.end(), rng);
 
-            query_descriptors[i] = {series_uniform_dist(rng), length, channels};
+            FilePositionT series_ind = series_uniform_dist(rng), start_pos = start_pos_dists[j](rng);
+            FilePositionT file_pos = series_ind * series_len * num_channels + start_pos;
+            query_descriptors[i * lengths.size() + j] = {file_pos * sizeof(float), lengths[j], channels};
         }
     }
     std::sort(query_descriptors.begin(), query_descriptors.end());
 
     for (size_t q = 0; q < query_descriptors.size(); ++q) {
-        const auto &[series_idx, length, channels] = query_descriptors[q];
-        unsigned long long start_offset = series_idx * num_channels * series_len * sizeof(float);
+        const auto &[start_offset, length, channels] = query_descriptors[q];
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             if (channels[c]) {
                 data_file.seekg(start_offset + c * series_len * sizeof(float));

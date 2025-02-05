@@ -19,10 +19,12 @@ SaxSymbolT iSaxWord::operator[](SaxSegIndT index) const {
     return m_symbols[index] >> (m_alphabet_num_bits - m_num_bits[index]);
 }
 
+// TODO: move logic into operator[], remove this
 SaxSymbolT iSaxWord::symbol_no_shift(SaxSegIndT index) const { return m_symbols[index]; }
 
 const vec<SaxNumBitsT> &iSaxWord::get_num_bits() const { return m_num_bits; }
 
+// TODO: remove
 uint8_t iSaxWord::apply_split(SaxSegIndT split_ind) {
     assert(m_num_bits[split_ind] < m_alphabet_num_bits);
 
@@ -43,7 +45,7 @@ void iSaxWord::remove_from_symbol(SaxSegIndT index) {
 
 void iSaxWord::set_symbol(SaxSegIndT index, SaxNumBitsT num_bits, SaxSymbolT symbol) {
     m_alphabet_num_bits = std::max(m_alphabet_num_bits, num_bits);
-    m_symbols[index] = symbol << (m_alphabet_num_bits - num_bits);
+    m_symbols[index] = symbol;  // << (m_alphabet_num_bits - num_bits);
     m_num_bits[index] = num_bits;
 }
 
