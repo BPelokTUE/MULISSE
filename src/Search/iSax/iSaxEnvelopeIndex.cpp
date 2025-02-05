@@ -36,11 +36,10 @@ iSaxEnvelopeIndex::iSaxEnvelopeIndex(const SeriesISaxProperties &series_isax_pro
     assert(num_bits_limit >= first_layer_num_bits);
 }
 
-void iSaxEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<Envelope> &mts_envelope,
-                                   std::unique_ptr<iSaxSplittableNode> &node_ref) {
+void iSaxEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, std::unique_ptr<iSaxSplittableNode> &node_ref) {
     // Split the leaf
     auto [segment_ind, channel_ind] = m_split_strategy->get_split_ind();
-    segment_ind = segment_ind % mts_envelope[0].size();
+    segment_ind = segment_ind % isax_mins[0].size();
     SaxNumBitsT split_seg_bits = isax_mins[channel_ind].get_num_bits()[segment_ind];
     // If cannot split further, return
     if (split_seg_bits == m_num_bits_limit) return;
@@ -49,14 +48,12 @@ void iSaxEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<Envelope>
     SaxSymbolT breakpoint_alphabet_size = (m_breakpoints.size() + 1);
     SaxSymbolT alphabet_size_ratio = breakpoint_alphabet_size / (1 << split_seg_bits);
 
-    bool isax_update_required = false;
     // If the segment already used the full alphabet, double the alphabet size
     // Do not update the iSAX word yet, it may not be necessary
     if (alphabet_size_ratio == 1) {
         m_breakpoints = m_breakpoint_strategy->get_breakpoints(breakpoint_alphabet_size * 2);
         alphabet_size_ratio = 2;
         ++m_alphabet_num_bits;
-        isax_update_required = true;
     }
     // `symbol * 2 + 1` goes to the upper interval in the next resolution
     // `* (alphabet_size_ratio >> 1)` goes to the lowest portion of the upper interval
@@ -95,26 +92,19 @@ void iSaxEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, const vec<Envelope>
     // Check if further splitting is necessary
     bool split_left = left_size > m_leaf_capacity, split_right = right_size > m_leaf_capacity;
     if (split_left || split_right) {
-        if (isax_update_required) {
-            for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
-                isax_mins[c] =
-                    iSaxWord(mts_envelope[c].lower, {isax_mins[c].get_num_bits(), m_alphabet_num_bits, m_breakpoints});
-            }
-        }
         auto &parent = reinterpret_cast<std::unique_ptr<iSaxSplittableInternal> &>(node_ref);
-
         if (split_left) {
             uint8_t new_bit = 0;
             isax_mins[channel_ind].append_to_symbol(segment_ind, new_bit);
             leaf = static_cast<iSaxSplittableLeaf *>(parent->m_left.get());
-            split_leaf(isax_mins, mts_envelope, parent->m_left);
+            split_leaf(isax_mins, parent->m_left);
             isax_mins[channel_ind].remove_from_symbol(segment_ind);
         }
         if (split_right) {
             uint8_t new_bit = 1;
             isax_mins[channel_ind].append_to_symbol(segment_ind, new_bit);
             leaf = static_cast<iSaxSplittableLeaf *>(parent->m_right.get());
-            split_leaf(isax_mins, mts_envelope, parent->m_right);
+            split_leaf(isax_mins, parent->m_right);
             isax_mins[channel_ind].remove_from_symbol(segment_ind);
         }
     }
@@ -157,7 +147,7 @@ void iSaxEnvelopeIndex::insert(const EnvelopeEntry &entry) {
         // Split if needed
         if (leaf->m_file_positions.size() > m_leaf_capacity) {
             auto &node_ref = parent ? (new_bit ? parent->m_right : parent->m_left) : node_it->second;
-            split_leaf(isax_mins, mts_envelope, node_ref);
+            split_leaf(isax_mins, node_ref);
         }
     }
 }

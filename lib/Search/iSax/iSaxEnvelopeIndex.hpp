@@ -53,8 +53,7 @@ class iSaxEnvelopeIndex : public IEnvelopeIndex {
     vec<float> m_breakpoints;
     std::unique_ptr<IiSaxSplitStrategy> m_split_strategy;
 
-    void split_leaf(vec<iSaxWord> &isax_min, const vec<Envelope> &envelopes,
-                    std::unique_ptr<iSaxSplittableNode> &node_ref);
+    void split_leaf(vec<iSaxWord> &isax_min, std::unique_ptr<iSaxSplittableNode> &node_ref);
 };
 
 #endif  // ISAX_ULISSE_ENVELOPE_INDEX_HPP
