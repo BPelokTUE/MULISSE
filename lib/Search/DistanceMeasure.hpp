@@ -5,10 +5,10 @@
 #include "Search/ResultSet.hpp"
 
 /** @brief Types of distance measure */
-enum DistanceType { ED };
+enum DistanceType { ED, MASS };
 
 /** @brief Map from strings to DistanceType */
-const umap<str, DistanceType> STR_TO_DISTANCE_TYPE = {{"ed", ED}, {"euclidean", ED}};
+const umap<str, DistanceType> STR_TO_DISTANCE_TYPE = {{"ed", ED}, {"euclidean", ED}, {"mass", MASS}};
 
 /** @brief Vector of accepted strings for STR_TO_DISTANCE_TYPE */
 const vec<str> DISTANCE_TYPE_STRS = get_keys(STR_TO_DISTANCE_TYPE);
@@ -46,6 +46,19 @@ class EuclideanDistance : public IDistanceMeasure {
 
     bool update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
                            const vec<vec<float>> &mts) override;
+};
+
+class EuclideanDistanceWMass : public EuclideanDistance {
+   public:
+    bool update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
+                           const vec<vec<float>> &mts) override;
+
+    EuclideanDistanceWMass(bool normalized);
+
+   private:
+    vec<DistanceT> calculate_dot_products(const vec<DistanceT> &query_channel, const vec<DistanceT> &mts_channel) const;
+
+    bool m_normalized;
 };
 
 #endif  // DISTANCE_MEASURE_HPP

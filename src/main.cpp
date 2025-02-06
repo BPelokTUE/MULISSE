@@ -182,6 +182,7 @@ int main(int argc, char **argv) {
     query_path = "DATA/query1.txt";
     results_path = "DATA/results_q1.txt";
     search_type_str = "knn";
+    distance_measure_str = "mass";
     knn_k = 5;
     series_len = 4096;
     num_channels = 1;
@@ -229,12 +230,15 @@ int main(int argc, char **argv) {
             .index_params = std::unique_ptr<IIndexParams>(index_params),
         };
         create_index(index_options);
-    } else if (search_subcommand->parsed()) {
+    } else {  // if (search_subcommand->parsed()) {
         SearchType search_type = STR_TO_SEARCH_TYPE.at(search_type_str);
         IDistanceMeasure *distance_measure;
         switch (STR_TO_DISTANCE_TYPE.at(distance_measure_str)) {
             case ED:
                 distance_measure = new EuclideanDistance();
+                break;
+            case MASS:
+                distance_measure = new EuclideanDistanceWMass(!unnormalized);
                 break;
             default:
                 cout << "Distance measure \"" << distance_measure_str << "\" is not implemented\n";

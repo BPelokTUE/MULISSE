@@ -4,10 +4,13 @@ project(ulisse_mts)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# set(CMAKE_C_COMPILER_LAUNCHER ccache)
-# set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
+set(CMAKE_C_COMPILER_LAUNCHER ccache)
+set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 set(CLI11_PRECOMPILED ON)
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+
+# Add flags to make sure they are passed to ccache
+set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -lm -lfftw3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -lm -lfftw3")
 
 # Use debug build by default
 if(NOT CMAKE_BUILD_TYPE)
@@ -33,6 +36,10 @@ include_directories(${CMAKE_SOURCE_DIR}/extern SYSTEM GLAD)
 # Add Boost
 find_package(Boost 1.87 REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
+
+# Add FFTW3
+include_directories(/usr/local/fftw3/include)
+link_directories(/usr/local/fftw3/lib)
 
 # Add OpenMP
 # Apple settings from: https://stackoverflow.com/a/60198415/27492177
@@ -66,6 +73,10 @@ file(GLOB_RECURSE TEST_SOURCES tests/*.cpp src/**/*.cpp src/utilities.cpp)
 set(TEST_NAME ${PROJECT_NAME}_tests)
 add_executable(${TEST_NAME} ${TEST_SOURCES})
 add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+
+# Link FFTW3 and math library
+target_link_libraries(${PROJECT_NAME} fftw3 m)
+target_link_libraries(${TEST_NAME} fftw3 m)
 
 # Link OpenMP
 if (OpenMP_CXX_FOUND)
