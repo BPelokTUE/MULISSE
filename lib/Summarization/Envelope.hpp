@@ -1,7 +1,7 @@
 #ifndef ENVELOPE_HPP
 #define ENVELOPE_HPP
 
-#include "typedefs.hpp"
+#include "Util/typedefs.hpp"
 
 /**
  * @brief Envelope of a multivariate time series

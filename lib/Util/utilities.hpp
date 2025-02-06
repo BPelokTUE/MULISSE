@@ -1,7 +1,7 @@
 #ifndef UTIL_HPP
 #define UTIL_HPP
 
-#include "typedefs.hpp"
+#include "Util/typedefs.hpp"
 
 /**
  * @brief Get the size of a dataset
@@ -21,7 +21,7 @@ size_t get_dataset_size(const str dataset_path);
 template <typename T>
 vec<str> get_keys(const umap<str, T> map) {
     vec<str> keys;
-    for (const auto &pair : map) {
+    for (const auto& pair : map) {
         keys.push_back(pair.first);
     }
     return keys;

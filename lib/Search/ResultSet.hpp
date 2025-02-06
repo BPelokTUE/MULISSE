@@ -1,7 +1,7 @@
 #ifndef RESULT_SET_HPP
 #define RESULT_SET_HPP
 
-#include "typedefs.hpp"
+#include "Util/typedefs.hpp"
 
 /** @brief Search result */
 struct SearchResult {

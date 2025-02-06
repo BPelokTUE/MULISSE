@@ -1,7 +1,7 @@
 #ifndef ISAX_NODE_HPP
 #define ISAX_NODE_HPP
 
-#include "typedefs.hpp"
+#include "Util/typedefs.hpp"
 
 /** @brief Base class for iSAX nodes */
 class iSaxNode {

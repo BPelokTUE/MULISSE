@@ -1,7 +1,7 @@
 #ifndef RANDOMWALK_HPP
 #define RANDOMWALK_HPP
 
-#include "typedefs.hpp"
+#include "Util/typedefs.hpp"
 
 /**
  * @brief Creates random walks and writes them to a binary file

@@ -6,7 +6,7 @@
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
 
-#include "typedefs.hpp"
+#include "Util/typedefs.hpp"
 #include "Search/IndexOptions.hpp"
 #include "Search/SearchOptions.hpp"
 #include "Summarization/Envelope.hpp"

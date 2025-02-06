@@ -3,7 +3,7 @@
 
 #include "Summarization/iSaxBreakpointStrategy.hpp"
 #include "Search/iSax/iSaxSplitStrategy.hpp"
-#include "utilities.hpp"
+#include "Util/utilities.hpp"
 
 /** @brief Enumeration type for IEnvelopeIndex */
 enum IndexType { ISAX_ENVELOPE };

@@ -1,7 +1,7 @@
 #ifndef QUERY_GEN_HPP
 #define QUERY_GEN_HPP
 
-#include "typedefs.hpp"
+#include "Util/typedefs.hpp"
 
 /**
  * @brief Create queries from dataset by extracting subsequences and adding noise

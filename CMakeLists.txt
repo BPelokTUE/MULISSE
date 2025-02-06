@@ -67,7 +67,7 @@ file(GLOB_RECURSE SOURCES src/*.cpp)
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 # Gather test files
-file(GLOB_RECURSE TEST_SOURCES tests/*.cpp src/**/*.cpp src/utilities.cpp)
+file(GLOB_RECURSE TEST_SOURCES tests/*.cpp src/**/*.cpp)
 
 # Add test executable
 set(TEST_NAME ${PROJECT_NAME}_tests)

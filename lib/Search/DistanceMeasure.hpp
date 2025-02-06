@@ -1,7 +1,7 @@
 #ifndef DISTANCE_MEASURE_HPP
 #define DISTANCE_MEASURE_HPP
 
-#include "utilities.hpp"
+#include "Util/utilities.hpp"
 #include "Search/ResultSet.hpp"
 
 /** @brief Types of distance measure */

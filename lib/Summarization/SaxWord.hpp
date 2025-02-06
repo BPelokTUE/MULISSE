@@ -1,7 +1,7 @@
 #ifndef SAX_WORD_HPP
 #define SAX_WORD_HPP
 
-#include "typedefs.hpp"
+#include "Util/typedefs.hpp"
 
 #include <boost/functional/hash.hpp>
 

@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "typedefs.hpp"
+#include "Util/typedefs.hpp"
 
 /**
  * @brief Piecewise Aggregate Approximation (PAA) of a time series

@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "Search/DistanceMeasure.hpp"
+#include "Util/FftArray.hpp"
 
 bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
                                           const vec<vec<float>> &mts) {
@@ -64,12 +65,8 @@ vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<Distance
                                                               const vec<DistanceT> &mts_channel) const {
     unsigned mts_len = mts_channel.size(), query_len = q_channel.size();
 
-    fftw_complex *q_complex = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * 2 * mts_len),
-                 *mts_complex = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * 2 * mts_len),
-                 *query_fft = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * 2 * mts_len),
-                 *mts_fft = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * 2 * mts_len),
-                 *dot_prods_fft = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * 2 * mts_len),
-                 *dot_products = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * 2 * mts_len);
+    FftArray q_complex(2 * mts_len), mts_complex(2 * mts_len), query_fft(2 * mts_len), mts_fft(2 * mts_len),
+        dot_prods_fft(2 * mts_len), dot_products(2 * mts_len);
 
     for (unsigned i = 0; i < 2 * mts_len; ++i) {
         q_complex[i][1] = 0;
@@ -86,11 +83,11 @@ vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<Distance
             q_complex[i][0] = 0;
     }
 
-    fftw_plan plan = fftw_plan_dft_1d(2 * mts_len, mts_complex, mts_fft, FFTW_FORWARD, FFTW_ESTIMATE);
+    fftw_plan plan = fftw_plan_dft_1d(2 * mts_len, mts_complex.data(), mts_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
     fftw_execute(plan);
     fftw_destroy_plan(plan);
 
-    plan = fftw_plan_dft_1d(2 * mts_len, q_complex, query_fft, FFTW_FORWARD, FFTW_ESTIMATE);
+    plan = fftw_plan_dft_1d(2 * mts_len, q_complex.data(), query_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
     fftw_execute(plan);
     fftw_destroy_plan(plan);
 
@@ -99,19 +96,12 @@ vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<Distance
         dot_prods_fft[i][1] = query_fft[i][0] * mts_fft[i][1] + query_fft[i][1] * mts_fft[i][0];
     }
 
-    plan = fftw_plan_dft_1d(2 * mts_len, dot_prods_fft, dot_products, FFTW_BACKWARD, FFTW_ESTIMATE);
+    plan = fftw_plan_dft_1d(2 * mts_len, dot_prods_fft.data(), dot_products.data(), FFTW_BACKWARD, FFTW_ESTIMATE);
     fftw_execute(plan);
     fftw_destroy_plan(plan);
 
     vec<DistanceT> dot_products_real(mts_len);
     for (unsigned i = 0; i < mts_len; ++i) dot_products_real[i] = dot_products[i][0] / (2 * mts_len);
-
-    fftw_free(q_complex);
-    fftw_free(mts_complex);
-    fftw_free(query_fft);
-    fftw_free(mts_fft);
-    fftw_free(dot_prods_fft);
-    fftw_free(dot_products);
 
     return dot_products_real;
 }

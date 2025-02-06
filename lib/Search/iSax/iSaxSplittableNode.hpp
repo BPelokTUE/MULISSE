@@ -1,7 +1,7 @@
 #ifndef ISAX_SPLITTABLE_NODE_HPP
 #define ISAX_SPLITTABLE_NODE_HPP
 
-#include "typedefs.hpp"
+#include "Util/typedefs.hpp"
 #include "Search/iSax/iSaxNode.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
 #include "Summarization/Envelope.hpp"
