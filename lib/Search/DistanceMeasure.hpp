@@ -11,7 +11,7 @@ enum DistanceType { ED, MASS };
 const umap<str, DistanceType> STR_TO_DISTANCE_TYPE = {{"ed", ED}, {"euclidean", ED}, {"mass", MASS}};
 
 /** @brief Vector of accepted strings for STR_TO_DISTANCE_TYPE */
-const vec<str> DISTANCE_TYPE_STRS = get_keys(STR_TO_DISTANCE_TYPE);
+const vec<str> DISTANCE_TYPE_STRS = get_map_keys(STR_TO_DISTANCE_TYPE);
 
 /** @brief Interface for distance measures */
 class IDistanceMeasure {
@@ -56,7 +56,8 @@ class EuclideanDistanceWMass : public EuclideanDistance {
     EuclideanDistanceWMass(bool normalized);
 
    private:
-    vec<DistanceT> calculate_dot_products(const vec<DistanceT> &query_channel, const vec<DistanceT> &mts_channel) const;
+    vec<DistanceT> calculate_dot_products(const vec<DistanceT> &query_channel, const vec<DistanceT> &mts_channel,
+                                          FilePositionT file_pos, unsigned channel_ind) const;
 
     bool m_normalized;
 };

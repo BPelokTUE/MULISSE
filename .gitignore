@@ -1,5 +1,6 @@
 # Build files
 build/*
+xcode/*
 
 # Helper files
 DATA/*

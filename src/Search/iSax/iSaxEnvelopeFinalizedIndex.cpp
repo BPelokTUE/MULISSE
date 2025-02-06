@@ -3,6 +3,7 @@
 
 #include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
 #include "Summarization/Paa.hpp"
+#include "Util/RunSettings.hpp"
 
 iSaxEnvelopeFinalizedIndex::iSaxEnvelopeFinalizedIndex(const SeriesISaxProperties& series_isax_prop,
                                                        vec<vec<vec<SaxSymbolT>>> first_layer_min_symbols,
@@ -46,6 +47,9 @@ struct PQueueEntry {
 
 vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& query, const SearchOptions& opts) const {
     assert(query.size() == m_num_channels);
+
+    auto& RS = RunSettings::get_instance();
+    if (RS.ffts_supported()) RS.reset_query_ffts();
 
     std::ifstream data_stream(opts.dataset_path, std::ios::binary);
 

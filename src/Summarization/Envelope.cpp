@@ -33,7 +33,7 @@ vec<Envelope> ulisse_envelope_raw(const vec<float>& ts, const UlisseEnvelopePara
 
     float paa_acc = 0.0;
 
-    for (size_t last_ind = 0; last_ind < ts.size(); ++last_ind) {
+    for (int last_ind = 0; last_ind < ts.size(); ++last_ind) {
         paa_acc += ts[last_ind];
         unsigned subs_len = last_ind + 1;
         if (subs_len > segment_len) paa_acc -= ts[last_ind - segment_len];
@@ -42,7 +42,7 @@ vec<Envelope> ulisse_envelope_raw(const vec<float>& ts, const UlisseEnvelopePara
 
         float paa_val = paa_acc / segment_len;
         for (unsigned seg_ind = 0; seg_ind < segments_in_subs; ++seg_ind) {
-            size_t first_ind = last_ind - (seg_ind + 1) * segment_len + 1;
+            int first_ind = last_ind + 1 - (seg_ind + 1) * segment_len;
             if (ts.size() - first_ind >= l_min) {
                 auto& envelope = envelopes[first_ind / pos_per_env];
                 envelope.lower[seg_ind] = std::min(envelope.lower[seg_ind], paa_val);

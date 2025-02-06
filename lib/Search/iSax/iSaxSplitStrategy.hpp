@@ -11,7 +11,7 @@ enum iSaxSplitStrategyType { DOUBLE_ROUND_ROBIN };
 const umap<str, iSaxSplitStrategyType> STR_TO_ISAX_SPLIT_STRATEGY = {{"double_round_robin", DOUBLE_ROUND_ROBIN}};
 
 /** @brief Vector of accepted strings for STR_TO_ISAX_SPLIT_STRATEGY */
-const vec<str> ISAX_SPLIT_STRATEGY_STRS = get_keys(STR_TO_ISAX_SPLIT_STRATEGY);
+const vec<str> ISAX_SPLIT_STRATEGY_STRS = get_map_keys(STR_TO_ISAX_SPLIT_STRATEGY);
 
 /** @brief Interface for iSAX split strategies */
 class IiSaxSplitStrategy {

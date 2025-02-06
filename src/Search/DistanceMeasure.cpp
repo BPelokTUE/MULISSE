@@ -4,6 +4,7 @@
 
 #include "Search/DistanceMeasure.hpp"
 #include "Util/FftArray.hpp"
+#include "Util/RunSettings.hpp"
 
 bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
                                           const vec<vec<float>> &mts) {
@@ -61,35 +62,40 @@ DistanceT EuclideanDistance::min_dist_squared(const float paa, float lower, floa
 
 EuclideanDistanceWMass::EuclideanDistanceWMass(bool normalized) : m_normalized(normalized) {}
 
+bool printed = false;
+
 vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<DistanceT> &q_channel,
-                                                              const vec<DistanceT> &mts_channel) const {
+                                                              const vec<DistanceT> &mts_channel, FilePositionT file_pos,
+                                                              unsigned channel_ind) const {
     unsigned mts_len = mts_channel.size(), query_len = q_channel.size();
 
-    FftArray q_complex(2 * mts_len), mts_complex(2 * mts_len), query_fft(2 * mts_len), mts_fft(2 * mts_len),
-        dot_prods_fft(2 * mts_len), dot_products(2 * mts_len);
+    FftArray query_fft(2 * mts_len), mts_fft(2 * mts_len), dot_prods_fft(2 * mts_len), dot_products(2 * mts_len);
+    fftw_plan plan;
 
-    for (unsigned i = 0; i < 2 * mts_len; ++i) {
-        q_complex[i][1] = 0;
-        mts_complex[i][1] = 0;
+    auto &run_settings = RunSettings::get_instance();
 
-        if (i < mts_len)
-            mts_complex[i][0] = mts_channel[i];
-        else
-            mts_complex[i][0] = 0;
+    if (run_settings.ffts_supported()) {
+        mts_fft = run_settings.get_ffts(file_pos, channel_ind, mts_len);
 
-        if (i < query_len)
-            q_complex[i][0] = q_channel[query_len - 1 - i];
-        else
-            q_complex[i][0] = 0;
+        auto *query_fft_ptr = run_settings.get_query_ffts(channel_ind);
+        if (!query_fft_ptr) {
+            run_settings.calculate_query_ffts(q_channel, channel_ind, mts_len);
+            query_fft_ptr = run_settings.get_query_ffts(channel_ind);
+        }
+        query_fft = *query_fft_ptr;
+    } else {
+        FftArray mts_complex(2 * mts_len);
+        for (unsigned i = 0; i < mts_len; ++i) mts_complex[i][0] = mts_channel[i];
+        plan = fftw_plan_dft_1d(2 * mts_len, mts_complex.data(), mts_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
+        fftw_execute(plan);
+        fftw_destroy_plan(plan);
+
+        FftArray q_complex(2 * mts_len);
+        for (unsigned i = 0; i < query_len; ++i) q_complex[i][0] = q_channel[query_len - 1 - i];
+        plan = fftw_plan_dft_1d(2 * mts_len, q_complex.data(), query_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
+        fftw_execute(plan);
+        fftw_destroy_plan(plan);
     }
-
-    fftw_plan plan = fftw_plan_dft_1d(2 * mts_len, mts_complex.data(), mts_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
-    fftw_execute(plan);
-    fftw_destroy_plan(plan);
-
-    plan = fftw_plan_dft_1d(2 * mts_len, q_complex.data(), query_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
-    fftw_execute(plan);
-    fftw_destroy_plan(plan);
 
     for (unsigned i = 0; i < 2 * mts_len; ++i) {
         dot_prods_fft[i][0] = query_fft[i][0] * mts_fft[i][0] - query_fft[i][1] * mts_fft[i][1];
@@ -140,7 +146,7 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, FilePosit
         DistanceT query_mu = query_sum / query_len,
                   query_sigma = std::sqrt(std::max(query_sum_sq / query_len - query_mu * query_mu, EPS));
 
-        vec<DistanceT> dot_products = calculate_dot_products(q_channel, mts_channel);
+        vec<DistanceT> dot_products = calculate_dot_products(q_channel, mts_channel, file_pos, c);
 
         if (m_normalized) {
             for (unsigned start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {

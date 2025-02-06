@@ -12,7 +12,7 @@ enum SearchType { KNN, R_RANGE };
 const umap<str, SearchType> STR_TO_SEARCH_TYPE = {{"knn", KNN}, {"r_range", R_RANGE}};
 
 /** @brief Vector of accepted strings for STR_TO_SEARCH_TYPE */
-const vec<str> SEARCH_TYPE_STRS = get_keys(STR_TO_SEARCH_TYPE);
+const vec<str> SEARCH_TYPE_STRS = get_map_keys(STR_TO_SEARCH_TYPE);
 
 /** @brief Options for searching */
 struct SearchOptions {

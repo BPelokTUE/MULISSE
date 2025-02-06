@@ -12,7 +12,7 @@ enum IndexType { ISAX_ENVELOPE };
 const umap<str, IndexType> STR_TO_INDEX_TYPE = {{"isax_envelope", ISAX_ENVELOPE}};
 
 /** @brief Vector of accepted strings for STR_TO_INDEX_TYPE */
-const vec<str> INDEX_TYPE_STRS = get_keys(STR_TO_INDEX_TYPE);
+const vec<str> INDEX_TYPE_STRS = get_map_keys(STR_TO_INDEX_TYPE);
 
 /** @brief Vector of IndexType values */
 const vec<IndexType> ENVELOPE_TYPES = {ISAX_ENVELOPE};
@@ -94,7 +94,7 @@ enum ArchiveType { BINARY, JSON };
 const umap<str, ArchiveType> STR_TO_ARCHIVE_TYPE = {{"binary", BINARY}, {"json", JSON}};
 
 /** @brief Vector of accepted strings for STR_TO_ARCHIVE_TYPE */
-const vec<str> ARCHIVE_TYPE_STRS = get_keys(STR_TO_ARCHIVE_TYPE);
+const vec<str> ARCHIVE_TYPE_STRS = get_map_keys(STR_TO_ARCHIVE_TYPE);
 
 /** @brief Options for creating an index */
 struct IndexOptions {

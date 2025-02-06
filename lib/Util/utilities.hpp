@@ -15,16 +15,34 @@ size_t get_dataset_size(const str dataset_path);
  * @brief Get the keys of a map
  *
  * @tparam T Type of the map values
+ * @tparam V Type of the map keys
  * @param map The map
  * @return Vector of keys
  */
-template <typename T>
-vec<str> get_keys(const umap<str, T> map) {
-    vec<str> keys;
+template <typename K, typename V>
+vec<K> get_map_keys(const umap<K, V> map) {
+    vec<K> keys;
     for (const auto& pair : map) {
         keys.push_back(pair.first);
     }
     return keys;
+}
+
+/**
+ * @brief Get the inverse of a map
+ *
+ * @tparam K Type of the map values
+ * @tparam V Type of the map keys
+ * @param map The map
+ * @return Inverse of the map
+ */
+template <typename K, typename V>
+umap<V, K> get_inverse_map(const umap<K, V> map) {
+    umap<V, K> inverse_map;
+    for (const auto& pair : map) {
+        inverse_map[pair.second] = pair.first;
+    }
+    return inverse_map;
 }
 
 #endif  // UTIL_HPP

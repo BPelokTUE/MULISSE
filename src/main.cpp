@@ -8,6 +8,7 @@
 #include "Modules/QueryGen.hpp"
 #include "Modules/Indexing.hpp"
 #include "Modules/Searching.hpp"
+#include "Util/RunSettings.hpp"
 
 using std::string, std::cout;
 
@@ -15,10 +16,10 @@ int main(int argc, char **argv) {
     CLI::App app{"Run ULISSE-MTS"};
 
     // Add subcommands
-    auto ds_subcommand = app.add_subcommand("create_ds", "Create random walk dataset");
-    auto qs_subcommand = app.add_subcommand("create_qs", "Create queries from dataset");
-    auto index_subcommand = app.add_subcommand("index", "Construct ULISSE MTS index");
-    auto search_subcommand = app.add_subcommand("search", "Search using ULISSE MTS");
+    auto ds_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_DS), "Create random walk dataset");
+    auto qs_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_QS), "Create queries from dataset");
+    auto index_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(INDEX), "Construct ULISSE MTS index");
+    auto search_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(SEARCH), "Search using ULISSE MTS");
     app.require_subcommand(1);
 
     // Define custom validators
@@ -84,11 +85,11 @@ int main(int argc, char **argv) {
     */
 
     string dataset_path, query_path, index_path, results_path,
-        index_type_str = INDEX_TYPE_STRS[0], split_strategy_str = ISAX_SPLIT_STRATEGY_STRS[0],
+        ffts_path = "", index_type_str = INDEX_TYPE_STRS[0], split_strategy_str = ISAX_SPLIT_STRATEGY_STRS[0],
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0], index_format_str = ARCHIVE_TYPE_STRS[0],
         search_type_str, distance_measure_str = DISTANCE_TYPE_STRS[0];
     float noise = 1.0;
-    unsigned num_series, series_len, num_queries, l_min, l_max, segment_len, pos_per_env, knn_k = 1;
+    unsigned num_series = 0, series_len, num_queries, l_min, l_max, segment_len, pos_per_env, knn_k = 1;
     DistanceT r_range_r = 1.0;
     int seed = 0;
     size_t leaf_capacity;
@@ -118,6 +119,9 @@ int main(int argc, char **argv) {
     // Options for indexing
     index_subcommand->add_option("-i,--index", index_path, "Output index path")->required();
     index_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required()->check(CLI::ExistingFile);
+    index_subcommand
+        ->add_option("-F,--ffts", ffts_path, "Path to save FFTs; if not provided, FFTs will not be calculated")
+        ->capture_default_str();
     index_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
     index_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
         ->required()
@@ -153,6 +157,9 @@ int main(int argc, char **argv) {
         ->required()
         ->check(CLI::ExistingFile);
     search_subcommand->add_option("-q,--query", query_path, "Query file path")->required()->check(CLI::ExistingFile);
+    search_subcommand
+        ->add_option("-F,--ffts", ffts_path, "Path to load FFTs from; if not provided, FFTs will not be loaded")
+        ->capture_default_str();
     search_subcommand->add_option("-o,--out", results_path, "Output file path")->required();
     search_subcommand->add_option("-t,--index_type", index_type_str, "Index type")
         ->capture_default_str()
@@ -179,8 +186,9 @@ int main(int argc, char **argv) {
     // For debugging (Clang 19 + Code LLDB + CLI11 don't like each other for some reason)
     dataset_path = "DATA/small/test.bin";
     index_path = "DATA/small/test_ind.bin";
-    query_path = "DATA/query1.txt";
-    results_path = "DATA/results_q1.txt";
+    query_path = "DATA/small/test_query.txt";
+    results_path = "DATA/small/test_results.txt";
+    ffts_path = "DATA/small/test_ffts.bin";
     search_type_str = "knn";
     distance_measure_str = "mass";
     knn_k = 5;
@@ -192,14 +200,18 @@ int main(int argc, char **argv) {
     pos_per_env = 16;
     leaf_capacity = 16;
 
-    // Execute command
+    // Parse arguments and initialize run settings
     CLI11_PARSE(app, argc, argv);
+    CommandType command_type = STR_TO_CMD_TYPE.at(app.get_subcommands().front()->get_name());
+    // CommandType command_type = SEARCH;
+    RunSettings::initialize(command_type, {dataset_path, num_channels, series_len, num_series}, ffts_path);
 
-    if (ds_subcommand->parsed()) {
+    // Execute subcommand
+    if (command_type == CREATE_DS) {
         create_random_walks(dataset_path, noise, zero_start, num_series, series_len, num_channels, seed);
-    } else if (qs_subcommand->parsed()) {
+    } else if (command_type == CREATE_QS) {
         create_queries(dataset_path, query_path, noise, series_len, num_channels, num_queries, lengths, seed);
-    } else if (index_subcommand->parsed()) {
+    } else if (command_type == INDEX) {
         IndexType index_type = STR_TO_INDEX_TYPE.at(index_type_str);
         IIndexParams *index_params;
         switch (index_type) {
@@ -230,7 +242,7 @@ int main(int argc, char **argv) {
             .index_params = std::unique_ptr<IIndexParams>(index_params),
         };
         create_index(index_options);
-    } else {  // if (search_subcommand->parsed()) {
+    } else if (command_type == SEARCH) {
         SearchType search_type = STR_TO_SEARCH_TYPE.at(search_type_str);
         IDistanceMeasure *distance_measure;
         switch (STR_TO_DISTANCE_TYPE.at(distance_measure_str)) {

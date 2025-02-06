@@ -8,10 +8,6 @@ set(CMAKE_C_COMPILER_LAUNCHER ccache)
 set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 set(CLI11_PRECOMPILED ON)
 
-# Add flags to make sure they are passed to ccache
-set(CMAKE_C_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -lm -lfftw3")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp -lm -lfftw3")
-
 # Use debug build by default
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
@@ -83,3 +79,7 @@ if (OpenMP_CXX_FOUND)
     target_link_libraries(${PROJECT_NAME} OpenMP::OpenMP_CXX)
     target_link_libraries(${TEST_NAME} OpenMP::OpenMP_CXX)
 endif()
+
+# Ensure flags are passed to ccache
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")

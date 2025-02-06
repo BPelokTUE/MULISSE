@@ -5,6 +5,7 @@
 #include "Modules/Indexing.hpp"
 #include "Search/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxEnvelopeIndex.hpp"
+#include "Util/RunSettings.hpp"
 
 uptr<IiSaxBreakpointStrategy> get_breakpoint_strategy(const iSaxIndexParams *params) {
     switch (params->breakpoint_strategy_type) {
@@ -72,5 +73,9 @@ int create_index(const IndexOptions &opts) {
         std::ofstream index_stream(opts.index_path, std::ios::binary);
         index->finalize()->save(index_stream, opts.index_format);
     }
+
+    auto &run_settings = RunSettings::get_instance();
+    if (run_settings.ffts_supported()) run_settings.calculate_ffts();
+
     return 0;
 }
