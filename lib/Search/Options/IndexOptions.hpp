@@ -2,20 +2,9 @@
 #define INDEX_OPTIONS_HPP
 
 #include "Summarization/iSaxBreakpointStrategy.hpp"
+#include "Search/Options/SearchMethodType.hpp"
 #include "Search/iSax/iSaxSplitStrategy.hpp"
 #include "Util/utilities.hpp"
-
-/** @brief Enumeration type for IEnvelopeIndex */
-enum IndexType { ISAX_ENVELOPE };
-
-/** @brief Map from strings to IndexType */
-const umap<str, IndexType> STR_TO_INDEX_TYPE = {{"isax_envelope", ISAX_ENVELOPE}};
-
-/** @brief Vector of accepted strings for STR_TO_INDEX_TYPE */
-const vec<str> INDEX_TYPE_STRS = get_map_keys(STR_TO_INDEX_TYPE);
-
-/** @brief Vector of IndexType values */
-const vec<IndexType> ENVELOPE_TYPES = {ISAX_ENVELOPE};
 
 /** @brief Interface for index parameters */
 struct IIndexParams {
@@ -26,7 +15,7 @@ struct IIndexParams {
      *
      * @return The type of the index
      */
-    virtual IndexType get_type() const = 0;
+    virtual SearchMethodType get_type() const = 0;
 };
 
 /**
@@ -61,7 +50,7 @@ struct iSaxIndexParams {
 
 /** @brief Parameters for an iSAX envelope (ULISSE) index */
 struct iSaxEnvelopeIndexParams : EnvelopeIndexParams, iSaxIndexParams {
-    IndexType get_type() const override { return ISAX_ENVELOPE; }
+    SearchMethodType get_type() const override { return ISAX_ENVELOPE; }
 
     /**
      * @brief Constructor

@@ -26,42 +26,45 @@ uptr<IiSaxSplitStrategy> get_split_strategy(const iSaxIndexParams *params, SaxSe
 }
 
 uptr<IEnvelopeIndex> get_index(const IndexOptions &opts) {
-    switch (opts.index_params->get_type()) {
-        case ISAX_ENVELOPE:
-            auto *params = static_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
-            SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
+    SearchMethodType search_method_type = opts.index_params->get_type();
 
-            auto breakpoint_strategy = get_breakpoint_strategy(params);
-            auto split_strategy = get_split_strategy(params, num_seg_per_channel, opts.num_channels);
+    if (search_method_type == ISAX_ENVELOPE) {
+        auto *params = static_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
+        SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
 
-            SeriesISaxProperties series_isax_prop = {
-                params->segment_len, opts.series_len, params->pos_per_env, opts.num_channels, num_seg_per_channel,
-            };
+        auto breakpoint_strategy = get_breakpoint_strategy(params);
+        auto split_strategy = get_split_strategy(params, num_seg_per_channel, opts.num_channels);
 
-            SaxNumBitsT breakpoint_num_bits = DEFAULT_NUM_BIT_LIMIT;
-            RunSettings::get_instance().set_isax_properties(
-                {num_seg_per_channel, params->segment_len,
-                 breakpoint_strategy->get_breakpoints(1 << breakpoint_num_bits), breakpoint_num_bits});
+        SeriesISaxProperties series_isax_prop = {
+            params->segment_len, opts.series_len, params->pos_per_env, opts.num_channels, num_seg_per_channel,
+        };
 
-            auto *index = new iSaxEnvelopeIndex(series_isax_prop, params->first_layer_num_bits, params->leaf_capacity,
-                                                std::move(split_strategy));
-            return uptr<IEnvelopeIndex>(index);
+        SaxNumBitsT breakpoint_num_bits = DEFAULT_NUM_BIT_LIMIT;
+        RunSettings::get_instance().set_isax_properties({num_seg_per_channel, params->segment_len,
+                                                         breakpoint_strategy->get_breakpoints(1 << breakpoint_num_bits),
+                                                         breakpoint_num_bits});
+
+        auto *index = new iSaxEnvelopeIndex(series_isax_prop, params->first_layer_num_bits, params->leaf_capacity,
+                                            std::move(split_strategy));
+        return uptr<IEnvelopeIndex>(index);
     }
     return nullptr;
 }
 
 uptr<IEnvelopeGenerator> get_envelope_generator(const IndexOptions &opts) {
-    switch (opts.index_params->get_type()) {
-        case ISAX_ENVELOPE:
-            auto *params = static_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
-            UlisseEnvelopeParams uli_params = {
-                .pos_per_env = params->pos_per_env,
-                .segment_len = params->segment_len,
-                .l_min = opts.l_min,
-                .l_max = opts.l_max,
-            };
-            return std::make_unique<iSaxEnvelopeGenerator>(opts.num_channels, opts.normalized, uli_params);
+    SearchMethodType search_method_type = opts.index_params->get_type();
+
+    if (search_method_type == ISAX_ENVELOPE) {
+        auto *params = static_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
+        UlisseEnvelopeParams uli_params = {
+            .pos_per_env = params->pos_per_env,
+            .segment_len = params->segment_len,
+            .l_min = opts.l_min,
+            .l_max = opts.l_max,
+        };
+        return std::make_unique<iSaxEnvelopeGenerator>(opts.num_channels, opts.normalized, uli_params);
     }
+    return nullptr;
 }
 
 int create_index(const IndexOptions &opts) {

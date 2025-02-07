@@ -3,7 +3,7 @@
 
 #include "Util/typedefs.hpp"
 
-#include "Search/IndexOptions.hpp"
+#include "Search/Options/IndexOptions.hpp"
 
 /**
  * @brief Create an index based on the specified options

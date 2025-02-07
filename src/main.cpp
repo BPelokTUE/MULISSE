@@ -81,10 +81,10 @@ int main(int argc, char **argv) {
     out         |           |              |       |   X    |
     */
 
-    str dataset_path, query_path, index_path, results_path,
-        ffts_path = "", index_type_str = INDEX_TYPE_STRS[0], split_strategy_str = ISAX_SPLIT_STRATEGY_STRS[0],
-        breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0], index_format_str = ARCHIVE_TYPE_STRS[0],
-        search_type_str, distance_measure_str = DISTANCE_TYPE_STRS[0];
+    str dataset_path, query_path,
+        index_path = "", results_path, ffts_path = "", search_method_type_str = SEARCH_METHOD_TYPE_STRS[0],
+        split_strategy_str = ISAX_SPLIT_STRATEGY_STRS[0], breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0],
+        index_format_str = ARCHIVE_TYPE_STRS[0], search_type_str, distance_measure_str = DISTANCE_TYPE_STRS[0];
     float noise = 1.0;
     uint num_series = 0, series_len, num_queries, l_min, l_max, segment_len = 0, pos_per_env = 0, knn_k = 1;
     DistanceT r_range_r = 1.0;
@@ -126,9 +126,9 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-f,--format", index_format_str, "Index format")
         ->capture_default_str()
         ->check(CLI::IsMember(ARCHIVE_TYPE_STRS));
-    index_subcommand->add_option("-t,--index_type", index_type_str, "Index type")
+    index_subcommand->add_option("-t,--index_type", search_method_type_str, "Index type")
         ->capture_default_str()
-        ->check(CLI::IsMember(INDEX_TYPE_STRS));
+        ->check(CLI::IsMember(SEARCH_METHOD_TYPE_STRS));
     index_subcommand->add_option("-S,--split_strategy", split_strategy_str, "Split strategy")
         ->capture_default_str()
         ->check(CLI::IsMember(ISAX_SPLIT_STRATEGY_STRS));
@@ -149,7 +149,8 @@ int main(int argc, char **argv) {
     index_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
 
     // Options for searching
-    search_subcommand->add_option("-i,--index", index_path, "Index file path")->required()->check(CLI::ExistingFile);
+    // TODO: check if file exists but only when the path is not empty string
+    search_subcommand->add_option("-i,--index", index_path, "Index file path")->capture_default_str();
     search_subcommand->add_option("-d,--dataset", dataset_path, "Dataset file path")
         ->required()
         ->check(CLI::ExistingFile);
@@ -158,13 +159,13 @@ int main(int argc, char **argv) {
         ->add_option("-F,--ffts", ffts_path, "Path to load FFTs from; if not provided, FFTs will not be loaded")
         ->capture_default_str();
     search_subcommand->add_option("-o,--out", results_path, "Output file path")->required();
-    // TODO: figure out how to handle `num_channels` for `RunSettings` in the `SEARCH` case
     search_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
         ->required()
         ->check(positive_int);
-    search_subcommand->add_option("-t,--index_type", index_type_str, "Index type")
+    search_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
+    search_subcommand->add_option("-t,--method_type", search_method_type_str, "Search method type")
         ->capture_default_str()
-        ->check(CLI::IsMember(INDEX_TYPE_STRS));
+        ->check(CLI::IsMember(SEARCH_METHOD_TYPE_STRS));
     search_subcommand->add_option("-f,--format", index_format_str, "Index format")
         ->capture_default_str()
         ->check(CLI::IsMember(ARCHIVE_TYPE_STRS));
@@ -201,7 +202,7 @@ int main(int argc, char **argv) {
     } else if (command_type == CREATE_QS) {
         create_queries(dataset_path, query_path, noise, series_len, num_channels, num_queries, lengths, seed);
     } else if (command_type == INDEX) {
-        IndexType index_type = STR_TO_INDEX_TYPE.at(index_type_str);
+        SearchMethodType index_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str);
         IIndexParams *index_params;
         switch (index_type) {
             case ISAX_ENVELOPE:
@@ -215,8 +216,11 @@ int main(int argc, char **argv) {
                     DEFAULT_NUM_BIT_LIMIT,
                 };
                 break;
+            case SEQUENTIAL_SCAN:
+                std::cerr << "Sequential scan does not require indexation\n";
+                return 1;
             default:
-                std::cerr << "Index type \"" << index_type_str << "\" is not implemented\n";
+                std::cerr << "Index type \"" << search_method_type_str << "\" is not implemented\n";
                 return 1;
         }
         IndexOptions index_options{
@@ -262,7 +266,7 @@ int main(int argc, char **argv) {
             .dataset_path = dataset_path,
             .query_path = query_path,
             .results_path = results_path,
-            .index_type = STR_TO_INDEX_TYPE.at(index_type_str),
+            .search_method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str),
             .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
             .exact = !approximate,
             .normalized = !unnormalized,

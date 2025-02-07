@@ -1,20 +1,26 @@
 #include "Modules/Searching.hpp"
 
+#include "Util/RunSettings.hpp"
 #include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
+#include "Search/SequentialScan.hpp"
 
-uptr<IEnvelopeFinalizedIndex> load_index(IndexType index_type, const str &index_path, ArchiveType index_format) {
-    std::ifstream index_stream(index_path, std::ios::binary);
-    uptr<IEnvelopeFinalizedIndex> index;
+uptr<ISearchMethod> load_method(const SearchOptions &opts) {
+    switch (opts.search_method_type) {
+        case ISAX_ENVELOPE: {
+            if (opts.index_path.empty()) {
+                std::cerr << "No index path provided for search with iSAX envelope index\n";
+                return nullptr;
+            }
 
-    switch (index_type) {
-        case ISAX_ENVELOPE:
-            index = std::make_unique<iSaxEnvelopeFinalizedIndex>();
-            break;
-        default:
-            return nullptr;
+            std::ifstream index_stream(opts.index_path, std::ios::binary);
+            auto index = std::make_unique<iSaxEnvelopeFinalizedIndex>();
+            static_cast<IEnvelopeFinalizedIndex *>(index.get())->load(index_stream, opts.index_format);
+
+            return index;
+        }
+        case SEQUENTIAL_SCAN:
+            return std::make_unique<SequentialScan>();
     }
-    index->load(index_stream, index_format);
-    return index;
 }
 
 /**
@@ -23,18 +29,16 @@ uptr<IEnvelopeFinalizedIndex> load_index(IndexType index_type, const str &index_
  * @param opts Options for searching
  */
 int search(const SearchOptions &opts) {
-    uptr<IEnvelopeFinalizedIndex> index = load_index(opts.index_type, opts.index_path, opts.index_format);
+    uptr<ISearchMethod> method = load_method(opts);
 
-    if (index == nullptr) {
-        std::cout << "Index type not implemented\n";
-        return 1;
-    }
+    if (!method) return 1;
 
+    auto &RS = RunSettings::get_instance();
     std::ifstream query_stream(opts.query_path);
     std::ofstream result_stream(opts.results_path);
     result_stream << std::fixed << std::setprecision(6);
 
-    MtsNumChannelsT num_channels = index->get_num_channels();
+    MtsNumChannelsT num_channels = RunSettings::get_instance().get_dataset_props().num_channels;
     vec<vec<float>> query(num_channels);
 
     size_t query_count = 0;
@@ -57,8 +61,10 @@ int search(const SearchOptions &opts) {
 
         if (c == num_channels - 1) {
             opts.result_set->clear();
-            vec<SearchResult> results = index->search(query, opts);
-            result_stream << "Results for query " << ++query_count << ":\n";
+            if (RS.ffts_supported()) RS.reset_query_ffts();
+
+            vec<SearchResult> results = method->search(query, opts);
+            result_stream << "Results for query " << ++query_count << std::endl;
             for (auto &result : results)
                 result_stream << "Distance: " << std::sqrt(result.distance) << ", Location: " << result.file_position
                               << '\n';

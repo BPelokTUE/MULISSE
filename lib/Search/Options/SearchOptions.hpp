@@ -3,7 +3,8 @@
 
 #include "Search/DistanceMeasure.hpp"
 #include "Search/ResultSet.hpp"
-#include "Search/IndexOptions.hpp"
+#include "Search/Options/IndexOptions.hpp"
+#include "Search/Options/SearchMethodType.hpp"
 
 /** @brief Types of similarity search */
 enum SearchType { KNN, R_RANGE };
@@ -16,7 +17,7 @@ const vec<str> SEARCH_TYPE_STRS = get_map_keys(STR_TO_SEARCH_TYPE);
 
 /** @brief Options for searching */
 struct SearchOptions {
-    /** @brief Path to the index file to use */
+    /** @brief Path to the index file to use if any */
     str index_path;
     /** @brief Path to the dataset file to use; Assumed to be the source of the index */
     str dataset_path;
@@ -24,8 +25,8 @@ struct SearchOptions {
     str query_path;
     /** @brief Path to the file to save the results into */
     str results_path;
-    /** @brief Type of index */
-    IndexType index_type;
+    /** @brief Type of search method to use */
+    SearchMethodType search_method_type;
     /** @brief Archive type of the index */
     ArchiveType index_format;
     /** @brief Whether to run exact or approximate search */

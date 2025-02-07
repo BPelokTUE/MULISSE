@@ -7,13 +7,14 @@
 #include <cereal/archives/json.hpp>
 
 #include "Util/typedefs.hpp"
-#include "Search/IndexOptions.hpp"
-#include "Search/SearchOptions.hpp"
+#include "Search/SearchMethod.hpp"
+#include "Search/Options/IndexOptions.hpp"
+#include "Search/Options/SearchOptions.hpp"
 #include "Summarization/Envelope.hpp"
 #include "Summarization/iSaxWord.hpp"
 
 /** @brief Interface for finalized envelope indexes */
-class IEnvelopeFinalizedIndex {
+class IEnvelopeFinalizedIndex : public ISearchMethod {
    public:
     virtual ~IEnvelopeFinalizedIndex() = default;
 
@@ -34,15 +35,6 @@ class IEnvelopeFinalizedIndex {
     virtual void load(std::ifstream &ifs, ArchiveType ar_type) = 0;
 
     /**
-     * @brief Search for multivariate subsequence using the index
-     *
-     * @param query Multivariate subsequence to search for
-     * @param search_options Search options
-     * @return The start positions of the subsequences in the result set
-     */
-    virtual vec<SearchResult> search(const vec<vec<float>> &query, const SearchOptions &search_options) const = 0;
-
-    /**
      * @brief Get the length of the series in the index
      *
      * @return The length of the series
@@ -55,13 +47,6 @@ class IEnvelopeFinalizedIndex {
      * @return The number of positions per envelope
      */
     uint get_pos_per_env() const;
-
-    /**
-     * @brief Get the number of channels in the index
-     *
-     * @return The number of channels
-     */
-    MtsNumChannelsT get_num_channels() const;
 
    protected:
     uint m_series_len, m_pos_per_env;

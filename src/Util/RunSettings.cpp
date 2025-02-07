@@ -1,4 +1,4 @@
-#include "Search/IndexOptions.hpp"
+#include "Search/Options/IndexOptions.hpp"
 #include "Util/RunSettings.hpp"
 
 // Initialize static members
