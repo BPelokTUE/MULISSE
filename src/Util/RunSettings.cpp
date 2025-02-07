@@ -72,20 +72,20 @@ void RunSettings::calculate_ffts() const {
     }
 
     fftw_plan plan;
-    for (unsigned i = 0; i < m_dataset_props.num_series; ++i) {
+    for (uint i = 0; i < m_dataset_props.num_series; ++i) {
         vec<float> channel(m_dataset_props.series_len);
         ifs.read(reinterpret_cast<char *>(channel.data()), m_dataset_props.series_len * sizeof(float));
 
-        unsigned fft_len = 2 * m_dataset_props.series_len;
+        uint fft_len = 2 * m_dataset_props.series_len;
         FftArray channel_complex(fft_len), channel_ffts(fft_len);
-        for (unsigned j = 0; j < m_dataset_props.series_len; ++j) channel_complex[j][0] = channel[j];
+        for (uint j = 0; j < m_dataset_props.series_len; ++j) channel_complex[j][0] = channel[j];
 
         plan = fftw_plan_dft_1d(fft_len, channel_complex.data(), channel_ffts.data(), FFTW_FORWARD, FFTW_ESTIMATE);
 
         fftw_execute(plan);
         fftw_destroy_plan(plan);
 
-        for (unsigned j = 0; j < fft_len; ++j) {
+        for (uint j = 0; j < fft_len; ++j) {
             auto &fft = channel_ffts[j];
             ofs.write(reinterpret_cast<const char *>(&fft[0]), sizeof(double));
             ofs.write(reinterpret_cast<const char *>(&fft[1]), sizeof(double));
@@ -93,13 +93,13 @@ void RunSettings::calculate_ffts() const {
     }
 }
 
-FftArray RunSettings::get_ffts(FilePositionT file_pos, MtsNumChannelsT channel_ind, unsigned num_component) {
+FftArray RunSettings::get_ffts(FilePositionT file_pos, MtsNumChannelsT channel_ind, uint num_component) {
     if (!ffts_supported()) throw std::runtime_error("FFTs are not supported");
 
     // (*2) for using double instead of float
     // (*2) for real and imaginary parts
     // (*2) for extra components at the end
-    unsigned file_size_ratio = 8;
+    uint file_size_ratio = 8;
     FilePositionT channel_file_pos = (file_pos + channel_ind * m_dataset_props.series_len) * sizeof(float);
     m_ffts_stream.seekg(file_size_ratio * channel_file_pos);
 
@@ -112,14 +112,14 @@ FftArray RunSettings::get_ffts(FilePositionT file_pos, MtsNumChannelsT channel_i
 bool RunSettings::ffts_supported() const { return m_ffts_path != ""; }
 
 void RunSettings::calculate_query_ffts(const vec<DistanceT> &q_channel, MtsNumChannelsT channel_ind,
-                                       unsigned num_components) {
+                                       uint num_components) {
     if (!ffts_supported()) return;
 
     assert(channel_ind < m_dataset_props.num_channels);
 
-    unsigned fft_len = 2 * num_components, query_len = q_channel.size();
+    uint fft_len = 2 * num_components, query_len = q_channel.size();
     FftArray q_complex(fft_len);
-    for (unsigned i = 0; i < query_len; ++i) q_complex[i][0] = q_channel[query_len - 1 - i];
+    for (uint i = 0; i < query_len; ++i) q_complex[i][0] = q_channel[query_len - 1 - i];
 
     m_query_ffts[channel_ind] = std::make_unique<FftArray>(fft_len);
     fftw_plan plan =

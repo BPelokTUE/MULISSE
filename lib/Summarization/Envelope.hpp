@@ -67,10 +67,10 @@ class IEnvelopeGenerator {
  * @param l_max The maximum length of a subsequence
  */
 struct UlisseEnvelopeParams {
-    unsigned pos_per_env;
-    unsigned segment_len;
-    unsigned l_min;
-    unsigned l_max;
+    uint pos_per_env;
+    uint segment_len;
+    uint l_min;
+    uint l_max;
 };
 
 /**

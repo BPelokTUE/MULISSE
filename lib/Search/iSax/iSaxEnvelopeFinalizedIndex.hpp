@@ -10,11 +10,11 @@
 /** @brief Properties of time series for iSAX indexes */
 struct SeriesISaxProperties {
     /** @brief Length of the segments */
-    unsigned segment_len;
+    uint segment_len;
     /** @brief Length of the time series in the dataset */
-    unsigned series_len;
+    uint series_len;
     /** @brief Size of starting position groups */
-    unsigned pos_per_env;
+    uint pos_per_env;
     /** @brief Number of channels of each series */
     MtsNumChannelsT num_channels;
     /** @brief Number of segments per channel */
@@ -49,7 +49,7 @@ class iSaxEnvelopeFinalizedIndex : public IEnvelopeFinalizedIndex {
     vec<SearchResult> search(const vec<vec<float>>& query, const SearchOptions& search_options) const override;
 
    private:
-    unsigned m_segment_len;
+    uint m_segment_len;
     vec<vec<vec<SaxSymbolT>>> m_first_layer_min_symbols, m_first_layer_max_symbols;
     vec<std::unique_ptr<iSaxFinalizedNode>> m_first_layer_nodes;
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;

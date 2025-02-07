@@ -16,7 +16,7 @@ void RRangeResultSet::clear() { m_results.clear(); }
 
 // KnnResultSet
 
-KnnResultSet::KnnResultSet(unsigned k) : m_k(k) {};
+KnnResultSet::KnnResultSet(uint k) : m_k(k) {};
 
 void KnnResultSet::insert(SearchResult result) {
     auto it = std::lower_bound(m_results.begin(), m_results.end(), result);

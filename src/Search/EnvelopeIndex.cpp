@@ -1,16 +1,16 @@
 #include "Search/EnvelopeIndex.hpp"
 
-unsigned IEnvelopeFinalizedIndex::get_series_len() const { return m_series_len; };
+uint IEnvelopeFinalizedIndex::get_series_len() const { return m_series_len; };
 
-unsigned IEnvelopeFinalizedIndex::get_pos_per_env() const { return m_pos_per_env; };
+uint IEnvelopeFinalizedIndex::get_pos_per_env() const { return m_pos_per_env; };
 
 MtsNumChannelsT IEnvelopeFinalizedIndex::get_num_channels() const { return m_num_channels; };
 
 void IEnvelopeIndex::construct(const str &dataset_path, IEnvelopeGenerator *generator, MtsNumChannelsT num_channels,
-                               unsigned series_len) {
-    unsigned N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(float),
-             series_size = channel_size * num_channels;
-    unsigned num_series = N / series_size;
+                               uint series_len) {
+    uint N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(float),
+         series_size = channel_size * num_channels;
+    uint num_series = N / series_size;
 
 #pragma omp parallel
     {

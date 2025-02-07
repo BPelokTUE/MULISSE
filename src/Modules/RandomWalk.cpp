@@ -5,8 +5,8 @@
 
 #include "Modules/RandomWalk.hpp"
 
-int create_random_walks(std::string dataset_path, float rw_noise, bool zero_start, unsigned num_series,
-                        unsigned series_len, unsigned num_channels, int seed) {
+int create_random_walks(std::string dataset_path, float rw_noise, bool zero_start, uint num_series, uint series_len,
+                        uint num_channels, int seed) {
     if (std::filesystem::exists(dataset_path)) {
         std::cerr << "Error: Dataset " << dataset_path << " already exists." << std::endl;
         return 1;
@@ -23,10 +23,10 @@ int create_random_walks(std::string dataset_path, float rw_noise, bool zero_star
     std::default_random_engine generator(seed);
     std::normal_distribution<float> distribution(0.0, rw_noise);
 
-    for (unsigned i = 0; i < num_series; ++i) {
-        for (unsigned j = 0; j < num_channels; ++j) {
+    for (uint i = 0; i < num_series; ++i) {
+        for (uint j = 0; j < num_channels; ++j) {
             float value = zero_start ? 0 : distribution(generator);
-            for (unsigned k = 0; k < series_len; ++k) {
+            for (uint k = 0; k < series_len; ++k) {
                 value += distribution(generator);
                 // Cast the reference to `value` into `const char` pointer, so `outfile.write` will
                 // try to write the bytes stored in `value` as chars. By definition a `char` contains

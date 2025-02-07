@@ -80,7 +80,7 @@ class KnnResultSet : public IResultSet {
      *
      * @param k The number of neighbors to retrieve
      */
-    KnnResultSet(unsigned k);
+    KnnResultSet(uint k);
 
     void insert(SearchResult result) override;
 
@@ -92,7 +92,7 @@ class KnnResultSet : public IResultSet {
 
    private:
     vec<SearchResult> m_results;
-    unsigned m_k;
+    uint m_k;
 };
 
 #endif  // RESULT_SET_HPP

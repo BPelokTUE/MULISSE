@@ -36,7 +36,7 @@ struct IIndexParams {
  * */
 struct EnvelopeIndexParams : IIndexParams {
     /** @brief Size of the starting position groups */
-    unsigned pos_per_env;
+    uint pos_per_env;
 };
 
 /**
@@ -46,7 +46,7 @@ struct EnvelopeIndexParams : IIndexParams {
  */
 struct iSaxIndexParams {
     /** @brief Length of the segments */
-    unsigned segment_len;
+    uint segment_len;
     /** @brief Number of symbols to use in the first layer of the index */
     SaxNumBitsT first_layer_num_bits;
     /** @brief Maximum number of entries in a leaf */
@@ -74,8 +74,8 @@ struct iSaxEnvelopeIndexParams : EnvelopeIndexParams, iSaxIndexParams {
      * @param split_strategy_type Strategy for choosing the index to split on
      * @param num_bits_limit Maximum number of bits per segment
      */
-    iSaxEnvelopeIndexParams(unsigned pos_per_env, unsigned segment_len, SaxNumBitsT first_layer_num_bits,
-                            size_t leaf_capacity, iSaxBreakpointStrategyType breakpoint_strategy_type,
+    iSaxEnvelopeIndexParams(uint pos_per_env, uint segment_len, SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
+                            iSaxBreakpointStrategyType breakpoint_strategy_type,
                             iSaxSplitStrategyType split_strategy_type, SaxNumBitsT num_bits_limit) {
         this->pos_per_env = pos_per_env;
         this->segment_len = segment_len;
@@ -105,11 +105,11 @@ struct IndexOptions {
     /** @brief Format to save the index in */
     ArchiveType index_format;
     /** @brief Minimum accepted query length */
-    unsigned l_min;
+    uint l_min;
     /** @brief Maximum accepted query length */
-    unsigned l_max;
+    uint l_max;
     /** @brief Length time series in the dataset */
-    unsigned series_len;
+    uint series_len;
     /** @brief Number of channels of each series */
     MtsNumChannelsT num_channels;
     /** @brief Whether to Z-normalize the subsequences */

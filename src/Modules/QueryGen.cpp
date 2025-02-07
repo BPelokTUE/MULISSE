@@ -7,8 +7,8 @@
 #include "Modules/QueryGen.hpp"
 #include "Util/utilities.hpp"
 
-int create_queries(str dataset_path, str query_path, float noise, unsigned series_len, unsigned num_channels,
-                   unsigned num_queries, vec<unsigned> lengths, int seed) {
+int create_queries(str dataset_path, str query_path, float noise, uint series_len, uint num_channels, uint num_queries,
+                   vec<uint> lengths, int seed) {
     if (!std::filesystem::exists(dataset_path)) {
         std::cerr << "Error: Dataset " << dataset_path << " does not exist." << std::endl;
         return 1;
@@ -18,23 +18,22 @@ int create_queries(str dataset_path, str query_path, float noise, unsigned serie
     std::default_random_engine rng(seed);
     std::normal_distribution<float> noise_normal_dist(0.0, noise);
 
-    unsigned num_series = get_dataset_size(dataset_path) / (num_channels * series_len * sizeof(float));
-    std::uniform_int_distribution<unsigned> series_uniform_dist(0, num_series - 1),
-        channel_uniform_dist(1, num_channels);
-    vec<std::uniform_int_distribution<unsigned>> start_pos_dists(lengths.size());
-    for (unsigned i = 0; i < lengths.size(); ++i) {
-        start_pos_dists[i] = std::uniform_int_distribution<unsigned>(0, series_len - lengths[i]);
+    uint num_series = get_dataset_size(dataset_path) / (num_channels * series_len * sizeof(float));
+    std::uniform_int_distribution<uint> series_uniform_dist(0, num_series - 1), channel_uniform_dist(1, num_channels);
+    vec<std::uniform_int_distribution<uint>> start_pos_dists(lengths.size());
+    for (uint i = 0; i < lengths.size(); ++i) {
+        start_pos_dists[i] = std::uniform_int_distribution<uint>(0, series_len - lengths[i]);
     }
 
     std::ifstream data_file(dataset_path, std::ios::binary);
     std::ofstream query_file(query_path);
 
     // vector of tuples of start position to extract from, length of the query, and channels to include
-    vec<std::tuple<FilePositionT, unsigned, vec<bool>>> query_descriptors(lengths.size() * num_queries);
-    for (unsigned i = 0; i < num_queries; ++i) {
-        for (unsigned j = 0; j < lengths.size(); ++j) {
+    vec<std::tuple<FilePositionT, uint, vec<bool>>> query_descriptors(lengths.size() * num_queries);
+    for (uint i = 0; i < num_queries; ++i) {
+        for (uint j = 0; j < lengths.size(); ++j) {
             vec<bool> channels(num_channels, false);
-            unsigned included_channels = channel_uniform_dist(rng);
+            uint included_channels = channel_uniform_dist(rng);
             std::fill(channels.begin(), channels.begin() + included_channels, true);
             std::shuffle(channels.begin(), channels.end(), rng);
 
@@ -51,7 +50,7 @@ int create_queries(str dataset_path, str query_path, float noise, unsigned serie
             if (channels[c]) {
                 data_file.seekg(start_offset + c * series_len * sizeof(float));
                 float value;
-                for (unsigned j = 0; j < length; ++j) {
+                for (uint j = 0; j < length; ++j) {
                     data_file.read(reinterpret_cast<char *>(&value), sizeof(value));
                     value += noise_normal_dist(rng);
                     query_file << value;

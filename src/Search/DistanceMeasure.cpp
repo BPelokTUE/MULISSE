@@ -66,8 +66,8 @@ bool printed = false;
 
 vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<DistanceT> &q_channel,
                                                               const vec<DistanceT> &mts_channel, FilePositionT file_pos,
-                                                              unsigned channel_ind) const {
-    unsigned mts_len = mts_channel.size(), query_len = q_channel.size();
+                                                              uint channel_ind) const {
+    uint mts_len = mts_channel.size(), query_len = q_channel.size();
 
     FftArray query_fft(2 * mts_len), mts_fft(2 * mts_len), dot_prods_fft(2 * mts_len), dot_products(2 * mts_len);
     fftw_plan plan;
@@ -85,19 +85,19 @@ vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<Distance
         query_fft = *query_fft_ptr;
     } else {
         FftArray mts_complex(2 * mts_len);
-        for (unsigned i = 0; i < mts_len; ++i) mts_complex[i][0] = mts_channel[i];
+        for (uint i = 0; i < mts_len; ++i) mts_complex[i][0] = mts_channel[i];
         plan = fftw_plan_dft_1d(2 * mts_len, mts_complex.data(), mts_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
         fftw_execute(plan);
         fftw_destroy_plan(plan);
 
         FftArray q_complex(2 * mts_len);
-        for (unsigned i = 0; i < query_len; ++i) q_complex[i][0] = q_channel[query_len - 1 - i];
+        for (uint i = 0; i < query_len; ++i) q_complex[i][0] = q_channel[query_len - 1 - i];
         plan = fftw_plan_dft_1d(2 * mts_len, q_complex.data(), query_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
         fftw_execute(plan);
         fftw_destroy_plan(plan);
     }
 
-    for (unsigned i = 0; i < 2 * mts_len; ++i) {
+    for (uint i = 0; i < 2 * mts_len; ++i) {
         dot_prods_fft[i][0] = query_fft[i][0] * mts_fft[i][0] - query_fft[i][1] * mts_fft[i][1];
         dot_prods_fft[i][1] = query_fft[i][0] * mts_fft[i][1] + query_fft[i][1] * mts_fft[i][0];
     }
@@ -107,7 +107,7 @@ vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<Distance
     fftw_destroy_plan(plan);
 
     vec<DistanceT> dot_products_real(mts_len);
-    for (unsigned i = 0; i < mts_len; ++i) dot_products_real[i] = dot_products[i][0] / (2 * mts_len);
+    for (uint i = 0; i < mts_len; ++i) dot_products_real[i] = dot_products[i][0] / (2 * mts_len);
 
     return dot_products_real;
 }
@@ -117,7 +117,7 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, FilePosit
                                                const vec<vec<float>> &query, const vec<vec<float>> &mts) {
     bool updated = false;
 
-    unsigned mts_len = mts[0].size(), query_len = 0;
+    uint mts_len = mts[0].size(), query_len = 0;
     for (auto channel : query) {
         if (!channel.empty()) {
             query_len = channel.size();
@@ -130,16 +130,16 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, FilePosit
         if (query.empty()) continue;
 
         vec<DistanceT> q_channel(query_len), mts_channel(mts_len);
-        for (unsigned i = 0; i < query_len; ++i) q_channel[i] = query[c][i];
+        for (uint i = 0; i < query_len; ++i) q_channel[i] = query[c][i];
 
         vec<DistanceT> mts_sums(mts_len + 1, 0), mts_sum_sqs(mts_len + 1, 0);
-        for (unsigned i = 1; i <= mts_len; ++i) {
+        for (uint i = 1; i <= mts_len; ++i) {
             mts_channel[i - 1] = mts[c][i - 1];
             mts_sums[i] = mts_sums[i - 1] + mts_channel[i - 1];
             mts_sum_sqs[i] = mts_sum_sqs[i - 1] + mts_channel[i - 1] * mts_channel[i - 1];
         }
         DistanceT query_sum = 0, query_sum_sq = 0;
-        for (unsigned i = 0; i < query_len; ++i) {
+        for (uint i = 0; i < query_len; ++i) {
             query_sum += q_channel[i];
             query_sum_sq += q_channel[i] * q_channel[i];
         }
@@ -149,7 +149,7 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, FilePosit
         vec<DistanceT> dot_products = calculate_dot_products(q_channel, mts_channel, file_pos, c);
 
         if (m_normalized) {
-            for (unsigned start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
+            for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
                 DistanceT dot = dot_products[query_len - 1 + start_pos],
                           subs_sum = mts_sums[query_len + start_pos] - mts_sums[start_pos],
                           subs_sum_sq = mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos],
@@ -161,7 +161,7 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, FilePosit
                 squared_dists[start_pos] += 2 * query_len * (1 - corr);
             }
         } else {
-            for (unsigned start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
+            for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
                 DistanceT dot = dot_products[query_len - 1 + start_pos];
                 squared_dists[start_pos] +=
                     query_sum_sq + (mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos]) + dot;
@@ -169,7 +169,7 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, FilePosit
         }
     }
 
-    for (unsigned start_pos = 0; start_pos < squared_dists.size(); ++start_pos) {
+    for (uint start_pos = 0; start_pos < squared_dists.size(); ++start_pos) {
         if (squared_dists[start_pos] < result_set->get_distance_lb()) {
             result_set->insert({file_pos + start_pos, squared_dists[start_pos]});
             updated = true;

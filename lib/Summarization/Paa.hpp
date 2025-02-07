@@ -14,6 +14,6 @@
  * @param segment_len The length of each segment Assumed to be greater than 0
  * @return The PAA of the time series
  */
-vec<float> paa(const vec<float> &ts, unsigned segment_len);
+vec<float> paa(const vec<float> &ts, uint segment_len);
 
 #endif  // PAA_HPP

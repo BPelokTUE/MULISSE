@@ -45,7 +45,7 @@ class iSaxEnvelopeIndex : public IEnvelopeIndex {
    private:
     std::unordered_map<vec<vec<SaxSymbolT>>, std::unique_ptr<iSaxSplittableNode>, SaxSymbolsHash> m_first_layer;
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits, m_num_bits_limit;
-    unsigned m_segment_len, m_series_len, m_pos_per_env;
+    uint m_segment_len, m_series_len, m_pos_per_env;
     SaxSegIndT m_num_seg_per_channel;
     MtsNumChannelsT m_num_channels;
     size_t m_leaf_capacity;

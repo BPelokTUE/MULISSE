@@ -27,21 +27,21 @@ void flip_env_infinities(vec<Envelope>& envelopes) {
 vec<Envelope> ulisse_envelope_raw(const vec<float>& ts, const UlisseEnvelopeParams& env_params) {
     auto [pos_per_env, segment_len, l_min, l_max] = env_params;
 
-    unsigned segments_per_env = l_max / segment_len;
-    unsigned num_env = (ts.size() - l_min + pos_per_env) / pos_per_env;
+    uint segments_per_env = l_max / segment_len;
+    uint num_env = (ts.size() - l_min + pos_per_env) / pos_per_env;
     vec<Envelope> envelopes(num_env, {vec<float>(segments_per_env, INF), vec<float>(segments_per_env, -INF)});
 
     float paa_acc = 0.0;
 
     for (int last_ind = 0; last_ind < ts.size(); ++last_ind) {
         paa_acc += ts[last_ind];
-        unsigned subs_len = last_ind + 1;
+        uint subs_len = last_ind + 1;
         if (subs_len > segment_len) paa_acc -= ts[last_ind - segment_len];
 
-        unsigned segments_in_subs = std::min(l_max, subs_len) / segment_len;
+        uint segments_in_subs = std::min(l_max, subs_len) / segment_len;
 
         float paa_val = paa_acc / segment_len;
-        for (unsigned seg_ind = 0; seg_ind < segments_in_subs; ++seg_ind) {
+        for (uint seg_ind = 0; seg_ind < segments_in_subs; ++seg_ind) {
             int first_ind = last_ind + 1 - (seg_ind + 1) * segment_len;
             if (ts.size() - first_ind >= l_min) {
                 auto& envelope = envelopes[first_ind / pos_per_env];
@@ -55,11 +55,11 @@ vec<Envelope> ulisse_envelope_raw(const vec<float>& ts, const UlisseEnvelopePara
 }
 
 vec<Envelope> ulisse_envelope_normalized(const vec<float>& ts, const UlisseEnvelopeParams& env_params) {
-    unsigned pos_per_env = env_params.pos_per_env, segment_len = env_params.segment_len, l_min = env_params.l_min,
-             l_max = env_params.l_max;
+    uint pos_per_env = env_params.pos_per_env, segment_len = env_params.segment_len, l_min = env_params.l_min,
+         l_max = env_params.l_max;
 
-    unsigned segments_per_env = l_max / segment_len;
-    unsigned num_env = (ts.size() - l_min + pos_per_env) / pos_per_env;
+    uint segments_per_env = l_max / segment_len;
+    uint num_env = (ts.size() - l_min + pos_per_env) / pos_per_env;
     vec<Envelope> envelopes(num_env, {vec<float>(segments_per_env, INF), vec<float>(segments_per_env, -INF)});
 
     vec<float> sum_accs(ts.size() + 1, 0.0), sq_sum_accs(ts.size() + 1, 0.0);
@@ -100,8 +100,8 @@ iSaxEnvelopeGenerator::iSaxEnvelopeGenerator(MtsNumChannelsT num_channels, bool 
 }
 
 vec<EnvelopeEntry> iSaxEnvelopeGenerator::get_entries(const vec<vec<float>>& mts, size_t series_ind) {
-    unsigned series_len = mts[0].size();
-    unsigned num_env = (series_len - m_uli_params.l_min + m_uli_params.pos_per_env) / m_uli_params.pos_per_env;
+    uint series_len = mts[0].size();
+    uint num_env = (series_len - m_uli_params.l_min + m_uli_params.pos_per_env) / m_uli_params.pos_per_env;
     vec<EnvelopeEntry> entries(num_env);
 
     for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {

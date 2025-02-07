@@ -47,14 +47,14 @@ class IEnvelopeFinalizedIndex {
      *
      * @return The length of the series
      */
-    unsigned get_series_len() const;
+    uint get_series_len() const;
 
     /**
      * @brief Get the number of positions per envelope in the index
      *
      * @return The number of positions per envelope
      */
-    unsigned get_pos_per_env() const;
+    uint get_pos_per_env() const;
 
     /**
      * @brief Get the number of channels in the index
@@ -64,7 +64,7 @@ class IEnvelopeFinalizedIndex {
     MtsNumChannelsT get_num_channels() const;
 
    protected:
-    unsigned m_series_len, m_pos_per_env;
+    uint m_series_len, m_pos_per_env;
     MtsNumChannelsT m_num_channels;
 };
 
@@ -122,7 +122,7 @@ class IEnvelopeIndex {
     virtual ~IEnvelopeIndex() = default;
 
     void construct(const str &dataset_path, IEnvelopeGenerator *generator, MtsNumChannelsT num_channels,
-                   unsigned series_len);
+                   uint series_len);
 
     /**
      * @brief Finalize the index

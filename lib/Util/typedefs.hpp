@@ -17,6 +17,7 @@ using uptr = std::unique_ptr<T>;
 
 using str = std::string;
 
+using uint = uint32_t;
 using SaxNumBitsT = uint8_t;
 using SaxSegIndT = uint16_t;
 using SaxSymbolT = uint16_t;

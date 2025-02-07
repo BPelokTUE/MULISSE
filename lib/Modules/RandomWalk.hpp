@@ -18,7 +18,7 @@
  * @param seed The seed for the random number generator
  * @return 0 on success, 1 if the dataset file already exists, 2 if the file could not be created.
  */
-int create_random_walks(str dataset_path, float rw_noise, bool zero_start, unsigned num_series, unsigned series_len,
-                        unsigned num_channels, int seed);
+int create_random_walks(str dataset_path, float rw_noise, bool zero_start, uint num_series, uint series_len,
+                        uint num_channels, int seed);
 
 #endif  // RANDOMWALK_HPP

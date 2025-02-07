@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
     auto positive_int = CLI::Validator(
         [](str &input) {
             try {
-                unsigned value = std::stoi(input);
+                uint value = std::stoi(input);
                 if (value > 0) {
                     return "";
                 } else {
@@ -86,11 +86,11 @@ int main(int argc, char **argv) {
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0], index_format_str = ARCHIVE_TYPE_STRS[0],
         search_type_str, distance_measure_str = DISTANCE_TYPE_STRS[0];
     float noise = 1.0;
-    unsigned num_series = 0, series_len, num_queries, l_min, l_max, segment_len, pos_per_env = 0, knn_k = 1;
+    uint num_series = 0, series_len, num_queries, l_min, l_max, segment_len, pos_per_env = 0, knn_k = 1;
     DistanceT r_range_r = 1.0;
     int seed = 0;
     size_t leaf_capacity;
-    vec<unsigned> lengths;
+    vec<uint> lengths;
     MtsNumChannelsT num_channels;
     bool zero_start = false, unnormalized = false, approximate = false;
 

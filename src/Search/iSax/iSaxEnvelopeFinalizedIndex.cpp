@@ -30,7 +30,7 @@ iSaxEnvelopeFinalizedIndex::iSaxEnvelopeFinalizedIndex(const SeriesISaxPropertie
 
 std::pair<float, float> iSaxEnvelopeFinalizedIndex::get_segment_limits(SaxNumBitsT num_bits, SaxSymbolT min_symbol,
                                                                        SaxSymbolT max_symbol) const {
-    unsigned num_shift = m_alphabet_num_bits - num_bits;
+    uint num_shift = m_alphabet_num_bits - num_bits;
     int lower_ind = (min_symbol << num_shift) - 1, upper_ind = ((max_symbol + 1) << num_shift) - 1;
     return {
         lower_ind == -1 ? -INF : m_breakpoints[lower_ind],
@@ -96,7 +96,7 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
                 pq.push({min_dist_squared, isax_mins, isax_maxs, left});
                 pq.push({min_dist_squared, isax_mins, isax_maxs, right});
             } else {
-                unsigned num_bits = isax_mins[c].get_num_bits()[s];
+                uint num_bits = isax_mins[c].get_num_bits()[s];
                 auto limits =
                     get_segment_limits(num_bits, isax_mins[c].symbol_no_shift(s), isax_maxs[c].symbol_no_shift(s));
                 auto [max_symbol_left, max_symbol_right] =

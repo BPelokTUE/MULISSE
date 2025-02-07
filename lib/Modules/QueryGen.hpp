@@ -20,7 +20,7 @@
  * @param seed Seed for the random number generator
  * @return 0 on success, 1 if dataset does not exist
  */
-int create_queries(str dataset_path, str query_path, float noise, unsigned num_series, unsigned num_channels,
-                   unsigned num_queries, vec<unsigned> lengths, int seed);
+int create_queries(str dataset_path, str query_path, float noise, uint num_series, uint num_channels, uint num_queries,
+                   vec<uint> lengths, int seed);
 
 #endif  // QUERY_GEN_HPP

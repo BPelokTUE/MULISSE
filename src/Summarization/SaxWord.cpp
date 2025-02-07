@@ -9,10 +9,10 @@ SaxWord::SaxWord(const vec<float> &paa, SaxNumBitsT num_bits, const vec<float> &
     assert(std::is_sorted(breakpoints.begin(), breakpoints.end()));
 
     m_alphabet_num_bits = num_bits;
-    unsigned paa_len = paa.size();
+    uint paa_len = paa.size();
     m_symbols.resize(paa_len);
 
-    for (unsigned i = 0; i < paa_len; ++i) {
+    for (uint i = 0; i < paa_len; ++i) {
         auto it = std::lower_bound(breakpoints.begin(), breakpoints.end(), paa[i]);
         m_symbols[i] = it - breakpoints.begin();
     }

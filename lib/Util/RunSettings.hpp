@@ -19,8 +19,8 @@ const umap<CommandType, str> CMD_TYPE_TO_STR = get_inverse_map(STR_TO_CMD_TYPE);
 struct DatasetProperties {
     str path;
     MtsNumChannelsT num_channels;
-    unsigned series_len;
-    unsigned num_series;
+    uint series_len;
+    uint num_series;
 };
 
 struct QueryProperties {
@@ -62,7 +62,7 @@ class RunSettings {
      * @param num_components Number of FFT components to load
      * @return FFTs of the time series
      */
-    FftArray get_ffts(FilePositionT file_pos, MtsNumChannelsT channel_ind, unsigned num_components);
+    FftArray get_ffts(FilePositionT file_pos, MtsNumChannelsT channel_ind, uint num_components);
 
     /**
      * @brief Check if the FFTs of the time series are supported
@@ -78,7 +78,7 @@ class RunSettings {
      * @param channel_ind Index of the channel in the query
      * @param num_components Number of FFT components to load
      */
-    void calculate_query_ffts(const vec<DistanceT>& q_channel, MtsNumChannelsT channel_ind, unsigned num_components);
+    void calculate_query_ffts(const vec<DistanceT>& q_channel, MtsNumChannelsT channel_ind, uint num_components);
 
     /**
      * @brief Get the FFTs of the last query they were calculated for
