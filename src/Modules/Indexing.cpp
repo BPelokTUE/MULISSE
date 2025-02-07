@@ -36,9 +36,13 @@ uptr<IEnvelopeIndex> get_index(const IndexOptions &opts) {
                 params->segment_len, opts.series_len, params->pos_per_env, opts.num_channels, num_seg_per_channel,
             };
 
+            SaxNumBitsT breakpoint_num_bits = DEFAULT_NUM_BIT_LIMIT;
+            RunSettings::get_instance().set_isax_properties(
+                {num_seg_per_channel, params->segment_len,
+                 breakpoint_strategy->get_breakpoints(1 << breakpoint_num_bits), breakpoint_num_bits});
+
             auto *index = new iSaxEnvelopeIndex(series_isax_prop, params->first_layer_num_bits, params->leaf_capacity,
-                                                std::move(breakpoint_strategy), std::move(split_strategy),
-                                                params->num_bits_limit);
+                                                std::move(split_strategy));
             return uptr<IEnvelopeIndex>(index);
     }
     return nullptr;

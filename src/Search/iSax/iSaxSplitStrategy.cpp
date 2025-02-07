@@ -25,15 +25,15 @@ SaxSplitIndT EntropyMaximizingStrategy::get_split_ind(const iSaxSplittableLeaf *
     const vec<float> &breakpoints = RS.get_breakpoints();
     uint br_ind;
 
-    vec<vec<SaxNumBitsT>> num_bits();
-
     const vec<vec<Envelope>> &envelopes = leaf->get_envelopes();
     for (MtsNumChannelsT c = 0; c < RS.get_dataset_props().num_channels; ++c) {
+        vec<SaxNumBitsT> num_bits = isax_mins[c].get_num_bits();
         for (SaxSegIndT s = 0; s < RS.get_isax_props().num_segments; ++s) {
             float lower_sum = 0, lower_sum_sq = 0, score = 0;
             uint count = 0;
 
-            // uint alphabet_ratio = (breakpoints.size() + 1) / ();
+            uint alphabet_ratio = (breakpoints.size() + 1) / (1 << (num_bits[s] + 1));
+            assert(alphabet_ratio > 0);
 
             for (uint i = 0; i < envelopes.size(); ++i) {
                 float lower = envelopes[i][c].lower[s];
@@ -55,4 +55,5 @@ SaxSplitIndT EntropyMaximizingStrategy::get_split_ind(const iSaxSplittableLeaf *
             }
         }
     }
+    return split_ind;
 }

@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
     CommandType command_type = STR_TO_CMD_TYPE.at(app.get_subcommands().front()->get_name());
     try {
         RunSettings::initialize(command_type, {dataset_path, num_channels, series_len, num_series},
-                                {query_path, l_min, l_max}, pos_per_env, segment_len, ffts_path);
+                                {query_path, l_min, l_max}, pos_per_env, ffts_path);
     } catch (const std::exception &e) {
         std::cerr << "Error configuring run: " << e.what() << '\n';
         return 1;

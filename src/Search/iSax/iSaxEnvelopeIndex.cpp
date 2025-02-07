@@ -15,54 +15,44 @@ std::size_t SaxSymbolsHash::operator()(const vec<vec<SaxSymbolT>> &symbols) cons
 }
 
 iSaxEnvelopeIndex::iSaxEnvelopeIndex(const SeriesISaxProperties &series_isax_prop, SaxNumBitsT first_layer_num_bits,
-                                     size_t leaf_capacity, std::unique_ptr<IiSaxBreakpointStrategy> breakpoint_strategy,
-                                     std::unique_ptr<IiSaxSplitStrategy> split_strategy, SaxNumBitsT num_bits_limit)
+                                     size_t leaf_capacity, std::unique_ptr<IiSaxSplitStrategy> split_strategy)
     : m_segment_len(series_isax_prop.segment_len),
       m_series_len(series_isax_prop.series_len),
       m_pos_per_env(series_isax_prop.pos_per_env),
       m_num_channels(series_isax_prop.num_channels),
       m_num_seg_per_channel(series_isax_prop.num_seg_per_channel),
       m_first_layer_num_bits(first_layer_num_bits),
-      m_alphabet_num_bits(first_layer_num_bits),
-      m_num_bits_limit(num_bits_limit),
       m_leaf_capacity(leaf_capacity),
-      m_breakpoint_strategy(std::move(breakpoint_strategy)),
-      m_split_strategy(std::move(split_strategy)),
-      m_breakpoints(m_breakpoint_strategy->get_breakpoints(1 << m_alphabet_num_bits)) {
+      m_split_strategy(std::move(split_strategy)) {
     assert(m_segment_len > 0);
     assert(m_num_channels > 0);
     assert(first_layer_num_bits > 0);
-    assert(num_bits_limit >= first_layer_num_bits);
 
-    RunSettings::get_instance().set_breakpoints(m_breakpoints);
+    auto &RS = RunSettings::get_instance();
+    m_alphabet_num_bits = RS.get_isax_props().m_breakpoint_num_bits;
+    m_breakpoints = &RS.get_breakpoints();
+
+    assert(m_breakpoints->size() == (1 << m_alphabet_num_bits) - 1);
+    assert(m_alphabet_num_bits >= m_first_layer_num_bits);
 }
 
 void iSaxEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, std::unique_ptr<iSaxSplittableNode> &node_ref) {
     auto *leaf = static_cast<iSaxSplittableLeaf *>(node_ref.get());
     // Split the leaf
     auto [segment_ind, channel_ind] = m_split_strategy->get_split_ind(leaf, isax_mins);
-    segment_ind = segment_ind % isax_mins[0].size();
     SaxNumBitsT split_seg_bits = isax_mins[channel_ind].get_num_bits()[segment_ind];
     // If cannot split further, return
-    if (split_seg_bits == m_num_bits_limit) return;
+    if (split_seg_bits == m_alphabet_num_bits) return;
 
     // Find the breakpoint in the middle of the symbol at the split index
-    SaxSymbolT breakpoint_alphabet_size = (m_breakpoints.size() + 1);
-    SaxSymbolT alphabet_size_ratio = breakpoint_alphabet_size / (1 << split_seg_bits);
+    SaxSymbolT alphabet_size_ratio = (m_breakpoints->size() + 1) / (1 << split_seg_bits);
 
-    // If the segment already used the full alphabet, double the alphabet size
-    // Do not update the iSAX word yet, it may not be necessary
-    if (alphabet_size_ratio == 1) {
-        m_breakpoints = m_breakpoint_strategy->get_breakpoints(breakpoint_alphabet_size * 2);
-        alphabet_size_ratio = 2;
-        ++m_alphabet_num_bits;
-    }
     // `symbol * 2 + 1` goes to the upper interval in the next resolution
     // `* (alphabet_size_ratio >> 1)` goes to the lowest portion of the upper interval
     // (i.e. just above the mid breakpoint) in the desired resolution
     // `-1` adjusts for the fact that the breakpoints have an implicit -inf at the beginning
     auto symbol = isax_mins[channel_ind][segment_ind];
-    auto mid_breakpoint = m_breakpoints[(symbol * 2 + 1) * (alphabet_size_ratio >> 1) - 1];
+    auto mid_breakpoint = m_breakpoints->at((symbol * 2 + 1) * (alphabet_size_ratio >> 1) - 1);
 
     // Distribute the mts_envelope across the two new leaves
     vec<FilePositionT> left_file_positions, right_file_positions;
@@ -121,7 +111,7 @@ void iSaxEnvelopeIndex::insert(const EnvelopeEntry &entry) {
     for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
         auto env_min = mts_envelope[c].lower;
         isax_mins[c] = iSaxWord(
-            env_min, {vec<SaxNumBitsT>(env_min.size(), m_first_layer_num_bits), m_alphabet_num_bits, m_breakpoints});
+            env_min, {vec<SaxNumBitsT>(env_min.size(), m_first_layer_num_bits), m_alphabet_num_bits, *m_breakpoints});
         for (SaxSegIndT s = 0; s < m_num_seg_per_channel; ++s) symbols[c][s] = isax_mins[c][s];
     }
 
@@ -159,7 +149,7 @@ std::unique_ptr<IEnvelopeFinalizedIndex> iSaxEnvelopeIndex::finalize() {
     vec<std::unique_ptr<iSaxFinalizedNode>> finalized_nodes(size_first_layer);
 
     iSaxWordSettings isax_word_settings = {vec<SaxNumBitsT>(m_num_seg_per_channel, m_alphabet_num_bits),
-                                           m_alphabet_num_bits, m_breakpoints};
+                                           m_alphabet_num_bits, *m_breakpoints};
 
     size_t i = 0;
     for (auto it = m_first_layer.begin(); it != m_first_layer.end(); ++it) {
@@ -186,7 +176,7 @@ std::unique_ptr<IEnvelopeFinalizedIndex> iSaxEnvelopeIndex::finalize() {
                                              m_num_seg_per_channel};
     return std::make_unique<iSaxEnvelopeFinalizedIndex>(series_isax_prop, std::move(first_layer_min_symbols),
                                                         std::move(first_layer_max_symbols), std::move(finalized_nodes),
-                                                        m_first_layer_num_bits, m_alphabet_num_bits, m_breakpoints);
+                                                        m_first_layer_num_bits, m_alphabet_num_bits, *m_breakpoints);
 }
 
 const iSaxSplittableNode *iSaxEnvelopeIndex::get_first_layer_node(const vec<iSaxWord> &isax_mins) const {

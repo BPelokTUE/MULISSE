@@ -7,7 +7,7 @@ bool RunSettings::initialized = false;
 RunSettings::RunSettings() {}
 
 void RunSettings::initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
-                             uint pos_per_env, uint segment_len, str ffts_path) {
+                             uint pos_per_env, str ffts_path) {
     if (initialized) return;
 
     initialized = true;
@@ -21,11 +21,6 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     }
 
     instance.m_query_properties = query_props;
-
-    instance.m_isax_properties = {
-        .num_segments = static_cast<SaxSegIndT>(segment_len > 0 ? query_props.l_max / segment_len : 0),
-        .segment_len = segment_len,
-    };
 
     uint envs_per_ts =
         pos_per_env == 0 ? 1 : (dataset_props.series_len - query_props.l_min + pos_per_env) / pos_per_env;
@@ -150,11 +145,16 @@ void RunSettings::reset_query_ffts() {
 
 // iSAX
 
-const vec<float> &RunSettings::get_breakpoints() { return m_breakpoints; }
+const vec<float> &RunSettings::get_breakpoints() { return m_isax_props.m_breakpoints; }
 
-void RunSettings::set_breakpoints(const vec<float> &breakpoints) { m_breakpoints = breakpoints; }
+const iSaxProperties &RunSettings::get_isax_props() { return m_isax_props; }
 
-const iSaxProperties &RunSettings::get_isax_props() { return m_isax_properties; }
+void RunSettings::set_isax_properties(iSaxProperties isax_props) {
+    if (!m_isax_props_set) {
+        m_isax_props = isax_props;
+        m_isax_props_set = true;
+    }
+}
 
 // Properties
 
