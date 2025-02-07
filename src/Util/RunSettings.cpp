@@ -8,7 +8,8 @@ RunSettings RunSettings::instance = RunSettings();
 bool RunSettings::initialized = false;
 RunSettings::RunSettings() {}
 
-void RunSettings::initialize(CommandType command_type, DatasetProperties dataset_props, str ffts_path) {
+void RunSettings::initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
+                             uint pos_per_env, str ffts_path) {
     if (initialized) return;
 
     initialized = true;
@@ -20,6 +21,16 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
         instance.m_dataset_props.num_series =
             dataset_size / (dataset_props.series_len * dataset_props.num_channels * sizeof(float));
     }
+
+    instance.m_query_properties = query_props;
+
+    uint envs_per_ts =
+        pos_per_env == 0 ? 1 : (dataset_props.series_len - query_props.l_min + pos_per_env) / pos_per_env;
+    instance.m_envelope_props = {
+        .pos_per_env = pos_per_env,
+        .envs_per_ts = envs_per_ts,
+    };
+
     instance.m_ffts_path = ffts_path;
 
     switch (instance.m_command_type) {
@@ -28,6 +39,10 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
         case CREATE_QS:
             break;
         case INDEX:
+            if (instance.ffts_supported() && envs_per_ts > 1) {
+                throw std::runtime_error(
+                    "Precalculating FFTs are only supported for setups with one envelope per time series");
+            }
             break;
         case SEARCH:
             if (instance.ffts_supported()) {

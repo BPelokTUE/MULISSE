@@ -1,5 +1,4 @@
 #include <iostream>
-#include <string>
 #include <fstream>
 
 #include "CLI11/CLI11.hpp"
@@ -9,8 +8,6 @@
 #include "Modules/Indexing.hpp"
 #include "Modules/Searching.hpp"
 #include "Util/RunSettings.hpp"
-
-using std::string, std::cout;
 
 int main(int argc, char **argv) {
     CLI::App app{"Run ULISSE-MTS"};
@@ -24,7 +21,7 @@ int main(int argc, char **argv) {
 
     // Define custom validators
     auto positive_int = CLI::Validator(
-        [](std::string &input) {
+        [](str &input) {
             try {
                 unsigned value = std::stoi(input);
                 if (value > 0) {
@@ -39,7 +36,7 @@ int main(int argc, char **argv) {
         "POSITIVE_INTEGER", "Positive Integer");
 
     auto positive_float = CLI::Validator(
-        [](std::string &input) {
+        [](str &input) {
             try {
                 float value = std::stof(input);
                 if (value > 0.0) {
@@ -62,7 +59,7 @@ int main(int argc, char **argv) {
     zero_start  |     X     |              |       |        |
     n           |     X     |              |       |        |
     m           |     X     |       X      |   X   |        |
-    c           |     X     |       X      |   X   |        |
+    c           |     X     |       X      |   X   |   X    |
     Q           |           |       X      |       |        |
     lengths     |           |       X      |       |        |
     query_path  |           |       X      |       |   X    |
@@ -84,12 +81,12 @@ int main(int argc, char **argv) {
     out         |           |              |       |   X    |
     */
 
-    string dataset_path, query_path, index_path, results_path,
+    str dataset_path, query_path, index_path, results_path,
         ffts_path = "", index_type_str = INDEX_TYPE_STRS[0], split_strategy_str = ISAX_SPLIT_STRATEGY_STRS[0],
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0], index_format_str = ARCHIVE_TYPE_STRS[0],
         search_type_str, distance_measure_str = DISTANCE_TYPE_STRS[0];
     float noise = 1.0;
-    unsigned num_series = 0, series_len, num_queries, l_min, l_max, segment_len, pos_per_env, knn_k = 1;
+    unsigned num_series = 0, series_len, num_queries, l_min, l_max, segment_len, pos_per_env = 0, knn_k = 1;
     DistanceT r_range_r = 1.0;
     int seed = 0;
     size_t leaf_capacity;
@@ -161,6 +158,10 @@ int main(int argc, char **argv) {
         ->add_option("-F,--ffts", ffts_path, "Path to load FFTs from; if not provided, FFTs will not be loaded")
         ->capture_default_str();
     search_subcommand->add_option("-o,--out", results_path, "Output file path")->required();
+    // TODO: figure out how to handle `num_channels` for `RunSettings` in the `SEARCH` case
+    search_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
+        ->required()
+        ->check(positive_int);
     search_subcommand->add_option("-t,--index_type", index_type_str, "Index type")
         ->capture_default_str()
         ->check(CLI::IsMember(INDEX_TYPE_STRS));
@@ -183,28 +184,16 @@ int main(int argc, char **argv) {
         ->capture_default_str()
         ->check(positive_float);
 
-    // For debugging (Clang 19 + Code LLDB + CLI11 don't like each other for some reason)
-    dataset_path = "DATA/small/test.bin";
-    index_path = "DATA/small/test_ind.bin";
-    query_path = "DATA/small/test_query.txt";
-    results_path = "DATA/small/test_results.txt";
-    ffts_path = "DATA/small/test_ffts.bin";
-    search_type_str = "knn";
-    distance_measure_str = "mass";
-    knn_k = 5;
-    series_len = 4096;
-    num_channels = 1;
-    l_min = 256;
-    l_max = 1024;
-    segment_len = 64;
-    pos_per_env = 16;
-    leaf_capacity = 16;
-
     // Parse arguments and initialize run settings
     CLI11_PARSE(app, argc, argv);
     CommandType command_type = STR_TO_CMD_TYPE.at(app.get_subcommands().front()->get_name());
-    // CommandType command_type = SEARCH;
-    RunSettings::initialize(command_type, {dataset_path, num_channels, series_len, num_series}, ffts_path);
+    try {
+        RunSettings::initialize(command_type, {dataset_path, num_channels, series_len, num_series},
+                                {query_path, l_min, l_max}, pos_per_env, ffts_path);
+    } catch (const std::exception &e) {
+        std::cerr << "Error configuring run: " << e.what() << '\n';
+        return 1;
+    }
 
     // Execute subcommand
     if (command_type == CREATE_DS) {
@@ -227,7 +216,7 @@ int main(int argc, char **argv) {
                 };
                 break;
             default:
-                cout << "Index type \"" << index_type_str << "\" is not implemented\n";
+                std::cerr << "Index type \"" << index_type_str << "\" is not implemented\n";
                 return 1;
         }
         IndexOptions index_options{
@@ -253,7 +242,7 @@ int main(int argc, char **argv) {
                 distance_measure = new EuclideanDistanceWMass(!unnormalized);
                 break;
             default:
-                cout << "Distance measure \"" << distance_measure_str << "\" is not implemented\n";
+                std::cerr << "Distance measure \"" << distance_measure_str << "\" is not implemented\n";
                 return 1;
         }
         IResultSet *result_set;
@@ -265,7 +254,7 @@ int main(int argc, char **argv) {
                 result_set = new RRangeResultSet(r_range_r);
                 break;
             default:
-                cout << "Search type \"" << search_type_str << "\" is not implemented\n";
+                std::cerr << "Search type \"" << search_type_str << "\" is not implemented\n";
                 return 1;
         }
         SearchOptions search_options = {

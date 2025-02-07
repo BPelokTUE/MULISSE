@@ -23,6 +23,17 @@ struct DatasetProperties {
     unsigned num_series;
 };
 
+struct QueryProperties {
+    str path;
+    uint l_min;
+    uint l_max;
+};
+
+struct EnvelopeProperties {
+    uint pos_per_env;
+    uint envs_per_ts;
+};
+
 class RunSettings {
    public:
     RunSettings(const RunSettings&) = delete;
@@ -30,7 +41,8 @@ class RunSettings {
 
     RunSettings();
 
-    static void initialize(CommandType command_type, DatasetProperties dataset_properties, str ffts_path);
+    static void initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
+                           uint pos_per_env, str ffts_path);
 
     static RunSettings& get_instance();
 
@@ -87,6 +99,12 @@ class RunSettings {
 
     // Dataset properties
     DatasetProperties m_dataset_props;
+
+    // Query properties
+    QueryProperties m_query_properties;
+
+    // Envelope properties
+    EnvelopeProperties m_envelope_props;
 
     // FFTs
     str m_ffts_path;
