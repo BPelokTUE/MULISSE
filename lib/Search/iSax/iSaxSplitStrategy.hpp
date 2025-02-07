@@ -6,10 +6,15 @@
 #include "Util/utilities.hpp"
 
 /** @brief Enum for IiSaxSplitStrategy implementations */
-enum iSaxSplitStrategyType { DOUBLE_ROUND_ROBIN };
+enum iSaxSplitStrategyType { DOUBLE_ROUND_ROBIN, ENTROPY_MAXIMIZING };
 
 /** @brief Map from strings to iSaxSplitStrategyType */
-const umap<str, iSaxSplitStrategyType> STR_TO_ISAX_SPLIT_STRATEGY = {{"double_round_robin", DOUBLE_ROUND_ROBIN}};
+const umap<str, iSaxSplitStrategyType> STR_TO_ISAX_SPLIT_STRATEGY = {
+    {"double_round_robin", DOUBLE_ROUND_ROBIN},
+    {"drr", DOUBLE_ROUND_ROBIN},
+    {"entropy_maximizing", ENTROPY_MAXIMIZING},
+    {"em", ENTROPY_MAXIMIZING},
+};
 
 /** @brief Vector of accepted strings for STR_TO_ISAX_SPLIT_STRATEGY */
 const vec<str> ISAX_SPLIT_STRATEGY_STRS = get_map_keys(STR_TO_ISAX_SPLIT_STRATEGY);
@@ -52,12 +57,12 @@ class DoubleRoundRobinStrategy : public IiSaxSplitStrategy {
 
 class EntropyMaximizingStrategy : public IiSaxSplitStrategy {
    public:
-    EntropyMaximizingStrategy() = default;
+    EntropyMaximizingStrategy(bool choose_min_num_bits_when_tied);
 
     SaxSplitIndT get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) override;
 
    private:
-    float calculate_score(float sum, float sum_sq, uint count, uint size);
+    bool m_choose_min_num_bits_when_tied;
 };
 
 #endif  // ISAX_SPLIT_STRATEGY_HPP

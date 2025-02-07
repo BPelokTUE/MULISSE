@@ -33,7 +33,7 @@ uint8_t iSaxWord::apply_split(SaxSegIndT split_ind) {
 }
 
 void iSaxWord::append_to_symbol(SaxSegIndT index, uint8_t bit) {
-    m_symbols[index] = (m_symbols[index] << 1) | bit;
+    m_symbols[index] = (operator[](index) << 1) | bit;
     m_num_bits[index]++;
     m_alphabet_num_bits = std::max(m_alphabet_num_bits, m_num_bits[index]);
 }

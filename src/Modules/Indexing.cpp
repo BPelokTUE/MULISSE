@@ -19,6 +19,8 @@ uptr<IiSaxSplitStrategy> get_split_strategy(const iSaxIndexParams *params, SaxSe
     switch (params->split_strategy_type) {
         case DOUBLE_ROUND_ROBIN:
             return std::make_unique<DoubleRoundRobinStrategy>(num_seg_per_channel, num_channels);
+        case ENTROPY_MAXIMIZING:
+            return std::make_unique<EntropyMaximizingStrategy>(false);
     }
     return nullptr;
 }

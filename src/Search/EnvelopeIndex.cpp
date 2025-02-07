@@ -12,6 +12,8 @@ void IEnvelopeIndex::construct(const str &dataset_path, IEnvelopeGenerator *gene
          series_size = channel_size * num_channels;
     uint num_series = N / series_size;
 
+    vec<EnvelopeEntry> dataset_entries;
+
 #pragma omp parallel
     {
         std::ifstream data_stream(dataset_path, std::ios::binary);
@@ -22,11 +24,15 @@ void IEnvelopeIndex::construct(const str &dataset_path, IEnvelopeGenerator *gene
             for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
                 data_stream.read(reinterpret_cast<char *>(mts[c].data()), channel_size);
             }
-            auto entries = generator->get_entries(mts, i);
+            auto mts_entries = generator->get_entries(mts, i);
 #pragma omp critical
             {
-                for (auto entry : entries) insert(entry);
+                dataset_entries.insert(dataset_entries.end(), mts_entries.begin(), mts_entries.end());
             }
         }
     }
+
+    // TODO: adapt stuff based on entries, e.g. change breakpoint distribution mean
+
+    for (auto &entry : dataset_entries) insert(std::move(entry));
 }

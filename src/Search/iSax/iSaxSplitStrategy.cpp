@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "Search/iSax/iSaxSplitStrategy.hpp"
 #include "Util/RunSettings.hpp"
 
@@ -17,13 +19,18 @@ SaxSplitIndT DoubleRoundRobinStrategy::get_split_ind(const iSaxSplittableLeaf *l
 
 // Entropy Maximizing Strategy
 
-SaxSplitIndT EntropyMaximizingStrategy::get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) {
-    SaxSplitIndT split_ind{0, 0};
-    float max_score = -INF;
+EntropyMaximizingStrategy::EntropyMaximizingStrategy(bool choose_min_num_bits_when_tied)
+    : m_choose_min_num_bits_when_tied(choose_min_num_bits_when_tied) {}
 
+SaxSplitIndT EntropyMaximizingStrategy::get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) {
     auto &RS = RunSettings::get_instance();
+
     const vec<float> &breakpoints = RS.get_breakpoints();
     uint br_ind;
+
+    SaxSplitIndT split_ind{0, 0};
+    float max_score = -INF;
+    SaxNumBitsT min_num_bits = RS.get_isax_props().m_breakpoint_num_bits;
 
     const vec<vec<Envelope>> &envelopes = leaf->get_envelopes();
     for (MtsNumChannelsT c = 0; c < RS.get_dataset_props().num_channels; ++c) {
@@ -33,24 +40,36 @@ SaxSplitIndT EntropyMaximizingStrategy::get_split_ind(const iSaxSplittableLeaf *
             uint count = 0;
 
             uint alphabet_ratio = (breakpoints.size() + 1) / (1 << (num_bits[s] + 1));
-            assert(alphabet_ratio > 0);
+            // If this segment already has the maximum allowed cardinality ==> skip
+            if (alphabet_ratio == 0) continue;
 
-            for (uint i = 0; i < envelopes.size(); ++i) {
-                float lower = envelopes[i][c].lower[s];
+            br_ind = alphabet_ratio - 1;
 
-                if (lower < breakpoints[br_ind]) {
+            vec<float> lower_vals(envelopes.size());
+            for (uint i = 0; i < envelopes.size(); ++i) lower_vals[i] = envelopes[i][c].lower[s];
+            std::sort(lower_vals.begin(), lower_vals.end());
+
+            for (float lower : lower_vals) {
+                if (br_ind >= breakpoints.size() || lower < breakpoints[br_ind]) {
                     ++count;
                     lower_sum += lower;
                     lower_sum_sq += lower * lower;
                 } else {
                     float prob = (float)count / envelopes.size();
-                    score -= prob * log2(prob);
+                    if (prob > 0) score -= prob * log2(prob);
+
                     count = 0;
+                    br_ind += alphabet_ratio;
                 }
             }
+            float prob = (float)count / envelopes.size();
+            if (prob > 0) score -= prob * log2(prob);
+
             score /= calculate_mu_and_sigma(lower_sum, lower_sum_sq, envelopes.size()).second;
-            if (score > max_score) {
+            if (score > max_score ||
+                (m_choose_min_num_bits_when_tied && score == max_score && num_bits[s] < min_num_bits)) {
                 max_score = score;
+                min_num_bits = num_bits[s];
                 split_ind = {s, c};
             }
         }
