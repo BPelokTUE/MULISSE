@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "Search/iSax/iSaxSplittableNode.hpp"
 
 // iSaxSplittableInternal

@@ -1,6 +1,5 @@
 #include <filesystem>
 #include <fstream>
-#include <iostream>
 
 #include "Modules/Indexing.hpp"
 #include "Search/EnvelopeIndex.hpp"

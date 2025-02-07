@@ -51,8 +51,8 @@ int search(const SearchOptions &opts) {
             sq_sum += value * value;
         }
         if (query[c].size() > 0) {
-            float mu = sum / query[c].size(), sigma = sq_sum / query[c].size() - mu * mu;
-            for (size_t i = 0; i < query[c].size(); ++i) query[c][i] = (query[c][i] - mu) / std::sqrt(sigma);
+            auto [mu, sigma] = calculate_mu_and_sigma(sum, sq_sum, query[c].size());
+            for (size_t i = 0; i < query[c].size(); ++i) query[c][i] = (query[c][i] - mu) / sigma;
         }
 
         if (c == num_channels - 1) {

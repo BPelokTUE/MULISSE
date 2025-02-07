@@ -27,7 +27,7 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT 
     for (int start_pos = 0; start_pos < num_start_pos; ++start_pos) {
         DistanceT dist_squared = 0;
         for (size_t c = 0; c < query.size(); ++c) {
-            DistanceT mu = sums[c] / query_len, sigma = std::sqrt(std::max(sq_sums[c] / query_len - mu * mu, EPS));
+            auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], query_len);
             for (size_t i = 0; i < query[c].size(); ++i) {
                 DistanceT diff = (mts[c][start_pos + i] - mu) / sigma - query[c][i];
                 dist_squared += diff * diff;
@@ -143,8 +143,7 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, FilePosit
             query_sum += q_channel[i];
             query_sum_sq += q_channel[i] * q_channel[i];
         }
-        DistanceT query_mu = query_sum / query_len,
-                  query_sigma = std::sqrt(std::max(query_sum_sq / query_len - query_mu * query_mu, EPS));
+        auto [query_mu, query_sigma] = calculate_mu_and_sigma(query_sum, query_sum_sq, query_len);
 
         vec<DistanceT> dot_products = calculate_dot_products(q_channel, mts_channel, file_pos, c);
 
@@ -152,9 +151,8 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, FilePosit
             for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
                 DistanceT dot = dot_products[query_len - 1 + start_pos],
                           subs_sum = mts_sums[query_len + start_pos] - mts_sums[start_pos],
-                          subs_sum_sq = mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos],
-                          subs_mu = subs_sum / query_len,
-                          subs_sigma = std::sqrt(std::max(subs_sum_sq / query_len - subs_mu * subs_mu, EPS));
+                          subs_sum_sq = mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos];
+                auto [subs_mu, subs_sigma] = calculate_mu_and_sigma(subs_sum, subs_sum_sq, query_len);
 
                 // TODO: Assuming that the query is already normalized ==> query_mu = 0, query_sigma = 1
                 DistanceT corr = (dot - query_len * query_mu * subs_mu) / (query_len * query_sigma * subs_sigma);

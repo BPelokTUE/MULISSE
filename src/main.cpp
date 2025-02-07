@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0], index_format_str = ARCHIVE_TYPE_STRS[0],
         search_type_str, distance_measure_str = DISTANCE_TYPE_STRS[0];
     float noise = 1.0;
-    uint num_series = 0, series_len, num_queries, l_min, l_max, segment_len, pos_per_env = 0, knn_k = 1;
+    uint num_series = 0, series_len, num_queries, l_min, l_max, segment_len = 0, pos_per_env = 0, knn_k = 1;
     DistanceT r_range_r = 1.0;
     int seed = 0;
     size_t leaf_capacity;
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
     CommandType command_type = STR_TO_CMD_TYPE.at(app.get_subcommands().front()->get_name());
     try {
         RunSettings::initialize(command_type, {dataset_path, num_channels, series_len, num_series},
-                                {query_path, l_min, l_max}, pos_per_env, ffts_path);
+                                {query_path, l_min, l_max}, pos_per_env, segment_len, ffts_path);
     } catch (const std::exception &e) {
         std::cerr << "Error configuring run: " << e.what() << '\n';
         return 1;

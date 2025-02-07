@@ -1,8 +1,11 @@
 #ifndef ISAX_FINALIZED_NODE_HPP
 #define ISAX_FINALIZED_NODE_HPP
 
+#include <vector>
+
 #include <cereal/types/memory.hpp>
 #include <cereal/types/utility.hpp>
+#include <cereal/types/vector.hpp>
 
 #include "Search/iSax/iSaxNode.hpp"
 

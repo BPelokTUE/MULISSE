@@ -1,6 +1,7 @@
 #ifndef ISAX_SPLIT_STRATEGY_HPP
 #define ISAX_SPLIT_STRATEGY_HPP
 
+#include "Search/iSax/iSaxSplittableNode.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 
@@ -21,9 +22,10 @@ class IiSaxSplitStrategy {
     /**
      * @brief Get a channel and segment index to split on
      *
+     * @param leaf The leaf to get the split index for
      * @return A channel and segment index to split on (see SaxSplitIndT)
      */
-    virtual SaxSplitIndT get_split_ind() = 0;
+    virtual SaxSplitIndT get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) = 0;
 };
 
 /**
@@ -41,11 +43,21 @@ class DoubleRoundRobinStrategy : public IiSaxSplitStrategy {
      */
     DoubleRoundRobinStrategy(SaxSegIndT num_seg_per_channel, MtsNumChannelsT num_channels);
 
-    SaxSplitIndT get_split_ind() override;
+    SaxSplitIndT get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) override;
 
    private:
     SaxSegIndT m_num_seg_per_channel, m_current_split = 0;
     MtsNumChannelsT m_num_channels, m_current_channel = 0;
+};
+
+class EntropyMaximizingStrategy : public IiSaxSplitStrategy {
+   public:
+    EntropyMaximizingStrategy() = default;
+
+    SaxSplitIndT get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) override;
+
+   private:
+    float calculate_score(float sum, float sum_sq, uint count, uint size);
 };
 
 #endif  // ISAX_SPLIT_STRATEGY_HPP

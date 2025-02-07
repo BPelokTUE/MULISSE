@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "Search/IndexOptions.hpp"
 #include "Util/RunSettings.hpp"
 
@@ -9,7 +7,7 @@ bool RunSettings::initialized = false;
 RunSettings::RunSettings() {}
 
 void RunSettings::initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
-                             uint pos_per_env, str ffts_path) {
+                             uint pos_per_env, uint segment_len, str ffts_path) {
     if (initialized) return;
 
     initialized = true;
@@ -23,6 +21,11 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     }
 
     instance.m_query_properties = query_props;
+
+    instance.m_isax_properties = {
+        .num_segments = static_cast<SaxSegIndT>(segment_len > 0 ? query_props.l_max / segment_len : 0),
+        .segment_len = segment_len,
+    };
 
     uint envs_per_ts =
         pos_per_env == 0 ? 1 : (dataset_props.series_len - query_props.l_min + pos_per_env) / pos_per_env;
@@ -58,6 +61,8 @@ RunSettings &RunSettings::get_instance() {
     assert(initialized);
     return instance;
 }
+
+// FFTs
 
 void RunSettings::calculate_ffts() const {
     if (!ffts_supported()) return;
@@ -142,3 +147,15 @@ void RunSettings::reset_query_ffts() {
 
     for (MtsNumChannelsT c = 0; c < m_dataset_props.num_channels; ++c) m_query_ffts[c] = nullptr;
 }
+
+// iSAX
+
+const vec<float> &RunSettings::get_breakpoints() { return m_breakpoints; }
+
+void RunSettings::set_breakpoints(const vec<float> &breakpoints) { m_breakpoints = breakpoints; }
+
+const iSaxProperties &RunSettings::get_isax_props() { return m_isax_properties; }
+
+// Properties
+
+const DatasetProperties &RunSettings::get_dataset_props() { return m_dataset_props; }

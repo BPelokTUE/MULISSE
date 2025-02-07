@@ -45,4 +45,8 @@ umap<V, K> get_inverse_map(const umap<K, V> map) {
     return inverse_map;
 }
 
+std::pair<float, float> calculate_mu_and_sigma(float sum, float sum_sq, uint count);
+
+std::pair<double, double> calculate_mu_and_sigma(double sum, double sum_sq, uint count);
+
 #endif  // UTIL_HPP

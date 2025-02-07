@@ -1,6 +1,5 @@
 #include "Summarization/Envelope.hpp"
-
-#include <iostream>
+#include "Util/utilities.hpp"
 
 size_t Envelope::size() const { return lower.size(); }
 
@@ -73,8 +72,8 @@ vec<Envelope> ulisse_envelope_normalized(const vec<float>& ts, const UlisseEnvel
 
         for (int start = start_min; start <= start_max; ++start) {
             int subs_len = last_ind - start + 1;
-            float mu = (sum_accs[last_ind + 1] - sum_accs[start]) / subs_len;
-            float sigma = std::sqrt((sq_sum_accs[last_ind + 1] - sq_sum_accs[start]) / subs_len - mu * mu);
+            auto [mu, sigma] = calculate_mu_and_sigma(sum_accs[last_ind + 1] - sum_accs[start],
+                                                      sq_sum_accs[last_ind + 1] - sq_sum_accs[start], subs_len);
 
             int num_seg_in_subs = subs_len / segment_len;
             for (int seg_ind = 0; seg_ind < num_seg_in_subs; ++seg_ind) {

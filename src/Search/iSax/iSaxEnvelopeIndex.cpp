@@ -2,8 +2,7 @@
 #include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
 #include "Search/iSax/iSaxSplittableNode.hpp"
 #include "Summarization/iSaxWord.hpp"
-
-#include <iostream>
+#include "Util/RunSettings.hpp"
 
 std::size_t SaxSymbolsHash::operator()(const vec<vec<SaxSymbolT>> &symbols) const {
     std::size_t seed = 0, num_symbols = symbols[0].size();
@@ -34,11 +33,14 @@ iSaxEnvelopeIndex::iSaxEnvelopeIndex(const SeriesISaxProperties &series_isax_pro
     assert(m_num_channels > 0);
     assert(first_layer_num_bits > 0);
     assert(num_bits_limit >= first_layer_num_bits);
+
+    RunSettings::get_instance().set_breakpoints(m_breakpoints);
 }
 
 void iSaxEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, std::unique_ptr<iSaxSplittableNode> &node_ref) {
+    auto *leaf = static_cast<iSaxSplittableLeaf *>(node_ref.get());
     // Split the leaf
-    auto [segment_ind, channel_ind] = m_split_strategy->get_split_ind();
+    auto [segment_ind, channel_ind] = m_split_strategy->get_split_ind(leaf, isax_mins);
     segment_ind = segment_ind % isax_mins[0].size();
     SaxNumBitsT split_seg_bits = isax_mins[channel_ind].get_num_bits()[segment_ind];
     // If cannot split further, return
@@ -66,7 +68,6 @@ void iSaxEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, std::unique_ptr<iSa
     vec<FilePositionT> left_file_positions, right_file_positions;
     vec<vec<Envelope>> left_mts_envelope, right_mts_envelope;
 
-    auto *leaf = static_cast<iSaxSplittableLeaf *>(node_ref.get());
     for (size_t i = 0; i < leaf->m_file_positions.size(); ++i) {
         auto &seg_min = leaf->m_envelopes[i][channel_ind].lower;
         if (seg_min[segment_ind] <= mid_breakpoint) {

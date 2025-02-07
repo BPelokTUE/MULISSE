@@ -34,6 +34,11 @@ struct EnvelopeProperties {
     uint envs_per_ts;
 };
 
+struct iSaxProperties {
+    SaxSegIndT num_segments;
+    uint segment_len;
+};
+
 class RunSettings {
    public:
     RunSettings(const RunSettings&) = delete;
@@ -42,7 +47,7 @@ class RunSettings {
     RunSettings();
 
     static void initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
-                           uint pos_per_env, str ffts_path);
+                           uint pos_per_env, uint segment_len, str ffts_path);
 
     static RunSettings& get_instance();
 
@@ -91,6 +96,27 @@ class RunSettings {
     /** @brief Resets the FFTs of the query */
     void reset_query_ffts();
 
+    // iSAX
+
+    /**
+     * @brief Get the currently used iSAX interval breakpoints
+     * @return The vector of breakpoints, excluding `-INF` and `INF` at the ends
+     */
+    const vec<float>& get_breakpoints();
+
+    // TODO: figure out a way to make this only accessible for some classes
+    /**
+     * @brief Set the currently used iSAX interval breakpoints
+     * @param breakpoints The new breakpoints
+     */
+    void set_breakpoints(const vec<float>& breakpoints);
+
+    const iSaxProperties& get_isax_props();
+
+    // Properties
+
+    const DatasetProperties& get_dataset_props();
+
     // ---------------------------------------------------- //
 
    private:
@@ -105,6 +131,10 @@ class RunSettings {
 
     // Envelope properties
     EnvelopeProperties m_envelope_props;
+
+    // iSAX properties
+    iSaxProperties m_isax_properties;
+    vec<float> m_breakpoints;
 
     // FFTs
     str m_ffts_path;
