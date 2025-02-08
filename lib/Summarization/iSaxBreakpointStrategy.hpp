@@ -9,11 +9,7 @@
 /** @brief Enum type for IiSaxBreakpointStrategy */
 enum iSaxBreakpointStrategyType { EQUIPROBABLE };
 
-/** @brief Map from strings to iSaxBreakpointStrategyType */
-const umap<str, iSaxBreakpointStrategyType> STR_TO_ISAX_BREAKPOINT_STRATEGY = {{"equiprobable", EQUIPROBABLE}};
-
-/** @brief Vector of accepted strings for STR_TO_ISAX_BREAKPOINT_STRATEGY */
-const vec<str> ISAX_BREAKPOINT_STRATEGY_STRS = get_map_keys(STR_TO_ISAX_BREAKPOINT_STRATEGY);
+DEFINE_ENUM_CONSTS_NO_EXTRA(iSaxBreakpointStrategyType, ISAX_BREAKPOINT_STRATEGY, false);
 
 /**
  * @brief Interface for breakpoints strategies

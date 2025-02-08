@@ -8,16 +8,7 @@
 /** @brief Enum for IiSaxSplitStrategy implementations */
 enum iSaxSplitStrategyType { DOUBLE_ROUND_ROBIN, ENTROPY_MAXIMIZING };
 
-/** @brief Map from strings to iSaxSplitStrategyType */
-const umap<str, iSaxSplitStrategyType> STR_TO_ISAX_SPLIT_STRATEGY = {
-    {"double_round_robin", DOUBLE_ROUND_ROBIN},
-    {"drr", DOUBLE_ROUND_ROBIN},
-    {"entropy_maximizing", ENTROPY_MAXIMIZING},
-    {"em", ENTROPY_MAXIMIZING},
-};
-
-/** @brief Vector of accepted strings for STR_TO_ISAX_SPLIT_STRATEGY */
-const vec<str> ISAX_SPLIT_STRATEGY_STRS = get_map_keys(STR_TO_ISAX_SPLIT_STRATEGY);
+DEFINE_ENUM_CONSTS_NO_EXTRA(iSaxSplitStrategyType, ISAX_SPLIT_STRATEGY, true);
 
 /** @brief Interface for iSAX split strategies */
 class IiSaxSplitStrategy {

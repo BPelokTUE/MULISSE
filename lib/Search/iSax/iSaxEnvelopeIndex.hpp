@@ -1,5 +1,5 @@
-#ifndef ISAX_ULISSE_ENVELOPE_INDEX_HPP
-#define ISAX_ULISSE_ENVELOPE_INDEX_HPP
+#ifndef ISAX_ENVELOPE_INDEX_HPP
+#define ISAX_ENVELOPE_INDEX_HPP
 
 #include <unordered_map>
 
@@ -51,4 +51,4 @@ class iSaxEnvelopeIndex : public IEnvelopeIndex {
     void split_leaf(vec<iSaxWord> &isax_min, std::unique_ptr<iSaxSplittableNode> &node_ref);
 };
 
-#endif  // ISAX_ULISSE_ENVELOPE_INDEX_HPP
+#endif  // ISAX_ENVELOPE_INDEX_HPP

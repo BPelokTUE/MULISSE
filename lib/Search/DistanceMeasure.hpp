@@ -7,11 +7,7 @@
 /** @brief Types of distance measure */
 enum DistanceType { ED, MASS };
 
-/** @brief Map from strings to DistanceType */
-const umap<str, DistanceType> STR_TO_DISTANCE_TYPE = {{"ed", ED}, {"euclidean", ED}, {"mass", MASS}};
-
-/** @brief Vector of accepted strings for STR_TO_DISTANCE_TYPE */
-const vec<str> DISTANCE_TYPE_STRS = get_map_keys(STR_TO_DISTANCE_TYPE);
+DEFINE_ENUM_CONSTS(DistanceType, DISTANCE_TYPE, false, (umap<str, DistanceType>{{"euclidean", ED}}));
 
 /** @brief Interface for distance measures */
 class IDistanceMeasure {

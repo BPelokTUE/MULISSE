@@ -1,5 +1,5 @@
-#ifndef I_ULISSE_ENVELOPE_INDEX_HPP
-#define I_ULISSE_ENVELOPE_INDEX_HPP
+#ifndef ENVELOPE_INDEX_HPP
+#define ENVELOPE_INDEX_HPP
 
 #include <fstream>
 
@@ -127,4 +127,4 @@ class IEnvelopeIndex {
     virtual void insert(const EnvelopeEntry &entry) = 0;
 };
 
-#endif  // I_ULISSE_ENVELOPE_INDEX_HPP
+#endif  // ENVELOPE_INDEX_HPP

@@ -75,7 +75,7 @@ int create_index(const IndexOptions &opts) {
 
     auto index = get_index(opts);
 
-    if (std::ranges::find(ENVELOPE_TYPES, opts.index_params->get_type()) != ENVELOPE_TYPES.end()) {
+    if (std::ranges::find(ENVELOPE_METHODS, opts.index_params->get_type()) != ENVELOPE_METHODS.end()) {
         auto envelope_generator = get_envelope_generator(opts);
         index->construct(opts.dataset_path, envelope_generator.get(), opts.num_channels, opts.series_len);
         std::ofstream index_stream(opts.index_path, std::ios::binary);

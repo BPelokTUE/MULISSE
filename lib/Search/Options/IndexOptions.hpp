@@ -79,11 +79,7 @@ struct iSaxEnvelopeIndexParams : EnvelopeIndexParams, iSaxIndexParams {
 /** @brief Enumeration type for the cereal archives */
 enum ArchiveType { BINARY, JSON };
 
-/** @brief Map from strings to ArchiveType */
-const umap<str, ArchiveType> STR_TO_ARCHIVE_TYPE = {{"binary", BINARY}, {"json", JSON}};
-
-/** @brief Vector of accepted strings for STR_TO_ARCHIVE_TYPE */
-const vec<str> ARCHIVE_TYPE_STRS = get_map_keys(STR_TO_ARCHIVE_TYPE);
+DEFINE_ENUM_CONSTS_NO_EXTRA(ArchiveType, ARCHIVE_TYPE, false);
 
 /** @brief Options for creating an index */
 struct IndexOptions {

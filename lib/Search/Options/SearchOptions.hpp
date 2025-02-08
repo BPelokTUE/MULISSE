@@ -9,11 +9,7 @@
 /** @brief Types of similarity search */
 enum SearchType { KNN, R_RANGE };
 
-/** @brief Map from strings to SearchType */
-const umap<str, SearchType> STR_TO_SEARCH_TYPE = {{"knn", KNN}, {"r_range", R_RANGE}};
-
-/** @brief Vector of accepted strings for STR_TO_SEARCH_TYPE */
-const vec<str> SEARCH_TYPE_STRS = get_map_keys(STR_TO_SEARCH_TYPE);
+DEFINE_ENUM_CONSTS_NO_EXTRA(SearchType, SEARCH_TYPE, false);
 
 /** @brief Options for searching */
 struct SearchOptions {
