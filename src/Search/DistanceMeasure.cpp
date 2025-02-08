@@ -9,15 +9,16 @@
 bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
                                           const vec<vec<float>> &mts) {
     bool updated = false;
-    int num_start_pos, query_len;
+    int num_start_pos, mts_len, query_len;
 
     vec<DistanceT> sums(query.size()), sq_sums(query.size());
     for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
         if (!(query[c].empty())) {
             query_len = query[c].size();
+            mts_len = mts[c].size();
             num_start_pos = mts[c].size() - query_len + 1;
 
-            for (size_t i = 0; i < query[c].size(); ++i) {
+            for (size_t i = 0; i < query_len; ++i) {
                 sums[c] += mts[c][i];
                 sq_sums[c] += mts[c][i] * mts[c][i];
             }
@@ -26,9 +27,12 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT 
 
     for (int start_pos = 0; start_pos < num_start_pos; ++start_pos) {
         DistanceT dist_squared = 0;
-        for (size_t c = 0; c < query.size(); ++c) {
+        for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
+            if (query[c].empty()) continue;
+
             auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], query_len);
-            for (size_t i = 0; i < query[c].size(); ++i) {
+
+            for (uint i = 0; i < query_len; ++i) {
                 DistanceT diff = (mts[c][start_pos + i] - mu) / sigma - query[c][i];
                 dist_squared += diff * diff;
                 if (dist_squared >= result_set->get_distance_lb()) {
@@ -39,8 +43,8 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT 
         result_set->insert({file_pos + start_pos, dist_squared});
         updated = true;
     start_pos_it_end:;
-        int end_pos = start_pos + query[0].size();
-        if (end_pos < mts[0].size()) {
+        int end_pos = start_pos + query_len;
+        if (end_pos < mts_len) {
             for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
                 if (query[c].empty()) continue;
 
@@ -68,7 +72,7 @@ bool printed = false;
 
 vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<DistanceT> &q_channel,
                                                               const vec<DistanceT> &mts_channel, FilePositionT file_pos,
-                                                              uint channel_ind) const {
+                                                              MtsNumChannelsT channel_ind) const {
     uint mts_len = mts_channel.size(), query_len = q_channel.size();
 
     FftArray query_fft(2 * mts_len), mts_fft(2 * mts_len), dot_prods_fft(2 * mts_len), dot_products(2 * mts_len);
@@ -119,17 +123,18 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, FilePosit
                                                const vec<vec<float>> &query, const vec<vec<float>> &mts) {
     bool updated = false;
 
-    uint mts_len = mts[0].size(), query_len = 0;
-    for (auto channel : query) {
-        if (!channel.empty()) {
-            query_len = channel.size();
+    uint mts_len = 0, query_len = 0;
+    for (MtsNumChannelsT c = 0; c < mts.size(); ++c) {
+        if (!query[c].empty()) {
+            mts_len = mts[c].size();
+            query_len = query[c].size();
             break;
         }
     }
 
     vec<DistanceT> squared_dists(mts_len - query_len + 1, 0);
     for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
-        if (query.empty()) continue;
+        if (query[c].empty()) continue;
 
         vec<DistanceT> q_channel(query_len), mts_channel(mts_len);
         for (uint i = 0; i < query_len; ++i) q_channel[i] = query[c][i];

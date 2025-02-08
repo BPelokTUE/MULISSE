@@ -76,7 +76,8 @@ void RunSettings::calculate_ffts() const {
     }
 
     fftw_plan plan;
-    for (uint i = 0; i < m_dataset_props.num_series; ++i) {
+    uint num_chunks = m_dataset_props.num_series * m_dataset_props.num_channels;
+    for (uint i = 0; i < num_chunks; ++i) {
         vec<float> channel(m_dataset_props.series_len);
         ifs.read(reinterpret_cast<char *>(channel.data()), m_dataset_props.series_len * sizeof(float));
 

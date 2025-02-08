@@ -60,7 +60,7 @@ class EuclideanDistanceWMass : public EuclideanDistance {
 
    private:
     vec<DistanceT> calculate_dot_products(const vec<DistanceT> &query_channel, const vec<DistanceT> &mts_channel,
-                                          FilePositionT file_pos, uint channel_ind) const;
+                                          FilePositionT file_pos, MtsNumChannelsT channel_ind) const;
 
     bool m_normalized;
 };
