@@ -81,14 +81,14 @@ int main(int argc, char **argv) {
     out         |           |              |       |   X    |
     */
 
-    str dataset_path, query_path,
-        index_path = "", results_path, ffts_path = "", search_method_type_str = SEARCH_METHOD_TYPE_STRS[0],
-        split_strategy_str = ISAX_SPLIT_STRATEGY_STRS[0], breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0],
-        index_format_str = ARCHIVE_TYPE_STRS[0], search_type_str, distance_measure_str = DISTANCE_TYPE_STRS[0];
+    str dataset_path, query_path, index_path, results_path, ffts_path,
+        search_method_type_str = SEARCH_METHOD_TYPE_STRS[0], split_strategy_str = ISAX_SPLIT_STRATEGY_STRS[0],
+        breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0], index_format_str = ARCHIVE_TYPE_STRS[0],
+        search_type_str, distance_measure_str = DISTANCE_TYPE_STRS[0];
     float noise = 1.0;
-    uint num_series = 0, series_len, num_queries, l_min, l_max, segment_len = 0, pos_per_env = 0, knn_k = 1;
+    uint num_series = 0, series_len, num_queries, l_min, l_max, segment_len, pos_per_env, knn_k = 1;
     DistanceT r_range_r = 1.0;
-    int seed = 0;
+    int seed;
     size_t leaf_capacity;
     vec<uint> lengths;
     MtsNumChannelsT num_channels;
@@ -198,7 +198,7 @@ int main(int argc, char **argv) {
 
     // Execute subcommand
     if (command_type == CREATE_DS) {
-        create_random_walks(dataset_path, noise, zero_start, num_series, series_len, num_channels, seed);
+        create_random_walks(noise, zero_start, num_series, series_len, num_channels, seed);
     } else if (command_type == CREATE_QS) {
         create_queries(dataset_path, query_path, noise, series_len, num_channels, num_queries, lengths, seed);
     } else if (command_type == INDEX) {
@@ -262,9 +262,9 @@ int main(int argc, char **argv) {
                 return 1;
         }
         SearchOptions search_options = {
-            .index_path = index_path,
-            .dataset_path = dataset_path,
-            .query_path = query_path,
+            .index_file = index_path,
+            .dataset_file = dataset_path,
+            .query_file = query_path,
             .results_path = results_path,
             .search_method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str),
             .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),

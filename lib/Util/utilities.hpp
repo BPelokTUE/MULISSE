@@ -58,20 +58,48 @@ umap<str, T> generate_string_to_enum_map(bool add_acronyms = false, umap<str, T>
 }
 
 /**
- * @brief Get the keys of a map
+ * @brief Generate enum to string map
+ *
+ * Generate a map containing (Enum value -> lower case enum name) mappings
+ *
+ * @tparam T Enum type
+ * @return Map from enum value to string
+ */
+template <typename T>
+umap<T, str> generate_enum_to_string_map() {
+    umap<T, str> enum_to_string_map;
+    for (auto e : magic_enum::enum_values<T>()) {
+        str name(magic_enum::enum_name(e));
+        std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+        enum_to_string_map.emplace(e, name);
+    }
+    return enum_to_string_map;
+}
+
+/**
+ * @brief Get the values of an enum
  *
  * @tparam T Type of the map values
- * @tparam V Type of the map keys
- * @param map The map
- * @return Vector of keys
  */
-template <typename K, typename V>
-vec<K> get_map_keys(const umap<K, V> map) {
-    vec<K> keys;
-    for (const auto& pair : map) {
-        keys.push_back(pair.first);
-    }
-    return keys;
+template <typename T>
+vec<T> get_enum_values() {
+    auto val_array = magic_enum::enum_values<T>();
+    return vec<T>(val_array.begin(), val_array.end());
+}
+
+/**
+ * @brief Get the values of an enum to string map
+ *
+ * @tparam T Enum type
+ * @param map The map
+ * @return Vector of strings
+ */
+template <typename T>
+vec<str> get_enum_strings(const umap<T, str> map) {
+    vec<str> strings;
+    vec<T> values = get_enum_values<T>();
+    for (T val : values) strings.push_back(map.at(val));
+    return strings;
 }
 
 /**
@@ -104,11 +132,12 @@ umap<V, K> get_inverse_map(const umap<K, V> map) {
  * @param GENERATE_ACRONYM Whether to generate acronyms
  * @param EXTRA_MAPPINGS Extra mappings to add to the map
  */
-#define DEFINE_ENUM_CONSTS(ENUM_TYPE, ENUM_NAME, GENERATE_ACRONYM, EXTRA_MAPPINGS) \
-    inline const umap<str, ENUM_TYPE> STR_TO_##ENUM_NAME =                         \
-        generate_string_to_enum_map<ENUM_TYPE>(GENERATE_ACRONYM, EXTRA_MAPPINGS);  \
-    inline const vec<str> ENUM_NAME##_STRS = get_map_keys(STR_TO_##ENUM_NAME);     \
-    inline const auto ENUM_NAME##_VALUES = magic_enum::enum_values<ENUM_TYPE>();
+#define DEFINE_ENUM_CONSTS(ENUM_TYPE, ENUM_NAME, GENERATE_ACRONYM, EXTRA_MAPPINGS)                   \
+    inline const umap<str, ENUM_TYPE> STR_TO_##ENUM_NAME =                                           \
+        generate_string_to_enum_map<ENUM_TYPE>(GENERATE_ACRONYM, EXTRA_MAPPINGS);                    \
+    inline const umap<ENUM_TYPE, str> ENUM_NAME##_TO_STR = generate_enum_to_string_map<ENUM_TYPE>(); \
+    inline const vec<str> ENUM_NAME##_STRS = get_enum_strings<ENUM_TYPE>(ENUM_NAME##_TO_STR);        \
+    inline const vec<ENUM_TYPE> ENUM_NAME##_VALUES = get_enum_values<ENUM_TYPE>();
 
 /** @brief Same as DEFINE_ENUM_CONSTS with no extra mappings */
 #define DEFINE_ENUM_CONSTS_NO_EXTRA(ENUM_TYPE, ENUM_NAME, GENERATE_ACRONYM) \

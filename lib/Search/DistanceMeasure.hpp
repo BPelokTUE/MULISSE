@@ -34,6 +34,9 @@ class IDistanceMeasure {
      */
     virtual bool update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
                                    const vec<vec<float>> &mts) = 0;
+
+    /** @brief Get the type of the distance measure */
+    virtual DistanceType get_type() const = 0;
 };
 
 class EuclideanDistance : public IDistanceMeasure {
@@ -42,6 +45,8 @@ class EuclideanDistance : public IDistanceMeasure {
 
     bool update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
                            const vec<vec<float>> &mts) override;
+
+    DistanceType get_type() const override;
 };
 
 class EuclideanDistanceWMass : public EuclideanDistance {
@@ -50,6 +55,8 @@ class EuclideanDistanceWMass : public EuclideanDistance {
                            const vec<vec<float>> &mts) override;
 
     EuclideanDistanceWMass(bool normalized);
+
+    DistanceType get_type() const override;
 
    private:
     vec<DistanceT> calculate_dot_products(const vec<DistanceT> &query_channel, const vec<DistanceT> &mts_channel,

@@ -4,6 +4,7 @@ xcode/*
 
 # Helper files
 DATA/*
+LOGS/*
 TESTING
 
 # Development

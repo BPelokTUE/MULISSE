@@ -7,12 +7,12 @@
 uptr<ISearchMethod> load_method(const SearchOptions &opts) {
     switch (opts.search_method_type) {
         case ISAX_ENVELOPE: {
-            if (opts.index_path.empty()) {
+            if (opts.index_file.empty()) {
                 std::cerr << "No index path provided for search with iSAX envelope index\n";
                 return nullptr;
             }
 
-            std::ifstream index_stream(opts.index_path, std::ios::binary);
+            std::ifstream index_stream(opts.index_file, std::ios::binary);
             auto index = std::make_unique<iSaxEnvelopeFinalizedIndex>();
             static_cast<IEnvelopeFinalizedIndex *>(index.get())->load(index_stream, opts.index_format);
 
@@ -34,7 +34,7 @@ int search(const SearchOptions &opts) {
     if (!method) return 1;
 
     auto &RS = RunSettings::get_instance();
-    std::ifstream query_stream(opts.query_path);
+    std::ifstream query_stream(opts.query_file);
     std::ofstream result_stream(opts.results_path);
     result_stream << std::fixed << std::setprecision(6);
 

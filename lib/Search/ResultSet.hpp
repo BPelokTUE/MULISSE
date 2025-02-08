@@ -2,6 +2,12 @@
 #define RESULT_SET_HPP
 
 #include "Util/typedefs.hpp"
+#include "Util/utilities.hpp"
+
+/** @brief Types of similarity search */
+enum SearchType { KNN, R_RANGE };
+
+DEFINE_ENUM_CONSTS_NO_EXTRA(SearchType, SEARCH_TYPE, false);
 
 /** @brief Search result */
 struct SearchResult {
@@ -23,6 +29,13 @@ struct SearchResult {
 class IResultSet {
    public:
     virtual ~IResultSet() = default;
+
+    /**
+     * @brief Get the type of the result set
+     *
+     * @return The type of the result set
+     */
+    virtual SearchType get_type() const = 0;
 
     /**
      * @brief Insert a search result into the result set
@@ -59,6 +72,8 @@ class RRangeResultSet : public IResultSet {
      */
     RRangeResultSet(DistanceT r);
 
+    SearchType get_type() const override;
+
     void insert(SearchResult result) override;
 
     vec<SearchResult> get_results() const override;
@@ -66,6 +81,9 @@ class RRangeResultSet : public IResultSet {
     DistanceT get_distance_lb() const override;
 
     void clear() override;
+
+    /** @brief Get R */
+    DistanceT get_r() const;
 
    private:
     vec<SearchResult> m_results;
@@ -82,6 +100,8 @@ class KnnResultSet : public IResultSet {
      */
     KnnResultSet(uint k);
 
+    SearchType get_type() const override;
+
     void insert(SearchResult result) override;
 
     vec<SearchResult> get_results() const override;
@@ -89,6 +109,9 @@ class KnnResultSet : public IResultSet {
     DistanceT get_distance_lb() const override;
 
     void clear() override;
+
+    /** @brief Get K */
+    uint get_k() const;
 
    private:
     vec<SearchResult> m_results;

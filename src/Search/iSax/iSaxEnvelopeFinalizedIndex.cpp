@@ -48,7 +48,7 @@ struct PQueueEntry {
 vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& query, const SearchOptions& opts) const {
     assert(query.size() == m_num_channels);
 
-    std::ifstream data_stream(opts.dataset_path, std::ios::binary);
+    std::ifstream data_stream(opts.dataset_file, std::ios::binary);
 
     std::priority_queue<PQueueEntry> pq;
 

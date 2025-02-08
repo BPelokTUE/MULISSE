@@ -17,12 +17,13 @@ const umap<str, CommandType> STR_TO_CMD_TYPE = {
 const umap<CommandType, str> CMD_TYPE_TO_STR = get_inverse_map(STR_TO_CMD_TYPE);
 
 struct DatasetProperties {
-    str path;
+    str file;
     MtsNumChannelsT num_channels;
     uint series_len;
     uint num_series;
 };
 
+// TODO: Rewrite, `l_min` and `l_max` are not properties of the query
 struct QueryProperties {
     str path;
     uint l_min;
@@ -106,13 +107,21 @@ class RunSettings {
      */
     const vec<float>& get_breakpoints();
 
-    const iSaxProperties& get_isax_props();
-
     void set_isax_properties(iSaxProperties isax_props);
 
     // Properties
 
     const DatasetProperties& get_dataset_props();
+
+    const QueryProperties& get_query_props();
+
+    const iSaxProperties& get_isax_props();
+
+    // Paths
+
+    str get_dataset_path() const;
+
+    str get_logs_path() const;
 
     // ---------------------------------------------------- //
 
@@ -138,9 +147,17 @@ class RunSettings {
     std::ifstream m_ffts_stream;
     vec<uptr<FftArray>> m_query_ffts;
 
+    // Static
     static RunSettings instance;
-
     static bool initialized;
+
+    // Constants
+    const str DATA_DIR = "../DATA/", LOGS_DIR = "../LOGS/";
+
+    // Friend classes
+    friend class DatasetLogger;
+    friend class IndexLogger;
+    friend class QueryLogger;
 };
 
 #endif  // RUN_SETTINGS_HPP

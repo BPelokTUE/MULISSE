@@ -4,11 +4,15 @@
 #include <random>
 
 #include "Modules/RandomWalk.hpp"
+#include "Util/Logger.hpp"
+#include "Util/RunSettings.hpp"
 
-int create_random_walks(std::string dataset_path, float rw_noise, bool zero_start, uint num_series, uint series_len,
-                        uint num_channels, int seed) {
+int create_random_walks(float rw_noise, bool zero_start, uint num_series, uint series_len, uint num_channels,
+                        int seed) {
+    str dataset_path = RunSettings::get_instance().get_dataset_path();
+
     if (std::filesystem::exists(dataset_path)) {
-        std::cerr << "Error: Dataset " << dataset_path << " already exists." << std::endl;
+        std::cerr << "Error: Dataset " << dataset_path << " already exists\n";
         return 1;
     }
 
@@ -37,6 +41,8 @@ int create_random_walks(std::string dataset_path, float rw_noise, bool zero_star
     }
 
     outfile.close();
+
+    DatasetLogger::write_entry();
 
     return 0;
 }

@@ -9,13 +9,17 @@ RunSettings::RunSettings() {}
 void RunSettings::initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
                              uint pos_per_env, str ffts_path) {
     if (initialized) return;
-
     initialized = true;
+
+    // Create directories if they do not exist
+    for (str dir : {instance.DATA_DIR, instance.LOGS_DIR}) {
+        if (!std::filesystem::exists(dir)) std::filesystem::create_directories(dir);
+    }
 
     instance.m_command_type = command_type;
     instance.m_dataset_props = dataset_props;
     if (dataset_props.num_series == 0) {
-        FilePositionT dataset_size = get_dataset_size(dataset_props.path);
+        FilePositionT dataset_size = get_dataset_size(dataset_props.file);
         instance.m_dataset_props.num_series =
             dataset_size / (dataset_props.series_len * dataset_props.num_channels * sizeof(float));
     }
@@ -62,7 +66,7 @@ RunSettings &RunSettings::get_instance() {
 void RunSettings::calculate_ffts() const {
     if (!ffts_supported()) return;
 
-    std::ifstream ifs(m_dataset_props.path, std::ios::binary);
+    std::ifstream ifs(m_dataset_props.file, std::ios::binary);
     if (!ifs.is_open()) {
         throw std::runtime_error("Could not open dataset file for FFT calculation");
     }
@@ -147,8 +151,6 @@ void RunSettings::reset_query_ffts() {
 
 const vec<float> &RunSettings::get_breakpoints() { return m_isax_props.m_breakpoints; }
 
-const iSaxProperties &RunSettings::get_isax_props() { return m_isax_props; }
-
 void RunSettings::set_isax_properties(iSaxProperties isax_props) {
     if (!m_isax_props_set) {
         m_isax_props = isax_props;
@@ -159,3 +161,13 @@ void RunSettings::set_isax_properties(iSaxProperties isax_props) {
 // Properties
 
 const DatasetProperties &RunSettings::get_dataset_props() { return m_dataset_props; }
+
+const QueryProperties &RunSettings::get_query_props() { return m_query_properties; }
+
+const iSaxProperties &RunSettings::get_isax_props() { return m_isax_props; }
+
+// Paths
+
+str RunSettings::get_dataset_path() const { return DATA_DIR + m_dataset_props.file; }
+
+str RunSettings::get_logs_path() const { return LOGS_DIR; }

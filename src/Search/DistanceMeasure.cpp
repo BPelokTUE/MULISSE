@@ -58,6 +58,8 @@ DistanceT EuclideanDistance::min_dist_squared(const float paa, float lower, floa
     return diff * diff;
 }
 
+DistanceType EuclideanDistance::get_type() const { return ED; }
+
 // MASS
 
 EuclideanDistanceWMass::EuclideanDistanceWMass(bool normalized) : m_normalized(normalized) {}
@@ -176,3 +178,5 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, FilePosit
 
     return updated;
 }
+
+DistanceType EuclideanDistanceWMass::get_type() const { return MASS; }
