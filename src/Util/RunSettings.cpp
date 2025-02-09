@@ -55,6 +55,9 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
             }
             break;
         case SEARCH:
+            if (!std::filesystem::exists(instance.get_query_path())) {
+                throw std::runtime_error("Query file " + instance.get_query_path() + " does not exist");
+            }
             if (instance.ffts_supported()) {
                 instance.m_ffts_stream.open(instance.m_ffts_file, std::ios::binary);
                 instance.m_query_ffts.resize(instance.m_dataset_props.num_channels);

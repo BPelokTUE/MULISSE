@@ -7,6 +7,8 @@
 #include "Util/utilities.hpp"
 #include "Search/Options/SearchOptions.hpp"
 
+using std::to_string;
+
 // ---------------------------------------------------- //
 // ----------------- COLUMN ENUMS --------------------- //
 // ---------------------------------------------------- //
@@ -71,11 +73,10 @@ DEFINE_ENUM_CONSTS_NO_EXTRA(QuerySettingsColumn, QUERY_SETTINGS_COL, false);
 
 /** @brief Enum of the columns of the query log file */
 enum class QueryColumn {
-    ID,              // ID of the run within the file
-    SETTINGS_ID,     // ID of the search settings within the settings file
-    QUERY_LENGTH,    // Length of the query
-    QUERY_CHANNELS,  // Channels included in the query as a list of ITEM_SEP separated `0`s and `1`s
-    QUERY_INDEX,     // The index of the query within the query file (the query file is indicated in the settings file)
+    ID,                       // ID of the run within the file
+    SETTINGS_ID,              // ID of the search settings within the settings file
+    QUERY_LENGTH,             // Length of the query
+    QUERY_CHANNELS,           // Channels included in the query as a list of ITEM_SEP separated `0`s and `1`s
     RESULT_SET_TS_INDICES,    // The indices of time series of the entries of the result set, separated by ITEM_SEP
     RESULT_SET_TS_POSITIONS,  // The start positions within their respective time series of the entries of the result
                               // set, separated by ITEM_SEP
@@ -99,11 +100,13 @@ const vec<QC> QUERY_TIME_COLUMNS = {QC::TOTAL_TIME_S, QC::FIRST_LAYER_TIME_S, QC
               QUERY_COUNT_COLUMNS = {QC::NUM_LEAVES_VISITED, QC::NUM_NODES_VISITED, QC::NUM_TS_EXAMINED},
               QUERY_COLLECTION_COLUMNS = {QC::RESULT_SET_TS_INDICES, QC::RESULT_SET_TS_POSITIONS,
                                           QC::RESULT_SET_DISTANCES, QC::QUERY_CHANNELS},
-              QUERY_GENERIC_COLUMNS = {QC::ID, QC::SETTINGS_ID, QC::QUERY_LENGTH, QC::QUERY_INDEX};
+              QUERY_NUMBER_COLUMNS = {QC::ID, QC::QUERY_LENGTH};
 
 // ---------------------------------------------------- //
 // ----------------- LOGGER CLASSES ------------------- //
 // ---------------------------------------------------- //
+
+using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
 class Logger {
    public:
@@ -132,7 +135,16 @@ class Logger {
      * @param columns A vector defining the order of the columns
      */
     template <typename C>
-    void write_row(const str &file_path, const umap<C, str> &enum_to_val, const vec<C> &columns);
+    void write_row(const str &file_path, const umap<C, str> &enum_to_val, const vec<C> &columns) {
+        std::ofstream ofs(file_path, std::ios::app);
+
+        ofs << ROW_SEP;
+        for (uint i = 0; i < columns.size(); ++i) {
+            C col = columns[i];
+            ofs << enum_to_val.at(col);
+            if (i < columns.size() - 1) ofs << COL_SEP;
+        }
+    }
 
     /**
      * @brief Get the string representation of the given number, or emtpy string if the number is zero
@@ -141,7 +153,10 @@ class Logger {
      * @return The string representation of the number, or empty string if the number is zero
      */
     template <typename T>
-    static str format_num_param(T num);
+    static str format_num_param(T num) {
+        return num == 0 ? "" : to_string(num);
+    }
+
     // Separators
 
     const char COL_SEP = ',', ROW_SEP = '\n', ITEM_SEP = ';';
@@ -159,6 +174,7 @@ class DatasetLogger : public Logger {
     DatasetLogger(const DatasetLogger &) = delete;
     DatasetLogger &operator=(const DatasetLogger &) = delete;
 
+    /** @brief Write the entry */
     static void write_entry();
 
    private:
@@ -173,17 +189,24 @@ class IndexLogger : public Logger {
 
     static void initialize(const IndexOptions &index_options);
 
+    /** @brief Write the entry */
     void write_entry();
 
     /**
-     * @brief Measure the time it takes to finish the given function, and save it into the given column
-     * @param col The column to save the time into
-     * @param func The function to measure the time of
-     * */
-    void measure_time_for_col(ISC col, std::function<void()> func);
+     * @brief Start the timer for the given column
+     * @param col The column to start the timer for, expected to be a value from INDEX_TIME_COLUMNS
+     */
+    void start_timer(ISC col);
+
+    /**
+     * @brief Stop the timer for the given column and save the duration
+     * @param col The column to stop the timer for, expected to be a value from INDEX_TIME_COLUMNS
+     */
+    void stop_timer(ISC col);
 
    private:
     umap<ISC, str> m_columns;
+    umap<ISC, TimePoint> m_time_cols_start;
     umap<ISC, double> m_time_cols_duration;
     str m_index_settings_path;
 
@@ -194,50 +217,69 @@ class IndexLogger : public Logger {
 
 class QueryLogger : public Logger {
    public:
-    void initialize(const SearchOptions &search_options);
+    static void initialize(const SearchOptions &search_options);
 
     static QueryLogger &get_instance();
 
     /**
      * @brief Set the given column to the specified value
-     * @param col The column to set, expected to be a value from RUN_LOG_GENERIC_COLUMNS
+     * @tparam T The type of the value
+     * @param col The column to set, expected to be a value from QUERY_NUMBER_COLUMNS
      * @param value The value
      * */
-    void set_generic_col(QC col, str value);
+    template <typename T>
+    void set_number_col(QC col, T value) {
+        assert(vec_contains(QUERY_NUMBER_COLUMNS, col));
+        instance.m_settable_cols[col] = std::to_string(value);
+    }
 
     /**
      * @brief Increment the value of the given column
-     * @param col The column to increment, expected to be a value from RUN_LOG_COUNT_COLUMNS
+     * @param col The column to increment, expected to be a value from QUERY_COUNT_COLUMNS
      * */
     void increment_count_col(QC col);
 
     /**
      * @brief Start the timer for the given column
-     * @param col The column to start the timer for, expected to be a value from RUN_LOG_TIME_COLUMNS
-     * */
-    void start_timer_for_col(QC col);
+     * @param col The column to start the timer for, expected to be a value from QUERY_TIME_COLUMNS
+     */
+    void start_timer(QC col);
 
     /**
-     * @brief Measure the duration of the timer for the given column
-     * @param col The column to stop the timer for, expected to be a value from RUN_LOG_TIME_COLUMNS
-     * */
-    void measure_time_for_col(QC col);
+     * @brief Stop the timer for the given column and save the duration
+     * @param col The column to stop the timer for, expected to be a value from QUERY_TIME_COLUMNS
+     */
+    void stop_timer(QC col);
 
     /**
-     * @brief Add an item to the collection column
-     * @param col The column to add the item to, expected to be a value from RUN_LOG_COLLECTION_COLUMNS
-     * @param item The item to add
-     * */
-    void add_item_to_collection_col(QC col, str item);
+     * @brief Log information about the query into the current run entry
+     * @param query The query to log
+     */
+    void log_query(const vec<vec<float>> &query);
+
+    /**
+     * @brief Log information about the results of the search into the current run entry
+     * @param results The results of the search
+     */
+    void log_results(const vec<SearchResult> &results);
+
+    /** @brief Reset the current run entry */
+    void reset_entry();
+
+    /** @brief Write the current run entry */
+    void write_entry();
 
     // ---------------------------------------------------- //
 
    private:
-    std::ifstream m_query_log_ofs;
+    str get_collection_str(QC col);
 
-    umap<QC, str> m_generic_cols;
+    std::ifstream m_query_log_ofs;
+    str m_query_settings_id_str;
+
+    umap<QC, str> m_settable_cols;
     umap<QC, uint> m_count_cols;
-    umap<QC, double> m_time_cols_start;
+    umap<QC, TimePoint> m_time_cols_start;
     umap<QC, double> m_time_cols_duration;
     umap<QC, vec<str>> m_collection_cols;
 

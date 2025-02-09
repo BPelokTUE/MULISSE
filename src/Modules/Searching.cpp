@@ -1,6 +1,7 @@
 #include "Modules/Searching.hpp"
 
 #include "Util/RunSettings.hpp"
+#include "Util/Logger.hpp"
 #include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
 #include "Search/SequentialScan.hpp"
 
@@ -38,6 +39,9 @@ int search(const SearchOptions &opts) {
     std::ifstream dataset_ifs(RS.get_dataset_path(), std::ios::binary);
     std::ifstream query_ifs(RS.get_query_path());
 
+    QueryLogger::initialize(opts);
+    auto &logger = QueryLogger::get_instance();
+
     MtsNumChannelsT num_channels = RunSettings::get_instance().get_dataset_props().num_channels;
     vec<vec<float>> query(num_channels);
 
@@ -60,9 +64,20 @@ int search(const SearchOptions &opts) {
         }
 
         if (c == num_channels - 1) {
+            logger.reset_entry();
+            logger.set_number_col(QC::ID, query_count++);
+            logger.log_query(query);
+
             opts.result_set->clear();
             if (RS.ffts_supported()) RS.reset_query_ffts();
+
+            logger.start_timer(QC::TOTAL_TIME_S);
             vec<SearchResult> results = method->search(query, opts, dataset_ifs);
+            logger.stop_timer(QC::TOTAL_TIME_S);
+
+            logger.log_results(results);
+
+            logger.write_entry();
         }
     }
 

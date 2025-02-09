@@ -4,6 +4,7 @@
 #include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
 #include "Summarization/Paa.hpp"
 #include "Util/RunSettings.hpp"
+#include "Util/Logger.hpp"
 
 iSaxEnvelopeFinalizedIndex::iSaxEnvelopeFinalizedIndex(const SeriesISaxProperties& series_isax_prop,
                                                        vec<vec<vec<SaxSymbolT>>> first_layer_min_symbols,
@@ -49,6 +50,8 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
                                                      std::ifstream& dataset_ifs) const {
     assert(query.size() == m_num_channels);
 
+    auto& logger = QueryLogger::get_instance();
+
     std::priority_queue<PQueueEntry> pq;
 
     vec<vec<float>> query_paa(m_num_channels);
@@ -62,6 +65,7 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
     IResultSet* result_set = opts.result_set.get();
 
     // Go over first layer, calculate MINDIST and iSAX words, push to priority queue
+    logger.start_timer(QC::FIRST_LAYER_TIME_S);
     for (size_t i = 0; i < m_first_layer_min_symbols.size(); ++i) {
         DistanceT min_dist_squared = 0;
         vec<iSaxWord> isax_mins(m_num_channels), isax_maxs(m_num_channels);
@@ -77,7 +81,10 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
         }
         pq.push({min_dist_squared * m_segment_len, isax_mins, isax_maxs, m_first_layer_nodes[i].get()});
     }
+    logger.stop_timer(QC::FIRST_LAYER_TIME_S);
 
+    // TIME-IT (TREE_TRAVERSAL_TIME_S)
+    logger.start_timer(QC::TREE_TRAVERSAL_TIME_S);
     while (!pq.empty()) {
         auto [min_dist_squared, isax_mins, isax_maxs, node] = pq.top();
         pq.pop();
@@ -128,6 +135,7 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
 
                 size_t data_to_read = std::min(query_len + IEnvelopeFinalizedIndex::m_pos_per_env - 1, data_remaining);
                 vec<vec<float>> subsequence(m_num_channels);
+                logger.start_timer(QC::IO_TIME_S);
                 for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
                     if (query[c].empty()) continue;
 
@@ -136,10 +144,20 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
                     dataset_ifs.seekg(start_byte);
                     dataset_ifs.read(reinterpret_cast<char*>(subsequence[c].data()), data_to_read * sizeof(float));
                 }
+                logger.stop_timer(QC::IO_TIME_S);
+
+                logger.start_timer(QC::TS_EXAMINATION_TIME_S);
                 distance_measure->update_result_set(result_set, file_pos, query, subsequence);
+                logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
+
+                // TODO: Discuss how pruning ratio should be calculated when envs_per_ts > 1
+                logger.increment_count_col(QC::NUM_TS_EXAMINED);
             }
+            logger.increment_count_col(QC::NUM_LEAVES_VISITED);
         }
+        logger.increment_count_col(QC::NUM_NODES_VISITED);
     }
+    logger.stop_timer(QC::TREE_TRAVERSAL_TIME_S);
 
     return result_set->get_results();
 };

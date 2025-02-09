@@ -29,23 +29,6 @@ void Logger::file_setup(const str &file_path, const vec<str> &header) {
     }
 }
 
-template <typename C>
-void Logger::write_row(const str &file_path, const umap<C, str> &enum_to_val, const vec<C> &columns) {
-    std::ofstream ofs(file_path, std::ios::app);
-
-    ofs << ROW_SEP;
-    for (uint i = 0; i < columns.size(); ++i) {
-        C col = columns[i];
-        ofs << enum_to_val.at(col);
-        if (i < columns.size() - 1) ofs << COL_SEP;
-    }
-}
-
-template <typename T>
-str Logger::format_num_param(T num) {
-    return num == 0 ? "" : to_string(num);
-}
-
 // DatasetLogger
 using DSC = DatasetSettingsColumn;
 
@@ -129,11 +112,15 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
     };
 }
 
-void IndexLogger::measure_time_for_col(ISC col, std::function<void()> func) {
-    auto start = std::chrono::high_resolution_clock::now();
-    func();
+void IndexLogger::start_timer(ISC col) {
+    assert(vec_contains(INDEX_TIME_COLUMNS, col));
+    m_time_cols_start[col] = std::chrono::high_resolution_clock::now();
+}
+
+void IndexLogger::stop_timer(ISC col) {
+    assert(vec_contains(INDEX_TIME_COLUMNS, col));
     auto end = std::chrono::high_resolution_clock::now();
-    instance.m_time_cols_duration[col] = std::chrono::duration<double>(end - start).count();
+    m_time_cols_duration[col] += std::chrono::duration<double>(end - m_time_cols_start[col]).count();
 }
 
 void IndexLogger::write_entry() {
@@ -155,11 +142,12 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
 
     auto &RS = RunSettings::get_instance();
 
-    str query_settings_path = RS.get_logs_path() + QUERY_SETTINGS_FILE;
+    str query_settings_path = RS.get_logs_path() + instance.QUERY_SETTINGS_FILE;
 
     // Write settings file
     instance.file_setup(query_settings_path, QUERY_SETTINGS_COL_STRS);
 
+    instance.m_query_settings_id_str = to_string(instance.determine_index(query_settings_path));
     // Determine number of queries
     uint num_queries = 0;
     {
@@ -186,7 +174,7 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
     instance.write_row(
         query_settings_path,
         {
-            {QSC::ID, to_string(instance.determine_index(query_settings_path))},
+            {QSC::ID, instance.m_query_settings_id_str},
             {QSC::INDEX_FILE, RS.m_index_file},
             {QSC::DATASET_FILE, RS.m_dataset_props.file},
             {QSC::FFTS_FILE, RS.m_ffts_file},
@@ -203,14 +191,78 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
         QUERY_SETTINGS_COL_ENUMS);
 
     // Setup for run logging
-    for (const auto &col : QUERY_GENERIC_COLUMNS) instance.m_generic_cols[col] = "";
+    instance.reset_entry();
+    str run_log_path = RS.get_logs_path() + instance.RUN_LOG_FILE;
+    instance.file_setup(run_log_path, QUERY_COL_STRS);
+    instance.m_query_log_ofs.open(run_log_path, std::ios::app);
+}
+
+void QueryLogger::reset_entry() {
+    for (const auto &col : QUERY_NUMBER_COLUMNS) instance.m_settable_cols[col] = "";
     for (const auto &col : QUERY_COUNT_COLUMNS) instance.m_count_cols[col] = 0;
     for (const auto &col : QUERY_TIME_COLUMNS) {
-        instance.m_time_cols_start[col] = 0;
+        instance.m_time_cols_start[col] = TimePoint();
         instance.m_time_cols_duration[col] = 0;
     }
     for (const auto &col : QUERY_COLLECTION_COLUMNS) instance.m_collection_cols[col] = vec<str>();
+}
 
-    str run_log_path = RS.get_logs_path() + RUN_LOG_FILE;
-    instance.m_query_log_ofs.open(run_log_path, std::ios::app);
+void QueryLogger::increment_count_col(QC col) {
+    assert(vec_contains(QUERY_COUNT_COLUMNS, col));
+    ++instance.m_count_cols[col];
+}
+
+void QueryLogger::start_timer(QC col) {
+    assert(vec_contains(QUERY_TIME_COLUMNS, col));
+    instance.m_time_cols_start[col] = std::chrono::high_resolution_clock::now();
+}
+
+void QueryLogger::stop_timer(QC col) {
+    assert(vec_contains(QUERY_TIME_COLUMNS, col));
+    auto end = std::chrono::high_resolution_clock::now();
+    instance.m_time_cols_duration[col] += std::chrono::duration<double>(end - instance.m_time_cols_start[col]).count();
+}
+
+void QueryLogger::log_query(const vec<vec<float>> &query) {
+    size_t query_len = 0;
+    vec<str> included;
+
+    for (const auto &channel : query) {
+        included.push_back(channel.empty() ? "0" : "1");
+        query_len = std::max(query_len, channel.size());
+    }
+    instance.m_settable_cols[QC::QUERY_LENGTH] = to_string(query_len);
+    instance.m_collection_cols[QC::QUERY_CHANNELS] = included;
+}
+
+void QueryLogger::log_results(const vec<SearchResult> &results) {
+    auto &RS = RunSettings::get_instance();
+    size_t series_size = RS.m_dataset_props.series_len * RS.m_dataset_props.num_channels;
+    for (auto result : results) {
+        uint ts_index = result.file_position / series_size, ts_position = result.file_position % series_size;
+        instance.m_collection_cols[QC::RESULT_SET_TS_INDICES].push_back(to_string(ts_index));
+        instance.m_collection_cols[QC::RESULT_SET_TS_POSITIONS].push_back(to_string(ts_position));
+        instance.m_collection_cols[QC::RESULT_SET_DISTANCES].push_back(to_string(result.distance));
+    }
+}
+
+str QueryLogger::get_collection_str(QC col) {
+    assert(vec_contains(QUERY_COLLECTION_COLUMNS, col));
+    str result;
+    for (uint i = 0; i < instance.m_collection_cols[col].size(); ++i) {
+        result += instance.m_collection_cols[col][i];
+        if (i < instance.m_collection_cols[col].size() - 1) result += ITEM_SEP;
+    }
+    return result;
+}
+
+void QueryLogger::write_entry() {
+    umap<QC, str> columns({{QC::SETTINGS_ID, m_query_settings_id_str}});
+
+    for (const auto &col : QUERY_NUMBER_COLUMNS) columns[col] = m_settable_cols[col];
+    for (const auto &col : QUERY_COUNT_COLUMNS) columns[col] = to_string(m_count_cols[col]);
+    for (const auto &col : QUERY_TIME_COLUMNS) columns[col] = to_string(m_time_cols_duration[col]);
+    for (const auto &col : QUERY_COLLECTION_COLUMNS) columns[col] = get_collection_str(col);
+
+    write_row(RunSettings::get_instance().get_logs_path() + RUN_LOG_FILE, columns, QUERY_COL_ENUMS);
 }

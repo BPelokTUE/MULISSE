@@ -151,11 +151,8 @@ int main(int argc, char **argv) {
     index_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
 
     // Options for searching
-    // TODO: check if file exists but only when the path is not empty string
     search_subcommand->add_option("-i,--index", index_path, "Index file path")->capture_default_str();
-    search_subcommand->add_option("-d,--dataset", dataset_path, "Dataset file path")
-        ->required()
-        ->check(CLI::ExistingFile);
+    search_subcommand->add_option("-d,--dataset", dataset_path, "Dataset file path")->required();
     search_subcommand->add_option("-q,--query", query_path, "Query file path")->required();
     search_subcommand
         ->add_option("-F,--ffts", ffts_path, "Path to load FFTs from; if not provided, FFTs will not be loaded")

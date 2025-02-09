@@ -81,6 +81,7 @@ vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<Distance
     auto &run_settings = RunSettings::get_instance();
 
     if (run_settings.ffts_supported()) {
+        // TIME-IT
         mts_fft = run_settings.get_ffts(file_pos, channel_ind, mts_len);
 
         auto *query_fft_ptr = run_settings.get_query_ffts(channel_ind);

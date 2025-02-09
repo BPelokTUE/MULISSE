@@ -84,15 +84,17 @@ int create_index(const IndexOptions &opts) {
     auto index = get_index(opts);
     if (std::ranges::find(ENVELOPE_METHODS, opts.index_params->get_type()) != ENVELOPE_METHODS.end()) {
         auto envelope_generator = get_envelope_generator(opts);
-        logger.measure_time_for_col(ISC::INDEXING_TIME_S, [&]() {
-            index->construct(dataset_path, envelope_generator.get(), opts.num_channels, opts.series_len);
-            std::ofstream index_stream(index_path, std::ios::binary);
-            index->finalize()->save(index_stream, opts.index_format);
-        });
+        logger.start_timer(ISC::INDEXING_TIME_S);
+        index->construct(dataset_path, envelope_generator.get(), opts.num_channels, opts.series_len);
+        std::ofstream index_stream(index_path, std::ios::binary);
+        index->finalize()->save(index_stream, opts.index_format);
+        logger.stop_timer(ISC::INDEXING_TIME_S);
     }
 
     if (RS.ffts_supported()) {
-        logger.measure_time_for_col(ISC::FFT_CALC_TIME_S, [&]() { RS.calculate_ffts(); });
+        logger.start_timer(ISC::FFT_CALC_TIME_S);
+        RS.calculate_ffts();
+        logger.stop_timer(ISC::FFT_CALC_TIME_S);
     }
 
     logger.write_entry();

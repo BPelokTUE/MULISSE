@@ -17,6 +17,13 @@
  */
 size_t get_dataset_size(const str dataset_path);
 
+// Helper
+
+template <typename T>
+bool vec_contains(const vec<T>& vec, const T& value) {
+    return std::find(vec.begin(), vec.end(), value) != vec.end();
+}
+
 // Enums
 
 /**
