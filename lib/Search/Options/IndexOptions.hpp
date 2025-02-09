@@ -46,6 +46,9 @@ struct iSaxIndexParams {
     iSaxSplitStrategyType split_strategy_type;
     /** @brief Maximum number of bits per segment */
     SaxNumBitsT num_bits_limit;
+    /** @brief Only used for EntropyMaximizingStrategy: whether to select the segment with the min number of bits in
+     * case of a tie */
+    bool min_num_bits_on_tie;
 };
 
 /** @brief Parameters for an iSAX envelope (ULISSE) index */
@@ -62,10 +65,13 @@ struct iSaxEnvelopeIndexParams : EnvelopeIndexParams, iSaxIndexParams {
      * @param breakpoint_strategy_type Strategy for getting the breakpoints of the symbol intervals
      * @param split_strategy_type Strategy for choosing the index to split on
      * @param num_bits_limit Maximum number of bits per segment
+     * @param min_num_bits_on_tie Only used for EntropyMaximizingStrategy: whether to select the segment with the min
+     *        number of bits in case of a tie
      */
     iSaxEnvelopeIndexParams(uint pos_per_env, uint segment_len, SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
                             iSaxBreakpointStrategyType breakpoint_strategy_type,
-                            iSaxSplitStrategyType split_strategy_type, SaxNumBitsT num_bits_limit) {
+                            iSaxSplitStrategyType split_strategy_type, SaxNumBitsT num_bits_limit,
+                            bool min_num_bits_on_tie) {
         this->pos_per_env = pos_per_env;
         this->segment_len = segment_len;
         this->first_layer_num_bits = first_layer_num_bits;
@@ -73,6 +79,7 @@ struct iSaxEnvelopeIndexParams : EnvelopeIndexParams, iSaxIndexParams {
         this->breakpoint_strategy_type = breakpoint_strategy_type;
         this->split_strategy_type = split_strategy_type;
         this->num_bits_limit = num_bits_limit;
+        this->min_num_bits_on_tie = min_num_bits_on_tie;
     }
 };
 
@@ -83,10 +90,6 @@ DEFINE_ENUM_CONSTS_NO_EXTRA(ArchiveType, ARCHIVE_TYPE, false);
 
 /** @brief Options for creating an index */
 struct IndexOptions {
-    /** @brief Path to the dataset */
-    str dataset_path;
-    /** @brief Path to the index */
-    str index_path;
     /** @brief Format to save the index in */
     ArchiveType index_format;
     /** @brief Minimum accepted query length */

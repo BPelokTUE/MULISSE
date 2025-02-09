@@ -7,7 +7,7 @@ bool RunSettings::initialized = false;
 RunSettings::RunSettings() {}
 
 void RunSettings::initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
-                             uint pos_per_env, str ffts_path) {
+                             uint pos_per_env, const str index_path, const str ffts_path) {
     if (initialized) return;
     initialized = true;
 
@@ -19,7 +19,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     instance.m_command_type = command_type;
     instance.m_dataset_props = dataset_props;
     if (dataset_props.num_series == 0) {
-        FilePositionT dataset_size = get_dataset_size(dataset_props.file);
+        FilePositionT dataset_size = get_dataset_size(instance.get_dataset_path());
         instance.m_dataset_props.num_series =
             dataset_size / (dataset_props.series_len * dataset_props.num_channels * sizeof(float));
     }
@@ -33,7 +33,15 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
         .envs_per_ts = envs_per_ts,
     };
 
-    instance.m_ffts_path = ffts_path;
+    instance.m_index_file = index_path;
+    instance.m_ffts_file = ffts_path;
+
+    if (instance.m_command_type != CREATE_DS) {
+        str dataset_path = instance.get_dataset_path();
+        if (!std::filesystem::exists(dataset_path)) {
+            throw std::runtime_error("Dataset file " + dataset_path + " does not exist");
+        }
+    }
 
     switch (instance.m_command_type) {
         case CREATE_DS:
@@ -48,7 +56,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
             break;
         case SEARCH:
             if (instance.ffts_supported()) {
-                instance.m_ffts_stream.open(instance.m_ffts_path, std::ios::binary);
+                instance.m_ffts_stream.open(instance.m_ffts_file, std::ios::binary);
                 instance.m_query_ffts.resize(instance.m_dataset_props.num_channels);
                 for (auto &channel_ffts : instance.m_query_ffts) channel_ffts = nullptr;
             }
@@ -66,11 +74,11 @@ RunSettings &RunSettings::get_instance() {
 void RunSettings::calculate_ffts() const {
     if (!ffts_supported()) return;
 
-    std::ifstream ifs(m_dataset_props.file, std::ios::binary);
+    std::ifstream ifs(get_dataset_path(), std::ios::binary);
     if (!ifs.is_open()) {
         throw std::runtime_error("Could not open dataset file for FFT calculation");
     }
-    std::ofstream ofs(m_ffts_path, std::ios::binary);
+    std::ofstream ofs(get_ffts_path(), std::ios::binary);
     if (!ofs.is_open()) {
         throw std::runtime_error("Could not open FFTs file for writing");
     }
@@ -114,7 +122,7 @@ FftArray RunSettings::get_ffts(FilePositionT file_pos, MtsNumChannelsT channel_i
     return ffts;
 }
 
-bool RunSettings::ffts_supported() const { return m_ffts_path != ""; }
+bool RunSettings::ffts_supported() const { return m_ffts_file != ""; }
 
 void RunSettings::calculate_query_ffts(const vec<DistanceT> &q_channel, MtsNumChannelsT channel_ind,
                                        uint num_components) {
@@ -170,5 +178,11 @@ const iSaxProperties &RunSettings::get_isax_props() { return m_isax_props; }
 // Paths
 
 str RunSettings::get_dataset_path() const { return DATA_DIR + m_dataset_props.file; }
+
+str RunSettings::get_query_path() const { return DATA_DIR + m_query_properties.file; }
+
+str RunSettings::get_index_path() const { return m_index_file.empty() ? "" : DATA_DIR + m_index_file; }
+
+str RunSettings::get_ffts_path() const { return m_ffts_file.empty() ? "" : DATA_DIR + m_ffts_file; }
 
 str RunSettings::get_logs_path() const { return LOGS_DIR; }

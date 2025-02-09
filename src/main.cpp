@@ -82,9 +82,11 @@ int main(int argc, char **argv) {
     */
 
     str dataset_path, query_path, index_path, results_path, ffts_path,
-        search_method_type_str = SEARCH_METHOD_TYPE_STRS[0], split_strategy_str = ISAX_SPLIT_STRATEGY_STRS[0],
-        breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_STRS[0], index_format_str = ARCHIVE_TYPE_STRS[0],
-        search_type_str, distance_measure_str = DISTANCE_TYPE_STRS[0];
+        search_method_type_str = ACCEPTED_SEARCH_METHOD_TYPE_STRS[0],
+        split_strategy_str = ACCEPTED_ISAX_SPLIT_STRATEGY_STRS[0],
+        breakpoint_strategy_str = ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS[0],
+        index_format_str = ACCEPTED_ARCHIVE_TYPE_STRS[0], search_type_str,
+        distance_measure_str = ACCEPTED_DISTANCE_TYPE_STRS[0];
     float noise = 1.0;
     uint num_series = 0, series_len, num_queries, l_min, l_max, segment_len, pos_per_env, knn_k = 1;
     DistanceT r_range_r = 1.0;
@@ -104,7 +106,7 @@ int main(int argc, char **argv) {
     ds_subcommand->add_option("-S,--seed", seed, "Random seed")->capture_default_str();
 
     // Options for creating queries
-    qs_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required()->check(CLI::ExistingFile);
+    qs_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required();
     qs_subcommand->add_option("-q,--query", query_path, "Output query path")->required();
     qs_subcommand->add_option("--noise", noise, "Query noise")->capture_default_str();
     qs_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
@@ -115,7 +117,7 @@ int main(int argc, char **argv) {
 
     // Options for indexing
     index_subcommand->add_option("-i,--index", index_path, "Output index path")->required();
-    index_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required()->check(CLI::ExistingFile);
+    index_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required();
     index_subcommand
         ->add_option("-F,--ffts", ffts_path, "Path to save FFTs; if not provided, FFTs will not be calculated")
         ->capture_default_str();
@@ -125,16 +127,16 @@ int main(int argc, char **argv) {
         ->check(positive_int);
     index_subcommand->add_option("-f,--format", index_format_str, "Index format")
         ->capture_default_str()
-        ->check(CLI::IsMember(ARCHIVE_TYPE_STRS));
+        ->check(CLI::IsMember(ACCEPTED_ARCHIVE_TYPE_STRS));
     index_subcommand->add_option("-t,--index_type", search_method_type_str, "Index type")
         ->capture_default_str()
-        ->check(CLI::IsMember(SEARCH_METHOD_TYPE_STRS));
+        ->check(CLI::IsMember(ACCEPTED_SEARCH_METHOD_TYPE_STRS));
     index_subcommand->add_option("-S,--split_strategy", split_strategy_str, "Split strategy")
         ->capture_default_str()
-        ->check(CLI::IsMember(ISAX_SPLIT_STRATEGY_STRS));
+        ->check(CLI::IsMember(ACCEPTED_ISAX_SPLIT_STRATEGY_STRS));
     index_subcommand->add_option("-B,--breakpoint_strategy", breakpoint_strategy_str, "Breakpoint strategy")
         ->capture_default_str()
-        ->check(CLI::IsMember(ISAX_BREAKPOINT_STRATEGY_STRS));
+        ->check(CLI::IsMember(ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS));
     index_subcommand->add_option("-l,--l_min", l_min, "Minimum length of subsequences")
         ->required()
         ->check(positive_int);
@@ -154,7 +156,7 @@ int main(int argc, char **argv) {
     search_subcommand->add_option("-d,--dataset", dataset_path, "Dataset file path")
         ->required()
         ->check(CLI::ExistingFile);
-    search_subcommand->add_option("-q,--query", query_path, "Query file path")->required()->check(CLI::ExistingFile);
+    search_subcommand->add_option("-q,--query", query_path, "Query file path")->required();
     search_subcommand
         ->add_option("-F,--ffts", ffts_path, "Path to load FFTs from; if not provided, FFTs will not be loaded")
         ->capture_default_str();
@@ -165,19 +167,19 @@ int main(int argc, char **argv) {
     search_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
     search_subcommand->add_option("-t,--method_type", search_method_type_str, "Search method type")
         ->capture_default_str()
-        ->check(CLI::IsMember(SEARCH_METHOD_TYPE_STRS));
+        ->check(CLI::IsMember(ACCEPTED_SEARCH_METHOD_TYPE_STRS));
     search_subcommand->add_option("-f,--format", index_format_str, "Index format")
         ->capture_default_str()
-        ->check(CLI::IsMember(ARCHIVE_TYPE_STRS));
+        ->check(CLI::IsMember(ACCEPTED_ARCHIVE_TYPE_STRS));
     search_subcommand->add_option("-D,--distance", distance_measure_str, "Distance measure")
         ->capture_default_str()
-        ->check(CLI::IsMember(DISTANCE_TYPE_STRS));
+        ->check(CLI::IsMember(ACCEPTED_DISTANCE_TYPE_STRS));
     search_subcommand->add_flag("--approx", approximate, "Approximate search");
     search_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
     //      Search type-specific options
     search_subcommand->add_option("-T,--search_type", search_type_str, "Search type")
         ->required()
-        ->check(CLI::IsMember(SEARCH_TYPE_STRS));
+        ->check(CLI::IsMember(ACCEPTED_SEARCH_TYPE_STRS));
     search_subcommand->add_option("-k,--k", knn_k, "Number of nearest neighbors for kNN")
         ->capture_default_str()
         ->check(positive_int);
@@ -190,7 +192,7 @@ int main(int argc, char **argv) {
     CommandType command_type = STR_TO_CMD_TYPE.at(app.get_subcommands().front()->get_name());
     try {
         RunSettings::initialize(command_type, {dataset_path, num_channels, series_len, num_series},
-                                {query_path, l_min, l_max}, pos_per_env, ffts_path);
+                                {query_path, l_min, l_max}, pos_per_env, index_path, ffts_path);
     } catch (const std::exception &e) {
         std::cerr << "Error configuring run: " << e.what() << '\n';
         return 1;
@@ -200,7 +202,7 @@ int main(int argc, char **argv) {
     if (command_type == CREATE_DS) {
         create_random_walks(noise, zero_start, num_series, series_len, num_channels, seed);
     } else if (command_type == CREATE_QS) {
-        create_queries(dataset_path, query_path, noise, series_len, num_channels, num_queries, lengths, seed);
+        create_queries(noise, series_len, num_channels, num_queries, lengths, seed);
     } else if (command_type == INDEX) {
         SearchMethodType index_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str);
         IIndexParams *index_params;
@@ -214,6 +216,7 @@ int main(int argc, char **argv) {
                     STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str),
                     STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str),
                     DEFAULT_NUM_BIT_LIMIT,
+                    false,  // min_num_bits_on_tie,
                 };
                 break;
             case SEQUENTIAL_SCAN:
@@ -224,8 +227,6 @@ int main(int argc, char **argv) {
                 return 1;
         }
         IndexOptions index_options{
-            .dataset_path = dataset_path,
-            .index_path = index_path,
             .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
             .l_min = l_min,
             .l_max = l_max,
@@ -262,10 +263,6 @@ int main(int argc, char **argv) {
                 return 1;
         }
         SearchOptions search_options = {
-            .index_file = index_path,
-            .dataset_file = dataset_path,
-            .query_file = query_path,
-            .results_path = results_path,
             .search_method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str),
             .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
             .exact = !approximate,

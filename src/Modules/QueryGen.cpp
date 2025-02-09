@@ -6,9 +6,13 @@
 
 #include "Modules/QueryGen.hpp"
 #include "Util/utilities.hpp"
+#include "Util/RunSettings.hpp"
 
-int create_queries(str dataset_path, str query_path, float noise, uint series_len, uint num_channels, uint num_queries,
-                   vec<uint> lengths, int seed) {
+int create_queries(float noise, uint series_len, uint num_channels, uint num_queries, vec<uint> lengths, int seed) {
+    auto &RS = RunSettings::get_instance();
+    const str &dataset_path = RS.get_dataset_path();
+    const str &query_path = RS.get_query_path();
+
     if (!std::filesystem::exists(dataset_path)) {
         std::cerr << "Error: Dataset " << dataset_path << " does not exist." << std::endl;
         return 1;

@@ -10,8 +10,6 @@
  * of specified lengths at random points, from random series, containing a random non-empty subset
  * of channels and adding noise to them. The queries are saved to a text file.
  *
- * @param dataset_path Path to dataset
- * @param query_path Path to save queries
  * @param noise Noise to add to the queries
  * @param num_series Number of series in the dataset
  * @param num_channels Number of channels in each series
@@ -20,7 +18,6 @@
  * @param seed Seed for the random number generator
  * @return 0 on success, 1 if dataset does not exist
  */
-int create_queries(str dataset_path, str query_path, float noise, uint num_series, uint num_channels, uint num_queries,
-                   vec<uint> lengths, int seed);
+int create_queries(float noise, uint num_series, uint num_channels, uint num_queries, vec<uint> lengths, int seed);
 
 #endif  // QUERY_GEN_HPP

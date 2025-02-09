@@ -5,6 +5,7 @@
 #include "Search/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxEnvelopeIndex.hpp"
 #include "Util/RunSettings.hpp"
+#include "Util/Logger.hpp"
 
 uptr<IiSaxBreakpointStrategy> get_breakpoint_strategy(const iSaxIndexParams *params) {
     switch (params->breakpoint_strategy_type) {
@@ -20,7 +21,7 @@ uptr<IiSaxSplitStrategy> get_split_strategy(const iSaxIndexParams *params, SaxSe
         case DOUBLE_ROUND_ROBIN:
             return std::make_unique<DoubleRoundRobinStrategy>(num_seg_per_channel, num_channels);
         case ENTROPY_MAXIMIZING:
-            return std::make_unique<EntropyMaximizingStrategy>(false);
+            return std::make_unique<EntropyMaximizingStrategy>(params->min_num_bits_on_tie);
     }
     return nullptr;
 }
@@ -68,22 +69,33 @@ uptr<IEnvelopeGenerator> get_envelope_generator(const IndexOptions &opts) {
 }
 
 int create_index(const IndexOptions &opts) {
-    if (!std::filesystem::exists(opts.dataset_path)) {
-        std::cerr << "Error: Dataset " << opts.dataset_path << " does not exist." << std::endl;
+    auto &RS = RunSettings::get_instance();
+    str dataset_path = RS.get_dataset_path();
+    str index_path = RS.get_index_path();
+
+    if (!std::filesystem::exists(dataset_path)) {
+        std::cerr << "Error: Dataset " << dataset_path << " does not exist." << std::endl;
         return 1;
     }
 
-    auto index = get_index(opts);
+    IndexLogger::initialize(opts);
+    auto &logger = IndexLogger::get_instance();
 
+    auto index = get_index(opts);
     if (std::ranges::find(ENVELOPE_METHODS, opts.index_params->get_type()) != ENVELOPE_METHODS.end()) {
         auto envelope_generator = get_envelope_generator(opts);
-        index->construct(opts.dataset_path, envelope_generator.get(), opts.num_channels, opts.series_len);
-        std::ofstream index_stream(opts.index_path, std::ios::binary);
-        index->finalize()->save(index_stream, opts.index_format);
+        logger.measure_time_for_col(ISC::INDEXING_TIME_S, [&]() {
+            index->construct(dataset_path, envelope_generator.get(), opts.num_channels, opts.series_len);
+            std::ofstream index_stream(index_path, std::ios::binary);
+            index->finalize()->save(index_stream, opts.index_format);
+        });
     }
 
-    auto &run_settings = RunSettings::get_instance();
-    if (run_settings.ffts_supported()) run_settings.calculate_ffts();
+    if (RS.ffts_supported()) {
+        logger.measure_time_for_col(ISC::FFT_CALC_TIME_S, [&]() { RS.calculate_ffts(); });
+    }
+
+    logger.write_entry();
 
     return 0;
 }

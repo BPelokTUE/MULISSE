@@ -13,9 +13,11 @@ class ISearchMethod {
      *
      * @param query Multivariate subsequence to search for
      * @param search_options Search options
+     * @param dataset_ifs Input file stream for the dataset
      * @return The start positions of the subsequences in the result set
      */
-    virtual vec<SearchResult> search(const vec<vec<float>> &query, const SearchOptions &opts) const = 0;
+    virtual vec<SearchResult> search(const vec<vec<float>> &query, const SearchOptions &opts,
+                                     std::ifstream &dataset_ifs) const = 0;
 };
 
 #endif  // SEARCH_METHOD_HPP

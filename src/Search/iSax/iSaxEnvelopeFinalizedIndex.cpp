@@ -45,10 +45,9 @@ struct PQueueEntry {
     bool operator<(const PQueueEntry& other) const { return min_dist_squared > other.min_dist_squared; }
 };
 
-vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& query, const SearchOptions& opts) const {
+vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& query, const SearchOptions& opts,
+                                                     std::ifstream& dataset_ifs) const {
     assert(query.size() == m_num_channels);
-
-    std::ifstream data_stream(opts.dataset_file, std::ios::binary);
 
     std::priority_queue<PQueueEntry> pq;
 
@@ -134,8 +133,8 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
 
                     subsequence[c].resize(data_to_read);
                     FilePositionT start_byte = (file_pos + c * m_series_len) * sizeof(float);
-                    data_stream.seekg(start_byte);
-                    data_stream.read(reinterpret_cast<char*>(subsequence[c].data()), data_to_read * sizeof(float));
+                    dataset_ifs.seekg(start_byte);
+                    dataset_ifs.read(reinterpret_cast<char*>(subsequence[c].data()), data_to_read * sizeof(float));
                 }
                 distance_measure->update_result_set(result_set, file_pos, query, subsequence);
             }

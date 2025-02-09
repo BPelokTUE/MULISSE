@@ -8,14 +8,6 @@
 
 /** @brief Options for searching */
 struct SearchOptions {
-    /** @brief Index file to use if any */
-    str index_file;
-    /** @brief Dataset file to use; Assumed to be the source of the index */
-    str dataset_file;
-    /** @brief File containing the queries to answer */
-    str query_file;
-    /** @brief Path to the file to save the results into */
-    str results_path;
     /** @brief Type of search method to use */
     SearchMethodType search_method_type;
     /** @brief Archive type of the index */

@@ -25,7 +25,7 @@ struct DatasetProperties {
 
 // TODO: Rewrite, `l_min` and `l_max` are not properties of the query
 struct QueryProperties {
-    str path;
+    str file;
     uint l_min;
     uint l_max;
 };
@@ -50,7 +50,7 @@ class RunSettings {
     RunSettings();
 
     static void initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
-                           uint pos_per_env, str ffts_path);
+                           uint pos_per_env, const str index_path, const str ffts_path);
 
     static RunSettings& get_instance();
 
@@ -121,6 +121,12 @@ class RunSettings {
 
     str get_dataset_path() const;
 
+    str get_query_path() const;
+
+    str get_index_path() const;
+
+    str get_ffts_path() const;
+
     str get_logs_path() const;
 
     // ---------------------------------------------------- //
@@ -142,8 +148,11 @@ class RunSettings {
     iSaxProperties m_isax_props;
     bool m_isax_props_set = false;
 
+    // Index
+    str m_index_file;
+
     // FFTs
-    str m_ffts_path;
+    str m_ffts_file;
     std::ifstream m_ffts_stream;
     vec<uptr<FftArray>> m_query_ffts;
 

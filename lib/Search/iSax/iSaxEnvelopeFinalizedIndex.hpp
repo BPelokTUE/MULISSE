@@ -46,7 +46,8 @@ class iSaxEnvelopeFinalizedIndex : public IEnvelopeFinalizedIndex {
 
     ~iSaxEnvelopeFinalizedIndex() = default;
 
-    vec<SearchResult> search(const vec<vec<float>>& query, const SearchOptions& search_options) const override;
+    vec<SearchResult> search(const vec<vec<float>>& query, const SearchOptions& search_options,
+                             std::ifstream& dataset_ifs) const override;
 
    private:
     uint m_segment_len;
