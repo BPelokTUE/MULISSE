@@ -257,12 +257,16 @@ str QueryLogger::get_collection_str(QC col) {
 }
 
 void QueryLogger::write_entry() {
-    umap<QC, str> columns({{QC::SETTINGS_ID, m_query_settings_id_str}});
+    str run_log_path = RunSettings::get_instance().get_logs_path() + instance.RUN_LOG_FILE;
+    umap<QC, str> columns({
+        {QC::ID, to_string(instance.determine_index(run_log_path))},
+        {QC::SETTINGS_ID, m_query_settings_id_str},
+    });
 
     for (const auto &col : QUERY_NUMBER_COLUMNS) columns[col] = m_settable_cols[col];
     for (const auto &col : QUERY_COUNT_COLUMNS) columns[col] = to_string(m_count_cols[col]);
     for (const auto &col : QUERY_TIME_COLUMNS) columns[col] = to_string(m_time_cols_duration[col]);
     for (const auto &col : QUERY_COLLECTION_COLUMNS) columns[col] = get_collection_str(col);
 
-    write_row(RunSettings::get_instance().get_logs_path() + RUN_LOG_FILE, columns, QUERY_COL_ENUMS);
+    write_row(run_log_path, columns, QUERY_COL_ENUMS);
 }

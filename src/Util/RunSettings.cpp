@@ -59,7 +59,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
                 throw std::runtime_error("Query file " + instance.get_query_path() + " does not exist");
             }
             if (instance.ffts_supported()) {
-                instance.m_ffts_stream.open(instance.m_ffts_file, std::ios::binary);
+                instance.m_ffts_stream.open(instance.get_ffts_path(), std::ios::binary);
                 instance.m_query_ffts.resize(instance.m_dataset_props.num_channels);
                 for (auto &channel_ffts : instance.m_query_ffts) channel_ffts = nullptr;
             }

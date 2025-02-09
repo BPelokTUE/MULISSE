@@ -65,9 +65,10 @@ int search(const SearchOptions &opts) {
 
         if (c == num_channels - 1) {
             logger.reset_entry();
-            logger.set_number_col(QC::ID, query_count++);
+            logger.set_number_col(QC::QUERY_ID, query_count++);
             logger.log_query(query);
 
+            dataset_ifs.seekg(0);
             opts.result_set->clear();
             if (RS.ffts_supported()) RS.reset_query_ffts();
 

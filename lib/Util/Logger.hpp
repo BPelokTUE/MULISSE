@@ -75,6 +75,7 @@ DEFINE_ENUM_CONSTS_NO_EXTRA(QuerySettingsColumn, QUERY_SETTINGS_COL, false);
 enum class QueryColumn {
     ID,                       // ID of the run within the file
     SETTINGS_ID,              // ID of the search settings within the settings file
+    QUERY_ID,                 // ID of the query within the query file
     QUERY_LENGTH,             // Length of the query
     QUERY_CHANNELS,           // Channels included in the query as a list of ITEM_SEP separated `0`s and `1`s
     RESULT_SET_TS_INDICES,    // The indices of time series of the entries of the result set, separated by ITEM_SEP
@@ -100,7 +101,7 @@ const vec<QC> QUERY_TIME_COLUMNS = {QC::TOTAL_TIME_S, QC::FIRST_LAYER_TIME_S, QC
               QUERY_COUNT_COLUMNS = {QC::NUM_LEAVES_VISITED, QC::NUM_NODES_VISITED, QC::NUM_TS_EXAMINED},
               QUERY_COLLECTION_COLUMNS = {QC::RESULT_SET_TS_INDICES, QC::RESULT_SET_TS_POSITIONS,
                                           QC::RESULT_SET_DISTANCES, QC::QUERY_CHANNELS},
-              QUERY_NUMBER_COLUMNS = {QC::ID, QC::QUERY_LENGTH};
+              QUERY_NUMBER_COLUMNS = {QC::QUERY_ID, QC::QUERY_LENGTH};
 
 // ---------------------------------------------------- //
 // ----------------- LOGGER CLASSES ------------------- //
