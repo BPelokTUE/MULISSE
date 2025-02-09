@@ -7,6 +7,7 @@
 #include <cereal/types/utility.hpp>
 #include <cereal/types/vector.hpp>
 
+#include "Util/typedefs.hpp"
 #include "Search/iSax/iSaxNode.hpp"
 
 using std::pair;

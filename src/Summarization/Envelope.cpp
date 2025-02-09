@@ -1,4 +1,5 @@
 #include "Summarization/Envelope.hpp"
+#include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 
 size_t Envelope::size() const { return lower.size(); }

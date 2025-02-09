@@ -2,6 +2,7 @@
 #include <algorithm>
 
 #include "Summarization/SaxWord.hpp"
+#include "Util/typedefs.hpp"
 
 SaxWord::SaxWord(const vec<float> &paa, SaxNumBitsT num_bits, const vec<float> &breakpoints) {
     assert(num_bits > 0);

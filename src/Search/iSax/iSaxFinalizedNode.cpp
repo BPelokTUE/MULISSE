@@ -1,4 +1,6 @@
 #include "Search/iSax/iSaxFinalizedNode.hpp"
+#include "Search/iSax/iSaxNode.hpp"
+#include "Util/typedefs.hpp"
 
 // iSaxFinalizedInternal
 

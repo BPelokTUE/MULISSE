@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 
+#include "Util/typedefs.hpp"
 #include "Search/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxSplittableNode.hpp"
 #include "Search/iSax/iSaxSplitStrategy.hpp"
@@ -26,7 +27,7 @@ class iSaxEnvelopeIndex : public IEnvelopeIndex {
      * @param split_strategy Split strategy
      */
     iSaxEnvelopeIndex(const SeriesISaxProperties &series_isax_prop, SaxNumBitsT first_layer_num_bits,
-                      size_t leaf_capacity, std::unique_ptr<IiSaxSplitStrategy> split_strategy);
+                      size_t leaf_capacity, uptr<IiSaxSplitStrategy> split_strategy);
 
     iSaxEnvelopeIndex() = default;
 
@@ -34,21 +35,21 @@ class iSaxEnvelopeIndex : public IEnvelopeIndex {
 
     void insert(const EnvelopeEntry &entry) override;
 
-    std::unique_ptr<IEnvelopeFinalizedIndex> finalize() override;
+    uptr<IEnvelopeFinalizedIndex> finalize() override;
 
     const iSaxSplittableNode *get_first_layer_node(const vec<iSaxWord> &isax_mins) const;
 
    private:
-    std::unordered_map<vec<vec<SaxSymbolT>>, std::unique_ptr<iSaxSplittableNode>, SaxSymbolsHash> m_first_layer;
+    std::unordered_map<vec<vec<SaxSymbolT>>, uptr<iSaxSplittableNode>, SaxSymbolsHash> m_first_layer;
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
     uint m_segment_len, m_series_len, m_pos_per_env;
     SaxSegIndT m_num_seg_per_channel;
     MtsNumChannelsT m_num_channels;
     size_t m_leaf_capacity;
     const vec<float> *m_breakpoints;
-    std::unique_ptr<IiSaxSplitStrategy> m_split_strategy;
+    uptr<IiSaxSplitStrategy> m_split_strategy;
 
-    void split_leaf(vec<iSaxWord> &isax_min, std::unique_ptr<iSaxSplittableNode> &node_ref);
+    void split_leaf(vec<iSaxWord> &isax_min, uptr<iSaxSplittableNode> &node_ref);
 };
 
 #endif  // ISAX_ENVELOPE_INDEX_HPP

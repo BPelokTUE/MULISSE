@@ -1,6 +1,8 @@
-#include "Util/utilities.hpp"
-
+#include <cmath>
 #include <fstream>
+
+#include "Util/utilities.hpp"
+#include "Util/typedefs.hpp"
 
 size_t get_dataset_size(const str dataset_path) {
     std::ifstream data_stream(dataset_path, std::ios::binary | std::ios::ate);

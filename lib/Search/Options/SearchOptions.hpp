@@ -5,6 +5,7 @@
 #include "Search/ResultSet.hpp"
 #include "Search/Options/IndexOptions.hpp"
 #include "Search/Options/SearchMethodType.hpp"
+#include "Util/typedefs.hpp"
 
 /** @brief Options for searching */
 struct SearchOptions {

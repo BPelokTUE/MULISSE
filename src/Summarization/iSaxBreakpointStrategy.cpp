@@ -4,6 +4,8 @@
 #include <limits>
 
 #include "Summarization/iSaxBreakpointStrategy.hpp"
+#include "Util/typedefs.hpp"
+#include "Util/utilities.hpp"
 
 EquiprobableBreakpointStrategy::EquiprobableBreakpointStrategy(float mean, float standard_deviation)
     : m_distribution(mean, standard_deviation) {};

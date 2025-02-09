@@ -1,3 +1,5 @@
+#include "Util/typedefs.hpp"
+#include "Util/utilities.hpp"
 #include "Search/ResultSet.hpp"
 
 // RRangeResultSet

@@ -1,0 +1,24 @@
+# Build files
+build/*
+xcode/*
+
+# Helper files
+DATA/*
+LOGS/*
+TESTING
+
+# Development
+.vscode
+.editorconfig
+.clang-format
+.gitignore
+
+# OS-specific
+.DS_Store
+
+# Documentation
+README.md
+Doxyfile
+docs/*
+html
+latex

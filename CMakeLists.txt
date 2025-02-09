@@ -1,11 +1,16 @@
 cmake_minimum_required(VERSION 3.10)
-cmake_policy(SET CMP0167 NEW)
-project(ulisse_mts)
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+project(mulisse)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_C_COMPILER_LAUNCHER ccache)
-set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    set(CMAKE_C_COMPILER_LAUNCHER ccache)
+    set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
+endif()
 set(CLI11_PRECOMPILED ON)
 
 # Use debug build by default
@@ -31,7 +36,7 @@ include_directories(${CMAKE_SOURCE_DIR}/extern/doctest) # Required for fake-it
 include_directories(${CMAKE_SOURCE_DIR}/extern SYSTEM GLAD)
 
 # Add Boost
-find_package(Boost 1.87 REQUIRED)
+find_package(Boost 1.74 REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 # Add FFTW3
@@ -82,5 +87,7 @@ if (OpenMP_CXX_FOUND)
 endif()
 
 # Ensure flags are passed to ccache
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+if (CCACHE_PROGRAM)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+endif()

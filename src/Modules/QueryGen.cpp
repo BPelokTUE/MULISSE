@@ -5,6 +5,7 @@
 #include <random>
 
 #include "Modules/QueryGen.hpp"
+#include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 #include "Util/RunSettings.hpp"
 

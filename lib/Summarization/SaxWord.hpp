@@ -1,11 +1,11 @@
 #ifndef SAX_WORD_HPP
 #define SAX_WORD_HPP
 
-#include "Util/typedefs.hpp"
+#include <functional>
 
 #include <boost/functional/hash.hpp>
 
-#include <functional>
+#include "Util/typedefs.hpp"
 
 /** @brief Symbolic Aggregate approXimation (SAX) word */
 class SaxWord {

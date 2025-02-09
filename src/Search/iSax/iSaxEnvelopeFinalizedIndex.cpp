@@ -2,7 +2,12 @@
 #include <queue>
 
 #include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
+#include "Search/ResultSet.hpp"
+#include "Search/EnvelopeIndex.hpp"
+#include "Search/Options/SearchOptions.hpp"
+#include "Search/iSax/iSaxFinalizedNode.hpp"
 #include "Summarization/Paa.hpp"
+#include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
 #include "Util/Logger.hpp"
 

@@ -1,6 +1,10 @@
 #include <fstream>
 
 #include "Search/SequentialScan.hpp"
+#include "Search/SearchMethod.hpp"
+#include "Search/ResultSet.hpp"
+#include "Search/Options/SearchOptions.hpp"
+#include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
 #include "Util/Logger.hpp"
 

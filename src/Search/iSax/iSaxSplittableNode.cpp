@@ -1,4 +1,9 @@
 #include "Search/iSax/iSaxSplittableNode.hpp"
+#include "Search/iSax/iSaxNode.hpp"
+#include "Search/iSax/iSaxFinalizedNode.hpp"
+#include "Summarization/Envelope.hpp"
+#include "Summarization/iSaxWord.hpp"
+#include "Util/typedefs.hpp"
 
 // iSaxSplittableInternal
 

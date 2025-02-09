@@ -2,8 +2,9 @@
 #define SEQUENTIAL_SCAN_HPP
 
 #include "Search/SearchMethod.hpp"
-#include "Search/DistanceMeasure.hpp"
+#include "Search/ResultSet.hpp"
 #include "Search/Options/SearchOptions.hpp"
+#include "Util/typedefs.hpp"
 
 class SequentialScan : public ISearchMethod {
    public:

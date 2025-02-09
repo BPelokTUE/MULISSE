@@ -5,6 +5,7 @@
 #include "Search/Options/SearchMethodType.hpp"
 #include "Search/iSax/iSaxSplitStrategy.hpp"
 #include "Util/utilities.hpp"
+#include "Util/typedefs.hpp"
 
 /** @brief Interface for index parameters */
 struct IIndexParams {

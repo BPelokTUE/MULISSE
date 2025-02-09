@@ -1,4 +1,6 @@
 #include "Summarization/iSaxWord.hpp"
+#include "Summarization/SaxWord.hpp"
+#include "Util/typedefs.hpp"
 
 iSaxWord::iSaxWord(const vec<float> &paa, const iSaxWordSettings &settings)
     : SaxWord(paa, settings.alphabet_num_bits, settings.breakpoints), m_num_bits(settings.num_bits) {

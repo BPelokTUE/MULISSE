@@ -36,8 +36,7 @@ class iSaxSplittableNode : public iSaxNode {
      * @param isax_word_settings The settings for the iSAX word
      * @return A unique pointer to the finalized node and the iSAX max of the node
      */
-    virtual std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(
-        const iSaxWordSettings &isax_word_settings) = 0;
+    virtual std::pair<uptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(const iSaxWordSettings &isax_word_settings) = 0;
 };
 
 /** @brief Splittable internal node */
@@ -71,12 +70,11 @@ class iSaxSplittableInternal : public iSaxSplittableNode {
 
     vec<vec<Envelope>> get_envelopes() const override;
 
-    std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(
-        const iSaxWordSettings &isax_word_settings) override;
+    std::pair<uptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(const iSaxWordSettings &isax_word_settings) override;
 
    private:
     SaxSplitIndT m_split_ind;
-    std::unique_ptr<iSaxSplittableNode> m_left = nullptr, m_right = nullptr;
+    uptr<iSaxSplittableNode> m_left = nullptr, m_right = nullptr;
 };
 
 /** @brief Splittable leaf node */
@@ -102,8 +100,7 @@ class iSaxSplittableLeaf : public iSaxSplittableNode {
 
     vec<vec<Envelope>> get_envelopes() const override;
 
-    std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(
-        const iSaxWordSettings &isax_word_settings) override;
+    std::pair<uptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(const iSaxWordSettings &isax_word_settings) override;
 
    private:
     vec<vec<Envelope>> m_envelopes;

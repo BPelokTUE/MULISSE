@@ -1,6 +1,8 @@
 #include <algorithm>
 
 #include "Search/iSax/iSaxSplitStrategy.hpp"
+#include "Util/typedefs.hpp"
+#include "Util/utilities.hpp"
 #include "Util/RunSettings.hpp"
 
 // Round Robin Strategy

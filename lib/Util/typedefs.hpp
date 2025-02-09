@@ -2,6 +2,9 @@
 #define TYPEDEFS_HPP
 
 #include <vector>
+#include <memory>
+#include <string>
+#include <limits>
 #include <unordered_map>
 #include <cstdint>
 #include <cassert>

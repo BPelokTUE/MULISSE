@@ -1,5 +1,10 @@
+#include <fstream>
+#include <filesystem>
+
 #include "Search/Options/IndexOptions.hpp"
 #include "Util/RunSettings.hpp"
+#include "Util/typedefs.hpp"
+#include "Util/FftArray.hpp"
 
 // Initialize static members
 RunSettings RunSettings::instance = RunSettings();

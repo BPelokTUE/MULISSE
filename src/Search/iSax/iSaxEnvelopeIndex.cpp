@@ -1,7 +1,12 @@
 #include "Search/iSax/iSaxEnvelopeIndex.hpp"
-#include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
+#include "Search/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxSplittableNode.hpp"
+#include "Search/iSax/iSaxSplitStrategy.hpp"
+#include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
+#include "Summarization/Envelope.hpp"
 #include "Summarization/iSaxWord.hpp"
+#include "Summarization/iSaxBreakpointStrategy.hpp"
+#include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
 
 std::size_t SaxSymbolsHash::operator()(const vec<vec<SaxSymbolT>> &symbols) const {

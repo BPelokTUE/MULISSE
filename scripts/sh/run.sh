@@ -1,0 +1,34 @@
+#!/bin/bash
+
+n_series=1000
+series_len=512
+n_channels=4
+n_queries=100
+base_dir=../DATA
+inner_dir=mts
+l_min=128
+l_max=512
+lengths=(128 256 512)
+k=5
+query_file=${inner_dir}/test_query.txt
+
+cd build
+mkdir -p ${base_dir}/${inner_dir}
+
+./mulisse create_ds -d ${inner_dir}/test.bin -n ${n_series} -m ${series_len} -c ${n_channels} -S 8999
+./mulisse create_qs -d ${inner_dir}/test.bin -q ${inner_dir}/test_query.txt -m ${series_len} -c ${n_channels} --lengths ${lengths[@]} --noise 0.1 -Q ${n_queries}
+./mulisse index -d ${inner_dir}/test.bin -i ${inner_dir}/test_ind.bin -m ${series_len} -c ${n_channels} -l ${l_min} -L ${l_max} -s 32 -p 385 -C 64  -F ${inner_dir}/test_ffts.bin -S em 
+
+ed_file=${inner_dir}/ed.txt
+mass_file=${inner_dir}/mass.txt
+mass_fft_file=${inner_dir}/mass_fft.txt
+isax_ed_file=${inner_dir}/isax_ed.txt
+isax_mass_file=${inner_dir}/isax_mass.txt
+isax_mass_fft_file=${inner_dir}/isax_mass_fft.txt
+
+./mulisse search -q ${query_file} -o ${ed_file} -d ${inner_dir}/test.bin -T knn -k ${k} -D ed -c ${n_channels} -m ${series_len} -t scan
+./mulisse search -q ${query_file} -o ${mass_file} -d ${inner_dir}/test.bin -T knn -k ${k} -D mass -c ${n_channels} -m ${series_len} -t scan
+./mulisse search -q ${query_file} -o ${mass_fft_file} -d ${inner_dir}/test.bin -T knn -k ${k} -D mass -F ${inner_dir}/test_ffts.bin -c ${n_channels} -m ${series_len} -t scan
+./mulisse search -q ${query_file} -o ${isax_ed_file} -d ${inner_dir}/test.bin -T knn -k ${k} -D ed -c ${n_channels} -m ${series_len} -i ${inner_dir}/test_ind.bin
+./mulisse search -q ${query_file} -o ${isax_mass_file} -d ${inner_dir}/test.bin -T knn -k ${k} -D mass -c ${n_channels} -m ${series_len} -i ${inner_dir}/test_ind.bin
+./mulisse search -q ${query_file} -o ${isax_mass_fft_file} -d ${inner_dir}/test.bin -T knn -k ${k} -D mass -c ${n_channels} -m ${series_len} -i ${inner_dir}/test_ind.bin -F ${inner_dir}/test_ffts.bin

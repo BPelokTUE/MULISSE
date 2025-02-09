@@ -2,10 +2,12 @@
 #include <fstream>
 
 #include "Modules/Indexing.hpp"
+#include "Search/Options/IndexOptions.hpp"
 #include "Search/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxEnvelopeIndex.hpp"
 #include "Util/RunSettings.hpp"
 #include "Util/Logger.hpp"
+#include "Util/typedefs.hpp"
 
 uptr<IiSaxBreakpointStrategy> get_breakpoint_strategy(const iSaxIndexParams *params) {
     switch (params->breakpoint_strategy_type) {

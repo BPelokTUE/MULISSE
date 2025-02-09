@@ -1,6 +1,8 @@
 #include <cassert>
+#include <vector>
 
 #include "Summarization/Paa.hpp"
+#include "Util/typedefs.hpp"
 
 vec<float> paa(const vec<float> &ts, uint segment_len) {
     uint num_segments = ts.size() / segment_len;

@@ -2,7 +2,6 @@
 #define INDEXING_HPP
 
 #include "Util/typedefs.hpp"
-
 #include "Search/Options/IndexOptions.hpp"
 
 /**

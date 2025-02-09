@@ -1,4 +1,10 @@
 #include "Search/EnvelopeIndex.hpp"
+#include "Search/SearchMethod.hpp"
+#include "Search/Options/IndexOptions.hpp"
+#include "Search/Options/SearchOptions.hpp"
+#include "Summarization/Envelope.hpp"
+#include "Summarization/iSaxWord.hpp"
+#include "Util/typedefs.hpp"
 
 uint IEnvelopeFinalizedIndex::get_series_len() const { return m_series_len; };
 

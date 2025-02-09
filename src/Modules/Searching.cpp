@@ -1,5 +1,6 @@
 #include "Modules/Searching.hpp"
-
+#include "Search/Options/SearchOptions.hpp"
+#include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
 #include "Util/Logger.hpp"
 #include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
@@ -23,6 +24,7 @@ uptr<ISearchMethod> load_method(const SearchOptions &opts) {
         case SEQUENTIAL_SCAN:
             return std::make_unique<SequentialScan>();
     }
+    return nullptr;
 }
 
 /**

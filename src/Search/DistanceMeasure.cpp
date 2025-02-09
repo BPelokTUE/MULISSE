@@ -3,6 +3,9 @@
 #include <iostream>
 
 #include "Search/DistanceMeasure.hpp"
+#include "Search/ResultSet.hpp"
+#include "Util/utilities.hpp"
+#include "Util/typedefs.hpp"
 #include "Util/FftArray.hpp"
 #include "Util/RunSettings.hpp"
 

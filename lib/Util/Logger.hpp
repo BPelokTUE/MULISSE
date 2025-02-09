@@ -6,6 +6,7 @@
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 #include "Search/Options/SearchOptions.hpp"
+#include "Search/Options/IndexOptions.hpp"
 
 using std::to_string;
 

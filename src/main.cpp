@@ -7,16 +7,17 @@
 #include "Modules/QueryGen.hpp"
 #include "Modules/Indexing.hpp"
 #include "Modules/Searching.hpp"
+#include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
 
 int main(int argc, char **argv) {
-    CLI::App app{"Run ULISSE-MTS"};
+    CLI::App app{"Run MULISSE"};
 
     // Add subcommands
     auto ds_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_DS), "Create random walk dataset");
     auto qs_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_QS), "Create queries from dataset");
-    auto index_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(INDEX), "Construct ULISSE MTS index");
-    auto search_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(SEARCH), "Search using ULISSE MTS");
+    auto index_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(INDEX), "Construct MULISSE index");
+    auto search_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(SEARCH), "Search using MULISSE");
     app.require_subcommand(1);
 
     // Define custom validators

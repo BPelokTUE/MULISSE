@@ -4,6 +4,7 @@
 #include <random>
 
 #include "Modules/RandomWalk.hpp"
+#include "Util/typedefs.hpp"
 #include "Util/Logger.hpp"
 #include "Util/RunSettings.hpp"
 

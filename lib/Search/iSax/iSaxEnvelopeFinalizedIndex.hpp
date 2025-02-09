@@ -4,6 +4,9 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/memory.hpp>
 
+#include "Util/typedefs.hpp"
+#include "Search/Options/SearchOptions.hpp"
+#include "Search/ResultSet.hpp"
 #include "Search/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
 

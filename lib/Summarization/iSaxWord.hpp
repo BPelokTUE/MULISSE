@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "Summarization/SaxWord.hpp"
+#include "Util/typedefs.hpp"
 
 /** @brief iSAX word settings */
 struct iSaxWordSettings {

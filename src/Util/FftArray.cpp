@@ -1,4 +1,7 @@
 #include <vector>
+#include <cstring>
+
+#include <fftw3.h>
 
 #include "Util/FftArray.hpp"
 

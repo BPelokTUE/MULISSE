@@ -1,7 +1,12 @@
 #include <filesystem>
+#include <fstream>
 
+#include "Util/typedefs.hpp"
+#include "Util/utilities.hpp"
 #include "Util/Logger.hpp"
 #include "Util/RunSettings.hpp"
+#include "Search/Options/SearchOptions.hpp"
+#include "Search/Options/IndexOptions.hpp"
 
 using std::to_string;
 

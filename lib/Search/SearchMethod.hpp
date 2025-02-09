@@ -3,6 +3,7 @@
 
 #include "Search/Options/SearchOptions.hpp"
 #include "Search/ResultSet.hpp"
+#include "Util/typedefs.hpp"
 
 class ISearchMethod {
    public:
