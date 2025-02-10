@@ -3,33 +3,43 @@
 n_series=500
 series_len=512
 n_channels=4
-n_queries=10
+n_queries=100
 base_dir=../DATA
 inner_dir=mts
 l_min=128
 l_max=512
 lengths=(128 256 512)
-k=5
-query_file=${inner_dir}/test_query.txt
+k=1
 
 cd build
 mkdir -p ${base_dir}/${inner_dir}
 
 # Create random walk dataset
-./mulisse create_ds -d ${inner_dir}/test.bin -n ${n_series} -m ${series_len} -c ${n_channels} -S 8999
+# ./mulisse create_ds -d ${dataset_path} -n ${n_series} -m ${series_len} -c ${n_channels} -S 8999
 
 # OR
 # Create dataset from CSV files
-# csv_dir=../../DATA/mulisse_pack/weather
-# csv_files=(${csv_dir}/DEW ${csv_dir}/SLP ${csv_dir}/TMP ${csv_dir}/WND)
-# num_channels=${#csv_files[@]}
-# ./mulisse parse_csv -d ${inner_dir}/test.bin -i ${csv_files[@]} -l ${l_min} -m ${series_len}
+csv_dir=/home/jens/tue/data/MTS/subsequence_search/preprocessed/weather
+csv_files=($(ls ${csv_dir}/*))
+num_channels=${#csv_files[@]}
+
+# Get basename from csv_dir
+filename=$(basename ${csv_dir})_n${n_series}_m${series_len}_c${num_channels}
+dataset_path=${inner_dir}/${filename}.bin
+index_path=${inner_dir}/index_${filename}.bin
+fft_path=${inner_dir}/ffts_${filename}.bin
+query_path=${inner_dir}/query_${filename}.txt
+
+# echo "PARSING CSV FILES"
+# ./mulisse parse_csv -d ${dataset_path} -i ${csv_files[@]} -l ${l_min} -m ${series_len}
 
 # Create queries
-./mulisse create_qs -d ${inner_dir}/test.bin -q ${inner_dir}/test_query.txt -m ${series_len} -c ${n_channels} --lengths ${lengths[@]} --noise 0.1 -Q ${n_queries}
+echo "CREATING QUERIES"
+./mulisse create_qs -d ${dataset_path} -q ${query_path} -m ${series_len} -c ${n_channels} --lengths ${lengths[@]} --noise 0.1 -Q ${n_queries}
 
 # Create index for ulisse (and creates ffts)
-./mulisse index -d ${inner_dir}/test.bin -i ${inner_dir}/test_ind.bin -m ${series_len} -c ${n_channels} -l ${l_min} -L ${l_max} -s 32 -p 385 -C 64  -F ${inner_dir}/test_ffts.bin -S em 
+echo "CREATING INDEX"
+./mulisse index -d ${dataset_path} -i ${index_path} -m ${series_len} -c ${n_channels} -l ${l_min} -L ${l_max} -s 32 -p 385 -C 64  -F ${fft_path} -S em 
 
 ed_file=${inner_dir}/ed.txt
 mass_file=${inner_dir}/mass.txt
@@ -39,25 +49,33 @@ isax_mass_file=${inner_dir}/isax_mass.txt
 isax_mass_fft_file=${inner_dir}/isax_mass_fft.txt
 
 # BRUTE FORCE
-./mulisse search -q ${query_file} -o ${ed_file} -d ${inner_dir}/test.bin -T knn -k ${k} -D ed -c ${n_channels} -m ${series_len} -t scan
+echo "BRUTE FORCE"
+./mulisse search -q ${query_path} -o ${ed_file} -d ${dataset_path} -T knn -k ${k} -D ed -c ${n_channels} -m ${series_len} -t scan
 
 # ED with early abandoning
-./mulisse search -q ${query_file} -o ${ed_file} -d ${inner_dir}/test.bin -T knn -k ${k} -D ed -c ${n_channels} -m ${series_len} -t scan --early_abandon
+# echo "ED with early abandoning"
+# ./mulisse search -q ${query_path} -o ${ed_file} -d ${dataset_path} -T knn -k ${k} -D ed -c ${n_channels} -m ${series_len} -t scan --early_abandon
 
 # MASS
-./mulisse search -q ${query_file} -o ${mass_file} -d ${inner_dir}/test.bin -T knn -k ${k} -D mass -c ${n_channels} -m ${series_len} -t scan
+# echo "MASS"
+# ./mulisse search -q ${query_path} -o ${mass_file} -d ${dataset_path} -T knn -k ${k} -D mass -c ${n_channels} -m ${series_len} -t scan
 
 # MASS with precomputed FFTs
-./mulisse search -q ${query_file} -o ${mass_fft_file} -d ${inner_dir}/test.bin -T knn -k ${k} -D mass -F ${inner_dir}/test_ffts.bin -c ${n_channels} -m ${series_len} -t scan
+echo "MASS with precomputed FFTs"
+./mulisse search -q ${query_path} -o ${mass_fft_file} -d ${dataset_path} -T knn -k ${k} -D mass -F ${fft_path} -c ${n_channels} -m ${series_len} -t scan
 
 # ISAX ED
-./mulisse search -q ${query_file} -o ${isax_ed_file} -d ${inner_dir}/test.bin -T knn -k ${k} -D ed -c ${n_channels} -m ${series_len} -i ${inner_dir}/test_ind.bin
+# echo "MULISSE ED"
+# ./mulisse search -q ${query_path} -o ${isax_ed_file} -d ${dataset_path} -T knn -k ${k} -D ed -c ${n_channels} -m ${series_len} -i ${index_path}
 
 # ISAX ED with early abandoning
-./mulisse search -q ${query_file} -o ${isax_ed_file} -d ${inner_dir}/test.bin -T knn -k ${k} -D ed -c ${n_channels} -m ${series_len} -i ${inner_dir}/test_ind.bin --early_abandon
+echo "MULISSE ED with early abandoning"
+./mulisse search -q ${query_path} -o ${isax_ed_file} -d ${dataset_path} -T knn -k ${k} -D ed -c ${n_channels} -m ${series_len} -i ${index_path} --early_abandon
 
 # ISAX MASS
-./mulisse search -q ${query_file} -o ${isax_mass_file} -d ${inner_dir}/test.bin -T knn -k ${k} -D mass -c ${n_channels} -m ${series_len} -i ${inner_dir}/test_ind.bin
+# echo "MULISSE MASS"
+# ./mulisse search -q ${query_path} -o ${isax_mass_file} -d ${dataset_path} -T knn -k ${k} -D mass -c ${n_channels} -m ${series_len} -i ${index_path}
 
 # ISAX MASS with precomputed FFTs
-./mulisse search -q ${query_file} -o ${isax_mass_fft_file} -d ${inner_dir}/test.bin -T knn -k ${k} -D mass -c ${n_channels} -m ${series_len} -i ${inner_dir}/test_ind.bin -F ${inner_dir}/test_ffts.bin
+echo "MULISSE MASS with precomputed FFTs"
+./mulisse search -q ${query_path} -o ${isax_mass_fft_file} -d ${dataset_path} -T knn -k ${k} -D mass -c ${n_channels} -m ${series_len} -i ${index_path} -F ${fft_path}
