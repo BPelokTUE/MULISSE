@@ -8,6 +8,7 @@
 #include "Util/typedefs.hpp"
 #include "Util/FftArray.hpp"
 #include "Util/RunSettings.hpp"
+#include "Util/Logger.hpp"
 
 bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
                                           const vec<vec<float>> &mts) {
@@ -84,8 +85,11 @@ vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<Distance
     auto &run_settings = RunSettings::get_instance();
 
     if (run_settings.ffts_supported()) {
-        // TIME-IT
+        auto &logger = QueryLogger::get_instance();
+
+        logger.start_timer(QC::IO_TIME_S);
         mts_fft = run_settings.get_ffts(file_pos, channel_ind, mts_len);
+        logger.stop_timer(QC::IO_TIME_S);
 
         auto *query_fft_ptr = run_settings.get_query_ffts(channel_ind);
         if (!query_fft_ptr) {

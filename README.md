@@ -147,3 +147,7 @@ Options:
   -r,--range FLOAT:POSITIVE_FLOAT [1] 
                               Range for range search
 ```
+
+## Codebase
+
+The codebase is documented through docstrings, and the documentation can be generated using [Doxygen](https://www.doxygen.nl/) by running `doxygen`, which creates the docs under `docs/html`.

@@ -88,7 +88,6 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
     }
     logger.stop_timer(QC::FIRST_LAYER_TIME_S);
 
-    // TIME-IT (TREE_TRAVERSAL_TIME_S)
     logger.start_timer(QC::TREE_TRAVERSAL_TIME_S);
     while (!pq.empty()) {
         auto [min_dist_squared, isax_mins, isax_maxs, node] = pq.top();

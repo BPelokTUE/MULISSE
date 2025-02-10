@@ -3,6 +3,7 @@
 
 #include "Util/utilities.hpp"
 #include "Util/typedefs.hpp"
+#include "Util/RunSettings.hpp"
 #include "Search/ResultSet.hpp"
 
 /** @brief Types of distance measure */

@@ -31,7 +31,8 @@ if __name__ == "__main__":
     # Parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-l,--logs_dir",
+        "-l",
+        "--logs_dir",
         default=LOGS_DIR,
         help="Directory containing the logs",
     )
