@@ -1,14 +1,13 @@
 #!/bin/bash
 
-n_series=5000
+n_series=1000
 series_len=2048
-n_channels=4
-n_queries=5
+n_queries=20
 base_dir=../DATA
 inner_dir=mts
-l_min=1536
+l_min=1024
 l_max=2048
-lengths=(1536 1792 2048)
+lengths=(1024 1536 2048)
 k=1
 
 cd build
@@ -16,26 +15,26 @@ mkdir -p ${base_dir}/${inner_dir}
 
 
 # Create random walk dataset
-filename=rwalk_n${n_series}_m${series_len}_c${n_channels}
-dataset_path=${inner_dir}/${filename}.bin
-./mulisse create_ds -d ${dataset_path} -n ${n_series} -m ${series_len} -c ${n_channels} -S 8999
+# filename=rwalk_n${n_series}_m${series_len}_c${n_channels}
+# dataset_path=${inner_dir}/${filename}.bin
+# ./mulisse create_ds -d ${dataset_path} -n ${n_series} -m ${series_len} -c ${n_channels} -S 8999
 
 # OR
 # Create dataset from CSV files
-# csv_dir=/home/jens/tue/data/MTS/subsequence_search/preprocessed/weather
-# csv_files=($(ls ${csv_dir}/*))
-# num_channels=${#csv_files[@]}
-# filename=$(basename ${csv_dir})_n${n_series}_m${series_len}_c${num_channels}
+csv_dir=/home/jens/tue/data/MTS/subsequence_search/preprocessed/stocks
+csv_files=($(ls ${csv_dir}/*))
+n_channels=${#csv_files[@]}
+filename=$(basename ${csv_dir})_n${n_series}_m${series_len}_c${n_channels}
 
 # Get basename from csv_dir
-# filename=$(basename ${csv_dir})_n${n_series}_m${series_len}_c${num_channels}
 dataset_path=${inner_dir}/${filename}.bin
 index_path=${inner_dir}/index_${filename}_lmin${l_min}_lmax${l_max}.bin
 fft_path=${inner_dir}/ffts_${filename}.bin
 query_path=${inner_dir}/query_${filename}.txt
 
-# echo "PARSING CSV FILES"
-# ./mulisse parse_csv -d ${dataset_path} -i ${csv_files[@]} -l ${l_min} -m ${series_len}
+# Parse CSV files
+echo "PARSING CSV FILES"
+./mulisse parse_csv -d ${dataset_path} -i ${csv_files[@]} -l ${l_min} -m ${series_len} -n ${n_series}
 
 # Create queries
 echo "CREATING QUERIES"
@@ -43,7 +42,7 @@ echo "CREATING QUERIES"
 
 # Create index for ulisse (and creates ffts)
 echo "CREATING INDEX"
-./mulisse index -d ${dataset_path} -i ${index_path} -m ${series_len} -c ${n_channels} -l ${l_min} -L ${l_max} -s 32 -p $((l_max - l_min + 1)) -C 64  -F ${fft_path} -S em 
+./mulisse index -d ${dataset_path} -i ${index_path} -m ${series_len} -c ${n_channels} -l ${l_min} -L ${l_max} -s 32 -p $((l_max - l_min + 10)) -C 64  -F ${fft_path} -S em 
 
 ed_file=${inner_dir}/ed.txt
 mass_file=${inner_dir}/mass.txt
