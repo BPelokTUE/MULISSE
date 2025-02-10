@@ -11,7 +11,7 @@
 #include "Util/Logger.hpp"
 
 bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
-                                          const vec<vec<float>> &mts) {
+                                          const vec<vec<float>> &mts, const bool early_abandoning) {
     bool updated = false;
     int num_start_pos, mts_len, query_len;
 
@@ -39,7 +39,9 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT 
             for (uint i = 0; i < query_len; ++i) {
                 DistanceT diff = (mts[c][start_pos + i] - mu) / sigma - query[c][i];
                 dist_squared += diff * diff;
-                if (dist_squared >= result_set->get_distance_lb()) {
+
+                // Early abandoning
+                if (early_abandoning && dist_squared >= result_set->get_distance_lb()) {
                     goto start_pos_it_end;
                 }
             }
@@ -128,7 +130,8 @@ vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<Distance
 
 // TODO: figure out where double is actually needed
 bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, FilePositionT file_pos,
-                                               const vec<vec<float>> &query, const vec<vec<float>> &mts) {
+                                               const vec<vec<float>> &query, const vec<vec<float>> &mts, 
+                                               const bool early_abandoning) {
     bool updated = false;
 
     uint mts_len = 0, query_len = 0;

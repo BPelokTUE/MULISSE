@@ -35,7 +35,7 @@ class IDistanceMeasure {
      * @return true if the result set was updated, false otherwise
      */
     virtual bool update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
-                                   const vec<vec<float>> &mts) = 0;
+                                   const vec<vec<float>> &mts, const bool early_abandoning) = 0;
 
     /** @brief Get the type of the distance measure */
     virtual DistanceType get_type() const = 0;
@@ -46,7 +46,7 @@ class EuclideanDistance : public IDistanceMeasure {
     DistanceT min_dist_squared(const float paa, float lower, float upper) const override;
 
     bool update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
-                           const vec<vec<float>> &mts) override;
+                           const vec<vec<float>> &mts, const bool early_abandoning) override;
 
     DistanceType get_type() const override;
 };
@@ -54,7 +54,7 @@ class EuclideanDistance : public IDistanceMeasure {
 class EuclideanDistanceWMass : public EuclideanDistance {
    public:
     bool update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
-                           const vec<vec<float>> &mts) override;
+                           const vec<vec<float>> &mts, const bool early_abandoning) override;
 
     EuclideanDistanceWMass(bool normalized);
 

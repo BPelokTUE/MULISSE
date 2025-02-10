@@ -26,7 +26,7 @@ vec<SearchResult> SequentialScan::search(const vec<vec<float>> &query, const Sea
         FilePositionT file_pos = i * series_len * num_channels;
 
         logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-        opts.distance_measure->update_result_set(opts.result_set.get(), file_pos, query, mts);
+        opts.distance_measure->update_result_set(opts.result_set.get(), file_pos, query, mts, false);
         logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
 
         logger.increment_count_col(QC::NUM_TS_EXAMINED);

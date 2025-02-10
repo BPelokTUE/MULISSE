@@ -151,7 +151,7 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
                 logger.stop_timer(QC::IO_TIME_S);
 
                 logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-                distance_measure->update_result_set(result_set, file_pos, query, subsequence);
+                distance_measure->update_result_set(result_set, file_pos, query, subsequence, true);
                 logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
 
                 // TODO: Discuss how pruning ratio should be calculated when envs_per_ts > 1
