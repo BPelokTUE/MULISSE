@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     size_t leaf_capacity;
     vec<uint> lengths;
     MtsNumChannelsT num_channels;
-    bool zero_start = false, unnormalized = false, approximate = false;
+    bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path")->required();
@@ -156,6 +156,7 @@ int main(int argc, char **argv) {
     search_subcommand->add_option("-D,--distance", distance_measure_str, "Distance measure")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_DISTANCE_TYPE_STRS));
+    search_subcommand->add_flag("--early_abandon", early_abandon, "Use early abandoning");
     search_subcommand->add_flag("--approx", approximate, "Approximate search");
     search_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
     //      Search type-specific options
@@ -225,7 +226,7 @@ int main(int argc, char **argv) {
         IDistanceMeasure *distance_measure;
         switch (STR_TO_DISTANCE_TYPE.at(distance_measure_str)) {
             case ED:
-                distance_measure = new EuclideanDistance(!unnormalized);
+                distance_measure = new EuclideanDistance(!unnormalized, early_abandon);
                 break;
             case MASS:
                 distance_measure = new EuclideanDistanceWMass(!unnormalized);

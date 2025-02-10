@@ -18,6 +18,7 @@ SEARCH_METHOD_COL = "search_method"
 DISTANCE_MEASURE_COL = "distance_measure"
 FFTS_FILE_COL = "ffts_file"
 DATASET_FILE_COL = "dataset_file"
+EARLY_ABANDONING_COL = "early_abandoning"
 
 
 def get_method_name(settings_df: pandas.DataFrame, settings_id: int) -> str:
@@ -25,6 +26,11 @@ def get_method_name(settings_df: pandas.DataFrame, settings_id: int) -> str:
     parts = [setting[SEARCH_METHOD_COL], setting[DISTANCE_MEASURE_COL]]
     if pandas.notna(setting[FFTS_FILE_COL]) and setting[FFTS_FILE_COL] != "":
         parts.append("ffts")
+    if (
+        pandas.notna(setting[EARLY_ABANDONING_COL])
+        and setting[EARLY_ABANDONING_COL] != ""
+    ):
+        parts.append("early")
     return "-".join(parts)
 
 

@@ -14,6 +14,8 @@
 EuclideanDistance::EuclideanDistance(bool normalized, bool use_early_abandoning)
     : m_normalized(normalized), m_use_early_abandoning(use_early_abandoning) {}
 
+bool EuclideanDistance::uses_early_abandoning() const { return m_use_early_abandoning; }
+
 bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
                                           const vec<vec<float>> &mts) {
     bool updated = false;

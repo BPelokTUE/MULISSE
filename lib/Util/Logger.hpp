@@ -70,6 +70,7 @@ enum class QuerySettingsColumn {
     NORMALIZED,        // Whether the query and subsequences are normalized
     SEARCH_METHOD,     // Method used for searching
     DISTANCE_MEASURE,  // Distance measure used
+    EARLY_ABANDONING,  // Whether early abandoning is used (for ED)
 };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(QuerySettingsColumn, QUERY_SETTINGS_COL, false);

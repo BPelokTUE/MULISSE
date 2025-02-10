@@ -52,6 +52,8 @@ class EuclideanDistance : public IDistanceMeasure {
 
     DistanceType get_type() const override;
 
+    bool uses_early_abandoning() const;
+
    protected:
     bool m_normalized;
 

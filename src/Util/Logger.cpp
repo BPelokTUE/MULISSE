@@ -5,6 +5,7 @@
 #include "Util/utilities.hpp"
 #include "Util/Logger.hpp"
 #include "Util/RunSettings.hpp"
+#include "Search/DistanceMeasure.hpp"
 #include "Search/Options/SearchOptions.hpp"
 #include "Search/Options/IndexOptions.hpp"
 
@@ -178,6 +179,13 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
             break;
     }
 
+    str early_abandon_str = "";
+    DistanceType distance_type = search_options.distance_measure->get_type();
+    if (distance_type == DistanceType::ED) {
+        auto *ed = static_cast<EuclideanDistance *>(search_options.distance_measure.get());
+        early_abandon_str = to_string(ed->uses_early_abandoning());
+    }
+
     instance.write_row(
         query_settings_path,
         {
@@ -194,6 +202,7 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
             {QSC::NORMALIZED, to_string(search_options.normalized)},
             {QSC::SEARCH_METHOD, SEARCH_METHOD_TYPE_TO_STR.at(search_options.search_method_type)},
             {QSC::DISTANCE_MEASURE, DISTANCE_TYPE_TO_STR.at(search_options.distance_measure->get_type())},
+            {QSC::EARLY_ABANDONING, early_abandon_str},
         },
         QUERY_SETTINGS_COL_ENUMS);
 
