@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
 #include "Modules/CsvParsing.hpp"
 #include "Util/RunSettings.hpp"
