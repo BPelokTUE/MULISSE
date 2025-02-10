@@ -68,7 +68,8 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
         case CSV: {
             auto *csv_attributes = static_cast<CsvDatasetLogAttributes *>(attributes.get());
             num_series = csv_attributes->series_generated;
-            vec<str> source_csvs;
+            const vec<str> &source_csvs = csv_attributes->source_csvs;
+            num_channels = source_csvs.size();
             for (uint i = 0; i < source_csvs.size(); ++i) {
                 source_csv_str += source_csvs[i];
                 if (i < source_csvs.size() - 1) source_csv_str += instance.ITEM_SEP;

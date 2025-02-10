@@ -71,13 +71,23 @@ int create_queries(float noise, uint num_queries, vec<uint> lengths, MtsNumChann
 
     for (size_t q = 0; q < query_descriptors.size(); ++q) {
         const auto &[start_offset, length, channels] = query_descriptors[q];
+        FilePositionT series_start = start_offset - start_offset % (series_len * num_channels);
+
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             if (channels[c]) {
+                data_file.seekg(series_start + c * series_len * sizeof(float));
+                float sum = 0, sum_sq = 0, value;
+                for (uint j = 0; j < series_len; ++j) {
+                    data_file.read(reinterpret_cast<char *>(&value), sizeof(value));
+                    sum += value;
+                    sum_sq += value * value;
+                }
+                float sigma = calculate_mu_and_sigma(sum, sum_sq, series_len).second;
+
                 data_file.seekg(start_offset + c * series_len * sizeof(float));
-                float value;
                 for (uint j = 0; j < length; ++j) {
                     data_file.read(reinterpret_cast<char *>(&value), sizeof(value));
-                    value += noise_normal_dist(rng);
+                    value += noise_normal_dist(rng) * sigma;
                     query_file << value;
                     if (j < length - 1) query_file << ' ';
                 }
