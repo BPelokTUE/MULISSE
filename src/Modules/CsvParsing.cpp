@@ -1,16 +1,18 @@
 #include <fstream>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <cstring>
 
 #include "Modules/CsvParsing.hpp"
-#include "Util/RunSettings.hpp"
 #include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
+#include "Util/RunSettings.hpp"
+#include "Util/Logger.hpp"
 
-int create_dataset_from_csv(const vec<str> &csv_paths, uint low_sd_len, char col_sep) {
+int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint low_sd_len, char col_sep) {
     for (str csv_path : csv_paths) {
         if (!std::filesystem::exists(csv_path)) {
             std::cerr << "Error: Dataset " << csv_path << " does not exist\n";
@@ -45,7 +47,7 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint low_sd_len, char col
     vec<vec<float>> mts(num_channels, vec<float>(series_len));
     MtsNumChannelsT channel = 0;
     bool discard = false;
-    uint length = series_len;
+    uint length = series_len, series_generated = 0;
 
     while (true) {
         auto &csv_ifs = csv_streams[channel];
@@ -87,13 +89,17 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint low_sd_len, char col
                 for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
                     dataset_ofs.write(reinterpret_cast<const char *>(mts[c].data()), sizeof(float) * series_len);
                 }
+                series_generated++;
             }
             channel = 0;
             length = series_len;
             discard = false;
         }
 
-        if (csv_ifs.eof()) break;
+        if (csv_ifs.eof() || series_generated == num_series) break;
     }
+
+    DatasetLogger::write_entry(std::make_unique<CsvDatasetLogAttributes>(csv_paths, series_generated, low_sd_len));
+
     return 0;
 }

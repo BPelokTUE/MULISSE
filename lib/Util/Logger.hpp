@@ -20,8 +20,10 @@ enum class DatasetSettingsColumn {
     SERIES_LENGTH,  // Length of each time series
     NUM_CHANNELS,   // Number of channels
     NUM_SERIES,     // Number of time series in the dataset
-    SD,             // The standard deviation of the Gaussian noise used for generating the dataset (if applicable)
-    SOURCE_CSV,     // Source CSV file of the dataset (if applicable)
+    SD,             // The standard deviation of the Gaussian noise used for generating the random walk dataset
+    SOURCE_CSVS,    // Source CSV files used for generating the CSV dataset
+    LOW_SD_LEN,     // Length of the subsequence with low standard deviation that causes the time series to be
+                    // discarded
 };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(DatasetSettingsColumn, DATASET_SETTINGS_COL, false);
@@ -174,6 +176,31 @@ class Logger {
     const str RUN_LOG_FILE = "runs.csv";
 };
 
+enum DatasetType { RANDOM_WALK, CSV };
+
+struct IDatasetLogAttributes {
+    virtual ~IDatasetLogAttributes() = default;
+
+    virtual DatasetType get_type() = 0;
+};
+
+struct RandomWalkLogAttributes : IDatasetLogAttributes {
+    RandomWalkLogAttributes(float noise);
+
+    DatasetType get_type() override;
+
+    float noise;
+};
+
+struct CsvDatasetLogAttributes : IDatasetLogAttributes {
+    CsvDatasetLogAttributes(const vec<str> &source_csvs, uint series_generated, uint low_sd_len);
+
+    DatasetType get_type() override;
+
+    vec<str> source_csvs;
+    uint series_generated;
+    uint low_sd_len;
+};
 class DatasetLogger : public Logger {
    public:
     DatasetLogger(const DatasetLogger &) = delete;
@@ -181,10 +208,9 @@ class DatasetLogger : public Logger {
 
     /**
      * @brief Write the entry
-     * @param standard_dev The standard deviation of the Gaussian noise used for generating the dataset
-     * @param source_csv The source CSV file of the dataset. Empty if the dataset was not generated from a CSV
+     * @param attributes Attributes of the generated dataset
      * */
-    static void write_entry(float noise, const str source_csv = "");
+    static void write_entry(uptr<IDatasetLogAttributes> attributes);
 
    private:
     DatasetLogger() = default;
