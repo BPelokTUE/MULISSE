@@ -1,6 +1,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <random>
 
 #include "Modules/RandomWalk.hpp"
@@ -8,9 +9,10 @@
 #include "Util/Logger.hpp"
 #include "Util/RunSettings.hpp"
 
-int create_random_walks(float rw_noise, bool zero_start, uint num_series, uint series_len, uint num_channels,
-                        int seed) {
-    str dataset_path = RunSettings::get_instance().get_dataset_path();
+int create_random_walks(float rw_noise, bool zero_start, int seed) {
+    auto &RS = RunSettings::get_instance();
+    str dataset_path = RS.get_dataset_path();
+    auto [file, num_channels, series_len, num_series] = RS.get_dataset_props();
     std::filesystem::create_directories(std::filesystem::path(dataset_path).parent_path());
 
     if (std::filesystem::exists(dataset_path)) {
@@ -44,7 +46,7 @@ int create_random_walks(float rw_noise, bool zero_start, uint num_series, uint s
 
     outfile.close();
 
-    DatasetLogger::write_entry(rw_noise);
+    DatasetLogger::write_entry(std::make_unique<RandomWalkLogAttributes>(rw_noise));
 
     return 0;
 }

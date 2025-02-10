@@ -36,9 +36,19 @@ void Logger::file_setup(const str &file_path, const vec<str> &header) {
 }
 
 // DatasetLogger
+
+RandomWalkLogAttributes::RandomWalkLogAttributes(float noise) : noise(noise) {}
+
+DatasetType RandomWalkLogAttributes::get_type() { return RANDOM_WALK; }
+
+CsvDatasetLogAttributes::CsvDatasetLogAttributes(const vec<str> &source_csvs, uint series_generated, uint low_sd_len)
+    : source_csvs(source_csvs), series_generated(series_generated), low_sd_len(low_sd_len) {}
+
+DatasetType CsvDatasetLogAttributes::get_type() { return CSV; }
+
 using DSC = DatasetSettingsColumn;
 
-void DatasetLogger::write_entry(float standard_dev, const str source_csv) {
+void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
     DatasetLogger instance;
 
     str dataset_settings_path = RunSettings::get_instance().get_logs_path() + instance.DATASET_SETTINGS_FILE;
@@ -48,6 +58,26 @@ void DatasetLogger::write_entry(float standard_dev, const str source_csv) {
     uint id = instance.determine_index(dataset_settings_path);
     auto [dataset_file, num_channels, series_len, num_series] = RunSettings::get_instance().get_dataset_props();
 
+    str sd_str = "", source_csv_str = "", low_sd_len_str = "";
+    switch (attributes->get_type()) {
+        case RANDOM_WALK: {
+            auto *rw_attributes = static_cast<RandomWalkLogAttributes *>(attributes.get());
+            sd_str = to_string(rw_attributes->noise);
+            break;
+        }
+        case CSV: {
+            auto *csv_attributes = static_cast<CsvDatasetLogAttributes *>(attributes.get());
+            num_series = csv_attributes->series_generated;
+            vec<str> source_csvs;
+            for (uint i = 0; i < source_csvs.size(); ++i) {
+                source_csv_str += source_csvs[i];
+                if (i < source_csvs.size() - 1) source_csv_str += instance.ITEM_SEP;
+            }
+            low_sd_len_str = to_string(csv_attributes->low_sd_len);
+            break;
+        }
+    }
+
     instance.write_row(dataset_settings_path,
                        {
                            {DSC::ID, to_string(id)},
@@ -55,8 +85,9 @@ void DatasetLogger::write_entry(float standard_dev, const str source_csv) {
                            {DSC::NUM_CHANNELS, to_string(num_channels)},
                            {DSC::SERIES_LENGTH, to_string(series_len)},
                            {DSC::NUM_SERIES, to_string(num_series)},
-                           {DSC::SD, format_num_param(standard_dev)},
-                           {DSC::SOURCE_CSV, source_csv},
+                           {DSC::SD, sd_str},
+                           {DSC::SOURCE_CSVS, source_csv_str},
+                           {DSC::LOW_SD_LEN, low_sd_len_str},
                        },
                        DATASET_SETTINGS_COL_ENUMS);
 }

@@ -84,6 +84,7 @@ int main(int argc, char **argv) {
     // Options for parsing csv
     csv_subcommand->add_option("-i,--input", csv_paths, "Input CSV file paths, in the order of channels")->required();
     csv_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path")->required();
+    csv_subcommand->add_option("-n,--num_series", num_series, "Max number of series")->required()->check(positive_int);
     csv_subcommand
         ->add_option(
             "-l,--low_sd_len", low_sd_len,
@@ -194,9 +195,9 @@ int main(int argc, char **argv) {
 
     // Execute subcommand
     if (command_type == CREATE_DS) {
-        create_random_walks(noise, zero_start, num_series, series_len, num_channels, seed);
+        create_random_walks(noise, zero_start, seed);
     } else if (command_type == PARSE_CSV) {
-        create_dataset_from_csv(csv_paths, low_sd_len);
+        create_dataset_from_csv(csv_paths, num_series, low_sd_len);
     } else if (command_type == CREATE_QS) {
         create_queries(noise, num_queries, lengths, used_channels, channel_mask, seed);
     } else if (command_type == INDEX) {
