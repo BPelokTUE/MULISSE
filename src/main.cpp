@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
         distance_measure_str = ACCEPTED_DISTANCE_TYPE_STRS[0];
     vec<str> csv_paths;
     float noise = 1.0;
-    uint num_series = 0, series_len, num_queries, l_min, l_max, segment_len, pos_per_env, knn_k = 1;
+    uint num_series = 0, series_len, num_queries, l_min, l_max, segment_len, pos_per_env, knn_k = 1, low_sd_len;
     DistanceT r_range_r = 1.0;
     int seed;
     size_t leaf_capacity;
@@ -83,6 +83,11 @@ int main(int argc, char **argv) {
     // Options for parsing csv
     csv_subcommand->add_option("-i,--input", csv_paths, "Input CSV file paths, in the order of channels")->required();
     csv_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path")->required();
+    csv_subcommand
+        ->add_option(
+            "-l,--low_sd_len", low_sd_len,
+            "Discard time series with any low standard deviation subsequence of this length. Pass 0 to disable.")
+        ->required();
     csv_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
 
     // Options for creating queries
@@ -179,7 +184,7 @@ int main(int argc, char **argv) {
     if (command_type == CREATE_DS) {
         create_random_walks(noise, zero_start, num_series, series_len, num_channels, seed);
     } else if (command_type == PARSE_CSV) {
-        create_dataset_from_csv(csv_paths);
+        create_dataset_from_csv(csv_paths, low_sd_len);
     } else if (command_type == CREATE_QS) {
         create_queries(noise, series_len, num_channels, num_queries, lengths, seed);
     } else if (command_type == INDEX) {

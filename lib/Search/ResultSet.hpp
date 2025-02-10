@@ -22,7 +22,9 @@ struct SearchResult {
      * @param other The other SearchResult to compare to
      * @return `true` if the distance of this result is less than the distance of the other result
      */
-    bool operator<(const SearchResult &other) const { return distance < other.distance; }
+    bool operator<(const SearchResult &other) const {
+        return distance < other.distance || (distance == other.distance && file_position < other.file_position);
+    }
 };
 
 /** @brief Interface for result sets */

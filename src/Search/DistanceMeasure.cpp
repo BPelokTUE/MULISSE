@@ -41,9 +41,6 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT 
 
                 auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], query_len);
 
-                // If subsequence variance is too low, skip it
-                if (sigma < MIN_SUBS_SIGMA) goto start_pos_it_end;
-
                 for (uint i = 0; i < query_len; ++i) {
                     DistanceT diff = (mts[c][start_pos + i] - mu) / sigma - query[c][i];
                     dist_squared += diff * diff;
@@ -66,6 +63,7 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT 
             }
         }
     } else {
+        throw std::runtime_error("Non-normalized Euclidean distance not implemented yet");
     }
 
     return updated;
@@ -178,12 +176,6 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, FilePosit
                           subs_sum = mts_sums[query_len + start_pos] - mts_sums[start_pos],
                           subs_sum_sq = mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos];
                 auto [subs_mu, subs_sigma] = calculate_mu_and_sigma(subs_sum, subs_sum_sq, query_len);
-
-                // If subsequence variance is too low, skip it
-                if (subs_sigma < MIN_SUBS_SIGMA) {
-                    squared_dists[start_pos] = INF;
-                    continue;
-                }
 
                 // TODO: Assuming that the query is already normalized ==> query_mu = 0, query_sigma = 1
                 DistanceT corr = (dot - query_len * query_mu * subs_mu) / (query_len * query_sigma * subs_sigma);

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-n_series=1000
+n_series=500
 series_len=512
-n_channels=4
-n_queries=100
+n_channels=5
+n_queries=5
 base_dir=../DATA
-inner_dir=mts
+inner_dir=weather
 l_min=128
 l_max=512
 lengths=(128 256 512)
@@ -15,8 +15,15 @@ query_file=${inner_dir}/test_query.txt
 cd build
 mkdir -p ${base_dir}/${inner_dir}
 
-# Create dataset
-./mulisse create_ds -d ${inner_dir}/test.bin -n ${n_series} -m ${series_len} -c ${n_channels} -S 8999
+# Create random walk dataset
+# ./mulisse create_ds -d ${inner_dir}/test.bin -n ${n_series} -m ${series_len} -c ${n_channels} -S 8999
+
+# OR
+# Create dataset from CSV files
+csv_dir=../../DATA/mulisse_pack/weather
+csv_files=(${csv_dir}/DEW ${csv_dir}/SLP ${csv_dir}/TMP ${csv_dir}/WND)
+num_channels=${#csv_files[@]}
+./mulisse parse_csv -d ${inner_dir}/test.bin -i ${csv_files[@]} -l ${l_min} -m ${series_len}
 
 # Create queries
 ./mulisse create_qs -d ${inner_dir}/test.bin -q ${inner_dir}/test_query.txt -m ${series_len} -c ${n_channels} --lengths ${lengths[@]} --noise 0.1 -Q ${n_queries}
