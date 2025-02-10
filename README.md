@@ -51,13 +51,35 @@ Options:
   -S,--seed INT [1]           Random seed
 ```
 
+### Create a Dataset from CSV files (`mulisse parse_csv`)
+
+Creates a dataset from a list of `.csv` files, where each file corresponds to one channel. If time series are too long they are truncated to the passed length. Time series are discarded if any of the following applies:
+- Any of the channels is too short
+- Any of the channels contains cells which cannot be converted to `float`
+- Any of the channels contains at least one subsequence of length `low_sd_len` where the standard deviation is lower than `MIN_SUBS_SIGMA=1e-3`
+
+```
+Create dataset from CSV
+Usage: ./mulisse parse_csv [OPTIONS]
+
+Options:
+  -h,--help                   Print this help message and exit
+  -i,--input TEXT ... REQUIRED
+                              Input CSV file paths, in the order of channels
+  -d,--dataset TEXT REQUIRED  Output dataset path
+  -l,--low_sd_len UINT REQUIRED
+                              Discard time series with any low standard deviation subsequence of this length. Pass 0 to disable.
+  -m,--series_len UINT:POSITIVE_INTEGER REQUIRED
+                              Length of series
+```
+
 ### Create Queries (`mulisse create_qs`)
 
-Creates a set of queries by extracting subsequences from a dataset file and adding random Gaussian noise. Some channels may be randomly missing (there is at least one channel present in all queries).
+Creates a set of queries by extracting subsequences from a dataset file and adding random Gaussian noise. If the neither the number of channels to be used, nor the channel mask is passed, the selection of channels in each query will be random, with at least one channel present in each query.
 
 ```
 Create queries from dataset
-Usage: build/mulisse create_qs [OPTIONS]
+Usage: ./mulisse create_qs [OPTIONS]
 
 Options:
   -h,--help                   Print this help message and exit
@@ -73,6 +95,10 @@ Options:
   -l,--lengths UINT:POSITIVE_INTEGER ... REQUIRED
                               Query lengths
   -S,--seed INT [1]           Random seed
+  -u,--used_channels UINT [0] 
+                              Number of channels to use for queries. 0 by default, meaning that the number of used channels is selected randomly for each query.
+  -M,--channel_mask BOOLEAN [{}]  ...
+                              Mask for which channels to use in the queries. Overrides used_channels if provided.
 ```
 
 ### Index a Dataset (`mulisse index`)
@@ -119,7 +145,7 @@ Run similarity search. A new entry will be created in `LOGS/search_settings.csv`
 
 ```
 Search using MULISSE
-Usage: build/mulisse search [OPTIONS]
+Usage: ./mulisse search [OPTIONS]
 
 Options:
   -h,--help                   Print this help message and exit
@@ -138,6 +164,7 @@ Options:
                               Index format
   -D,--distance TEXT:{ed,mass,euclidean} [ed] 
                               Distance measure
+  --early_abandon             Use early abandoning
   --approx                    Approximate search
   --raw                       Do not normalize
   -T,--search_type TEXT:{knn,r_range} REQUIRED
@@ -146,6 +173,7 @@ Options:
                               Number of nearest neighbors for kNN
   -r,--range FLOAT:POSITIVE_FLOAT [1] 
                               Range for range search
+
 ```
 
 ## Codebase

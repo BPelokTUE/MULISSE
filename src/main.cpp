@@ -68,7 +68,8 @@ int main(int argc, char **argv) {
     int seed;
     size_t leaf_capacity;
     vec<uint> lengths;
-    MtsNumChannelsT num_channels;
+    MtsNumChannelsT num_channels, used_channels = 0;
+    vec<bool> channel_mask;
     bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false;
 
     // Options for creating dataset
@@ -99,6 +100,16 @@ int main(int argc, char **argv) {
     qs_subcommand->add_option("-Q,--num_queries", num_queries, "Number of queries")->required()->check(positive_int);
     qs_subcommand->add_option("-l,--lengths", lengths, "Query lengths")->required()->check(positive_int);
     qs_subcommand->add_option("-S,--seed", seed, "Random seed")->capture_default_str();
+    qs_subcommand
+        ->add_option("-u,--used_channels", used_channels,
+                     "Number of channels to use for queries. 0 by default, meaning that the number of used "
+                     "channels is selected randomly for each query.")
+        ->capture_default_str();
+    qs_subcommand
+        ->add_option("-M,--channel_mask", channel_mask,
+                     "Mask for which channels to use in the queries. Overrides "
+                     "used_channels if provided.")
+        ->capture_default_str();
 
     // Options for indexing
     index_subcommand->add_option("-i,--index", index_path, "Output index path")->required();
@@ -187,7 +198,7 @@ int main(int argc, char **argv) {
     } else if (command_type == PARSE_CSV) {
         create_dataset_from_csv(csv_paths, low_sd_len);
     } else if (command_type == CREATE_QS) {
-        create_queries(noise, series_len, num_channels, num_queries, lengths, seed);
+        create_queries(noise, num_queries, lengths, used_channels, channel_mask, seed);
     } else if (command_type == INDEX) {
         SearchMethodType index_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str);
         IIndexParams *index_params;
@@ -201,7 +212,7 @@ int main(int argc, char **argv) {
                     STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str),
                     STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str),
                     DEFAULT_NUM_BIT_LIMIT,
-                    false,  // min_num_bits_on_tie,
+                    true,  // min_num_bits_on_tie,
                 };
                 break;
             case SEQUENTIAL_SCAN:
