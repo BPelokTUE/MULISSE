@@ -20,6 +20,8 @@ enum class DatasetSettingsColumn {
     SERIES_LENGTH,  // Length of each time series
     NUM_CHANNELS,   // Number of channels
     NUM_SERIES,     // Number of time series in the dataset
+    SD,             // The standard deviation of the Gaussian noise used for generating the dataset (if applicable)
+    SOURCE_CSV,     // Source CSV file of the dataset (if applicable)
 };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(DatasetSettingsColumn, DATASET_SETTINGS_COL, false);
@@ -176,8 +178,12 @@ class DatasetLogger : public Logger {
     DatasetLogger(const DatasetLogger &) = delete;
     DatasetLogger &operator=(const DatasetLogger &) = delete;
 
-    /** @brief Write the entry */
-    static void write_entry();
+    /**
+     * @brief Write the entry
+     * @param standard_dev The standard deviation of the Gaussian noise used for generating the dataset
+     * @param source_csv The source CSV file of the dataset. Empty if the dataset was not generated from a CSV
+     * */
+    static void write_entry(float noise, const str source_csv = "");
 
    private:
     DatasetLogger() = default;

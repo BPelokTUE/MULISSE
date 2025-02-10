@@ -1,6 +1,7 @@
 #include <cmath>
 #include <fstream>
 
+#include "Util/constants.hpp"
 #include "Util/utilities.hpp"
 #include "Util/typedefs.hpp"
 

@@ -4,9 +4,11 @@
 #include "CLI11/CLI11.hpp"
 
 #include "Modules/RandomWalk.hpp"
+#include "Modules/CsvParsing.hpp"
 #include "Modules/QueryGen.hpp"
 #include "Modules/Indexing.hpp"
 #include "Modules/Searching.hpp"
+#include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
 
@@ -14,7 +16,8 @@ int main(int argc, char **argv) {
     CLI::App app{"Run MULISSE"};
 
     // Add subcommands
-    auto ds_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_DS), "Create random walk dataset");
+    auto rw_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_DS), "Create random walk dataset");
+    auto csv_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(PARSE_CSV), "Create dataset from CSV");
     auto qs_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_QS), "Create queries from dataset");
     auto index_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(INDEX), "Construct MULISSE index");
     auto search_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(SEARCH), "Search using MULISSE");
@@ -52,42 +55,13 @@ int main(int argc, char **argv) {
         "POSITIVE_FLOAT", "Positive Float");
 
     // Add arguments
-    /*
-                | create_ds | create_query | index | search |
-    dataset     |     X     |       X      |   X   |   X    |
-    seed        |     X     |       X      |       |        |
-    noise       |     X     |       X      |       |        |
-    zero_start  |     X     |              |       |        |
-    n           |     X     |              |       |        |
-    m           |     X     |       X      |   X   |        |
-    c           |     X     |       X      |   X   |   X    |
-    Q           |           |       X      |       |        |
-    lengths     |           |       X      |       |        |
-    query_path  |           |       X      |       |   X    |
-    index_type  |           |              |   X   |   X    |
-    sps_type    |           |              |   X   |        |
-    bps_type    |           |              |   X   |        |
-    l_min       |           |              |   X   |        |
-    l_max       |           |              |   X   |        |
-    s           |           |              |   X   |        |
-    pos_per_env |           |              |   X   |        |
-    leaf_th     |           |              |   X   |        |
-    index_path  |           |              |   X   |   X    |
-    format      |           |              |   X   |   X    |
-    approx/ex   |           |              |       |   X    |
-    kNN/r-ran   |           |              |       |   X    |
-    k(NN)       |           |              |       |   X    |
-    r(range)    |           |              |       |   X    |
-    normalize   |           |              |       |   X    |
-    out         |           |              |       |   X    |
-    */
-
     str dataset_path, query_path, index_path, results_path, ffts_path,
         search_method_type_str = ACCEPTED_SEARCH_METHOD_TYPE_STRS[0],
         split_strategy_str = ACCEPTED_ISAX_SPLIT_STRATEGY_STRS[0],
         breakpoint_strategy_str = ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS[0],
         index_format_str = ACCEPTED_ARCHIVE_TYPE_STRS[0], search_type_str,
         distance_measure_str = ACCEPTED_DISTANCE_TYPE_STRS[0];
+    vec<str> csv_paths;
     float noise = 1.0;
     uint num_series = 0, series_len, num_queries, l_min, l_max, segment_len, pos_per_env, knn_k = 1;
     DistanceT r_range_r = 1.0;
@@ -98,13 +72,18 @@ int main(int argc, char **argv) {
     bool zero_start = false, unnormalized = false, approximate = false;
 
     // Options for creating dataset
-    ds_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path")->required();
-    ds_subcommand->add_option("--noise", noise, "Random walk standard deviation")->capture_default_str();
-    ds_subcommand->add_flag("-z,--zero_start", zero_start, "Start the random walk from zero");
-    ds_subcommand->add_option("-n,--num_series", num_series, "Number of series")->required()->check(positive_int);
-    ds_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
-    ds_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
-    ds_subcommand->add_option("-S,--seed", seed, "Random seed")->capture_default_str();
+    rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path")->required();
+    rw_subcommand->add_option("--noise", noise, "Random walk standard deviation")->capture_default_str();
+    rw_subcommand->add_flag("-z,--zero_start", zero_start, "Start the random walk from zero");
+    rw_subcommand->add_option("-n,--num_series", num_series, "Number of series")->required()->check(positive_int);
+    rw_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
+    rw_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
+    rw_subcommand->add_option("-S,--seed", seed, "Random seed")->capture_default_str();
+
+    // Options for parsing csv
+    csv_subcommand->add_option("-i,--input", csv_paths, "Input CSV file paths, in the order of channels")->required();
+    csv_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path")->required();
+    csv_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
 
     // Options for creating queries
     qs_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required();
@@ -199,6 +178,8 @@ int main(int argc, char **argv) {
     // Execute subcommand
     if (command_type == CREATE_DS) {
         create_random_walks(noise, zero_start, num_series, series_len, num_channels, seed);
+    } else if (command_type == PARSE_CSV) {
+        create_dataset_from_csv(csv_paths);
     } else if (command_type == CREATE_QS) {
         create_queries(noise, series_len, num_channels, num_queries, lengths, seed);
     } else if (command_type == INDEX) {
@@ -239,7 +220,7 @@ int main(int argc, char **argv) {
         IDistanceMeasure *distance_measure;
         switch (STR_TO_DISTANCE_TYPE.at(distance_measure_str)) {
             case ED:
-                distance_measure = new EuclideanDistance();
+                distance_measure = new EuclideanDistance(!unnormalized);
                 break;
             case MASS:
                 distance_measure = new EuclideanDistanceWMass(!unnormalized);

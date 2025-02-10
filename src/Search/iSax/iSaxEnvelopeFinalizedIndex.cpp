@@ -7,6 +7,7 @@
 #include "Search/Options/SearchOptions.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
 #include "Summarization/Paa.hpp"
+#include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
 #include "Util/Logger.hpp"

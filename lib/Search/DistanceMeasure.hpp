@@ -43,28 +43,34 @@ class IDistanceMeasure {
 
 class EuclideanDistance : public IDistanceMeasure {
    public:
+    EuclideanDistance(bool m_normalized, bool use_early_abandoning = true);
+
     DistanceT min_dist_squared(const float paa, float lower, float upper) const override;
 
     bool update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
                            const vec<vec<float>> &mts) override;
 
     DistanceType get_type() const override;
+
+   protected:
+    bool m_normalized;
+
+   private:
+    bool m_use_early_abandoning;
 };
 
 class EuclideanDistanceWMass : public EuclideanDistance {
    public:
+    EuclideanDistanceWMass(bool normalized);
+
     bool update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
                            const vec<vec<float>> &mts) override;
-
-    EuclideanDistanceWMass(bool normalized);
 
     DistanceType get_type() const override;
 
    private:
     vec<DistanceT> calculate_dot_products(const vec<DistanceT> &query_channel, const vec<DistanceT> &mts_channel,
                                           FilePositionT file_pos, MtsNumChannelsT channel_ind) const;
-
-    bool m_normalized;
 };
 
 #endif  // DISTANCE_MEASURE_HPP

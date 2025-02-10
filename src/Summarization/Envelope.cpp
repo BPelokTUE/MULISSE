@@ -1,4 +1,5 @@
 #include "Summarization/Envelope.hpp"
+#include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 

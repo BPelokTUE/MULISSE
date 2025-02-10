@@ -17,6 +17,7 @@ RESULTS_SET_TS_POSITIONS_COL = "result_set_ts_positions"
 SEARCH_METHOD_COL = "search_method"
 DISTANCE_MEASURE_COL = "distance_measure"
 FFTS_FILE_COL = "ffts_file"
+DATASET_FILE_COL = "dataset_file"
 
 
 def get_method_name(settings_df: pandas.DataFrame, settings_id: int) -> str:
@@ -48,42 +49,51 @@ if __name__ == "__main__":
     search_settings_df = pandas.read_csv(SEARCH_SETTING_CSV)
     runs_df = pandas.read_csv(RUNS_CSV)
 
-    differences_found = False
-    for query_id in runs_df[QUERY_ID_COL].unique():
-        results_by_method = {}
-        for _, row in runs_df[runs_df[QUERY_ID_COL] == query_id].iterrows():
-            ts_indices_str = row[RESULTS_SET_TS_INDICES_COL]
-            ts_positions_str = row[RESULTS_SET_TS_POSITIONS_COL]
-            method_name = get_method_name(search_settings_df, row[SETTINGS_ID_COL])
+    search_settings_by_dataset = {}
+    for _, row in search_settings_df.iterrows():
+        dataset = row[DATASET_FILE_COL]
+        if dataset not in search_settings_by_dataset:
+            search_settings_by_dataset[dataset] = []
+        search_settings_by_dataset[dataset].append(row[ID_COL])
 
-            results_by_method[method_name] = {
-                "ts_indices": ts_indices_str.split(ITEM_SEP),
-                "ts_positions": ts_positions_str.split(ITEM_SEP),
-            }
+    for dataset_file, search_settings_ids in search_settings_by_dataset.items():
+        differences_found = False
+        dataset_df = runs_df[runs_df[SETTINGS_ID_COL].isin(search_settings_ids)]
+        for query_id in dataset_df[QUERY_ID_COL].unique():
+            results_by_method = {}
+            for _, row in dataset_df[dataset_df[QUERY_ID_COL] == query_id].iterrows():
+                ts_indices_str = row[RESULTS_SET_TS_INDICES_COL]
+                ts_positions_str = row[RESULTS_SET_TS_POSITIONS_COL]
+                method_name = get_method_name(search_settings_df, row[SETTINGS_ID_COL])
 
-        # Find discrepancies
-        differences = []
-        keys = list(results_by_method.keys())
-        ref_key = keys[0]
-        ref_ts_indices = results_by_method[ref_key]["ts_indices"]
-        ref_ts_positions = results_by_method[ref_key]["ts_positions"]
+                results_by_method[method_name] = {
+                    "ts_indices": ts_indices_str.split(ITEM_SEP),
+                    "ts_positions": ts_positions_str.split(ITEM_SEP),
+                }
 
-        for key in keys[1:]:
-            ts_indices = results_by_method[key]["ts_indices"]
-            ts_positions = results_by_method[key]["ts_positions"]
+            # Find discrepancies/se
+            differences = []
+            keys = list(results_by_method.keys())
+            ref_key = keys[0]
+            ref_ts_indices = results_by_method[ref_key]["ts_indices"]
+            ref_ts_positions = results_by_method[ref_key]["ts_positions"]
 
-            if ts_indices != ref_ts_indices or ts_positions != ref_ts_positions:
-                differences.append(key)
-                differences_found = True
+            for key in keys[1:]:
+                ts_indices = results_by_method[key]["ts_indices"]
+                ts_positions = results_by_method[key]["ts_positions"]
 
-        if len(differences) > 0:
-            print(f"Query {query_id} has different results:")
-            print(f"\tReference:")
-            print(f"\t\t{results_by_method[ref_key]}")
-            print("\tDifferences:")
-            for key in differences:
-                print(f"\t\t{key}: {results_by_method[key]}")
-            print()
+                if ts_indices != ref_ts_indices or ts_positions != ref_ts_positions:
+                    differences.append(key)
+                    differences_found = True
 
-    if not differences_found:
-        print("No differences found.")
+            if len(differences) > 0:
+                print(f"Query {query_id} has different results:")
+                print(f"\tReference:")
+                print(f"\t\t{results_by_method[ref_key]}")
+                print("\tDifferences:")
+                for key in differences:
+                    print(f"\t\t{key}: {results_by_method[key]}")
+                print()
+
+        if not differences_found:
+            print(f"No differences found for dataset {dataset_file}")

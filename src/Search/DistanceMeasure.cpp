@@ -4,58 +4,68 @@
 
 #include "Search/DistanceMeasure.hpp"
 #include "Search/ResultSet.hpp"
+#include "Util/constants.hpp"
 #include "Util/utilities.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/FftArray.hpp"
 #include "Util/RunSettings.hpp"
 #include "Util/Logger.hpp"
 
+EuclideanDistance::EuclideanDistance(bool normalized, bool use_early_abandoning)
+    : m_normalized(normalized), m_use_early_abandoning(use_early_abandoning) {}
+
 bool EuclideanDistance::update_result_set(IResultSet *result_set, FilePositionT file_pos, const vec<vec<float>> &query,
                                           const vec<vec<float>> &mts) {
     bool updated = false;
     int num_start_pos, mts_len, query_len;
 
-    vec<DistanceT> sums(query.size()), sq_sums(query.size());
-    for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
-        if (!(query[c].empty())) {
-            query_len = query[c].size();
-            mts_len = mts[c].size();
-            num_start_pos = mts[c].size() - query_len + 1;
-
-            for (size_t i = 0; i < query_len; ++i) {
-                sums[c] += mts[c][i];
-                sq_sums[c] += mts[c][i] * mts[c][i];
-            }
-        }
-    }
-
-    for (int start_pos = 0; start_pos < num_start_pos; ++start_pos) {
-        DistanceT dist_squared = 0;
+    if (m_normalized) {
+        vec<DistanceT> sums(query.size()), sq_sums(query.size());
         for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
-            if (query[c].empty()) continue;
+            if (!(query[c].empty())) {
+                query_len = query[c].size();
+                mts_len = mts[c].size();
+                num_start_pos = mts[c].size() - query_len + 1;
 
-            auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], query_len);
-
-            for (uint i = 0; i < query_len; ++i) {
-                DistanceT diff = (mts[c][start_pos + i] - mu) / sigma - query[c][i];
-                dist_squared += diff * diff;
-                if (dist_squared >= result_set->get_distance_lb()) {
-                    goto start_pos_it_end;
+                for (size_t i = 0; i < query_len; ++i) {
+                    sums[c] += mts[c][i];
+                    sq_sums[c] += mts[c][i] * mts[c][i];
                 }
             }
         }
-        result_set->insert({file_pos + start_pos, dist_squared});
-        updated = true;
-    start_pos_it_end:;
-        int end_pos = start_pos + query_len;
-        if (end_pos < mts_len) {
+
+        for (int start_pos = 0; start_pos < num_start_pos; ++start_pos) {
+            DistanceT dist_squared = 0;
             for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
                 if (query[c].empty()) continue;
 
-                sums[c] += mts[c][end_pos] - mts[c][start_pos];
-                sq_sums[c] += mts[c][end_pos] * mts[c][end_pos] - mts[c][start_pos] * mts[c][start_pos];
+                auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], query_len);
+
+                // If subsequence variance is too low, skip it
+                if (sigma < MIN_SUBS_SIGMA) goto start_pos_it_end;
+
+                for (uint i = 0; i < query_len; ++i) {
+                    DistanceT diff = (mts[c][start_pos + i] - mu) / sigma - query[c][i];
+                    dist_squared += diff * diff;
+                    if (m_use_early_abandoning && dist_squared >= result_set->get_distance_lb()) {
+                        goto start_pos_it_end;
+                    }
+                }
+            }
+            result_set->insert({file_pos + start_pos, dist_squared});
+            updated = true;
+        start_pos_it_end:;
+            int end_pos = start_pos + query_len;
+            if (end_pos < mts_len) {
+                for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
+                    if (query[c].empty()) continue;
+
+                    sums[c] += mts[c][end_pos] - mts[c][start_pos];
+                    sq_sums[c] += mts[c][end_pos] * mts[c][end_pos] - mts[c][start_pos] * mts[c][start_pos];
+                }
             }
         }
+    } else {
     }
 
     return updated;
@@ -70,7 +80,7 @@ DistanceType EuclideanDistance::get_type() const { return ED; }
 
 // MASS
 
-EuclideanDistanceWMass::EuclideanDistanceWMass(bool normalized) : m_normalized(normalized) {}
+EuclideanDistanceWMass::EuclideanDistanceWMass(bool normalized) : EuclideanDistance(normalized) {}
 
 bool printed = false;
 
@@ -169,15 +179,21 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, FilePosit
                           subs_sum_sq = mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos];
                 auto [subs_mu, subs_sigma] = calculate_mu_and_sigma(subs_sum, subs_sum_sq, query_len);
 
+                // If subsequence variance is too low, skip it
+                if (subs_sigma < MIN_SUBS_SIGMA) {
+                    squared_dists[start_pos] = INF;
+                    continue;
+                }
+
                 // TODO: Assuming that the query is already normalized ==> query_mu = 0, query_sigma = 1
                 DistanceT corr = (dot - query_len * query_mu * subs_mu) / (query_len * query_sigma * subs_sigma);
-                squared_dists[start_pos] += 2 * query_len * (1 - corr);
+                squared_dists[start_pos] += std::max(0.0, 2 * query_len * (1 - corr));
             }
         } else {
             for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
                 DistanceT dot = dot_products[query_len - 1 + start_pos];
                 squared_dists[start_pos] +=
-                    query_sum_sq + (mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos]) + dot;
+                    std::max(0.0, query_sum_sq + (mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos]) + dot);
             }
         }
     }

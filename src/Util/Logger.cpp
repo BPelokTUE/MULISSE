@@ -37,7 +37,7 @@ void Logger::file_setup(const str &file_path, const vec<str> &header) {
 // DatasetLogger
 using DSC = DatasetSettingsColumn;
 
-void DatasetLogger::write_entry() {
+void DatasetLogger::write_entry(float standard_dev, const str source_csv) {
     DatasetLogger instance;
 
     str dataset_settings_path = RunSettings::get_instance().get_logs_path() + instance.DATASET_SETTINGS_FILE;
@@ -54,6 +54,8 @@ void DatasetLogger::write_entry() {
                            {DSC::NUM_CHANNELS, to_string(num_channels)},
                            {DSC::SERIES_LENGTH, to_string(series_len)},
                            {DSC::NUM_SERIES, to_string(num_series)},
+                           {DSC::SD, format_num_param(standard_dev)},
+                           {DSC::SOURCE_CSV, source_csv},
                        },
                        DATASET_SETTINGS_COL_ENUMS);
 }

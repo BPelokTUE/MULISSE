@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "Search/iSax/iSaxSplitStrategy.hpp"
+#include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 #include "Util/RunSettings.hpp"
@@ -67,7 +68,7 @@ SaxSplitIndT EntropyMaximizingStrategy::get_split_ind(const iSaxSplittableLeaf *
             float prob = (float)count / envelopes.size();
             if (prob > 0) score -= prob * log2(prob);
 
-            score /= calculate_mu_and_sigma(lower_sum, lower_sum_sq, envelopes.size()).second;
+            score *= calculate_mu_and_sigma(lower_sum, lower_sum_sq, envelopes.size()).second;
             if (score > max_score ||
                 (m_choose_min_num_bits_when_tied && score == max_score && num_bits[s] < min_num_bits)) {
                 max_score = score;

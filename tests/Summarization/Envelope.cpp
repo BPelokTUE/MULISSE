@@ -1,5 +1,6 @@
 #include "doctest/doctest.h"
 
+#include "Util/constants.hpp"
 #include "Summarization/Envelope.hpp"
 
 TEST_CASE("ULISSE raw happy-flow works") {

@@ -4,17 +4,13 @@
 #include <fstream>
 
 #include "Util/typedefs.hpp"
+#include "Util/utilities.hpp"
 #include "Util/FftArray.hpp"
 
 /** @brief Enumeration type for the command type */
-enum CommandType { CREATE_DS, CREATE_QS, INDEX, SEARCH };
+enum CommandType { CREATE_DS, PARSE_CSV, CREATE_QS, INDEX, SEARCH };
 
-/** @brief Map from strings to CommandType */
-const umap<str, CommandType> STR_TO_CMD_TYPE = {
-    {"create_ds", CREATE_DS}, {"create_qs", CREATE_QS}, {"index", INDEX}, {"search", SEARCH}};
-
-/** @brief Map from CommandType to strings */
-const umap<CommandType, str> CMD_TYPE_TO_STR = get_inverse_map(STR_TO_CMD_TYPE);
+DEFINE_ENUM_CONSTS_NO_EXTRA(CommandType, CMD_TYPE, false);
 
 struct DatasetProperties {
     str file;

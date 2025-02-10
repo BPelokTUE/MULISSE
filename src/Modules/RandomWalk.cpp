@@ -11,6 +11,7 @@
 int create_random_walks(float rw_noise, bool zero_start, uint num_series, uint series_len, uint num_channels,
                         int seed) {
     str dataset_path = RunSettings::get_instance().get_dataset_path();
+    std::filesystem::create_directories(std::filesystem::path(dataset_path).parent_path());
 
     if (std::filesystem::exists(dataset_path)) {
         std::cerr << "Error: Dataset " << dataset_path << " already exists\n";
@@ -43,7 +44,7 @@ int create_random_walks(float rw_noise, bool zero_start, uint num_series, uint s
 
     outfile.close();
 
-    DatasetLogger::write_entry();
+    DatasetLogger::write_entry(rw_noise);
 
     return 0;
 }

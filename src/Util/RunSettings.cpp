@@ -41,7 +41,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     instance.m_index_file = index_path;
     instance.m_ffts_file = ffts_path;
 
-    if (instance.m_command_type != CREATE_DS) {
+    if (instance.m_command_type != CREATE_DS && instance.m_command_type != PARSE_CSV) {
         str dataset_path = instance.get_dataset_path();
         if (!std::filesystem::exists(dataset_path)) {
             throw std::runtime_error("Dataset file " + dataset_path + " does not exist");
@@ -50,6 +50,8 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
 
     switch (instance.m_command_type) {
         case CREATE_DS:
+            break;
+        case PARSE_CSV:
             break;
         case CREATE_QS:
             break;

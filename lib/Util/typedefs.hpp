@@ -4,10 +4,9 @@
 #include <vector>
 #include <memory>
 #include <string>
-#include <limits>
 #include <unordered_map>
-#include <cstdint>
 #include <cassert>
+#include <cstdint>
 
 template <typename T>
 using vec = std::vector<T>;
@@ -26,13 +25,6 @@ using SaxSegIndT = uint16_t;
 using SaxSymbolT = uint16_t;
 using MtsNumChannelsT = uint16_t;
 using SaxSplitIndT = std::pair<SaxSegIndT, MtsNumChannelsT>;
-const uint8_t DEFAULT_NUM_BIT_LIMIT = 12;
-
-static_assert(DEFAULT_NUM_BIT_LIMIT <= sizeof(SaxSymbolT) * 8, "DEFAULT_NUM_BIT_LIMIT exceeds the size of SaxSymbolT");
-
-const float INF = std::numeric_limits<float>::max();
-const float EPS_F = std::numeric_limits<float>::epsilon();
-const double EPS = std::numeric_limits<double>::epsilon();
 
 using FilePositionT = uint64_t;
 
