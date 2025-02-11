@@ -2,8 +2,8 @@
 
 source scripts/slurm/header.sh
 
-if [ "$#" -ne 7 ]; then
-    echo "Usage: create_index dataset_path index_path series_len n_channels base_cardinality word_length"
+if [ "$#" -lt 6 ]; then
+    echo "Usage: create_index dataset_path index_path series_len n_channels l_min l_max (fft_path)"
     return 1
 fi
 
@@ -16,5 +16,5 @@ l_max="$6"
 fft_path="$7"
 
 echo "CREATING INDEX"
-./mulisse create_index -d "${dataset_path}" -i "${index_path}" -m "${series_len}" \
+./mulisse index -d "${dataset_path}" -i "${index_path}" -m "${series_len}" \
     -c "${n_channels}" -l "${l_min}" -L "${l_max}" -s 32 -p "$((series_len - l_min + 1))" -C 64 -F "${fft_path}" -S em
