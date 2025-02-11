@@ -1,13 +1,14 @@
 #!/bin/bash
 
 n_series=1000
-series_len=2048
+n_channels=5
+series_len=10000
 n_queries=20
 base_dir=../DATA
 inner_dir=mts
-l_min=1024
-l_max=2048
-lengths=(1024 1536 2048)
+l_min=730
+l_max=730
+lengths=(730)
 k=1
 
 cd build
@@ -15,6 +16,7 @@ mkdir -p ${base_dir}/${inner_dir}
 
 
 # Create random walk dataset
+# echo "CREATING DATASET"
 # filename=rwalk_n${n_series}_m${series_len}_c${n_channels}
 # dataset_path=${inner_dir}/${filename}.bin
 # ./mulisse create_ds -d ${dataset_path} -n ${n_series} -m ${series_len} -c ${n_channels} -S 8999
@@ -64,8 +66,8 @@ isax_mass_fft_file=${inner_dir}/isax_mass_fft.txt
 # ./mulisse search -q ${query_path} -o ${mass_file} -d ${dataset_path} -T knn -k ${k} -D mass -c ${n_channels} -m ${series_len} -t scan
 
 # MASS with precomputed FFTs
-echo "MASS with precomputed FFTs"
-./mulisse search -q ${query_path} -o ${mass_fft_file} -d ${dataset_path} -T knn -k ${k} -D mass -F ${fft_path} -c ${n_channels} -m ${series_len} -t scan
+# echo "MASS with precomputed FFTs"
+# ./mulisse search -q ${query_path} -o ${mass_fft_file} -d ${dataset_path} -T knn -k ${k} -D mass -F ${fft_path} -c ${n_channels} -m ${series_len} -t scan
 
 # ISAX ED
 # echo "MULISSE ED"
