@@ -1,3 +1,7 @@
+#!/bin/bash
+
+source scripts/slurm/header.sh
+
 if [ "$#" -lt 6 ]; then
     echo "Usage: create_queries dataset_path query_path series_len n_channels n_queries lengths..."
     return 1
