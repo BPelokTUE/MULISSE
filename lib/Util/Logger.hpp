@@ -47,6 +47,8 @@ enum class IndexSettingsColumn {
     MIN_NUM_BITS_ON_TIE,   // Whether to choose the segment with the minimum number of bits when tied for
                            // EntropyMaximizing split strategy for iSAX indexes
     NUM_BITS_LIMIT,        // Maximum number of bits per segment for iSAX indexes
+    NUM_LEAVES,            // Number of leaves in the index
+    NUM_NODES,             // Number of nodes in the index, excluding the root
     INDEXING_TIME_S,       // Time taken to index the dataset in seconds
     FFT_CALC_TIME_S,       // Time taken to calculate the FFTs in seconds
 };
@@ -54,6 +56,8 @@ enum class IndexSettingsColumn {
 using ISC = IndexSettingsColumn;
 
 const vec<ISC> INDEX_TIME_COLUMNS = {ISC::INDEXING_TIME_S, ISC::FFT_CALC_TIME_S};
+
+const vec<ISC> INDEX_COUNT_COLUMNS = {ISC::NUM_LEAVES, ISC::NUM_NODES};
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(IndexSettingsColumn, INDEX_SETTINGS_COL, false);
 
@@ -228,6 +232,13 @@ class IndexLogger : public Logger {
     void write_entry();
 
     /**
+     * @brief Increment the value of the given column
+     * @param col The column to increment, expected to be a value from INDEX_COUNT_COLUMNS
+     * @param amount The amount to increment by
+     */
+    void increment_count_col(ISC col, uint amount = 1);
+
+    /**
      * @brief Start the timer for the given column
      * @param col The column to start the timer for, expected to be a value from INDEX_TIME_COLUMNS
      */
@@ -241,6 +252,7 @@ class IndexLogger : public Logger {
 
    private:
     umap<ISC, str> m_columns;
+    umap<ISC, uint> m_count_cols;
     umap<ISC, TimePoint> m_time_cols_start;
     umap<ISC, double> m_time_cols_duration;
     str m_index_settings_path;

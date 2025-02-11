@@ -7,6 +7,7 @@
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/iSaxBreakpointStrategy.hpp"
 #include "Util/typedefs.hpp"
+#include "Util/Logger.hpp"
 #include "Util/RunSettings.hpp"
 
 std::size_t SaxSymbolsHash::operator()(const vec<vec<SaxSymbolT>> &symbols) const {
@@ -48,6 +49,10 @@ void iSaxEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, std::unique_ptr<iSa
     SaxNumBitsT split_seg_bits = isax_mins[channel_ind].get_num_bits()[segment_ind];
     // If cannot split further, return
     if (split_seg_bits == m_alphabet_num_bits) return;
+
+    auto &logger = IndexLogger::get_instance();
+    logger.increment_count_col(ISC::NUM_NODES, 2);
+    logger.increment_count_col(ISC::NUM_LEAVES);
 
     // Find the breakpoint in the middle of the symbol at the split index
     SaxSymbolT alphabet_size_ratio = (m_breakpoints->size() + 1) / (1 << split_seg_bits);
@@ -124,6 +129,10 @@ void iSaxEnvelopeIndex::insert(const EnvelopeEntry &entry) {
     if (node_it == m_first_layer.end()) {
         m_first_layer.emplace(symbols, std::make_unique<iSaxSplittableLeaf>(vec<FilePositionT>{file_pos},
                                                                             vec<vec<Envelope>>{mts_envelope}));
+
+        auto &logger = IndexLogger::get_instance();
+        logger.increment_count_col(ISC::NUM_NODES);
+        logger.increment_count_col(ISC::NUM_LEAVES);
     } else {
         auto node = node_it->second.get();
         iSaxSplittableInternal *parent = nullptr;
