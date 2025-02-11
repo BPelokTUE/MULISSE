@@ -63,11 +63,11 @@ int main(int argc, char **argv) {
         distance_measure_str = ACCEPTED_DISTANCE_TYPE_STRS[0];
     vec<str> csv_paths;
     float noise = 1.0;
-    uint num_series = 0, series_len, num_queries, l_min, l_max, segment_len, pos_per_env, knn_k = 1, low_sd_len;
+    uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env, knn_k = 1, low_sd_len;
     DistanceT r_range_r = 1.0;
     int seed;
     size_t leaf_capacity;
-    vec<uint> lengths;
+    vec<uint> exact_lengths = {};
     MtsNumChannelsT num_channels, used_channels = 0;
     vec<bool> channel_mask;
     bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false;
@@ -99,7 +99,21 @@ int main(int argc, char **argv) {
     qs_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
     qs_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
     qs_subcommand->add_option("-Q,--num_queries", num_queries, "Number of queries")->required()->check(positive_int);
-    qs_subcommand->add_option("-l,--lengths", lengths, "Query lengths")->required()->check(positive_int);
+    qs_subcommand
+        ->add_option("-e,--exact_lengths", exact_lengths,
+                     "List of query lengths to generate. Is overriden by `--l_min` and `--l_max`.")
+        ->capture_default_str()
+        ->check(positive_int);
+    qs_subcommand
+        ->add_option(
+            "-l,--l_min", l_min,
+            "Minimum length of queries to generate. If passed `--l_max` is also required. Overrides `--exact_lengths`.")
+        ->capture_default_str();
+    qs_subcommand
+        ->add_option(
+            "-L,--l_max", l_max,
+            "Maximum length of queries to generate. If passed `--l_min` is also required. Overrides `--exact_lengths`.")
+        ->capture_default_str();
     qs_subcommand->add_option("-S,--seed", seed, "Random seed")->capture_default_str();
     qs_subcommand
         ->add_option("-u,--used_channels", used_channels,
@@ -199,7 +213,7 @@ int main(int argc, char **argv) {
     } else if (command_type == PARSE_CSV) {
         create_dataset_from_csv(csv_paths, num_series, low_sd_len);
     } else if (command_type == CREATE_QS) {
-        create_queries(noise, num_queries, lengths, used_channels, channel_mask, seed);
+        create_queries(noise, num_queries, exact_lengths, l_min, l_max, used_channels, channel_mask, seed);
     } else if (command_type == INDEX) {
         SearchMethodType index_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str);
         IIndexParams *index_params;
