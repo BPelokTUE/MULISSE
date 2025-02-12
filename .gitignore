@@ -6,6 +6,7 @@ xcode/*
 DATA/*
 LOGS/*
 TESTING
+logs/*
 
 # Development
 .vscode
@@ -18,3 +19,4 @@ TESTING
 docs/*
 html
 latex
+
