@@ -44,6 +44,17 @@ std::pair<float, float> iSaxEnvelopeFinalizedIndex::get_segment_limits(SaxNumBit
         upper_ind == m_breakpoints.size() ? INF : m_breakpoints[upper_ind],
     };
 }
+
+const vec<vec<vec<SaxSymbolT>>>& iSaxEnvelopeFinalizedIndex::get_first_layer_min_symbols() const {
+    return m_first_layer_min_symbols;
+}
+
+const vec<vec<vec<SaxSymbolT>>>& iSaxEnvelopeFinalizedIndex::get_first_layer_max_symbols() const {
+    return m_first_layer_max_symbols;
+}
+
+SaxNumBitsT iSaxEnvelopeFinalizedIndex::get_first_layer_num_bits() const { return m_first_layer_num_bits; }
+
 struct PQueueEntry {
     DistanceT min_dist_squared;
     vec<iSaxWord> isax_mins, isax_maxs;
