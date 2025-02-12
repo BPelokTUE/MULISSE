@@ -94,7 +94,7 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
         auto [min_dist_squared, isax_mins, isax_maxs, node] = pq.top();
         pq.pop();
 
-        if (min_dist_squared > result_set->get_distance_lb()) break;
+        if (min_dist_squared >= result_set->get_distance_lb()) break;
 
         if (!(node->is_leaf())) {
             auto [s, c] = node->get_split_ind();

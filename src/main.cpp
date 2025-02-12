@@ -63,6 +63,7 @@ int main(int argc, char **argv) {
         distance_measure_str = ACCEPTED_DISTANCE_TYPE_STRS[0];
     vec<str> csv_paths;
     float noise = 1.0;
+    SaxNumBitsT first_layer_num_bits = 1;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env, knn_k = 1, low_sd_len;
     DistanceT r_range_r = 1.0;
     int seed;
@@ -160,6 +161,9 @@ int main(int argc, char **argv) {
         ->check(positive_int);
     index_subcommand->add_option("-C,--leaf_capacity", leaf_capacity, "Leaf capacity")->required()->check(positive_int);
     index_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
+    index_subcommand->add_option("-b,--first_layer_bits", first_layer_num_bits, "Number of bits for first layer")
+        ->check(positive_int)
+        ->capture_default_str();
 
     // Options for searching
     search_subcommand->add_option("-i,--index", index_path, "Index file path")->capture_default_str();
@@ -168,7 +172,8 @@ int main(int argc, char **argv) {
     search_subcommand
         ->add_option("-F,--ffts", ffts_path, "Path to load FFTs from; if not provided, FFTs will not be loaded")
         ->capture_default_str();
-    search_subcommand->add_option("-o,--out", results_path, "Output file path")->required();
+    // TODO: remove this
+    search_subcommand->add_option("-o,--out", results_path, "Output file path");
     search_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
         ->required()
         ->check(positive_int);
@@ -222,7 +227,7 @@ int main(int argc, char **argv) {
                 index_params = new iSaxEnvelopeIndexParams{
                     pos_per_env,
                     segment_len,
-                    1,  // first_layer_num_bits,
+                    first_layer_num_bits,
                     leaf_capacity,
                     STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str),
                     STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str),

@@ -1,5 +1,5 @@
 import argparse
-import pandas
+import pandas as pd
 
 # Default logs dir
 LOGS_DIR = "LOGS"
@@ -12,26 +12,47 @@ ITEM_SEP = ";"
 ID_COL = "id"
 QUERY_ID_COL = "query_id"
 SETTINGS_ID_COL = "settings_id"
-RESULTS_SET_TS_INDICES_COL = "result_set_ts_indices"
-RESULTS_SET_TS_POSITIONS_COL = "result_set_ts_positions"
+RESULT_SET_TS_INDICES_COL = "result_set_ts_indices"
+RESULT_SET_TS_POSITIONS_COL = "result_set_ts_positions"
+RESULT_SET_DISTANCES = "result_set_distances"
 SEARCH_METHOD_COL = "search_method"
 DISTANCE_MEASURE_COL = "distance_measure"
+INDEX_FILE_COL = "index_file"
 FFTS_FILE_COL = "ffts_file"
 DATASET_FILE_COL = "dataset_file"
 EARLY_ABANDONING_COL = "early_abandoning"
 
 
-def get_method_name(settings_df: pandas.DataFrame, settings_id: int) -> str:
+def get_items(s: str) -> list:
+    if ITEM_SEP in str(s):
+        return s.split(ITEM_SEP)
+    return [s]
+
+
+def get_method_name(settings_df: pd.DataFrame, settings_id: int) -> str:
     setting = settings_df[settings_df[ID_COL] == settings_id].iloc[0]
     parts = [setting[SEARCH_METHOD_COL], setting[DISTANCE_MEASURE_COL]]
-    if pandas.notna(setting[FFTS_FILE_COL]) and setting[FFTS_FILE_COL] != "":
+    if pd.notna(setting[FFTS_FILE_COL]) and setting[FFTS_FILE_COL] != "":
         parts.append("ffts")
-    if (
-        pandas.notna(setting[EARLY_ABANDONING_COL])
-        and setting[EARLY_ABANDONING_COL] != ""
-    ):
-        parts.append("early")
+    if pd.notna(setting[EARLY_ABANDONING_COL]) and setting[EARLY_ABANDONING_COL] != "":
+        uses_early_abandon = bool(setting[EARLY_ABANDONING_COL])
+        if uses_early_abandon:
+            parts.append("early")
+    if pd.notna(setting[INDEX_FILE_COL]) and setting[INDEX_FILE_COL] != "":
+        index_name = setting[INDEX_FILE_COL].split("/")[-1].split(".")[0]
+        parts.append(index_name)
     return "-".join(parts)
+
+
+def equal_distances(
+    dists_1: list[float], dists_2: list[float], eps: float = 1e-2
+) -> bool:
+    if len(dists_1) != len(dists_2):
+        return False
+    for d1, d2 in zip(dists_1, dists_2):
+        if abs(d1 - d2) > eps:
+            return False
+    return True
 
 
 if __name__ == "__main__":
@@ -52,8 +73,8 @@ if __name__ == "__main__":
     RUNS_CSV = f"{logs_dir}/runs.csv"
 
     # Check results
-    search_settings_df = pandas.read_csv(SEARCH_SETTING_CSV)
-    runs_df = pandas.read_csv(RUNS_CSV)
+    search_settings_df = pd.read_csv(SEARCH_SETTING_CSV)
+    runs_df = pd.read_csv(RUNS_CSV)
 
     search_settings_by_dataset = {}
     for _, row in search_settings_df.iterrows():
@@ -68,27 +89,22 @@ if __name__ == "__main__":
         for query_id in dataset_df[QUERY_ID_COL].unique():
             results_by_method = {}
             for _, row in dataset_df[dataset_df[QUERY_ID_COL] == query_id].iterrows():
-                ts_indices_str = row[RESULTS_SET_TS_INDICES_COL]
-                ts_positions_str = row[RESULTS_SET_TS_POSITIONS_COL]
                 method_name = get_method_name(search_settings_df, row[SETTINGS_ID_COL])
-
                 results_by_method[method_name] = {
-                    "ts_indices": ts_indices_str.split(ITEM_SEP),
-                    "ts_positions": ts_positions_str.split(ITEM_SEP),
+                    "ts_indices": get_items(row[RESULT_SET_TS_INDICES_COL]),
+                    "ts_positions": get_items(row[RESULT_SET_TS_POSITIONS_COL]),
+                    "distances": get_items(row[RESULT_SET_DISTANCES]),
                 }
 
             # Find discrepancies/se
             differences = []
             keys = list(results_by_method.keys())
             ref_key = keys[0]
-            ref_ts_indices = results_by_method[ref_key]["ts_indices"]
-            ref_ts_positions = results_by_method[ref_key]["ts_positions"]
+            ref_distances = results_by_method[ref_key]["distances"]
 
             for key in keys[1:]:
-                ts_indices = results_by_method[key]["ts_indices"]
-                ts_positions = results_by_method[key]["ts_positions"]
-
-                if ts_indices != ref_ts_indices or ts_positions != ref_ts_positions:
+                distances = results_by_method[key]["distances"]
+                if not equal_distances(ref_distances, distances):
                     differences.append(key)
                     differences_found = True
 
