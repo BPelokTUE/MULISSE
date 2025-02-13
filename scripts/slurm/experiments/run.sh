@@ -38,24 +38,22 @@ else
     bash scripts/slurm/methods/parse_csv.sh "${dataset_path}" "${l_min}" "${series_len}" "${num_series}" "${csv_files[@]}"
 fi
 
-if [ -f "${base_dir}/${query_path}" ]; then
-    echo "Queries already exist"
-else
-    echo "Creating queries with ${num_queries} queries"
-    bash scripts/slurm/methods/create_queries.sh "${dataset_path}" "${query_path}" "${series_len}" "${num_channels}" "${num_query_channels}" "${num_queries}" "${lengths[@]}"
-fi
+echo "Creating queries with ${num_queries} queries"
+bash scripts/slurm/methods/create_queries.sh "${dataset_path}" "${query_path}" "${series_len}" "${num_channels}" "${num_query_channels}" "${num_queries}" "${lengths[@]}"
 
 # 1. Run Brute Force
-# sbatch scripts/slurm/methods/bf.sh "${query_path}" "${ed_file}" "${dataset_path}" "${k}" "${num_channels}" "${series_len}"
+sbatch scripts/slurm/methods/bf.sh "${query_path}" "${ed_file}" "${dataset_path}" "${k}" "${num_channels}" "${series_len}"
 
 # 2. Run MASS
 # sbatch scripts/slurm/methods/mass.sh "${query_path}" "${mass_file}" "${dataset_path}" "${k}" "${num_channels}" "${series_len}"
 
 # 3. Run MULISSE
-# sbatch scripts/slurm/methods/mulisse.sh "${query_path}" "${isax_mass_file}" "${dataset_path}" "${k}" "${num_channels}" "${series_len}" "${l_min}" "${l_max}"
+sbatch scripts/slurm/methods/mulisse.sh "${query_path}" "${isax_mass_file}" "${dataset_path}" "${k}" "${num_channels}" "${series_len}" "${l_min}" "${l_max}"
 
 # 4. Run MULISSE ED
 sbatch scripts/slurm/methods/mulisse_ed.sh "${query_path}" "${isax_ed_file}" "${dataset_path}" "${k}" "${num_channels}" "${series_len}" "${l_min}" "${l_max}"
 
+# 5. Run MULISSE ED no abandon
+# sbatch scripts/slurm/methods/mulisse_ed_noearly.sh "${query_path}" "${isax_ed_file}" "${dataset_path}" "${k}" "${num_channels}" "${series_len}" "${l_min}" "${l_max}"
 
 
