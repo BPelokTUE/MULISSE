@@ -44,6 +44,17 @@ std::pair<float, float> iSaxEnvelopeFinalizedIndex::get_segment_limits(SaxNumBit
         upper_ind == m_breakpoints.size() ? INF : m_breakpoints[upper_ind],
     };
 }
+
+const vec<vec<vec<SaxSymbolT>>>& iSaxEnvelopeFinalizedIndex::get_first_layer_min_symbols() const {
+    return m_first_layer_min_symbols;
+}
+
+const vec<vec<vec<SaxSymbolT>>>& iSaxEnvelopeFinalizedIndex::get_first_layer_max_symbols() const {
+    return m_first_layer_max_symbols;
+}
+
+SaxNumBitsT iSaxEnvelopeFinalizedIndex::get_first_layer_num_bits() const { return m_first_layer_num_bits; }
+
 struct PQueueEntry {
     DistanceT min_dist_squared;
     vec<iSaxWord> isax_mins, isax_maxs;
@@ -94,7 +105,7 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
         auto [min_dist_squared, isax_mins, isax_maxs, node] = pq.top();
         pq.pop();
 
-        if (min_dist_squared > result_set->get_distance_lb()) break;
+        if (min_dist_squared >= result_set->get_distance_lb()) break;
 
         if (!(node->is_leaf())) {
             auto [s, c] = node->get_split_ind();

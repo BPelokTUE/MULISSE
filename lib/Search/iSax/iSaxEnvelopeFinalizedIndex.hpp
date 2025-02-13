@@ -52,6 +52,12 @@ class iSaxEnvelopeFinalizedIndex : public IEnvelopeFinalizedIndex {
     vec<SearchResult> search(const vec<vec<float>>& query, const SearchOptions& search_options,
                              std::ifstream& dataset_ifs) const override;
 
+    const vec<vec<vec<SaxSymbolT>>>& get_first_layer_min_symbols() const;
+
+    const vec<vec<vec<SaxSymbolT>>>& get_first_layer_max_symbols() const;
+
+    SaxNumBitsT get_first_layer_num_bits() const;
+
    private:
     uint m_segment_len;
     vec<vec<vec<SaxSymbolT>>> m_first_layer_min_symbols, m_first_layer_max_symbols;

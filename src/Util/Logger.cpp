@@ -146,10 +146,13 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         {ISC::MIN_NUM_BITS_ON_TIE, min_num_bits_on_tie_str},
         {ISC::NUM_BITS_LIMIT, format_num_param(num_bits_limit)},
     };
-    instance.m_time_cols_duration = {
-        {ISC::INDEXING_TIME_S, 0},
-        {ISC::FFT_CALC_TIME_S, 0},
-    };
+    for (const auto &col : INDEX_COUNT_COLUMNS) instance.m_count_cols[col] = 0;
+    for (const auto &col : INDEX_TIME_COLUMNS) instance.m_time_cols_duration[col] = 0;
+}
+
+void IndexLogger::increment_count_col(ISC col, uint amount) {
+    assert(vec_contains(INDEX_COUNT_COLUMNS, col));
+    instance.m_count_cols[col] += amount;
 }
 
 void IndexLogger::start_timer(ISC col) {
@@ -164,6 +167,7 @@ void IndexLogger::stop_timer(ISC col) {
 }
 
 void IndexLogger::write_entry() {
+    for (const auto &col : INDEX_COUNT_COLUMNS) instance.m_columns[col] = to_string(instance.m_count_cols[col]);
     for (const auto &col : INDEX_TIME_COLUMNS) instance.m_columns[col] = to_string(instance.m_time_cols_duration[col]);
     instance.write_row(m_index_settings_path, instance.m_columns, INDEX_SETTINGS_COL_ENUMS);
 }

@@ -40,7 +40,7 @@ index_path=$(dirname "${dataset_path}")/mulisseindex_lmin${lmin}_lmax${lmax}.bin
 bash ../scripts/slurm/methods/create_index.sh "${dataset_path}" "${index_path}" "${series_len}" "${n_channels}" "${lmin}" "${lmax}" &&
 
 echo "MULISSE ED with early abandoning"
-./mulisse search -q "${query_path}" -o "${isax_ed_file}" -d "${dataset_path}" -T knn -k "${k}" -D ed -c "${n_channels}" -m "${series_len}" -i "${index_path}" --early_abandon
+./mulisse search -q "${query_path}" -o "${isax_ed_file}" -d "${dataset_path}" -T knn -k "${k}" -D ed -c "${n_channels}" -m "${series_len}" -i "${index_path}"
 
 # Delete index
 rm -f "${index_path}"
