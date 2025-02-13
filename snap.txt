@@ -1,7 +1,0 @@
-stats = view.groupby(['num_series', 'algorithm']).total_time_s.agg(np.median).unstack()
-
-for algo in stats.columns:
-    for n in range(1,11):
-        stats.loc[n*1000, algo] = stats.loc[5000, algo] * (n/5) * np.random.normal(1, 0.05)
-
-stats
