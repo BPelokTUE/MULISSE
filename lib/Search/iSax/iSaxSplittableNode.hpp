@@ -49,7 +49,7 @@ class iSaxSplittableInternal : public iSaxSplittableNode {
      *
      * @param split_ind The channel and segment index to split on
      * */
-    iSaxSplittableInternal(SaxSplitIndT split_ind);
+    iSaxSplittableInternal(SaxSplitIndex split_ind);
 
     /**
      * @brief Construct a new internal node with the provided split index and children
@@ -58,13 +58,13 @@ class iSaxSplittableInternal : public iSaxSplittableNode {
      * @param left The left child
      * @param right The right child
      */
-    iSaxSplittableInternal(SaxSplitIndT split_ind, iSaxSplittableNode *left, iSaxSplittableNode *right);
+    iSaxSplittableInternal(SaxSplitIndex split_ind, iSaxSplittableNode *left, iSaxSplittableNode *right);
 
     std::pair<const iSaxSplittableNode *, const iSaxSplittableNode *> get_children() const override;
 
-    SaxSplitIndT get_split_ind() const override;
+    SaxSplitIndex get_split_ind() const override;
 
-    vec<FilePositionT> get_file_positions() const override;
+    vec<SubsequencePosition> get_subsequence_positions() const override;
 
     bool is_leaf() const override;
 
@@ -73,7 +73,7 @@ class iSaxSplittableInternal : public iSaxSplittableNode {
     std::pair<uptr<iSaxFinalizedNode>, vec<iSaxWord>> finalize(const iSaxWordSettings &isax_word_settings) override;
 
    private:
-    SaxSplitIndT m_split_ind;
+    SaxSplitIndex m_split_ind;
     uptr<iSaxSplittableNode> m_left = nullptr, m_right = nullptr;
 };
 
@@ -85,16 +85,15 @@ class iSaxSplittableLeaf : public iSaxSplittableNode {
     /**
      * @brief Construct a new leaf node with the provided file positions and envelopes
      *
-     * @param file_positions The file positions of the envelopes. Each file positions corresponds to the start of the
-     * data summarized in the envelope in the first channel of the time series file.
+     * @param subsequence_positions The positions within the dataset of the subsequences stored in the leaf
      */
-    iSaxSplittableLeaf(vec<FilePositionT> file_positions, vec<vec<Envelope>> envelopes);
+    iSaxSplittableLeaf(vec<SubsequencePosition> subsequence_positions, vec<vec<Envelope>> envelopes);
 
     virtual std::pair<const iSaxSplittableNode *, const iSaxSplittableNode *> get_children() const override;
 
-    SaxSplitIndT get_split_ind() const override;
+    SaxSplitIndex get_split_ind() const override;
 
-    vec<FilePositionT> get_file_positions() const override;
+    vec<SubsequencePosition> get_subsequence_positions() const override;
 
     bool is_leaf() const override;
 
@@ -104,7 +103,7 @@ class iSaxSplittableLeaf : public iSaxSplittableNode {
 
    private:
     vec<vec<Envelope>> m_envelopes;
-    vec<FilePositionT> m_file_positions;
+    vec<SubsequencePosition> m_subsequence_positions;
 };
 
 #endif  // ISAX_SPLITTABLE_NODE_HPP

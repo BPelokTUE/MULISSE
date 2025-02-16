@@ -10,11 +10,11 @@
 #include "Util/RunSettings.hpp"
 
 struct QueryDescriptor {
-    FilePositionT start_offset;
+    SubsequencePosition subs_pos;
     uint length;
     vec<bool> channels;
 
-    bool operator<(const QueryDescriptor &other) const { return start_offset < other.start_offset; }
+    bool operator<(const QueryDescriptor &other) const { return subs_pos < other.subs_pos; }
 };
 
 int create_queries(float noise, uint num_queries, vec<uint> lengths, uint l_min, uint l_max,
@@ -75,10 +75,9 @@ int create_queries(float noise, uint num_queries, vec<uint> lengths, uint l_min,
             channels = channel_mask;
         }
 
-        auto start_pos_dist = std::uniform_int_distribution<FilePositionT>(0, series_len - length);
-        FilePositionT series_ind = series_uniform_dist(rng), start_pos = start_pos_dist(rng);
-        FilePositionT file_pos = series_ind * series_len * num_channels + start_pos;
-        return {file_pos * sizeof(float), length, channels};
+        auto start_pos_dist = std::uniform_int_distribution<uint>(0, series_len - length);
+        SubsequencePosition subs_pos = {series_uniform_dist(rng), start_pos_dist(rng)};
+        return {subs_pos, length, channels};
     };
 
     for (uint i = 0; i < num_queries; ++i) {
@@ -93,12 +92,12 @@ int create_queries(float noise, uint num_queries, vec<uint> lengths, uint l_min,
     std::sort(query_descriptors.begin(), query_descriptors.end());
 
     for (size_t q = 0; q < query_descriptors.size(); ++q) {
-        const auto &[start_offset, length, channels] = query_descriptors[q];
-        FilePositionT series_start = start_offset - start_offset % (series_len * num_channels);
+        const auto &[subs_pos, length, channels] = query_descriptors[q];
+        SubsequencePosition series_start = {subs_pos.series_ind, 0};
 
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             if (channels[c]) {
-                data_file.seekg(series_start + c * series_len * sizeof(float));
+                data_file.seekg(series_start.get_file_pos(series_len, num_channels, c));
                 float sum = 0, sum_sq = 0, value;
                 for (uint j = 0; j < series_len; ++j) {
                     data_file.read(reinterpret_cast<char *>(&value), sizeof(value));
@@ -107,7 +106,7 @@ int create_queries(float noise, uint num_queries, vec<uint> lengths, uint l_min,
                 }
                 float sigma = calculate_mu_and_sigma(sum, sum_sq, series_len).second;
 
-                data_file.seekg(start_offset + c * series_len * sizeof(float));
+                data_file.seekg(subs_pos.get_file_pos(series_len, num_channels, c));
                 for (uint j = 0; j < length; ++j) {
                     data_file.read(reinterpret_cast<char *>(&value), sizeof(value));
                     value += noise_normal_dist(rng) * sigma;

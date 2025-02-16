@@ -4,7 +4,7 @@
 
 // iSaxFinalizedInternal
 
-iSaxFinalizedInternal::iSaxFinalizedInternal(SaxSplitIndT split_ind, SaxSymbolT max_symbol_left,
+iSaxFinalizedInternal::iSaxFinalizedInternal(SaxSplitIndex split_ind, SaxSymbolT max_symbol_left,
                                              SaxSymbolT max_symbol_right, uptr<iSaxFinalizedNode> left,
                                              uptr<iSaxFinalizedNode> right)
     : m_split_ind(split_ind),
@@ -24,15 +24,16 @@ pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedInternal::get_children_max_symbols(Sax
     return {m_max_symbol_left >> shift, m_max_symbol_right >> shift};
 }
 
-SaxSplitIndT iSaxFinalizedInternal::get_split_ind() const { return m_split_ind; }
+SaxSplitIndex iSaxFinalizedInternal::get_split_ind() const { return m_split_ind; }
 
-vec<FilePositionT> iSaxFinalizedInternal::get_file_positions() const { return {}; }
+vec<SubsequencePosition> iSaxFinalizedInternal::get_subsequence_positions() const { return {}; }
 
 bool iSaxFinalizedInternal::is_leaf() const { return false; }
 
 // iSaxFinalizedLeaf
 
-iSaxFinalizedLeaf::iSaxFinalizedLeaf(vec<FilePositionT> file_positions) : m_file_positions(file_positions) {}
+iSaxFinalizedLeaf::iSaxFinalizedLeaf(vec<SubsequencePosition> subsequence_positions)
+    : m_subsequence_positions(subsequence_positions) {}
 
 std::pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> iSaxFinalizedLeaf::get_children() const {
     return {nullptr, nullptr};
@@ -43,8 +44,8 @@ pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedLeaf::get_children_max_symbols(SaxNumB
     return {-1, -1};
 }
 
-SaxSplitIndT iSaxFinalizedLeaf::get_split_ind() const { return {-1, -1}; }
+SaxSplitIndex iSaxFinalizedLeaf::get_split_ind() const { return {0, 0}; }
 
-vec<FilePositionT> iSaxFinalizedLeaf::get_file_positions() const { return m_file_positions; }
+vec<SubsequencePosition> iSaxFinalizedLeaf::get_subsequence_positions() const { return m_subsequence_positions; }
 
 bool iSaxFinalizedLeaf::is_leaf() const { return true; }

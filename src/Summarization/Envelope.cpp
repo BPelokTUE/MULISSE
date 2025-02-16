@@ -100,7 +100,7 @@ iSaxEnvelopeGenerator::iSaxEnvelopeGenerator(MtsNumChannelsT num_channels, bool 
     m_envelope_func = m_normalized ? ulisse_envelope_normalized : ulisse_envelope_raw;
 }
 
-vec<EnvelopeEntry> iSaxEnvelopeGenerator::get_entries(const vec<vec<float>>& mts, size_t series_ind) {
+vec<EnvelopeEntry> iSaxEnvelopeGenerator::get_entries(const vec<vec<float>>& mts, uint series_ind) {
     uint series_len = mts[0].size();
     uint num_env = (series_len - m_uli_params.l_min + m_uli_params.pos_per_env) / m_uli_params.pos_per_env;
     vec<EnvelopeEntry> entries(num_env);
@@ -108,10 +108,10 @@ vec<EnvelopeEntry> iSaxEnvelopeGenerator::get_entries(const vec<vec<float>>& mts
     for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
         auto channel_envs = m_envelope_func(mts[c], m_uli_params);
         for (size_t i = 0; i < channel_envs.size(); ++i) {
-            size_t start_pos = i * m_uli_params.pos_per_env;
+            uint start_pos = i * m_uli_params.pos_per_env;
 
             if (c == 0) {
-                entries[i].file_position = series_ind * m_num_channels * series_len + start_pos;
+                entries[i].subsequence_position = {series_ind, start_pos};
                 entries[i].mts_envelope.resize(m_num_channels);
             }
             entries[i].mts_envelope[c] = std::move(channel_envs[i]);

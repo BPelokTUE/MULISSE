@@ -48,13 +48,13 @@ class iSaxFinalizedInternal : public iSaxFinalizedNode {
     /**
      * @brief Constructor
      *
-     * @param split_ind Segment and channel index to split on (see SaxSplitIndT)
+     * @param split_ind Segment and channel index to split on (see SaxSplitIndex)
      * @param isax_max_left iSAX max symbol of the left child in `split_ind`
      * @param isax_max_right iSAX max symbol of the right child in `split_ind`
      * @param left Unique pointer to the left child
      * @param right Unique pointer to the right child
      */
-    iSaxFinalizedInternal(SaxSplitIndT split_ind, SaxSymbolT isax_max_left, SaxSymbolT isax_min_right,
+    iSaxFinalizedInternal(SaxSplitIndex split_ind, SaxSymbolT isax_max_left, SaxSymbolT isax_min_right,
                           uptr<iSaxFinalizedNode> left, uptr<iSaxFinalizedNode> right);
 
     pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> get_children() const override;
@@ -62,14 +62,14 @@ class iSaxFinalizedInternal : public iSaxFinalizedNode {
     pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols(SaxNumBitsT split_num_bits,
                                                           SaxNumBitsT symbol_num_bits) const override;
 
-    SaxSplitIndT get_split_ind() const override;
+    SaxSplitIndex get_split_ind() const override;
 
-    vec<FilePositionT> get_file_positions() const override;
+    vec<SubsequencePosition> get_subsequence_positions() const override;
 
     bool is_leaf() const override;
 
    private:
-    SaxSplitIndT m_split_ind;
+    SaxSplitIndex m_split_ind;
     SaxSymbolT m_max_symbol_left, m_max_symbol_right;
     uptr<iSaxFinalizedNode> m_left = nullptr, m_right = nullptr;
 
@@ -94,31 +94,30 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode {
     /**
      * @brief Construct a new leaf node with the provided file positions and envelopes
      *
-     * @param file_positions The file positions of the envelopes. Each file positions corresponds to the start of the
-     * data summarized in the envelope in the first channel of the time series file.
+     * @param subsequence_positions The position of th subsequence in the dataset
      */
-    iSaxFinalizedLeaf(vec<FilePositionT> file_positions);
+    iSaxFinalizedLeaf(vec<SubsequencePosition> subsequence_positions);
 
     pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> get_children() const override;
 
     pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols(SaxNumBitsT split_num_bits,
                                                           SaxNumBitsT symbol_num_bits) const override;
 
-    SaxSplitIndT get_split_ind() const override;
+    SaxSplitIndex get_split_ind() const override;
 
-    vec<FilePositionT> get_file_positions() const override;
+    vec<SubsequencePosition> get_subsequence_positions() const override;
 
     bool is_leaf() const override;
 
    private:
-    vec<FilePositionT> m_file_positions;
+    vec<SubsequencePosition> m_subsequence_positions;
 
     // Required for Cereal (de)serialization
     friend class cereal::access;
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(m_file_positions);
+        ar(m_subsequence_positions);
     }
 };
 

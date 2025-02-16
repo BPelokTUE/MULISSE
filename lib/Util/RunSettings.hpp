@@ -61,12 +61,12 @@ class RunSettings {
     /**
      * @brief Load the FFTs of the given time series in the dataset
      *
-     * @param file_pos Starting position of the time series to get FFTs for
+     * @param subs_pos Position within the dataset of the subsequence to load the FFTs for
      * @param channel_ind Index of the channel in the time series
      * @param num_components Number of FFT components to load
      * @return FFTs of the time series
      */
-    FftArray get_ffts(FilePositionT file_pos, MtsNumChannelsT channel_ind, uint num_components);
+    FftArray get_ffts(SubsequencePosition subs_pos, MtsNumChannelsT channel_ind, uint num_components);
 
     /**
      * @brief Check if the FFTs of the time series are supported
@@ -149,7 +149,7 @@ class RunSettings {
 
     // FFTs
     str m_ffts_file;
-    std::ifstream m_ffts_stream;
+    std::ifstream m_ffts_ifs;
     vec<uptr<FftArray>> m_query_ffts;
 
     // Static

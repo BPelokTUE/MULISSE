@@ -7,9 +7,9 @@
 
 // iSaxSplittableInternal
 
-iSaxSplittableInternal::iSaxSplittableInternal(SaxSplitIndT split_ind) : m_split_ind(split_ind) {}
+iSaxSplittableInternal::iSaxSplittableInternal(SaxSplitIndex split_ind) : m_split_ind(split_ind) {}
 
-iSaxSplittableInternal::iSaxSplittableInternal(SaxSplitIndT split_ind, iSaxSplittableNode *left,
+iSaxSplittableInternal::iSaxSplittableInternal(SaxSplitIndex split_ind, iSaxSplittableNode *left,
                                                iSaxSplittableNode *right)
     : m_split_ind(split_ind), m_left(left), m_right(right) {}
 
@@ -17,9 +17,9 @@ std::pair<const iSaxSplittableNode *, const iSaxSplittableNode *> iSaxSplittable
     return {m_left.get(), m_right.get()};
 }
 
-SaxSplitIndT iSaxSplittableInternal::get_split_ind() const { return m_split_ind; }
+SaxSplitIndex iSaxSplittableInternal::get_split_ind() const { return m_split_ind; }
 
-vec<FilePositionT> iSaxSplittableInternal::get_file_positions() const { return {}; }
+vec<SubsequencePosition> iSaxSplittableInternal::get_subsequence_positions() const { return {}; }
 
 vec<vec<Envelope>> iSaxSplittableInternal::get_envelopes() const { return {}; };
 
@@ -59,16 +59,16 @@ std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> iSaxSplittableInter
 
 // iSaxSplittableLeaf
 
-iSaxSplittableLeaf::iSaxSplittableLeaf(vec<FilePositionT> file_positions, vec<vec<Envelope>> envelopes)
-    : m_file_positions(file_positions), m_envelopes(envelopes) {}
+iSaxSplittableLeaf::iSaxSplittableLeaf(vec<SubsequencePosition> subsequence_positions, vec<vec<Envelope>> envelopes)
+    : m_subsequence_positions(subsequence_positions), m_envelopes(envelopes) {}
 
 std::pair<const iSaxSplittableNode *, const iSaxSplittableNode *> iSaxSplittableLeaf::get_children() const {
     return {nullptr, nullptr};
 };
 
-SaxSplitIndT iSaxSplittableLeaf::get_split_ind() const { return {-1, -1}; }
+SaxSplitIndex iSaxSplittableLeaf::get_split_ind() const { return {0, 0}; }
 
-vec<FilePositionT> iSaxSplittableLeaf::get_file_positions() const { return m_file_positions; }
+vec<SubsequencePosition> iSaxSplittableLeaf::get_subsequence_positions() const { return m_subsequence_positions; }
 
 bool iSaxSplittableLeaf::is_leaf() const { return true; }
 
@@ -90,10 +90,10 @@ std::pair<std::unique_ptr<iSaxFinalizedNode>, vec<iSaxWord>> iSaxSplittableLeaf:
                 isax_max[c].select_max_symbols(iSaxWord(m_envelopes[i][c].upper, isax_word_settings));
             }
         }
-        auto finalized = std::make_unique<iSaxFinalizedLeaf>(m_file_positions);
+        auto finalized = std::make_unique<iSaxFinalizedLeaf>(m_subsequence_positions);
         return std::make_pair(std::move(finalized), std::move(isax_max));
     } else {
-        auto finalized = std::make_unique<iSaxFinalizedLeaf>(m_file_positions);
+        auto finalized = std::make_unique<iSaxFinalizedLeaf>(m_subsequence_positions);
         return std::make_pair(std::move(finalized), vec<iSaxWord>{});
     }
 }

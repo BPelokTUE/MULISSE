@@ -11,8 +11,8 @@
 DoubleRoundRobinStrategy::DoubleRoundRobinStrategy(SaxSegIndT num_seg_per_channel, MtsNumChannelsT num_channels)
     : m_num_seg_per_channel(num_seg_per_channel), m_num_channels(num_channels) {}
 
-SaxSplitIndT DoubleRoundRobinStrategy::get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) {
-    SaxSplitIndT inds = {m_current_split, m_current_channel};
+SaxSplitIndex DoubleRoundRobinStrategy::get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) {
+    SaxSplitIndex inds = {m_current_split, m_current_channel};
 
     m_current_split = (m_current_split + 1) % m_num_seg_per_channel;
     m_current_channel = (m_current_channel + 1) % m_num_channels;
@@ -25,13 +25,13 @@ SaxSplitIndT DoubleRoundRobinStrategy::get_split_ind(const iSaxSplittableLeaf *l
 EntropyMaximizingStrategy::EntropyMaximizingStrategy(bool choose_min_num_bits_when_tied)
     : m_choose_min_num_bits_when_tied(choose_min_num_bits_when_tied) {}
 
-SaxSplitIndT EntropyMaximizingStrategy::get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) {
+SaxSplitIndex EntropyMaximizingStrategy::get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) {
     auto &RS = RunSettings::get_instance();
 
     const vec<float> &breakpoints = RS.get_breakpoints();
     uint br_ind;
 
-    SaxSplitIndT split_ind{0, 0};
+    SaxSplitIndex split_ind{0, 0};
     float max_score = -INF;
     SaxNumBitsT min_num_bits = RS.get_isax_props().m_breakpoint_num_bits;
 

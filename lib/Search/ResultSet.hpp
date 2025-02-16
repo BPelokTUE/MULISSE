@@ -11,8 +11,8 @@ DEFINE_ENUM_CONSTS_NO_EXTRA(SearchType, SEARCH_TYPE, false);
 
 /** @brief Search result */
 struct SearchResult {
-    /** @brief Starting position of the first channel of the result in the dataset file */
-    FilePositionT file_position;
+    /** @brief Position of the result in the dataset */
+    SubsequencePosition subs_pos;
     /** @brief Distance of the result to the query */
     DistanceT distance;
 
@@ -23,7 +23,7 @@ struct SearchResult {
      * @return `true` if the distance of this result is less than the distance of the other result
      */
     bool operator<(const SearchResult &other) const {
-        return distance < other.distance || (distance == other.distance && file_position < other.file_position);
+        return distance < other.distance || (distance == other.distance && subs_pos < other.subs_pos);
     }
 };
 

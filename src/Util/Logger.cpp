@@ -291,7 +291,7 @@ void QueryLogger::log_results(const vec<SearchResult> &results) {
     auto &RS = RunSettings::get_instance();
     size_t series_size = RS.m_dataset_props.series_len * RS.m_dataset_props.num_channels;
     for (auto result : results) {
-        uint ts_index = result.file_position / series_size, ts_position = result.file_position % series_size;
+        auto [ts_index, ts_position] = result.subs_pos;
         instance.m_collection_cols[QC::RESULT_SET_TS_INDICES].push_back(to_string(ts_index));
         instance.m_collection_cols[QC::RESULT_SET_TS_POSITIONS].push_back(to_string(ts_position));
         instance.m_collection_cols[QC::RESULT_SET_DISTANCES].push_back(to_string(result.distance));

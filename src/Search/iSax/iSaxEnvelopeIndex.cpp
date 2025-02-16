@@ -65,27 +65,27 @@ void iSaxEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, std::unique_ptr<iSa
     auto mid_breakpoint = m_breakpoints->at((symbol * 2 + 1) * (alphabet_size_ratio >> 1) - 1);
 
     // Distribute the mts_envelope across the two new leaves
-    vec<FilePositionT> left_file_positions, right_file_positions;
+    vec<SubsequencePosition> left_subsequence_positions, right_subsequence_positions;
     vec<vec<Envelope>> left_mts_envelope, right_mts_envelope;
 
-    for (size_t i = 0; i < leaf->m_file_positions.size(); ++i) {
+    for (size_t i = 0; i < leaf->m_subsequence_positions.size(); ++i) {
         auto &seg_min = leaf->m_envelopes[i][channel_ind].lower;
         if (seg_min[segment_ind] <= mid_breakpoint) {
-            left_file_positions.push_back(leaf->m_file_positions[i]);
+            left_subsequence_positions.push_back(leaf->m_subsequence_positions[i]);
             left_mts_envelope.push_back(leaf->m_envelopes[i]);
         } else {
-            right_file_positions.push_back(leaf->m_file_positions[i]);
+            right_subsequence_positions.push_back(leaf->m_subsequence_positions[i]);
             right_mts_envelope.push_back(leaf->m_envelopes[i]);
         }
     }
 
     // Create new nodes
-    size_t left_size = left_file_positions.size(), right_size = right_file_positions.size();
-    auto new_internal = std::make_unique<iSaxSplittableInternal>(SaxSplitIndT{segment_ind, channel_ind});
+    size_t left_size = left_subsequence_positions.size(), right_size = right_subsequence_positions.size();
+    auto new_internal = std::make_unique<iSaxSplittableInternal>(SaxSplitIndex{segment_ind, channel_ind});
     new_internal->m_left =
-        std::make_unique<iSaxSplittableLeaf>(std::move(left_file_positions), std::move(left_mts_envelope));
+        std::make_unique<iSaxSplittableLeaf>(std::move(left_subsequence_positions), std::move(left_mts_envelope));
     new_internal->m_right =
-        std::make_unique<iSaxSplittableLeaf>(std::move(right_file_positions), std::move(right_mts_envelope));
+        std::make_unique<iSaxSplittableLeaf>(std::move(right_subsequence_positions), std::move(right_mts_envelope));
 
     // Replace the leaf with the new internal node
     node_ref = std::move(new_internal);
@@ -127,7 +127,7 @@ void iSaxEnvelopeIndex::insert(const EnvelopeEntry &entry) {
 
     auto node_it = m_first_layer.find(symbols);
     if (node_it == m_first_layer.end()) {
-        m_first_layer.emplace(symbols, std::make_unique<iSaxSplittableLeaf>(vec<FilePositionT>{file_pos},
+        m_first_layer.emplace(symbols, std::make_unique<iSaxSplittableLeaf>(vec<SubsequencePosition>{file_pos},
                                                                             vec<vec<Envelope>>{mts_envelope}));
 
         auto &logger = IndexLogger::get_instance();
@@ -146,11 +146,11 @@ void iSaxEnvelopeIndex::insert(const EnvelopeEntry &entry) {
         }
         // Reached a leaf => insert
         auto *leaf = static_cast<iSaxSplittableLeaf *>(node);
-        leaf->m_file_positions.push_back(file_pos);
+        leaf->m_subsequence_positions.push_back(file_pos);
         leaf->m_envelopes.push_back(mts_envelope);
 
         // Split if needed
-        if (leaf->m_file_positions.size() > m_leaf_capacity) {
+        if (leaf->m_subsequence_positions.size() > m_leaf_capacity) {
             auto &node_ref = parent ? (new_bit ? parent->m_right : parent->m_left) : node_it->second;
             split_leaf(isax_mins, node_ref);
         }

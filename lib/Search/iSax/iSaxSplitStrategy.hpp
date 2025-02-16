@@ -19,9 +19,9 @@ class IiSaxSplitStrategy {
      * @brief Get a channel and segment index to split on
      *
      * @param leaf The leaf to get the split index for
-     * @return A channel and segment index to split on (see SaxSplitIndT)
+     * @return A channel and segment index to split on (see SaxSplitIndex)
      */
-    virtual SaxSplitIndT get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) = 0;
+    virtual SaxSplitIndex get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) = 0;
 };
 
 /**
@@ -39,7 +39,7 @@ class DoubleRoundRobinStrategy : public IiSaxSplitStrategy {
      */
     DoubleRoundRobinStrategy(SaxSegIndT num_seg_per_channel, MtsNumChannelsT num_channels);
 
-    SaxSplitIndT get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) override;
+    SaxSplitIndex get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) override;
 
    private:
     SaxSegIndT m_num_seg_per_channel, m_current_split = 0;
@@ -50,7 +50,7 @@ class EntropyMaximizingStrategy : public IiSaxSplitStrategy {
    public:
     EntropyMaximizingStrategy(bool choose_min_num_bits_when_tied);
 
-    SaxSplitIndT get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) override;
+    SaxSplitIndex get_split_ind(const iSaxSplittableLeaf *leaf, const vec<iSaxWord> &isax_mins) override;
 
    private:
     bool m_choose_min_num_bits_when_tied;

@@ -33,8 +33,8 @@ struct Envelope {
 struct EnvelopeEntry {
     /** @brief Multivariate time series envelope */
     vec<Envelope> mts_envelope;
-    /** @brief Starting position of the first channel of the time series in the file (in number of floats) */
-    FilePositionT file_position;
+    /** @brief Position within the dataset of the subsequence summarized in the envelope */
+    SubsequencePosition subsequence_position;
 };
 
 /** @brief Interface for envelope generators */
@@ -47,9 +47,9 @@ class IEnvelopeGenerator {
      *
      * @param mts Multivariate time series
      * @param series_ind Index of the time series within the dataset
-     * @return Envelope entries ()
+     * @return Envelope entries
      */
-    virtual vec<EnvelopeEntry> get_entries(const vec<vec<float>> &mts, size_t series_ind) = 0;
+    virtual vec<EnvelopeEntry> get_entries(const vec<vec<float>> &mts, uint series_ind) = 0;
 };
 
 // ----------------------------------------------- //
@@ -107,13 +107,7 @@ class iSaxEnvelopeGenerator : public IEnvelopeGenerator {
      */
     iSaxEnvelopeGenerator(MtsNumChannelsT num_channels, bool normalized, const UlisseEnvelopeParams &uli_params);
 
-    /**
-     * @brief Generate envelopes for a given time series
-     *
-     * @param mts Multivariate time series to get the envelope entries from
-     * @param series_ind Index of the time series within the dataset
-     */
-    vec<EnvelopeEntry> get_entries(const vec<vec<float>> &mts, size_t series_ind) override;
+    vec<EnvelopeEntry> get_entries(const vec<vec<float>> &mts, uint series_ind) override;
 
    private:
     MtsNumChannelsT m_num_channels;

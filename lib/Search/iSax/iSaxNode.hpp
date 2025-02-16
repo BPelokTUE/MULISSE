@@ -11,16 +11,16 @@ class iSaxNode {
     /**
      * @brief Get the file positions of the envelopes stored in the node if any
      *
-     * @return Vector of file positions
+     * @return Vector of subsequence positions
      */
-    virtual vec<FilePositionT> get_file_positions() const = 0;
+    virtual vec<SubsequencePosition> get_subsequence_positions() const = 0;
 
     /**
      * @brief Get the segment and channel index to split the node on if any
      *
-     * @return Channel and segment index (see SaxSplitIndT)
+     * @return Channel and segment index (see SaxSplitIndex)
      */
-    virtual SaxSplitIndT get_split_ind() const = 0;
+    virtual SaxSplitIndex get_split_ind() const = 0;
 
     /**
      * @brief Check whether the node is a leaf or not

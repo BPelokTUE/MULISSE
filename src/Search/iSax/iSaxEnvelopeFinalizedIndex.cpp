@@ -143,9 +143,9 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
                     {min_dist_squared + m_segment_len * (dist - prev_dist), right_isax_mins, right_isax_maxs, right});
             }
         } else {
-            vec<FilePositionT> file_positions = node->get_file_positions();
-            for (FilePositionT file_pos : file_positions) {
-                size_t data_remaining = m_series_len - (file_pos % m_series_len);
+            vec<SubsequencePosition> subsequence_positions = node->get_subsequence_positions();
+            for (SubsequencePosition subs_pos : subsequence_positions) {
+                size_t data_remaining = m_series_len - subs_pos.start_pos;
 
                 if (data_remaining < query_len) continue;
 
@@ -156,14 +156,13 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
                     if (query[c].empty()) continue;
 
                     subsequence[c].resize(data_to_read);
-                    FilePositionT start_byte = (file_pos + c * m_series_len) * sizeof(float);
-                    dataset_ifs.seekg(start_byte);
+                    dataset_ifs.seekg(subs_pos.get_file_pos(m_series_len, m_num_channels, c));
                     dataset_ifs.read(reinterpret_cast<char*>(subsequence[c].data()), data_to_read * sizeof(float));
                 }
                 logger.stop_timer(QC::IO_TIME_S);
 
                 logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-                distance_measure->update_result_set(result_set, file_pos, query, subsequence);
+                distance_measure->update_result_set(result_set, subs_pos, query, subsequence);
                 logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
 
                 // TODO: Discuss how pruning ratio should be calculated when envs_per_ts > 1

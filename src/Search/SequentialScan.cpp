@@ -14,19 +14,20 @@ vec<SearchResult> SequentialScan::search(const vec<vec<float>> &query, const Sea
     auto &logger = QueryLogger::get_instance();
 
     for (uint i = 0; i < num_series; ++i) {
-        // TODO: skip channels missing in query
         vec<vec<float>> mts(num_channels);
         logger.start_timer(QC::IO_TIME_S);
         for (uint c = 0; c < num_channels; ++c) {
-            mts[c].resize(series_len);
-            dataset_ifs.read(reinterpret_cast<char *>(mts[c].data()), series_len * sizeof(float));
+            if (!query[c].empty()) {
+                mts[c].resize(series_len);
+                dataset_ifs.read(reinterpret_cast<char *>(mts[c].data()), series_len * sizeof(float));
+            } else {
+                dataset_ifs.seekg(series_len * sizeof(float), std::ios::cur);
+            }
         }
         logger.stop_timer(QC::IO_TIME_S);
 
-        FilePositionT file_pos = i * series_len * num_channels;
-
         logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-        opts.distance_measure->update_result_set(opts.result_set.get(), file_pos, query, mts);
+        opts.distance_measure->update_result_set(opts.result_set.get(), {i, 0}, query, mts);
         logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
 
         logger.increment_count_col(QC::NUM_TS_EXAMINED);

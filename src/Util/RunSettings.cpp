@@ -24,7 +24,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     instance.m_command_type = command_type;
     instance.m_dataset_props = dataset_props;
     if (dataset_props.num_series == 0) {
-        FilePositionT dataset_size = get_dataset_size(instance.get_dataset_path());
+        size_t dataset_size = get_dataset_size(instance.get_dataset_path());
         instance.m_dataset_props.num_series =
             dataset_size / (dataset_props.series_len * dataset_props.num_channels * sizeof(float));
     }
@@ -66,7 +66,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
                 throw std::runtime_error("Query file " + instance.get_query_path() + " does not exist");
             }
             if (instance.ffts_supported()) {
-                instance.m_ffts_stream.open(instance.get_ffts_path(), std::ios::binary);
+                instance.m_ffts_ifs.open(instance.get_ffts_path(), std::ios::binary);
                 instance.m_query_ffts.resize(instance.m_dataset_props.num_channels);
                 for (auto &channel_ffts : instance.m_query_ffts) channel_ffts = nullptr;
             }
@@ -116,18 +116,18 @@ void RunSettings::calculate_ffts() const {
     }
 }
 
-FftArray RunSettings::get_ffts(FilePositionT file_pos, MtsNumChannelsT channel_ind, uint num_component) {
+FftArray RunSettings::get_ffts(SubsequencePosition subs_pos, MtsNumChannelsT channel_ind, uint num_component) {
     if (!ffts_supported()) throw std::runtime_error("FFTs are not supported");
 
     // (*2) for using double instead of float
     // (*2) for real and imaginary parts
     // (*2) for extra components at the end
     uint file_size_ratio = 8;
-    FilePositionT channel_file_pos = (file_pos + channel_ind * m_dataset_props.series_len) * sizeof(float);
-    m_ffts_stream.seekg(file_size_ratio * channel_file_pos);
+    size_t data_file_pos = subs_pos.get_file_pos(m_dataset_props.series_len, m_dataset_props.num_channels, channel_ind);
+    m_ffts_ifs.seekg(file_size_ratio * data_file_pos);
 
     FftArray ffts(2 * num_component);
-    m_ffts_stream.read(reinterpret_cast<char *>(ffts.data()), 4 * num_component * sizeof(double));
+    m_ffts_ifs.read(reinterpret_cast<char *>(ffts.data()), 4 * num_component * sizeof(double));
 
     return ffts;
 }
