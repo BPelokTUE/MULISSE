@@ -40,6 +40,8 @@ struct iSaxProperties {
 
 class RunSettings {
    public:
+    virtual ~RunSettings() = default;
+
     RunSettings(const RunSettings&) = delete;
     RunSettings& operator=(const RunSettings&) = delete;
 
@@ -49,6 +51,8 @@ class RunSettings {
                            uint pos_per_env, const str index_path, const str ffts_path);
 
     static RunSettings& get_instance();
+
+    static void set_instance(std::shared_ptr<RunSettings> instance);
 
     // ---------------------------------------------------- //
     // -------------------- SETTINGS ---------------------- //
@@ -101,7 +105,7 @@ class RunSettings {
      * @brief Get the currently used iSAX interval breakpoints
      * @return The vector of breakpoints, excluding `-INF` and `INF` at the ends
      */
-    const vec<float>& get_breakpoints();
+    virtual const vec<float>& get_breakpoints();
 
     void set_isax_properties(iSaxProperties isax_props);
 
@@ -111,7 +115,7 @@ class RunSettings {
 
     const QueryProperties& get_query_props();
 
-    const iSaxProperties& get_isax_props();
+    virtual const iSaxProperties& get_isax_props();
 
     // Paths
 
@@ -153,7 +157,7 @@ class RunSettings {
     vec<uptr<FftArray>> m_query_ffts;
 
     // Static
-    static RunSettings instance;
+    static std::shared_ptr<RunSettings> instance;
     static bool initialized;
 
     // Constants

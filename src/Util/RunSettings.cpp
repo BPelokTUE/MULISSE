@@ -1,5 +1,6 @@
 #include <fstream>
 #include <filesystem>
+#include <memory>
 
 #include "Search/Options/IndexOptions.hpp"
 #include "Util/RunSettings.hpp"
@@ -7,7 +8,7 @@
 #include "Util/FftArray.hpp"
 
 // Initialize static members
-RunSettings RunSettings::instance = RunSettings();
+std::shared_ptr<RunSettings> RunSettings::instance = std::make_shared<RunSettings>();
 bool RunSettings::initialized = false;
 RunSettings::RunSettings() {}
 
@@ -17,38 +18,38 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     initialized = true;
 
     // Create directories if they do not exist
-    for (str dir : {instance.DATA_DIR, instance.LOGS_DIR}) {
+    for (str dir : {instance->DATA_DIR, instance->LOGS_DIR}) {
         if (!std::filesystem::exists(dir)) std::filesystem::create_directories(dir);
     }
 
-    instance.m_command_type = command_type;
-    instance.m_dataset_props = dataset_props;
+    instance->m_command_type = command_type;
+    instance->m_dataset_props = dataset_props;
     if (dataset_props.num_series == 0) {
-        size_t dataset_size = get_dataset_size(instance.get_dataset_path());
-        instance.m_dataset_props.num_series =
+        size_t dataset_size = get_dataset_size(instance->get_dataset_path());
+        instance->m_dataset_props.num_series =
             dataset_size / (dataset_props.series_len * dataset_props.num_channels * sizeof(float));
     }
 
-    instance.m_query_properties = query_props;
+    instance->m_query_properties = query_props;
 
     uint envs_per_ts =
         pos_per_env == 0 ? 1 : (dataset_props.series_len - query_props.l_min + pos_per_env) / pos_per_env;
-    instance.m_envelope_props = {
+    instance->m_envelope_props = {
         .pos_per_env = pos_per_env,
         .envs_per_ts = envs_per_ts,
     };
 
-    instance.m_index_file = index_path;
-    instance.m_ffts_file = ffts_path;
+    instance->m_index_file = index_path;
+    instance->m_ffts_file = ffts_path;
 
-    if (instance.m_command_type != CREATE_DS && instance.m_command_type != PARSE_CSV) {
-        str dataset_path = instance.get_dataset_path();
+    if (instance->m_command_type != CREATE_DS && instance->m_command_type != PARSE_CSV) {
+        str dataset_path = instance->get_dataset_path();
         if (!std::filesystem::exists(dataset_path)) {
             throw std::runtime_error("Dataset file " + dataset_path + " does not exist");
         }
     }
 
-    switch (instance.m_command_type) {
+    switch (instance->m_command_type) {
         case CREATE_DS:
             break;
         case PARSE_CSV:
@@ -56,19 +57,19 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
         case CREATE_QS:
             break;
         case INDEX:
-            if (instance.ffts_supported() && envs_per_ts > 1) {
+            if (instance->ffts_supported() && envs_per_ts > 1) {
                 throw std::runtime_error(
                     "Precalculating FFTs are only supported for setups with one envelope per time series");
             }
             break;
         case SEARCH:
-            if (!std::filesystem::exists(instance.get_query_path())) {
-                throw std::runtime_error("Query file " + instance.get_query_path() + " does not exist");
+            if (!std::filesystem::exists(instance->get_query_path())) {
+                throw std::runtime_error("Query file " + instance->get_query_path() + " does not exist");
             }
-            if (instance.ffts_supported()) {
-                instance.m_ffts_ifs.open(instance.get_ffts_path(), std::ios::binary);
-                instance.m_query_ffts.resize(instance.m_dataset_props.num_channels);
-                for (auto &channel_ffts : instance.m_query_ffts) channel_ffts = nullptr;
+            if (instance->ffts_supported()) {
+                instance->m_ffts_ifs.open(instance->get_ffts_path(), std::ios::binary);
+                instance->m_query_ffts.resize(instance->m_dataset_props.num_channels);
+                for (auto &channel_ffts : instance->m_query_ffts) channel_ffts = nullptr;
             }
             break;
     }
@@ -76,7 +77,12 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
 
 RunSettings &RunSettings::get_instance() {
     assert(initialized);
-    return instance;
+    return *instance.get();
+}
+
+void RunSettings::set_instance(std::shared_ptr<RunSettings> instance) {
+    RunSettings::instance = instance;
+    initialized = true;
 }
 
 // FFTs
