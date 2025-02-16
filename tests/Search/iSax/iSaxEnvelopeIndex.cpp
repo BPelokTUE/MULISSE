@@ -32,8 +32,10 @@ TEST_CASE("iSaxEnvelopeIndex insert UTS envelope works") {
     fakeit::When(Method(run_settings_mock, get_breakpoints)).AlwaysReturn(breakpoints);
     fakeit::When(Method(split_strategy_mock, get_split_ind)).Return(split1, split2, split3);
 
+#ifdef ENABLE_TEST_CODE
     // Pass empty deleter function, because fakeit manages the lifetime of the mock
     RunSettings::set_instance(std::shared_ptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
+#endif
 
     std::unique_ptr<iSaxEnvelopeIndex> index;
     index = std::make_unique<iSaxEnvelopeIndex>(series_isax_prop, 1, 2,
@@ -281,8 +283,10 @@ TEST_CASE("iSaxEnvelopeIndex insert MTS envelope works") {
     fakeit::When(Method(run_settings_mock, get_breakpoints)).AlwaysReturn(breakpoints);
     fakeit::When(Method(split_strategy_mock, get_split_ind)).Return(split1, split2);
 
+#ifdef ENABLE_TEST_CODE
     // Pass empty deleter function, because fakeit manages the lifetime of the mock
     RunSettings::set_instance(std::shared_ptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
+#endif
 
     std::unique_ptr<iSaxEnvelopeIndex> index;
     index = std::make_unique<iSaxEnvelopeIndex>(series_isax_prop, 1, 2,

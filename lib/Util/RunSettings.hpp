@@ -52,7 +52,9 @@ class RunSettings {
 
     static RunSettings& get_instance();
 
+#ifdef ENABLE_TEST_CODE
     static void set_instance(std::shared_ptr<RunSettings> instance);
+#endif
 
     // ---------------------------------------------------- //
     // -------------------- SETTINGS ---------------------- //

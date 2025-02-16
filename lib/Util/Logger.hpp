@@ -147,6 +147,7 @@ class Logger {
      */
     template <typename C>
     void write_row(const str &file_path, const umap<C, str> &enum_to_val, const vec<C> &columns) {
+#ifndef DISABLE_LOGGING
         std::ofstream ofs(file_path, std::ios::app);
 
         ofs << ROW_SEP;
@@ -155,6 +156,7 @@ class Logger {
             ofs << enum_to_val.at(col);
             if (i < columns.size() - 1) ofs << COL_SEP;
         }
+#endif
     }
 
     /**

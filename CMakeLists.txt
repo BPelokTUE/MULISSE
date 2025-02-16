@@ -75,6 +75,18 @@ file(GLOB_RECURSE TEST_SOURCES tests/*.cpp src/**/*.cpp)
 set(TEST_NAME ${PROJECT_NAME}_tests)
 add_executable(${TEST_NAME} ${TEST_SOURCES})
 add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+target_compile_definitions(${TEST_NAME} PRIVATE ENABLE_TEST_CODE)
+
+# Add preprocessor definitions
+if(DISABLE_LOGGING)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE DISABLE_LOGGING)
+    target_compile_definitions(${TEST_NAME} PRIVATE DISABLE_LOGGING)
+endif()
+
+if(DISABLE_PARALLELISM)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE DISABLE_PARALLELISM)
+    target_compile_definitions(${TEST_NAME} PRIVATE DISABLE_PARALLELISM)
+endif()
 
 # Link FFTW3 and math library
 target_link_libraries(${PROJECT_NAME} fftw3 m)

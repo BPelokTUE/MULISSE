@@ -18,9 +18,10 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     initialized = true;
 
     // Create directories if they do not exist
-    for (str dir : {instance->DATA_DIR, instance->LOGS_DIR}) {
-        if (!std::filesystem::exists(dir)) std::filesystem::create_directories(dir);
-    }
+    if (!std::filesystem::exists(instance->DATA_DIR)) std::filesystem::create_directories(instance->DATA_DIR);
+#ifndef DISABLE_LOGGING
+    if (!std::filesystem::exists(instance->LOGS_DIR)) std::filesystem::create_directories(instance->LOGS_DIR);
+#endif
 
     instance->m_command_type = command_type;
     instance->m_dataset_props = dataset_props;
@@ -80,10 +81,12 @@ RunSettings &RunSettings::get_instance() {
     return *instance.get();
 }
 
+#ifdef ENABLE_TEST_CODE
 void RunSettings::set_instance(std::shared_ptr<RunSettings> instance) {
     RunSettings::instance = instance;
     initialized = true;
 }
+#endif
 
 // FFTs
 

@@ -18,10 +18,14 @@ void IEnvelopeIndex::construct(const str &dataset_path, IEnvelopeGenerator *gene
 
     vec<EnvelopeEntry> dataset_entries;
 
+#ifndef DISABLE_PARALLELISM
 #pragma omp parallel
+#endif
     {
         std::ifstream data_stream(dataset_path, std::ios::binary);
+#ifndef DISABLE_PARALLELISM
 #pragma omp for
+#endif
         for (size_t i = 0; i < num_series; ++i) {
             vec<vec<float>> mts(num_channels, vec<float>(series_len));
             data_stream.seekg(i * series_size);
@@ -29,7 +33,9 @@ void IEnvelopeIndex::construct(const str &dataset_path, IEnvelopeGenerator *gene
                 data_stream.read(reinterpret_cast<char *>(mts[c].data()), channel_size);
             }
             auto mts_entries = generator->get_entries(mts, i);
+#ifndef DISABLE_PARALLELISM
 #pragma omp critical
+#endif
             {
                 dataset_entries.insert(dataset_entries.end(), mts_entries.begin(), mts_entries.end());
             }

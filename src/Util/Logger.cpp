@@ -15,14 +15,17 @@ using std::to_string;
 
 uint Logger::determine_index(const str &file_path) {
     uint index = 0;
+#ifndef DISABLE_LOGGING
     std::ifstream file_stream(file_path);
     str line;
     std::getline(file_stream, line);  // Skip the header
     while (std::getline(file_stream, line)) ++index;
+#endif
     return index;
 }
 
 void Logger::file_setup(const str &file_path, const vec<str> &header) {
+#ifndef DISABLE_LOGGING
     // If the directory does not exist, create it
     std::filesystem::create_directories(std::filesystem::path(file_path).parent_path());
 
@@ -33,6 +36,7 @@ void Logger::file_setup(const str &file_path, const vec<str> &header) {
         ofs << header[i];
         if (i < header.size() - 1) ofs << COL_SEP;
     }
+#endif
 }
 
 // DatasetLogger
@@ -49,6 +53,7 @@ DatasetType CsvDatasetLogAttributes::get_type() { return CSV; }
 using DSC = DatasetSettingsColumn;
 
 void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
+#ifndef DISABLE_LOGGING
     DatasetLogger instance;
 
     str dataset_settings_path = RunSettings::get_instance().get_logs_path() + instance.DATASET_SETTINGS_FILE;
@@ -91,6 +96,7 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
                            {DSC::LOW_SD_LEN, low_sd_len_str},
                        },
                        DATASET_SETTINGS_COL_ENUMS);
+#endif
 }
 
 // IndexLogger
