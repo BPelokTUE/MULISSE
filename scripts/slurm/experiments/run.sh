@@ -12,7 +12,6 @@ l_min=$5
 l_max=$6
 num_series=${7}
 k=1
-lengths=(${@:8}) # Get remaining arguments as lengths array
 
 dataset_name=$(basename ${csv_dir})
 
@@ -39,7 +38,7 @@ else
 fi
 
 echo "Creating queries with ${num_queries} queries"
-bash scripts/slurm/methods/create_queries.sh "${dataset_path}" "${query_path}" "${series_len}" "${num_channels}" "${num_query_channels}" "${num_queries}" "${lengths[@]}"
+bash scripts/slurm/methods/create_queries.sh "${dataset_path}" "${query_path}" "${series_len}" "${num_channels}" "${num_query_channels}" "${num_queries}" "${l_min}" "${l_max}"
 
 # 1. Run Brute Force
 sbatch scripts/slurm/methods/bf.sh "${query_path}" "${ed_file}" "${dataset_path}" "${k}" "${num_channels}" "${series_len}"
@@ -51,7 +50,7 @@ sbatch scripts/slurm/methods/bf.sh "${query_path}" "${ed_file}" "${dataset_path}
 sbatch scripts/slurm/methods/mulisse.sh "${query_path}" "${isax_mass_file}" "${dataset_path}" "${k}" "${num_channels}" "${series_len}" "${l_min}" "${l_max}"
 
 # 4. Run MULISSE ED
-sbatch scripts/slurm/methods/mulisse_ed.sh "${query_path}" "${isax_ed_file}" "${dataset_path}" "${k}" "${num_channels}" "${series_len}" "${l_min}" "${l_max}"
+# sbatch scripts/slurm/methods/mulisse_ed.sh "${query_path}" "${isax_ed_file}" "${dataset_path}" "${k}" "${num_channels}" "${series_len}" "${l_min}" "${l_max}"
 
 # 5. Run MULISSE ED no abandon
 # sbatch scripts/slurm/methods/mulisse_ed_noearly.sh "${query_path}" "${isax_ed_file}" "${dataset_path}" "${k}" "${num_channels}" "${series_len}" "${l_min}" "${l_max}"
