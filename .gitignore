@@ -6,7 +6,8 @@ xcode/*
 # Helper files
 DATA/*
 LOGS/*
-TESTING
+scripts/local/*
+local_settings.py
 logs/*
 
 # Development

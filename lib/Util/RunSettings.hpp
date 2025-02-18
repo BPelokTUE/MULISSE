@@ -8,7 +8,7 @@
 #include "Util/FftArray.hpp"
 
 /** @brief Enumeration type for the command type */
-enum CommandType { CREATE_DS, PARSE_CSV, CREATE_QS, INDEX, SEARCH };
+enum CommandType { CREATE_DS, PARSE_CSV, CREATE_QS, INDEX, CALC_FFTS, SEARCH };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(CommandType, CMD_TYPE, false);
 

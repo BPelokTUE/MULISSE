@@ -85,7 +85,7 @@ struct iSaxEnvelopeIndexParams : EnvelopeIndexParams, iSaxIndexParams {
 };
 
 /** @brief Enumeration type for the cereal archives */
-enum ArchiveType { BINARY, JSON };
+enum ArchiveType { BINARY, JSON, NONE };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(ArchiveType, ARCHIVE_TYPE, false);
 

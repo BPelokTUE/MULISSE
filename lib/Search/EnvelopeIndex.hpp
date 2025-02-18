@@ -73,6 +73,9 @@ class IEnvelopeFinalizedIndex : public ISearchMethod {
             operation(archive);                                       \
             break;                                                    \
         }                                                             \
+        case NONE: {                                                  \
+            break;                                                    \
+        }                                                             \
             /* Add new archive types here */                          \
     }
 

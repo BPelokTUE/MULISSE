@@ -7,6 +7,8 @@
 #include "Util/typedefs.hpp"
 #include "Util/FftArray.hpp"
 
+namespace fs = std::filesystem;
+
 // Initialize static members
 std::shared_ptr<RunSettings> RunSettings::instance = std::make_shared<RunSettings>();
 bool RunSettings::initialized = false;
@@ -62,6 +64,8 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
                 throw std::runtime_error(
                     "Precalculating FFTs are only supported for setups with one envelope per time series");
             }
+            break;
+        case CALC_FFTS:
             break;
         case SEARCH:
             if (!std::filesystem::exists(instance->get_query_path())) {
@@ -196,12 +200,16 @@ const iSaxProperties &RunSettings::get_isax_props() { return m_isax_props; }
 
 // Paths
 
-str RunSettings::get_dataset_path() const { return DATA_DIR + m_dataset_props.file; }
+str RunSettings::get_dataset_path() const { return std::filesystem::path(DATA_DIR) / m_dataset_props.file; }
 
-str RunSettings::get_query_path() const { return DATA_DIR + m_query_properties.file; }
+str RunSettings::get_query_path() const { return std::filesystem::path(DATA_DIR) / m_query_properties.file; }
 
-str RunSettings::get_index_path() const { return m_index_file.empty() ? "" : DATA_DIR + m_index_file; }
+str RunSettings::get_index_path() const {
+    return m_index_file.empty() ? "" : std::filesystem::path(DATA_DIR) / m_index_file;
+}
 
-str RunSettings::get_ffts_path() const { return m_ffts_file.empty() ? "" : DATA_DIR + m_ffts_file; }
+str RunSettings::get_ffts_path() const {
+    return m_ffts_file.empty() ? "" : std::filesystem::path(DATA_DIR) / m_ffts_file;
+}
 
 str RunSettings::get_logs_path() const { return LOGS_DIR; }

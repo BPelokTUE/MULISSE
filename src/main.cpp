@@ -7,6 +7,7 @@
 #include "Modules/CsvParsing.hpp"
 #include "Modules/QueryGen.hpp"
 #include "Modules/Indexing.hpp"
+#include "Modules/CalcFfts.hpp"
 #include "Modules/Searching.hpp"
 #include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
@@ -20,6 +21,7 @@ int main(int argc, char **argv) {
     auto csv_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(PARSE_CSV), "Create dataset from CSV");
     auto qs_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_QS), "Create queries from dataset");
     auto index_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(INDEX), "Construct MULISSE index");
+    auto ffts_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CALC_FFTS), "Calculate FFTs");
     auto search_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(SEARCH), "Search using MULISSE");
     app.require_subcommand(1);
 
@@ -55,14 +57,14 @@ int main(int argc, char **argv) {
         "POSITIVE_FLOAT", "Positive Float");
 
     // Add arguments
-    str dataset_path, query_path, index_path, results_path, ffts_path,
+    str dataset_path, query_path, index_path, ffts_path,
         search_method_type_str = ACCEPTED_SEARCH_METHOD_TYPE_STRS[0],
         split_strategy_str = ACCEPTED_ISAX_SPLIT_STRATEGY_STRS[0],
         breakpoint_strategy_str = ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS[0],
         index_format_str = ACCEPTED_ARCHIVE_TYPE_STRS[0], search_type_str,
         distance_measure_str = ACCEPTED_DISTANCE_TYPE_STRS[0];
     vec<str> csv_paths;
-    float noise = 1.0;
+    float noise = 0.1;
     SaxNumBitsT first_layer_num_bits = 1;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env, knn_k = 1, low_sd_len;
     DistanceT r_range_r = 1.0;
@@ -74,7 +76,7 @@ int main(int argc, char **argv) {
     bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false;
 
     // Options for creating dataset
-    rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path")->required();
+    rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
     rw_subcommand->add_option("--noise", noise, "Random walk standard deviation")->capture_default_str();
     rw_subcommand->add_flag("-z,--zero_start", zero_start, "Start the random walk from zero");
     rw_subcommand->add_option("-n,--num_series", num_series, "Number of series")->required()->check(positive_int);
@@ -84,7 +86,7 @@ int main(int argc, char **argv) {
 
     // Options for parsing csv
     csv_subcommand->add_option("-i,--input", csv_paths, "Input CSV file paths, in the order of channels")->required();
-    csv_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path")->required();
+    csv_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
     csv_subcommand->add_option("-n,--num_series", num_series, "Max number of series")->required()->check(positive_int);
     csv_subcommand
         ->add_option(
@@ -95,7 +97,7 @@ int main(int argc, char **argv) {
 
     // Options for creating queries
     qs_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required();
-    qs_subcommand->add_option("-q,--query", query_path, "Output query path")->required();
+    qs_subcommand->add_option("-q,--query", query_path, "Output query path relative to `DATA`")->required();
     qs_subcommand->add_option("--noise", noise, "Query noise")->capture_default_str();
     qs_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
     qs_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
@@ -128,10 +130,11 @@ int main(int argc, char **argv) {
         ->capture_default_str();
 
     // Options for indexing
-    index_subcommand->add_option("-i,--index", index_path, "Output index path")->required();
-    index_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required();
+    index_subcommand->add_option("-i,--index", index_path, "Output index path relative to `DATA`")->required();
+    index_subcommand->add_option("-d,--dataset", dataset_path, "Dataset path relative to `DATA`")->required();
     index_subcommand
-        ->add_option("-F,--ffts", ffts_path, "Path to save FFTs; if not provided, FFTs will not be calculated")
+        ->add_option("-F,--ffts", ffts_path,
+                     "Path to save FFTs relative to `DATA`; if not provided, FFTs will not be calculated")
         ->capture_default_str();
     index_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
     index_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
@@ -165,15 +168,24 @@ int main(int argc, char **argv) {
         ->check(positive_int)
         ->capture_default_str();
 
+    // Options for calculating FFTs
+    ffts_subcommand->add_option("-d,--dataset", dataset_path, "Dataset path relative to `DATA`")->required();
+    ffts_subcommand->add_option("-F,--ffts", ffts_path, "Path to save FFTs relative to `DATA`")->required();
+    ffts_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
+    ffts_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
+        ->required()
+        ->check(positive_int);
+    ffts_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
+
     // Options for searching
-    search_subcommand->add_option("-i,--index", index_path, "Index file path")->capture_default_str();
-    search_subcommand->add_option("-d,--dataset", dataset_path, "Dataset file path")->required();
-    search_subcommand->add_option("-q,--query", query_path, "Query file path")->required();
-    search_subcommand
-        ->add_option("-F,--ffts", ffts_path, "Path to load FFTs from; if not provided, FFTs will not be loaded")
+    search_subcommand->add_option("-i,--index", index_path, "Index file path relative to `DATA`")
         ->capture_default_str();
-    // TODO: remove this
-    search_subcommand->add_option("-o,--out", results_path, "Output file path");
+    search_subcommand->add_option("-d,--dataset", dataset_path, "Dataset path relative to `DATA`")->required();
+    search_subcommand->add_option("-q,--query", query_path, "Query file path relative to `DATA`")->required();
+    search_subcommand
+        ->add_option("-F,--ffts", ffts_path,
+                     "Path to load FFTs from relative to `DATA`; if not provided, FFTs will not be loaded")
+        ->capture_default_str();
     search_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
         ->required()
         ->check(positive_int);
@@ -252,6 +264,8 @@ int main(int argc, char **argv) {
             .index_params = std::unique_ptr<IIndexParams>(index_params),
         };
         create_index(index_options);
+    } else if (command_type == CALC_FFTS) {
+        calculate_ffts(!unnormalized);
     } else if (command_type == SEARCH) {
         SearchType search_type = STR_TO_SEARCH_TYPE.at(search_type_str);
         IDistanceMeasure *distance_measure;

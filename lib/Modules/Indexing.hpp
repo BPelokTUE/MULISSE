@@ -7,7 +7,7 @@
 /**
  * @brief Create an index based on the specified options
  *
- * This function generates an index based on the specified options and saves it to a file.  The type of index, its
+ * This function generates an index based on the specified options and saves it to a file. The type of index, its
  * parameters, the dataset to use and the location to save the index to are specified in the options.
  *
  * @param index_options Indexing options

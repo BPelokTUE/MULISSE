@@ -1,4 +1,5 @@
 import argparse
+
 import pandas as pd
 
 # Default logs dir
@@ -44,14 +45,23 @@ def get_method_name(settings_df: pd.DataFrame, settings_id: int) -> str:
     return "-".join(parts)
 
 
-def equal_distances(
-    dists_1: list[float], dists_2: list[float], eps: float = 1e-2
-) -> bool:
-    if len(dists_1) != len(dists_2):
+def results_equal(results_1: dict[str, list], results_2: dict[str, list], max_diff_ratio: float = 0.01) -> bool:
+    if len(results_1) != len(results_2):
         return False
-    for d1, d2 in zip(dists_1, dists_2):
-        if abs(d1 - d2) > eps:
-            return False
+
+    results_size = len(results_1["ts_indices"])
+    if results_size != len(results_2["ts_indices"]):
+        return False
+
+    for i in range(results_size):
+        if (
+            results_1["ts_indices"][i] != results_2["ts_indices"][i]
+            or results_1["ts_positions"][i] != results_2["ts_positions"][i]
+        ):
+            max_diff = results_1["distances"][i] * max_diff_ratio
+            if abs(results_1["distances"][i] - results_2["distances"][i]) > max_diff:
+                return False
+
     return True
 
 
@@ -76,7 +86,7 @@ if __name__ == "__main__":
     search_settings_df = pd.read_csv(SEARCH_SETTING_CSV)
     runs_df = pd.read_csv(RUNS_CSV)
 
-    search_settings_by_dataset = {}
+    search_settings_by_dataset: dict[str, list] = {}
     for _, row in search_settings_df.iterrows():
         dataset = row[DATASET_FILE_COL]
         if dataset not in search_settings_by_dataset:
@@ -84,7 +94,7 @@ if __name__ == "__main__":
         search_settings_by_dataset[dataset].append(row[ID_COL])
 
     for dataset_file, search_settings_ids in search_settings_by_dataset.items():
-        differences_found = False
+        print(f"Checking dataset {dataset_file}")
         dataset_df = runs_df[runs_df[SETTINGS_ID_COL].isin(search_settings_ids)]
         for query_id in dataset_df[QUERY_ID_COL].unique():
             results_by_method = {}
@@ -100,22 +110,16 @@ if __name__ == "__main__":
             differences = []
             keys = list(results_by_method.keys())
             ref_key = keys[0]
-            ref_distances = results_by_method[ref_key]["distances"]
 
             for key in keys[1:]:
-                distances = results_by_method[key]["distances"]
-                if not equal_distances(ref_distances, distances):
+                if not results_equal(results_by_method[ref_key], results_by_method[key]):
                     differences.append(key)
-                    differences_found = True
 
             if len(differences) > 0:
                 print(f"Query {query_id} has different results:")
-                print(f"\tReference:")
+                print("\tReference:")
                 print(f"\t\t{results_by_method[ref_key]}")
                 print("\tDifferences:")
                 for key in differences:
                     print(f"\t\t{key}: {results_by_method[key]}")
                 print()
-
-        if not differences_found:
-            print(f"No differences found for dataset {dataset_file}")

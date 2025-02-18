@@ -117,21 +117,26 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
     uint segment_len = 0, pos_per_env = 0;
     SaxNumBitsT first_layer_num_bits = 0, num_bits_limit = 0;
     size_t leaf_capacity = 0;
-    str brs_str = "", sps_str = "", min_num_bits_on_tie_str = "";
+    str brs_str = "", sps_str = "", min_num_bits_on_tie_str = "", method_type_str = "";
 
-    if (index_options.index_params->get_type() == ISAX_ENVELOPE) {
-        auto *params = static_cast<iSaxEnvelopeIndexParams *>(index_options.index_params.get());
-        segment_len = params->segment_len;
-        pos_per_env = params->pos_per_env;
-        first_layer_num_bits = params->first_layer_num_bits;
-        leaf_capacity = params->leaf_capacity;
-        brs_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(params->breakpoint_strategy_type);
+    if (index_options.index_params) {
+        auto method_type = index_options.index_params->get_type();
+        method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(method_type);
 
-        auto split_strategy = params->split_strategy_type;
-        sps_str = ISAX_SPLIT_STRATEGY_TO_STR.at(split_strategy);
+        if (method_type == ISAX_ENVELOPE) {
+            auto *params = static_cast<iSaxEnvelopeIndexParams *>(index_options.index_params.get());
+            segment_len = params->segment_len;
+            pos_per_env = params->pos_per_env;
+            first_layer_num_bits = params->first_layer_num_bits;
+            leaf_capacity = params->leaf_capacity;
+            brs_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(params->breakpoint_strategy_type);
 
-        if (split_strategy == ENTROPY_MAXIMIZING) min_num_bits_on_tie_str = to_string(params->min_num_bits_on_tie);
-        num_bits_limit = params->num_bits_limit;
+            auto split_strategy = params->split_strategy_type;
+            sps_str = ISAX_SPLIT_STRATEGY_TO_STR.at(split_strategy);
+
+            if (split_strategy == ENTROPY_MAXIMIZING) min_num_bits_on_tie_str = to_string(params->min_num_bits_on_tie);
+            num_bits_limit = params->num_bits_limit;
+        }
     }
 
     instance.m_columns = {
@@ -139,10 +144,10 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         {ISC::DATASET_FILE, RS.m_dataset_props.file},
         {ISC::INDEX_FILE, RS.m_index_file},
         {ISC::FFTS_FILE, RS.m_ffts_file},
-        {ISC::L_MIN, to_string(index_options.l_min)},
-        {ISC::L_MAX, to_string(index_options.l_max)},
+        {ISC::L_MIN, format_num_param(index_options.l_min)},
+        {ISC::L_MAX, format_num_param(index_options.l_max)},
         {ISC::NORMALIZED, to_string(index_options.normalized)},
-        {ISC::INDEX_TYPE, SEARCH_METHOD_TYPE_TO_STR.at(index_options.index_params->get_type())},
+        {ISC::INDEX_TYPE, method_type_str},
         {ISC::SEGMENT_LENGTH, format_num_param(segment_len)},
         {ISC::POS_PER_ENV, format_num_param(pos_per_env)},
         {ISC::FIRST_LAYER_NUM_BITS, format_num_param(first_layer_num_bits)},
