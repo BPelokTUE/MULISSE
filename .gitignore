@@ -7,8 +7,9 @@ xcode/*
 DATA/*
 LOGS/*
 scripts/local/*
-local_settings.py
-logs/*
+local_settings.json
+scripts/run_configs/*
+!scripts/run_configs/default_config.json
 
 # Development
 .vscode
@@ -19,7 +20,7 @@ __pycache__
 .DS_Store
 
 # Doxygen
-docs/*
+docs/mulisse_src/*
 html
 latex
 
