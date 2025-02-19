@@ -6,6 +6,7 @@ xcode/*
 # Helper files
 DATA/*
 LOGS/*
+LOGS*/*
 scripts/local/*
 local_settings.json
 scripts/run_configs/*
@@ -15,6 +16,7 @@ scripts/run_configs/*
 .vscode
 .editorconfig
 __pycache__
+.mypy_cache
 
 # OS-specific
 .DS_Store

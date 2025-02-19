@@ -1,6 +1,7 @@
 # %%
-import pandas as pd
 import os
+
+import pandas as pd
 
 LOGS_DIR = "../../LOGS"
 DATA_DIR = "../../DATA"
@@ -17,9 +18,7 @@ LOW_SD_LEN_COL = "low_sd_len"
 
 dataset_settings_df = pd.read_csv(f"{LOGS_DIR}/{DATASET_SETTINGS_CSV}")
 dataset_settings_df = dataset_settings_df[
-    dataset_settings_df[DATASET_FILE_COL].apply(
-        lambda x: os.path.exists(f"{DATA_DIR}/{x}")
-    )
+    dataset_settings_df[DATASET_FILE_COL].apply(lambda x: os.path.exists(f"{DATA_DIR}/{x}"))
 ]
 
 datasets = dataset_settings_df[DATASET_FILE_COL].unique()
@@ -29,14 +28,10 @@ print(datasets)
 import numpy as np
 
 
-def load_series(
-    dataset_file: str, series_ind: int, num_channels: int, series_len: int
-) -> np.ndarray:
+def load_series(dataset_file: str, series_ind: int, num_channels: int, series_len: int) -> np.ndarray:
     file_path = f"{DATA_DIR}/{dataset_file}"
     start_pos = series_ind * num_channels * series_len * 4
-    series = np.fromfile(
-        file_path, dtype=np.float32, count=num_channels * series_len, offset=start_pos
-    )
+    series = np.fromfile(file_path, dtype=np.float32, count=num_channels * series_len, offset=start_pos)
     return series.reshape((num_channels, series_len))
 
 
@@ -62,9 +57,7 @@ selected_series = {dataset: None for dataset in datasets}
 selected_queries = {dataset: None for dataset in datasets}
 
 for dataset in datasets:
-    settings = dataset_settings_df[
-        dataset_settings_df[DATASET_FILE_COL] == dataset
-    ].iloc[0]
+    settings = dataset_settings_df[dataset_settings_df[DATASET_FILE_COL] == dataset].iloc[0]
 
     series_len = settings[SERIES_LENGTH_COL]
     num_channels = settings[NUM_CHANNELS_COL]
@@ -109,10 +102,7 @@ for dataset, series in selected_series.items():
     l_max = series_len
     for segment_len in SEGMENT_LENGTHS:
         selected_envelopes[dataset][segment_len] = [
-            ulisse_envelope_normalized(
-                channel, (pos_per_env, segment_len, L_MIN, l_max)
-            )
-            for channel in series
+            ulisse_envelope_normalized(channel, (pos_per_env, segment_len, L_MIN, l_max)) for channel in series
         ]
 
 
@@ -154,9 +144,7 @@ for dataset, envelope_dict in selected_envelopes.items():
                 plt.hlines(min_l_val, start, end, colors="r")
                 max_u_val = np.max(u_val)
                 plt.hlines(max_u_val, start, end, colors="r")
-                plt.fill_between(
-                    (start, end), min_l_val, max_u_val, color="r", alpha=alpha
-                )
+                plt.fill_between((start, end), min_l_val, max_u_val, color="r", alpha=alpha)
         if SHOW_QUERY:
             plt.plot(selected_queries[dataset][c], color="g")
         if SHOW_SERIES:

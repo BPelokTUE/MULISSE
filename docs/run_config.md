@@ -4,98 +4,104 @@ This document describes the values used in configuration files for [`run_mulisse
 
 ## Configuration Values
 
-### `run_synthetic`
-- **Type**: `boolean`
-- **Description**: Whether to run on synthetic data or not.
+### Dataset configuration
 
-### `csv_data_dirs`
+#### `csv_data_dirs`
 - **Type**: `list[string]`
 - **Description**: List of directories within `local_settings.CSV_DIR`.
 
-### `dataset_sizes`
+#### `dataset_sizes`
 - **Type**: `list[int]`
 - **Description**: List of dataset sizes.
 
-### `series_lengths`
+#### `series_lengths`
 - **Type**: `list[int]`
 - **Description**: List of series lengths.
 
-### `syn_num_channels`
+#### `syn_num_channels`
 - **Type**: `list[int]`
-- **Description**: List of numbers of channels for synthetic data.
+- **Description**: List of numbers of channels for synthetic data. No experiments are run on synthetic dataset if `syn_num_channels=[]`.
 
-### `query_set_sizes`
+#### `syn_step_stdevs`
+- **Type**: `list[float]`
+- **Description**: List of standard deviations to use for the steps in the synthetic (random walk) datasets. No experiments are run on synthetic dataset if `syn_step_stdevs=[]`.
+
+#### `query_set_sizes`
 - **Type**: `list[int]`
 - **Description**: List of query set sizes.
 
-### `l_range_ratios`
+#### `l_range_ratios`
 - **Type**: `list[list[float]]`
 - **Description**: Ratios of `l_min` and `l_max` compared to `series_length`.
 
-### `used_channel_ratios`
+#### `used_channel_ratios`
 - **Type**: `list[float]`
 - **Description**: Ratio of number of used channels compared to number of channels. `0.0` means completely random selection of channels, `1.0` means all channels.
 
-### `index_types`
+#### `query_noise_stdevs`
+- **Type**: `list[float]`
+- **Description**: List of standard deviations of the Gaussian noise to apply for creating the queries.
+
+#### `index_types`
 - **Type**: `list[string]`
 - **Description**: List of index types.
 
-### `isax_split_strategies`
+#### `isax_split_strategies`
 - **Type**: `list[string]`
 - **Description**: List of iSAX split strategies.
 
-### `isax_breakpoint_strategies`
+#### `isax_breakpoint_strategies`
 - **Type**: `list[string]`
 - **Description**: List of iSAX breakpoint strategies.
 
-### `isax_leaf_capacities`
+#### `isax_leaf_capacities`
 - **Type**: `list[int]`
 - **Description**: List of iSAX leaf capacities.
 
-### `isax_start_bit_numbers`
+#### `isax_start_bit_numbers`
 - **Type**: `list[int]`
 - **Description**: List of iSAX first layer bit numbers.
 
-### `num_segments`
+#### `num_segments`
 - **Type**: `list[int]`
 - **Description**: Ratios of segment length compared to `series_length`.
 
-### `envelope_size_ratios`
+#### `envelope_size_ratios`
 - **Type**: `list[float]`
 - **Description**: Ratios of envelope size compared to `series_length - l_min + 1`.
 
-### `scan_methods`
+#### `scan_methods`
 - **Type**: `list[string]`
 - **Description**: List of scan methods.
 
-### `distance_measures`
+#### `distance_measures`
 - **Type**: `list[string]`
 - **Description**: List of distance measures.
 
-### `early_abandon`
+#### `early_abandon`
 - **Type**: `list[boolean]`
 - **Description**: List of early abandon flags.
 
-### `precalculate_ffts`
+#### `precalculate_ffts`
 - **Type**: `list[boolean]`
 - **Description**: List describing whether to use precalculated FFTs or not. The FFT file path is determined automatically.
 
-### `search_types`
+#### `search_types`
 - **Type**: `list[string]`
 - **Description**: List of search types.
 
-### `search_ks`
+#### `search_ks`
 - **Type**: `list[int]`
 - **Description**: List of `k` values for kNN search.
 
-### `search_rs`
+#### `search_rs`
 - **Type**: `list[float]`
 - **Description**: List of `r` values for r-range search.
 
-### `search_approx`
+#### `search_approx`
 - **Type**: `list[boolean]`
 - **Description**: List of approximate search flags.
 
-### `search_raw`
+#### `search_raw`
 - **Type**: `list[boolean]`
 - **Description**: List of raw (unnormalized) search flags.

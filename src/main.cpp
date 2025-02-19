@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
         index_format_str = ACCEPTED_ARCHIVE_TYPE_STRS[0], search_type_str,
         distance_measure_str = ACCEPTED_DISTANCE_TYPE_STRS[0];
     vec<str> csv_paths;
-    float noise = 0.1;
+    float step_sd = 1.0, noise = 0.1;
     SaxNumBitsT first_layer_num_bits = 1;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env, knn_k = 1, low_sd_len;
     DistanceT r_range_r = 1.0;
@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
-    rw_subcommand->add_option("--noise", noise, "Random walk standard deviation")->capture_default_str();
+    rw_subcommand->add_option("-s,--step_sd", step_sd, "Random walk step standard deviation")->capture_default_str();
     rw_subcommand->add_flag("-z,--zero_start", zero_start, "Start the random walk from zero");
     rw_subcommand->add_option("-n,--num_series", num_series, "Number of series")->required()->check(positive_int);
     rw_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
@@ -226,7 +226,7 @@ int main(int argc, char **argv) {
 
     // Execute subcommand
     if (command_type == CREATE_DS) {
-        create_random_walks(noise, zero_start, seed);
+        create_random_walks(step_sd, zero_start, seed);
     } else if (command_type == PARSE_CSV) {
         create_dataset_from_csv(csv_paths, num_series, low_sd_len);
     } else if (command_type == CREATE_QS) {

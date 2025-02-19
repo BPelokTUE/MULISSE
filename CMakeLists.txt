@@ -64,42 +64,58 @@ endif()
 
 find_package(OpenMP REQUIRED)
 
-# Add main executable
-file(GLOB_RECURSE SOURCES src/*.cpp)
-add_executable(${PROJECT_NAME} ${SOURCES})
-
-# Gather test files
-file(GLOB_RECURSE TEST_SOURCES tests/*.cpp src/**/*.cpp)
-
-# Add test executable
-set(TEST_NAME ${PROJECT_NAME}_tests)
-add_executable(${TEST_NAME} ${TEST_SOURCES})
-add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
-target_compile_definitions(${TEST_NAME} PRIVATE ENABLE_TEST_CODE)
-
-# Add preprocessor definitions
-if(DISABLE_LOGGING)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE DISABLE_LOGGING)
-    target_compile_definitions(${TEST_NAME} PRIVATE DISABLE_LOGGING)
-endif()
-
-if(DISABLE_PARALLELISM)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE DISABLE_PARALLELISM)
-    target_compile_definitions(${TEST_NAME} PRIVATE DISABLE_PARALLELISM)
-endif()
-
-# Link FFTW3 and math library
-target_link_libraries(${PROJECT_NAME} fftw3 m)
-target_link_libraries(${TEST_NAME} fftw3 m)
-
-# Link OpenMP
-if (OpenMP_CXX_FOUND)
-    target_link_libraries(${PROJECT_NAME} OpenMP::OpenMP_CXX)
-    target_link_libraries(${TEST_NAME} OpenMP::OpenMP_CXX)
-endif()
-
 # Ensure flags are passed to ccache
 if (CCACHE_PROGRAM)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+endif()
+
+# Function for setting up target (adding compile options, preprocessor definitions, and linking libraries)
+function(set_up_target target)
+    # Set compiler-specific flags to ignore warnings for the extern directory
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${target} PRIVATE -isystem ${CMAKE_SOURCE_DIR}/extern)
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(${target} PRIVATE -isystem ${CMAKE_SOURCE_DIR}/extern)
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        target_compile_options(${target} PRIVATE /external:I ${CMAKE_SOURCE_DIR}/extern)
+    endif()
+
+    # Add preprocessor definitions
+    if(DISABLE_LOGGING)
+        target_compile_definitions(${target} PRIVATE DISABLE_LOGGING)
+    endif()
+
+    if(DISABLE_PARALLELISM)
+        target_compile_definitions(${target} PRIVATE DISABLE_PARALLELISM)
+    endif()
+
+    # Link FFTW3 and math library
+    target_link_libraries(${target} fftw3 m)
+
+    # Link OpenMP
+    if (OpenMP_CXX_FOUND)
+        target_link_libraries(${target} OpenMP::OpenMP_CXX)
+    endif()
+endfunction()
+
+# Add main executable
+file(GLOB_RECURSE SOURCES src/*.cpp)
+add_executable(${PROJECT_NAME} ${SOURCES})
+set_up_target(${PROJECT_NAME})
+
+
+# Option to ignore tests
+option(IGNORE_TESTS "Ignore tests" OFF)
+
+if (NOT IGNORE_TESTS)
+    # Gather test files
+    file(GLOB_RECURSE TEST_SOURCES tests/*.cpp src/**/*.cpp)
+
+    # Add test executable
+    set(TEST_NAME ${PROJECT_NAME}_tests)
+    add_executable(${TEST_NAME} ${TEST_SOURCES})
+    add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+    target_compile_definitions(${TEST_NAME} PRIVATE ENABLE_TEST_CODE)
+    set_up_target(${TEST_NAME})
 endif()

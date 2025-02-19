@@ -9,7 +9,7 @@
 #include "Util/Logger.hpp"
 #include "Util/RunSettings.hpp"
 
-int create_random_walks(float rw_noise, bool zero_start, int seed) {
+int create_random_walks(float step_sigma, bool zero_start, int seed) {
     auto &RS = RunSettings::get_instance();
     str dataset_path = RS.get_dataset_path();
     auto [file, num_channels, series_len, num_series] = RS.get_dataset_props();
@@ -29,7 +29,7 @@ int create_random_walks(float rw_noise, bool zero_start, int seed) {
     }
 
     std::default_random_engine generator(seed);
-    std::normal_distribution<float> distribution(0.0, rw_noise);
+    std::normal_distribution<float> distribution(0.0, step_sigma);
 
     for (uint i = 0; i < num_series; ++i) {
         for (uint j = 0; j < num_channels; ++j) {
@@ -46,7 +46,7 @@ int create_random_walks(float rw_noise, bool zero_start, int seed) {
 
     outfile.close();
 
-    DatasetLogger::write_entry(std::make_unique<RandomWalkLogAttributes>(rw_noise));
+    DatasetLogger::write_entry(std::make_unique<RandomWalkLogAttributes>(step_sigma));
 
     return 0;
 }

@@ -7,8 +7,6 @@ import os
 import subprocess
 from typing import Any, Iterator
 
-from tqdm import tqdm
-
 
 def require_keys(d: dict, keys: list[str]):
     for key in keys:
@@ -30,24 +28,28 @@ if __name__ == "__main__":
     require_keys(local_settings, ["DEFAULT_RUN_CONFIG", "CSV_PATH", "REPO_PATH"])
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", default=local_settings["DEFAULT_RUN_CONFIG"])
-    parser.add_argument("--no_cleanup", action="store_true", help="Do not remove generated data files")
-    parser.add_argument("--print_settings", action="store_true", help="Print settings")
+    parser.add_argument("-i", "--input_config", default=local_settings["DEFAULT_RUN_CONFIG"])
+    parser.add_argument("-d", "--no_cleanup", "--dirty", action="store_true", help="Do not remove generated data files")
+    parser.add_argument("-s", "--print_settings", action="store_true", help="Print settings")
+    parser.add_argument("-b", "--progress_bar", action="store_true", help="Show progress bar")
     input_args = parser.parse_args()
 
-    if not os.path.exists(input_args.config):
-        raise FileNotFoundError(f"Config file {input_args.config} not found.")
+    if input_args.progress_bar:
+        from tqdm import tqdm
 
-    config = json.load(open(input_args.config))
+    if not os.path.exists(input_args.input_config):
+        raise FileNotFoundError(f"Config file {input_args.input_config} not found.")
+
+    config = json.load(open(input_args.input_config))
     # fmt: off
     require_keys(
         config,
         [
-            "run_synthetic", "csv_data_dirs", "dataset_sizes", "series_lengths", "syn_num_channels", "query_set_sizes",
-            "l_range_ratios", "used_channel_ratios", "index_types", "isax_split_strategies", 
-            "isax_breakpoint_strategies", "isax_leaf_capacities", "isax_start_bit_numbers", "num_segments",
-            "envelope_size_ratios", "scan_methods", "distance_measures", "early_abandon", "precalculate_ffts",
-            "search_types", "search_ks", "search_rs", "search_approx", "search_raw"
+            "csv_data_dirs", "dataset_sizes", "series_lengths", "syn_num_channels", "query_set_sizes",
+            "syn_step_stdevs", "l_range_ratios", "used_channel_ratios", "query_noise_stdevs", "index_types",
+            "isax_split_strategies", "isax_breakpoint_strategies", "isax_leaf_capacities", "isax_start_bit_numbers",
+            "num_segments", "envelope_size_ratios", "scan_methods", "distance_measures", "early_abandon",
+            "precalculate_ffts", "search_types", "search_ks", "search_rs", "search_approx", "search_raw"
         ],
     )
     # fmt: on
@@ -70,16 +72,15 @@ if __name__ == "__main__":
     # DATASET SETTINGS    #
     # --------------------#
 
-    dataset_settings = []
-    if config["run_synthetic"]:
-        dataset_settings.append(
-            {
-                "command": "create_ds",
-                "location": "synthetic",
-                "size": config["dataset_sizes"],
-                "num_channels": config["syn_num_channels"],
-            }
-        )
+    dataset_settings = [
+        {
+            "command": "create_ds",
+            "location": "synthetic",
+            "size": config["dataset_sizes"],
+            "num_channels": config["syn_num_channels"],
+            "step_stdev": config["syn_step_stdevs"],
+        }
+    ]
     csv_data_paths = [os.path.join(local_settings["CSV_PATH"], data_dir) for data_dir in config["csv_data_dirs"]]
     for path in csv_data_paths:
         dataset_settings.append(
@@ -95,7 +96,13 @@ if __name__ == "__main__":
     # QUERY SETTINGS      #
     # --------------------#
 
-    query_settings = [{"size": config["query_set_sizes"], "used_channel_ratio": config["used_channel_ratios"]}]
+    query_settings = [
+        {
+            "size": config["query_set_sizes"],
+            "used_channel_ratio": config["used_channel_ratios"],
+            "noise_stdev": config["query_noise_stdevs"],
+        }
+    ]
 
     # --------------------#
     # INDEX SETTINGS      #
@@ -222,6 +229,11 @@ if __name__ == "__main__":
         def __iter__(self) -> Iterator[dict[str, Any]]:
             return iter(self.all_combinations)
 
+        def iterate(self, desc: str = "", leave=True):
+            if input_args.progress_bar:
+                return tqdm(self, desc=desc, leave=leave)
+            return self.__iter__()
+
     # --------------------#
     # RUN EXPERIMENTS     #
     # --------------------#
@@ -249,12 +261,12 @@ if __name__ == "__main__":
                 f.write(f"Command failed with return code {result.returncode}\n")
             f.write("\n")
 
-    for length_setting in tqdm(SettingIterator(length_settings), desc="Length settings"):
+    for length_setting in SettingIterator(length_settings).iterate(desc="Length settings"):
         series_len = length_setting["series_len"]
         l_min = int(series_len * length_setting["l_range"][0])
         l_max = int(series_len * length_setting["l_range"][1])
 
-        for dataset_setting in tqdm(SettingIterator(dataset_settings), desc="Dataset settings", leave=False):
+        for dataset_setting in SettingIterator(dataset_settings).iterate(desc="Dataset settings", leave=False):
             command = dataset_setting["command"]
             num_series = dataset_setting["size"]
             num_channels = dataset_setting["num_channels"]
@@ -269,6 +281,7 @@ if __name__ == "__main__":
                 args += ["-i", *[os.path.join(csvs_dir, f) for f in os.listdir(csvs_dir)]]
             if command == "create_ds":
                 args += ["-c", str(num_channels)]
+                args += ["-s", str(dataset_setting["step_stdev"])]
 
             run_command_with_logging([EXECUTABLE_PATH, *args])
             ffts_required = any(
@@ -300,36 +313,32 @@ if __name__ == "__main__":
                         args += [f"--{key}", str(value)]
                 return args
 
-            for query_setting in tqdm(SettingIterator(query_settings), desc="Query settings", leave=False):
+            for query_setting in SettingIterator(query_settings).iterate(desc="Query settings", leave=False):
                 num_queries = query_setting["size"]
                 used_channels = int(num_channels * query_setting["used_channel_ratio"])
+                noise_stdev = query_setting["noise_stdev"]
 
                 query_file = os.path.join(dataset_setting["location"], f"queries-{query_counter}.txt")
                 query_counter += 1
                 # fmt: off
                 args = [
                     "create_qs", "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
-                    "-Q", str(num_queries), "-l", str(l_min), "-L", str(l_max), "-u", str(used_channels),
+                    "-Q", str(num_queries), "-l", str(l_min), "-L", str(l_max), "-u", str(used_channels), "--noise",
+                    str(noise_stdev)
                 ]
                 # fmt: on
                 run_command_with_logging([EXECUTABLE_PATH, *args])
 
                 shared_args = ["-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file]
-                for scan_method_setting in tqdm(
-                    SettingIterator(scan_method_settings), desc="Scan method settings", leave=False
+
+                for scan_method_setting in SettingIterator(scan_method_settings).iterate(
+                    desc="Scan method settings", leave=False
                 ):
                     args = get_method_args(scan_method_setting) + shared_args
                     run_command_with_logging([EXECUTABLE_PATH, *args])
 
-                shared_args = [
-                    "-m",
-                    str(series_len),
-                    "-c",
-                    str(num_channels),
-                    "-d",
-                    data_file,
-                ]
-                for index_setting in tqdm(SettingIterator(index_settings), desc="Index settings", leave=False):
+                shared_args = ["-m", str(series_len), "-c", str(num_channels), "-d", data_file]
+                for index_setting in SettingIterator(index_settings).iterate(desc="Index settings", leave=False):
                     index_file = os.path.join(dataset_setting["location"], f"index-{index_counter}.bin")
                     index_counter += 1
 
@@ -359,8 +368,9 @@ if __name__ == "__main__":
                         "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file, "-i", index_file
                     ]
                     # fmt: on
-                    for index_method_setting in tqdm(
-                        SettingIterator(index_method_settings), desc="Indexing method settings", leave=False
+
+                    for index_method_setting in SettingIterator(index_method_settings).iterate(
+                        desc="Indexing method settings", leave=False
                     ):
                         args = get_method_args(index_method_setting) + shared_args
                         run_command_with_logging([EXECUTABLE_PATH, *args])

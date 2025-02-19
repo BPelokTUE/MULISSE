@@ -9,11 +9,11 @@
  * This function generates multiple time series of random walks and writes them
  * to a specified binary file. Run with `num_channels=1` for generating UTS.
  *
- * @param rw_noise The standard deviation of the normal distribution used to generate noise
+ * @param step_sigma The standard deviation of the normal distribution used to generate the steps
  * @param zero_start If true, the random walk starts at zero; otherwise, it starts with a random value
  * @param seed The seed for the random number generator
  * @return 0 on success, 1 if the dataset file already exists, 2 if the file could not be created.
  */
-int create_random_walks(float rw_noise, bool zero_start, int seed);
+int create_random_walks(float step_sigma, bool zero_start, int seed);
 
 #endif  // RANDOMWALK_HPP
