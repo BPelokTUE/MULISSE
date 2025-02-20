@@ -7,10 +7,8 @@ xcode/*
 DATA/*
 LOGS/*
 LOGS*/*
-scripts/local/*
+**/local/*
 local_settings.json
-scripts/run_configs/*
-!scripts/run_configs/default_config.json
 
 # Development
 .vscode

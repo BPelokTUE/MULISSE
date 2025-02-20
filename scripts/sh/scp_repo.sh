@@ -28,7 +28,12 @@ local_path=$(cat scripts/local_settings.json | jq '.["REPO_PATH"]' | tr -d '"')
 remote_url=$(cat scripts/local_settings.json | jq '.["REMOTE_URL"]' | tr -d '"')
 remote_path=$(cat scripts/local_settings.json | jq '.["REMOTE_PATH"]' | tr -d '"')
 
-include=(lib src extern tests CMakeLists.txt scripts/py scripts/sh scripts/run_configs)
+include=(lib src extern tests CMakeLists.txt scripts/py scripts/sh)
+run_configs=$(ls run_configs | grep -v "local")
+for file in $run_configs; do
+    include+=(scripts/run_configs/$file)
+done
+
 if [ "$INCLUDE_SLURM_HEADER" = true ]; then
     include+=(scripts/slurm)
 else

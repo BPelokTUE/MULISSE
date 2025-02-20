@@ -1,7 +1,12 @@
 # %%
 import os
+from typing import Any
 
+import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
+
+from .common.ulisse_envelopes import ulisse_envelope_normalized
 
 LOGS_DIR = "../../LOGS"
 DATA_DIR = "../../DATA"
@@ -24,10 +29,8 @@ dataset_settings_df = dataset_settings_df[
 datasets = dataset_settings_df[DATASET_FILE_COL].unique()
 print(datasets)
 
+
 # %%
-import numpy as np
-
-
 def load_series(dataset_file: str, series_ind: int, num_channels: int, series_len: int) -> np.ndarray:
     file_path = f"{DATA_DIR}/{dataset_file}"
     start_pos = series_ind * num_channels * series_len * 4
@@ -46,15 +49,10 @@ def z_normalize_series(series: np.ndarray) -> np.ndarray:
 #### Pick random time series
 """
 
-# %%
-from matplotlib import pyplot as plt
-
-from ulisse_envelopes import ulisse_envelope_normalized
-
 QUERY_LEN = 384
 
-selected_series = {dataset: None for dataset in datasets}
-selected_queries = {dataset: None for dataset in datasets}
+selected_series: dict[str, Any] = {dataset: None for dataset in datasets}
+selected_queries: dict[str, Any] = {dataset: None for dataset in datasets}
 
 for dataset in datasets:
     settings = dataset_settings_df[dataset_settings_df[DATASET_FILE_COL] == dataset].iloc[0]
@@ -91,8 +89,7 @@ for dataset in datasets:
 #### Generate envelopes for time series
 """
 
-# %%
-selected_envelopes = {dataset: {} for dataset in datasets}
+selected_envelopes: dict[str, dict] = {dataset: {} for dataset in datasets}
 
 SEGMENT_LENGTHS = [32, 128]
 L_MIN = 128
@@ -111,7 +108,6 @@ for dataset, series in selected_series.items():
 #### Visualized envelopes on time series
 """
 
-# %%
 SHOW_QUERY = False
 SHOW_SERIES = True
 ENVELOPE_MASK = [1, 1]

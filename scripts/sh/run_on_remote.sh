@@ -26,12 +26,13 @@ config_files=()
 
 while [[ "$#" -gt 0 ]]; do
     if [[ $1 == -* ]]; then
+        echo $1
         reading_config_files=false
     fi
 
     case $1 in
     -i|--input_configs)
-        INPUT_CONFIG=$2
+        reading_config_files=true
         ;;
     --no_scp_repo)
         NO_SCP_REPO=true
@@ -56,7 +57,7 @@ while [[ "$#" -gt 0 ]]; do
             config_files+=("$1")
         else
             echo "Usage: $0 [--no_scp_repo] [-s | --slurm] [-t | --tests] [--clean_build] [--no_clean_prev_run]"
-            echo "  --input_configs      Paths to the configuration files"
+            echo "  -i, --input_configs      Paths to the configuration files"
             echo "  --no_scp_repo        Skip copying the repository to the remote"
             echo "  -s, --slurm          Include SLURM header in the scripts"
             echo "  -t, --tests          Build tests as well"

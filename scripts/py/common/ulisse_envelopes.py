@@ -1,9 +1,9 @@
 """
-Python implementation of the `ulisse_envelope_raw` and `ulisse_envelope_normalized` 
+Python implementation of the `ulisse_envelope_raw` and `ulisse_envelope_normalized`
 functions from the ULISSE library.
 """
 
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
 
 import numpy as np
 
@@ -17,9 +17,7 @@ def flip_env_infinities(envelopes: List[Dict[str, np.ndarray]]) -> None:
                 envelope["upper"][i] = np.inf
 
 
-def ulisse_envelope_raw(
-    ts: np.array, env_params: Tuple[int, int, int, int]
-) -> List[Dict[str, np.ndarray]]:
+def ulisse_envelope_raw(ts: np.ndarray, env_params: Tuple[int, int, int, int]) -> List[Dict[str, np.ndarray]]:
     """See `src/Summarization/Envelope.cpp:ulisse_envelope_raw`"""
     pos_per_env, segment_len, l_min, l_max = env_params
 
@@ -55,18 +53,14 @@ def ulisse_envelope_raw(
     return envelopes
 
 
-def calculate_mu_and_sigma(
-    sum_val: float, sq_sum_val: float, length: int
-) -> Tuple[float, float]:
+def calculate_mu_and_sigma(sum_val: float, sq_sum_val: float, length: int) -> Tuple[float, float]:
     """See `src/Util/utilities.cpp:calculate_mu_and_sigma`"""
     mu = sum_val / length
     sigma = np.sqrt((sq_sum_val / length) - (mu**2))
     return mu, sigma
 
 
-def ulisse_envelope_normalized(
-    ts: np.ndarray, env_params: Tuple[int, int, int, int]
-) -> List[Dict[str, np.ndarray]]:
+def ulisse_envelope_normalized(ts: np.ndarray, env_params: Tuple[int, int, int, int]) -> List[Dict[str, np.ndarray]]:
     """See `src/Summarization/Envelope.cpp:ulisse_envelope_normalized`"""
     pos_per_env, segment_len, l_min, l_max = env_params
 
@@ -101,8 +95,7 @@ def ulisse_envelope_normalized(
             num_seg_in_subs = subs_len // segment_len
             for seg_ind in range(num_seg_in_subs):
                 paa_val = (
-                    sum_accs[start + (seg_ind + 1) * segment_len]
-                    - sum_accs[start + seg_ind * segment_len]
+                    sum_accs[start + (seg_ind + 1) * segment_len] - sum_accs[start + seg_ind * segment_len]
                 ) / segment_len
                 paa_val = (paa_val - mu) / sigma
 
