@@ -58,11 +58,11 @@ int main(int argc, char **argv) {
 
     // Add arguments
     str dataset_path, query_path, index_path, ffts_path,
-        search_method_type_str = ACCEPTED_SEARCH_METHOD_TYPE_STRS[0],
-        split_strategy_str = ACCEPTED_ISAX_SPLIT_STRATEGY_STRS[0],
-        breakpoint_strategy_str = ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS[0],
-        index_format_str = ACCEPTED_ARCHIVE_TYPE_STRS[0], search_type_str,
-        distance_measure_str = ACCEPTED_DISTANCE_TYPE_STRS[0];
+        search_method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(ISAX_ENVELOPE),
+        split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
+        breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
+        index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
+        distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED);
     vec<str> csv_paths;
     float step_sd = 1.0, noise = 0.1;
     SaxNumBitsT first_layer_num_bits = 1;
@@ -204,7 +204,7 @@ int main(int argc, char **argv) {
     search_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
     //      Search type-specific options
     search_subcommand->add_option("-T,--search_type", search_type_str, "Search type")
-        ->required()
+        ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_SEARCH_TYPE_STRS));
     search_subcommand->add_option("-k,--k", knn_k, "Number of nearest neighbors for kNN")
         ->capture_default_str()

@@ -46,9 +46,9 @@ if __name__ == "__main__":
         config,
         [
             "csv_data_dirs", "dataset_sizes", "series_lengths", "syn_num_channels", "query_set_sizes",
-            "syn_step_stdevs", "l_range_ratios", "used_channel_ratios", "query_noise_stdevs", "index_types",
+            "syn_step_stdevs", "l_range_ratios", "used_channel_ratios", "query_noise_stdevs", "search_methods",
             "isax_split_strategies", "isax_breakpoint_strategies", "isax_leaf_capacities", "isax_start_bit_numbers",
-            "num_segments", "envelope_size_ratios", "scan_methods", "distance_measures", "early_abandon",
+            "num_segments", "envelope_size_ratios", "distance_measures", "early_abandon",
             "precalculate_ffts", "search_types", "search_ks", "search_rs", "search_approx", "search_raw"
         ],
     )
@@ -109,8 +109,11 @@ if __name__ == "__main__":
     # --------------------#
 
     index_settings = []
-    isax_index_types = ["isax", "isax_envelope"]
-    if any(t in config["index_types"] for t in isax_index_types):
+    isax_index_methods = ["isax", "isax_envelope"]
+    non_isax_index_methods: list[str] = []
+    index_methods = non_isax_index_methods + isax_index_methods
+
+    if any(t in config["search_methods"] for t in isax_index_methods):
         index_settings.append(
             {
                 "index_type": "isax",
@@ -123,11 +126,11 @@ if __name__ == "__main__":
             }
         )
 
-    non_isax_index_types = [t for t in config["index_types"] if t not in isax_index_types]
-    if len(non_isax_index_types) > 0:
+    non_isax_indexes = [t for t in config["search_methods"] if t in non_isax_index_methods]
+    if len(non_isax_indexes) > 0:
         index_settings.append(
             {
-                "index_type": non_isax_index_types,
+                "index_type": non_isax_indexes,
                 "num_segments": config["num_segments"],
                 "pos_per_env": config["envelope_size_ratios"],
             }
@@ -149,9 +152,13 @@ if __name__ == "__main__":
     def combine_settings(settings1, settings2):
         return [dict(**d1, **d2) for d1 in settings1 for d2 in settings2]
 
-    index_method_settings_base = [{"method_type": config["index_types"]}]
+    index_method_settings_base = [
+        {"method_type": [method for method in config["search_methods"] if method in index_methods]}
+    ]
     index_method_settings_base = combine_settings(index_method_settings_base, method_settings_base)
-    scan_method_settings_base = [{"method_type": config["scan_methods"]}]
+    scan_method_settings_base = [
+        {"method_type": [method for method in config["search_methods"] if method not in index_methods]}
+    ]
     scan_method_settings_base = combine_settings(scan_method_settings_base, method_settings_base)
 
     index_method_settings = []

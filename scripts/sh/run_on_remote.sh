@@ -20,34 +20,36 @@ INCLUDE_SLURM_HEADER=false
 IGNORE_TESTS=true
 CLEAN_BUILD=false
 CLEAN_PREV_RUN=true
+CLEANUP=true
 reading_config_files=false
 config_files=()
 
 while [[ "$#" -gt 0 ]]; do
+    if [[ $1 == -* ]]; then
+        reading_config_files=false
+    fi
+
     case $1 in
     -i|--input_configs)
         INPUT_CONFIG=$2
-        reading_config_files=true
         ;;
     --no_scp_repo)
         NO_SCP_REPO=true
-        reading_config_files=false
         ;;
     -s | --slurm)
         INCLUDE_SLURM_HEADER=true
-        reading_config_files=false
         ;;
     -t | --tests)
         IGNORE_TESTS=false
-        reading_config_files=false
+        ;;
+    -d | --dirty | --no_cleanup)
+        CLEANUP=false
         ;;
     --clean_build)
         CLEAN_BUILD=true
-        reading_config_files=false
         ;;
     --no_clean_prev_run)
         CLEAN_PREV_RUN=false
-        reading_config_files=false
         ;;
     *)
         if $reading_config_files; then
@@ -58,6 +60,8 @@ while [[ "$#" -gt 0 ]]; do
             echo "  --no_scp_repo        Skip copying the repository to the remote"
             echo "  -s, --slurm          Include SLURM header in the scripts"
             echo "  -t, --tests          Build tests as well"
+            echo "  -d, --dirty, --no_cleanup"
+            echo "                       Do not clean data from current run"
             echo "  --clean_build        Perform a clean build on the remote"
             echo "  --no_clean_prev_run  Do not clean up artifacts from the previous run"
             exit 1
@@ -104,9 +108,10 @@ for config_file in "${config_files[@]}"; do
 
     # Step 5
     config_flag=$([[ "$config_file" == "" ]] && echo "" || echo "-i $config_file")
+    dirty_flag=$([[ "$CLEANUP" == true ]] && echo "" || echo "-d")
     remote_cmd="cd '${remote_path}' && \
         chmod u+x ./scripts/slurm/run_mulisse.sh && \
-        ./scripts/slurm/run_mulisse.sh -b $config_flag"
+        ./scripts/slurm/run_mulisse.sh -b $config_flag $dirty_flag"
     ssh "$remote_url" "$remote_cmd" 
 
     # Step 6
