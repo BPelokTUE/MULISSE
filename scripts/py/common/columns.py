@@ -51,7 +51,6 @@ class IndexSettingsColumn(Enum):
 
 class QuerySettingsColumn(Enum):
     ID = auto()
-    METHOD_NAME = auto()
     INDEX_FILE = auto()
     DATASET_FILE = auto()
     FFTS_FILE = auto()
@@ -65,6 +64,8 @@ class QuerySettingsColumn(Enum):
     SEARCH_METHOD = auto()
     DISTANCE_MEASURE = auto()
     EARLY_ABANDONING = auto()
+
+    METHOD_NAME = auto()
 
     def __str__(self):
         return self.name.lower()
@@ -91,6 +92,8 @@ class QueryColumn(Enum):
     TREE_TRAVERSAL_TIME_S = auto()
     IO_TIME_S = auto()
     TS_EXAMINATION_TIME_S = auto()
+
+    PRUNING_RATIO = auto()
 
     def __str__(self):
         return self.name.lower()

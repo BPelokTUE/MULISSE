@@ -99,24 +99,45 @@ class ExperimentResults(BaseModel):
         act_methods_cols = list(set(REQUIRED_METHODS_COLS + methods_cols))
         act_runs_cols = list(set(REQUIRED_RUNS_COLS + runs_cols))
 
+        extra_datasets_cols = []
+        extra_indexes_cols = []
+        extra_methods_cols = []
+        extra_runs_cols = []
+
         # Handle method name column
-        cols_for_method_name = [str(col) for col in COLS_FOR_METHOD_NAME]
         if str(QSC.METHOD_NAME) in methods_cols:
+            extra_methods_cols = [str(col) for col in COLS_FOR_METHOD_NAME]
             act_methods_cols.remove(str(QSC.METHOD_NAME))
 
+        # Handle pruning ratio column
+        if str(QC.PRUNING_RATIO) in runs_cols:
+            extra_datasets_cols = [str(DSC.NUM_SERIES)]
+            extra_runs_cols = [str(QC.NUM_TS_EXAMINED), str(QC.ID)]
+            act_runs_cols.remove(str(QC.PRUNING_RATIO))
+
         results = cls(
-            datasets_df=pd.read_csv(os.path.join(logs_dir, DATASETS_CSV), usecols=act_datasets_cols),
-            indexes_df=pd.read_csv(os.path.join(logs_dir, INDEXES_CSV), usecols=act_indexes_cols),
-            methods_df=pd.read_csv(
-                os.path.join(logs_dir, METHODS_CSV), usecols=act_methods_cols + cols_for_method_name
+            datasets_df=pd.read_csv(
+                os.path.join(logs_dir, DATASETS_CSV), usecols=act_datasets_cols + extra_datasets_cols
             ),
-            runs_df=pd.read_csv(os.path.join(logs_dir, RUNS_CSV), usecols=act_runs_cols),
+            indexes_df=pd.read_csv(os.path.join(logs_dir, INDEXES_CSV), usecols=act_indexes_cols + extra_indexes_cols),
+            methods_df=pd.read_csv(os.path.join(logs_dir, METHODS_CSV), usecols=act_methods_cols + extra_methods_cols),
+            runs_df=pd.read_csv(os.path.join(logs_dir, RUNS_CSV), usecols=act_runs_cols + extra_runs_cols),
         )
 
         # Add method name column
         if str(QSC.METHOD_NAME) in methods_cols:
             act_methods_cols.append(str(QSC.METHOD_NAME))
             results.methods_df = define_method_name_col(results.methods_df, act_methods_cols)
+
+        # Add pruning ratio column
+        if str(QC.PRUNING_RATIO) in runs_cols:
+            merged_df = results.get_merged_df()
+            dsc_num_series = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.NUM_SERIES))
+            qc_num_ts_examined = get_merged_col_name(ERD.RUNS_COLS, str(QC.NUM_TS_EXAMINED))
+            qc_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.ID))
+            merged_df[str(QC.PRUNING_RATIO)] = 1.0 - merged_df[qc_num_ts_examined] / merged_df[dsc_num_series]
+            merged_df = merged_df[[str(QC.PRUNING_RATIO), qc_id]]
+            results.runs_df = results.runs_df.merge(merged_df, left_on=str(QC.ID), right_on=qc_id, how="left")
 
         method_cols_to_drop = [col for col in results.methods_df.columns if col not in act_methods_cols]
         results.methods_df = results.methods_df.drop(columns=method_cols_to_drop)
@@ -322,6 +343,10 @@ def remove_index_name_from_reduction_result(
     return result
 
 
+def calculate_pruning_ratio():
+    pass
+
+
 # %%[markdown]
 """
 ## Running the Analyses
@@ -347,38 +372,61 @@ groups = [
 ### Experiment: Effect of number of channels and dataset
 """
 
-# %%
-columns = {
-    str(ERD.DATASETS_COLS): [str(DSC.NUM_CHANNELS), str(DSC.DATASET_FILE)],
-    str(ERD.METHODS_COLS): [str(QSC.METHOD_NAME)],
-    str(ERD.RUNS_COLS): [str(QC.TOTAL_TIME_S)],
-}
-few_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_few_channels_config", **columns)
-many_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_many_channels_config", **columns)
 
 # %%
-targets = [(ERD.RUNS_COLS, str(QC.TOTAL_TIME_S), MeanReducer())]
-groups = [
-    (ERD.DATASETS_COLS, str(DSC.NUM_CHANNELS)),
-    (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
-    (ERD.METHODS_COLS, str(QSC.METHOD_NAME)),
-]
-reduction_result = execute_reduction([few_channels_results, many_channels_results], targets, groups)
-mean_times = reduction_result[get_merged_col_name(ERD.RUNS_COLS, str(QC.TOTAL_TIME_S))]
-mean_times = remove_index_name_from_reduction_result(mean_times, 2)
+def experiment_num_channels_and_dataset(target_col: str, y_label: str, y_scale: str = "log"):
+    columns = {
+        str(ERD.DATASETS_COLS): [str(DSC.NUM_CHANNELS), str(DSC.DATASET_FILE)],
+        str(ERD.METHODS_COLS): [str(QSC.METHOD_NAME)],
+        str(ERD.RUNS_COLS): [target_col],
+    }
+    few_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_few_channels_config", **columns)
+    many_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_many_channels_config", **columns)
+
+    targets = [(ERD.RUNS_COLS, target_col, MeanReducer())]
+    groups = [
+        (ERD.DATASETS_COLS, str(DSC.NUM_CHANNELS)),
+        (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
+        (ERD.METHODS_COLS, str(QSC.METHOD_NAME)),
+    ]
+    reduction_result = execute_reduction([few_channels_results, many_channels_results], targets, groups)
+    mean_values = reduction_result[get_merged_col_name(ERD.RUNS_COLS, target_col)]
+    mean_values = remove_index_name_from_reduction_result(mean_values, 2)
+
+    methods_to_show = [
+        "sequential_scan-ed",
+        "sequential_scan-mass-ffts",
+        "isax_envelope-ed-early",
+        "isax_envelope-mass-ffts",
+    ]
+    group_order = [
+        (4, "weather"),
+        (5, "stocks"),
+        (4, "synthetic"),
+        (5, "synthetic"),
+        (1024, "synthetic"),
+    ]
+
+    mean_values_to_show = [entry for entry in mean_values if entry[0][2] in methods_to_show]
+    mean_values_to_show = [
+        ([num_channels, dataset.split("/", 1)[0], method], value)
+        for (num_channels, dataset, method), value in mean_values_to_show
+    ]
+    x_labels = {
+        (num_channels, dataset): f"{dataset}\nC = {num_channels}"
+        for (num_channels, dataset, _), _ in mean_values_to_show
+    }
+    mean_values_to_show.sort(
+        key=lambda x: group_order.index((x[0][0], x[0][1])) * len(methods_to_show) + methods_to_show.index(x[0][2])
+    )
+
+    plot_bars(mean_values_to_show, 2, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, scale=y_scale)
+
 
 # %%
-methods_to_show = [
-    "sequential_scan-ed",
-    "sequential_scan-mass-ffts",
-    "isax_envelope-ed-early",
-    "isax_envelope-mass-ffts",
-]
-x_labels = {
-    (num_channels, dataset): f"{dataset.split('/', 1)[0]}\nC = {num_channels}"
-    for (num_channels, dataset, _), _ in mean_times
-}
 
-mean_times_to_show = [entry for entry in mean_times if entry[0][2] in methods_to_show]
-mean_times_to_show.sort(key=lambda x: methods_to_show.index(x[0][2]))
-plot_bars(mean_times_to_show, 2, METHOD_COLORS, METHOD_LABELS, x_labels, y_label="Total time (S)", scale="log")
+experiment_num_channels_and_dataset(str(QC.TOTAL_TIME_S), "Total time (S)")
+experiment_num_channels_and_dataset(str(QC.NUM_TS_EXAMINED), "Number of TS examined")
+experiment_num_channels_and_dataset(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear")
+
+# %%
