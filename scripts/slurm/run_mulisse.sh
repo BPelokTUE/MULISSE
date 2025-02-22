@@ -1,17 +1,21 @@
 #!/bin/bash
 
-#SBATCH --time=24:00:00
-#SBATCH -p cbuild
-#SBATCH -N 1
-#SBATCH --ntasks 1
-#SBATCH --cpus-per-task=16
-#SBATCH --job-name=mulisse
-#SBATCH --output=log/run_mulisse.log
+#SBATCH --job-name=run_mulisse
 
 source scripts/slurm/header.sh
 
-if [[ " $@ " == *" -b "* ]]; then
-    pip install tqdm
-fi
+experiment_name=$1
+shift
 
-./scripts/py/run_mulisse.py $@
+log_dirs=()
+for config_file in "$@"; do
+    log_dir="LOGS_$(basename ${config_file%.*})"
+    ./scripts/py/run_mulisse.py -i $config_file
+    mv LOGS $log_dir
+    log_dirs+=("$log_dir")
+    rm -rf DATA
+done
+
+zip_name="${experiment_name}_$(date +%Y-%m-%d_%H:%M).zip"
+zip -r $zip_name ${log_dirs[@]}
+mv $zip_name EXPERIMENT_LOGS/

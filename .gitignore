@@ -6,7 +6,9 @@ xcode/*
 # Helper files
 DATA/*
 LOGS/*
-LOGS*/*
+LOGS_*
+EXPERIMENT_LOGS/*
+!EXPERIMENT_LOGS/*.zip
 **/local/*
 local_settings.json
 

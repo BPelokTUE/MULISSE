@@ -21,6 +21,7 @@ import os
 from enum import Enum, auto
 from typing import Any
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel
@@ -32,6 +33,7 @@ from scripts.py.common.columns import DatasetSettingsColumn as DSC
 from scripts.py.common.columns import IndexSettingsColumn as ISC
 from scripts.py.common.columns import QueryColumn as QC
 from scripts.py.common.columns import QuerySettingsColumn as QSC
+from scripts.py.common.style import PALETTE
 from scripts.py.common.utils import COLS_FOR_METHOD_NAME, define_method_name_col
 
 # %%[markdown]
@@ -181,11 +183,12 @@ class MeanReducer(Reducer):
 
 Targets = list[tuple[ERD, str, Reducer]]
 Groups = list[tuple[ERD, str]]
+ReductionResult = list[tuple[list, Any]]
 
 
 def execute_reduction(
     experiments: list[ExperimentResults], targets: Targets, groups: Groups
-) -> dict[str, tuple[list[list], list]]:
+) -> dict[str, ReductionResult]:
     """
     Executes a reduction on the given experiment results. The reduction result is a dictionary mapping each
     target to a tuple of two lists. The first list contains the list of values of the group columns, and the second
@@ -199,7 +202,7 @@ def execute_reduction(
 
     merged_targets = {get_merged_col_name(target_df, target_col): reducer for target_df, target_col, reducer in targets}
     merged_groups = [get_merged_col_name(group, group_col) for group, group_col in groups]
-    reduction_result = {target: ([], []) for target in merged_targets}
+    reduction_result = {target: [] for target in merged_targets}
 
     for experiment in experiments:
         merged_df = experiment.get_merged_df()
@@ -210,10 +213,113 @@ def execute_reduction(
                 group_keys = (group_keys,)
             for target, reducer in merged_targets.items():
                 reduced_value = reducer(group_df[target].dropna())
-                reduction_result[target][0].append(list(group_keys))
-                reduction_result[target][1].append(reduced_value)
+                reduction_result[target].append((list(group_keys), reduced_value))
 
     return reduction_result
+
+
+# %%[markdown]
+"""
+### Bar plot function
+"""
+
+# %%
+
+
+def plot_bars(
+    reduction_result: ReductionResult,
+    color_group_ind: int,
+    color_map: dict,
+    label_map: dict,
+    x_labels: dict[tuple, str],
+    y_label: str,
+    scale: str = "linear",
+):
+    """
+    Plot bars for the given reduction result.
+
+    :param reduction_result: The reduction result to plot.
+    :param color_group_ind: The index of the group to use for coloring the bars.
+    :param color_map: The color map to use for coloring the bars.
+    :param label_map: The label map to use for labeling the bars.
+    :param x_labels: The labels for the x-axis for each group.
+    :param y_label: The label for the y-axis.
+    :param scale: The scale to use for the y-axis.
+    """
+
+    bar_groups = {}
+    num_bars = 0
+    for group, target in reduction_result:
+        bar_group_key = tuple([group[i] for i in range(len(group)) if i != color_group_ind])
+        if bar_group_key not in bar_groups:
+            bar_groups[bar_group_key] = []
+        bar_groups[bar_group_key].append((group[color_group_ind], target))
+        num_bars += 1
+
+    fig, ax = plt.subplots()
+    ax.set_xlim(0.0, 1.0)
+    bar_width = 1.0 / (num_bars + len(bar_groups))
+
+    x_start = 0
+    x_ticks = []
+    x_tick_labels = []
+    for i, (bar_group_key, bars) in enumerate(bar_groups.items()):
+        values = [bar[1] for bar in bars]
+        colors = [color_map[bar[0]] for bar in bars]
+        x = np.arange(0, len(bars)) * bar_width + x_start
+
+        labels = None
+        if i == 0:
+            labels = [label_map[bar[0]] for bar in bars]
+        ax.bar(x, values, bar_width, align="edge", color=colors, edgecolor="black", label=labels)
+
+        x_ticks.append(x_start + len(bars) * bar_width / 2)
+        x_tick_labels.append(x_labels[bar_group_key])
+        x_start += (len(bars) + 1) * bar_width
+
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.125), ncol=len(label_map))
+    ax.set_yscale(scale)
+    ax.yaxis.grid(True)
+    ax.set_ylabel(y_label)
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels(x_tick_labels)
+
+    fig.show()
+
+
+# %%[markdown]
+"""
+Misc. helpers
+"""
+
+# %%
+METHOD_COLORS = {
+    "sequential_scan-ed": PALETTE["Greens"][1],
+    "sequential_scan-mass-ffts": PALETTE["Oranges"][2],
+    "isax_envelope-ed-early": PALETTE["Blues"][4],
+    "isax_envelope-mass-ffts": PALETTE["Blues"][1],
+}
+METHOD_LABELS = {
+    "sequential_scan-ed": "BF",
+    "sequential_scan-mass-ffts": "MASS",
+    "isax_envelope-ed-early": "MULISSE (ED)",
+    "isax_envelope-mass-ffts": "MULISSE (MASS)",
+}
+
+
+def remove_index_name(method_name: str, index_prefix: str = "index") -> str:
+    return method_name.rsplit(f"-{index_prefix}", 1)[0]
+
+
+def remove_index_name_from_reduction_result(
+    reduction_result: ReductionResult, method_name_ind: int, index_prefix: str = "index"
+) -> ReductionResult:
+    result = []
+    for group, target in reduction_result:
+        method_name = group[method_name_ind]
+        group[method_name_ind] = remove_index_name(method_name, index_prefix)
+        result.append((group, target))
+    return result
 
 
 # %%[markdown]
@@ -247,8 +353,8 @@ columns = {
     str(ERD.METHODS_COLS): [str(QSC.METHOD_NAME)],
     str(ERD.RUNS_COLS): [str(QC.TOTAL_TIME_S)],
 }
-few_channels_results = ExperimentResults.load(logs_dir="LOGS_few", **columns)
-many_channels_results = ExperimentResults.load(logs_dir="LOGS_many", **columns)
+few_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_few_channels_config", **columns)
+many_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_many_channels_config", **columns)
 
 # %%
 targets = [(ERD.RUNS_COLS, str(QC.TOTAL_TIME_S), MeanReducer())]
@@ -257,13 +363,22 @@ groups = [
     (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
     (ERD.METHODS_COLS, str(QSC.METHOD_NAME)),
 ]
-mean_times = execute_reduction([few_channels_results, many_channels_results], targets, groups)
+reduction_result = execute_reduction([few_channels_results, many_channels_results], targets, groups)
+mean_times = reduction_result[get_merged_col_name(ERD.RUNS_COLS, str(QC.TOTAL_TIME_S))]
+mean_times = remove_index_name_from_reduction_result(mean_times, 2)
 
 # %%
+methods_to_show = [
+    "sequential_scan-ed",
+    "sequential_scan-mass-ffts",
+    "isax_envelope-ed-early",
+    "isax_envelope-mass-ffts",
+]
+x_labels = {
+    (num_channels, dataset): f"{dataset.split('/', 1)[0]}\nC = {num_channels}"
+    for (num_channels, dataset, _), _ in mean_times
+}
 
-for target, (group_values, reduced_values) in mean_times.items():
-    print(f"Target: {target}")
-    for group_value, reduced_value in zip(group_values, reduced_values):
-        print(f"Group: {group_value}\nReduced value: {reduced_value}")
-
-# %%
+mean_times_to_show = [entry for entry in mean_times if entry[0][2] in methods_to_show]
+mean_times_to_show.sort(key=lambda x: methods_to_show.index(x[0][2]))
+plot_bars(mean_times_to_show, 2, METHOD_COLORS, METHOD_LABELS, x_labels, y_label="Total time (S)", scale="log")

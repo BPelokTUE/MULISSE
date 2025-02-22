@@ -8,21 +8,6 @@
 # Usage: ./scripts/sh/scp_repo.sh [-s]
 
 # Default value for including scripts/slurm
-INCLUDE_SLURM_HEADER=false
-
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-    -s | --slurm_header)
-        INCLUDE_SLURM_HEADER=true
-        ;;
-    *)
-        echo "Usage: $0 [-s]"
-        echo "  -s  Copy the slurm header to the remote"
-        exit 1
-        ;;
-    esac
-    shift
-done
 
 local_path=$(cat scripts/local_settings.json | jq '.["REPO_PATH"]' | tr -d '"')
 remote_url=$(cat scripts/local_settings.json | jq '.["REMOTE_URL"]' | tr -d '"')
@@ -34,14 +19,6 @@ for file in $run_configs; do
     include+=(scripts/run_configs/$file)
 done
 
-if [ "$INCLUDE_SLURM_HEADER" = true ]; then
-    include+=(scripts/slurm)
-else
-    slurm_files=$(ls scripts/slurm | grep -v header.sh)
-    for file in $slurm_files; do
-        include+=(scripts/slurm/$file)
-    done
-fi
 echo ${include[@]}
 
 zip -r $local_path/MULISSE.zip ${include[@]}
