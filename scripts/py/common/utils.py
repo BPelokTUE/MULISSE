@@ -27,13 +27,7 @@ def get_method_name(df: pd.DataFrame, settings_id: int) -> str:
     return "-".join(parts)
 
 
-def define_method_name_col(df: pd.DataFrame, required_cols: list[str]) -> pd.DataFrame:
+def define_method_name_col(df: pd.DataFrame) -> pd.DataFrame:
     df_with_name_col = df.copy()
     df_with_name_col[str(QSC.METHOD_NAME)] = df.apply(lambda row: get_method_name(df, row[str(QSC.ID)]), axis=1)
-
-    col_strs_for_method_name = [str(col) for col in COLS_FOR_METHOD_NAME]
-    df_with_name_col.drop(
-        columns=[col for col in col_strs_for_method_name if col not in required_cols and col != str(QSC.METHOD_NAME)],
-        inplace=True,
-    )
     return df_with_name_col

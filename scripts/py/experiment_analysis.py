@@ -106,14 +106,21 @@ class ExperimentResults(BaseModel):
 
         # Handle method name column
         if str(QSC.METHOD_NAME) in methods_cols:
-            extra_methods_cols = [str(col) for col in COLS_FOR_METHOD_NAME]
+            extra_methods_cols += [str(col) for col in COLS_FOR_METHOD_NAME]
             act_methods_cols.remove(str(QSC.METHOD_NAME))
 
         # Handle pruning ratio column
         if str(QC.PRUNING_RATIO) in runs_cols:
-            extra_datasets_cols = [str(DSC.NUM_SERIES)]
-            extra_runs_cols = [str(QC.NUM_TS_EXAMINED), str(QC.ID)]
+            extra_datasets_cols += [str(DSC.NUM_SERIES), str(DSC.SERIES_LENGTH)]
+            extra_indexes_cols += [str(ISC.L_MIN), str(ISC.POS_PER_ENV)]
+            extra_methods_cols += [str(QSC.SEARCH_METHOD)]
+            extra_runs_cols += [str(QC.NUM_TS_EXAMINED), str(QC.ID)]
             act_runs_cols.remove(str(QC.PRUNING_RATIO))
+
+        extra_datasets_cols = list(set(extra_datasets_cols) - set(act_datasets_cols))
+        extra_indexes_cols = list(set(extra_indexes_cols) - set(act_indexes_cols))
+        extra_methods_cols = list(set(extra_methods_cols) - set(act_methods_cols))
+        extra_runs_cols = list(set(extra_runs_cols) - set(act_runs_cols))
 
         results = cls(
             datasets_df=pd.read_csv(
@@ -127,17 +134,38 @@ class ExperimentResults(BaseModel):
         # Add method name column
         if str(QSC.METHOD_NAME) in methods_cols:
             act_methods_cols.append(str(QSC.METHOD_NAME))
-            results.methods_df = define_method_name_col(results.methods_df, act_methods_cols)
+            results.methods_df = define_method_name_col(results.methods_df)
 
         # Add pruning ratio column
         if str(QC.PRUNING_RATIO) in runs_cols:
             merged_df = results.get_merged_df()
+
             dsc_num_series = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.NUM_SERIES))
+            dsc_series_length = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.SERIES_LENGTH))
+            isc_l_min = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MIN))
+            isc_pos_per_env = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.POS_PER_ENV))
             qc_num_ts_examined = get_merged_col_name(ERD.RUNS_COLS, str(QC.NUM_TS_EXAMINED))
             qc_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.ID))
-            merged_df[str(QC.PRUNING_RATIO)] = 1.0 - merged_df[qc_num_ts_examined] / merged_df[dsc_num_series]
+            qsc_search_method = get_merged_col_name(ERD.METHODS_COLS, str(QSC.SEARCH_METHOD))
+
+            # Handle the fact that iSAX counts one series for each envelope examined
+            merged_df["num_series_multiplier"] = np.where(
+                merged_df[qsc_search_method].str.contains("isax"),
+                (merged_df[dsc_series_length] - merged_df[isc_l_min] + merged_df[isc_pos_per_env])
+                // merged_df[isc_pos_per_env],
+                1.0,
+            )
+            merged_df[str(QC.PRUNING_RATIO)] = 1.0 - merged_df[qc_num_ts_examined] / (
+                merged_df[dsc_num_series] * merged_df["num_series_multiplier"]
+            )
             merged_df = merged_df[[str(QC.PRUNING_RATIO), qc_id]]
             results.runs_df = results.runs_df.merge(merged_df, left_on=str(QC.ID), right_on=qc_id, how="left")
+
+        # Drop extra columns
+        results.datasets_df = results.datasets_df.drop(columns=extra_datasets_cols)
+        results.indexes_df = results.indexes_df.drop(columns=extra_indexes_cols)
+        results.methods_df = results.methods_df.drop(columns=extra_methods_cols)
+        results.runs_df = results.runs_df.drop(columns=extra_runs_cols)
 
         method_cols_to_drop = [col for col in results.methods_df.columns if col not in act_methods_cols]
         results.methods_df = results.methods_df.drop(columns=method_cols_to_drop)
@@ -255,6 +283,7 @@ def plot_bars(
     x_labels: dict[tuple, str],
     y_label: str,
     scale: str = "linear",
+    bar_width_inches: float = 0.4,
 ):
     """
     Plot bars for the given reduction result.
@@ -266,6 +295,7 @@ def plot_bars(
     :param x_labels: The labels for the x-axis for each group.
     :param y_label: The label for the y-axis.
     :param scale: The scale to use for the y-axis.
+    :param bar_width_inches: The width of the bars in inches.
     """
 
     bar_groups = {}
@@ -281,7 +311,7 @@ def plot_bars(
     ax.set_xlim(0.0, 1.0)
     bar_width = 1.0 / (num_bars + len(bar_groups))
 
-    x_start = 0
+    x_start = bar_width / 2
     x_ticks = []
     x_tick_labels = []
     for i, (bar_group_key, bars) in enumerate(bar_groups.items()):
@@ -305,6 +335,7 @@ def plot_bars(
     ax.set_xticks(x_ticks)
     ax.set_xticklabels(x_tick_labels)
 
+    fig.set_size_inches((num_bars + len(bar_groups)) * bar_width_inches, 6)
     fig.show()
 
 
@@ -318,12 +349,14 @@ METHOD_COLORS = {
     "sequential_scan-ed": PALETTE["Greens"][1],
     "sequential_scan-mass-ffts": PALETTE["Oranges"][2],
     "isax_envelope-ed-early": PALETTE["Blues"][4],
+    "isax_envelope-mass": PALETTE["Blues"][2],
     "isax_envelope-mass-ffts": PALETTE["Blues"][1],
 }
 METHOD_LABELS = {
     "sequential_scan-ed": "BF",
     "sequential_scan-mass-ffts": "MASS",
     "isax_envelope-ed-early": "MULISSE (ED)",
+    "isax_envelope-mass": "MULISSE (MASS - no pre.)",
     "isax_envelope-mass-ffts": "MULISSE (MASS)",
 }
 
@@ -429,4 +462,44 @@ experiment_num_channels_and_dataset(str(QC.TOTAL_TIME_S), "Total time (S)")
 experiment_num_channels_and_dataset(str(QC.NUM_TS_EXAMINED), "Number of TS examined")
 experiment_num_channels_and_dataset(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear")
 
+# %%[markdown]
+"""
+### Experiment: Envelope size parametrization
+"""
+
+
+def experiment_envelope_parametrization(target_col: str, y_label: str, y_scale: str = "log"):
+    columns = {
+        str(ERD.INDEXES_COLS): [str(ISC.L_MIN), str(ISC.L_MAX), str(ISC.POS_PER_ENV)],
+        str(ERD.METHODS_COLS): [str(QSC.METHOD_NAME)],
+        str(ERD.RUNS_COLS): [target_col],
+    }
+    parametrization_results = ExperimentResults.load(
+        logs_dir="EXPERIMENT_LOGS/LOGS_envelope_size_parametrization", **columns
+    )
+
+    targets = [(ERD.RUNS_COLS, target_col, MeanReducer())]
+    groups = [
+        (ERD.INDEXES_COLS, str(ISC.L_MIN)),
+        (ERD.INDEXES_COLS, str(ISC.L_MAX)),
+        (ERD.INDEXES_COLS, str(ISC.POS_PER_ENV)),
+        (ERD.METHODS_COLS, str(QSC.METHOD_NAME)),
+    ]
+    reduction_result = execute_reduction([parametrization_results], targets, groups)
+    mean_values = reduction_result[get_merged_col_name(ERD.RUNS_COLS, target_col)]
+    mean_values = remove_index_name_from_reduction_result(mean_values, 3)
+
+    mean_values.sort(key=lambda x: (x[0][0], x[0][2]))
+    x_labels = {
+        (l_min, l_max, pos_per_env): f"l_min={l_min}\nl_max={l_max}\nPPE={pos_per_env}"
+        for (l_min, l_max, pos_per_env, _), _ in mean_values
+    }
+
+    print(mean_values)
+    plot_bars(mean_values, 3, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, scale=y_scale)
+
+
 # %%
+
+experiment_envelope_parametrization(str(QC.TOTAL_TIME_S), "Total time (S)")
+experiment_envelope_parametrization(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear")

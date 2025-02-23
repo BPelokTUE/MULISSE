@@ -336,50 +336,50 @@ if __name__ == "__main__":
                 # fmt: on
                 run_command_with_logging([EXECUTABLE_PATH, *args])
 
-                shared_args = ["-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file]
-
                 for scan_method_setting in SettingIterator(scan_method_settings).iterate(
                     desc="Scan method settings", leave=False
                 ):
-                    args = get_method_args(scan_method_setting) + shared_args
+                    # fmt: off
+                    args = get_method_args(scan_method_setting) + [
+                        "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file
+                    ]
+                    # fmt: on
                     run_command_with_logging([EXECUTABLE_PATH, *args])
 
-                shared_args = ["-m", str(series_len), "-c", str(num_channels), "-d", data_file]
                 for index_setting in SettingIterator(index_settings).iterate(desc="Index settings", leave=False):
                     index_file = os.path.join(dataset_setting["location"], f"index-{index_counter}.bin")
                     index_counter += 1
+                    index_setting_copy = index_setting.copy()
 
                     # fmt: off
                     args = [
                         "index", "-i", index_file, "-l", str(l_min), "-L", str(l_max), "-t", 
-                        index_setting.pop("index_type"), *shared_args
+                        index_setting_copy.pop("index_type"), "-m", str(series_len), "-c", str(num_channels), "-d", data_file 
                     ]
                     # fmt: on
 
-                    if "num_segments" in index_setting:
-                        args += ["-s", str(series_len // index_setting.pop("num_segments"))]
-                    if "pos_per_env" in index_setting:
+                    if "num_segments" in index_setting_copy:
+                        args += ["-s", str(series_len // index_setting_copy.pop("num_segments"))]
+                    if "pos_per_env" in index_setting_copy:
                         max_pos_per_env = series_len - l_min + 1
                         args += [
                             "-p",
-                            str(int(max_pos_per_env * index_setting.pop("pos_per_env"))),
+                            str(int(max_pos_per_env * index_setting_copy.pop("pos_per_env"))),
                         ]
 
-                    for key, value in index_setting.items():
+                    for key, value in index_setting_copy.items():
                         args += [f"--{key}", str(value)]
 
                     run_command_with_logging([EXECUTABLE_PATH, *args])
 
-                    # fmt: off
-                    shared_args = [
-                        "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file, "-i", index_file
-                    ]
-                    # fmt: on
-
                     for index_method_setting in SettingIterator(index_method_settings).iterate(
                         desc="Indexing method settings", leave=False
                     ):
-                        args = get_method_args(index_method_setting) + shared_args
+                        # fmt: off
+                        args = get_method_args(index_method_setting) + [
+                            "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file, "-i", index_file
+                        ]
+                        # fmt: on
                         run_command_with_logging([EXECUTABLE_PATH, *args])
 
                     file_cleanup(index_file)
