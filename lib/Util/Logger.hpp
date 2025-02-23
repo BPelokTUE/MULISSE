@@ -120,6 +120,8 @@ enum class QueryStatsColumn {
     QUERY_FILE,      // Name of the query file
     QUERY_LENGTH,    // Length of the query
     QUERY_CHANNELS,  // Channels included in the query as a list of ITEM_SEP separated `0`s and `1`s
+    NORMALIZED,      // Whether the query and subsequences are normalized
+    QUERY_NOISE,     // The standard deviation of the Gaussian noise used for generating the random walk query
     MIN_DIST,        // Minimum distance of the query to any subsequence in the dataset
     MAX_DIST,        // Maximum distance of the query to any subsequence in the dataset
     MEAN_DIST,       // Mean distance of the query to subsequences in the dataset
@@ -368,8 +370,11 @@ class QueryStatsLogger : public Logger {
      * @param query_id The ID of the query
      * @param query The query
      * @param query_stats The statistics of the query
+     * @param normalized Whether the query and subsequences are normalized
+     * @param noise The standard deviation of the Gaussian noise used for generating the random walk query
      * */
-    static void write_entry(uint query_id, const vec<vec<float>> &query, QueryStats stats);
+    static void write_entry(uint query_id, const vec<vec<float>> &query, QueryStats stats, bool normalized,
+                            float noise);
 
    private:
     QueryStatsLogger() = default;

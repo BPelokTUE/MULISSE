@@ -59,7 +59,7 @@ void update_query_stats(QueryStats &stats, const vec<vec<float>> &query, const v
     }
 }
 
-int calculate_query_stats(bool normalized) {
+int calculate_query_stats(bool normalized, float noise) {
     auto &RS = RunSettings::get_instance();
     auto [file, num_channels, series_len, num_series] = RS.get_dataset_props();
 
@@ -110,7 +110,7 @@ int calculate_query_stats(bool normalized) {
             stats.rc_using_max = (stats.max_dist - stats.min_dist) / stats.min_dist;
             stats.rc_using_mean = stats.mean_dist / stats.min_dist;
 
-            QueryStatsLogger::write_entry(query_count++, query, stats);
+            QueryStatsLogger::write_entry(query_count++, query, stats, normalized, noise);
         }
     }
     return 0;

@@ -48,8 +48,8 @@ if __name__ == "__main__":
             "csv_data_dirs", "dataset_sizes", "series_lengths", "syn_num_channels", "query_set_sizes",
             "syn_step_stdevs", "l_range_ratios", "used_channel_ratios", "query_noise_stdevs", "search_methods",
             "isax_split_strategies", "isax_breakpoint_strategies", "isax_leaf_capacities", "isax_start_bit_numbers",
-            "num_segments", "envelope_size_ratios", "distance_measures", "early_abandon",
-            "precalculate_ffts", "search_types", "search_ks", "search_rs", "search_approx", "search_raw"
+            "num_segments", "envelope_size_ratios", "distance_measures", "early_abandon", "precalculate_ffts", 
+            "search_types", "search_ks", "search_rs", "search_approx", "search_raw"
         ],
     )
     # fmt: on
@@ -103,6 +103,7 @@ if __name__ == "__main__":
             "noise_stdev": config["query_noise_stdevs"],
         }
     ]
+    calculate_query_stats = config.get("calculate_query_stats", False)
 
     # --------------------#
     # INDEX SETTINGS      #
@@ -303,7 +304,7 @@ if __name__ == "__main__":
                 # fmt: off
                 run_command_with_logging([
                     EXECUTABLE_PATH, "calc_ffts", "-d", data_file, "-F", ffts_file, "-m", str(series_len), "-c",
-                    str(num_channels),
+                    str(num_channels), 
                 ])
                 # fmt: on
 
@@ -335,6 +336,15 @@ if __name__ == "__main__":
                 ]
                 # fmt: on
                 run_command_with_logging([EXECUTABLE_PATH, *args])
+
+                if calculate_query_stats:
+                    # fmt: off
+                    args = [
+                        "calc_q_stats", "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
+                        "--noise", str(noise_stdev)
+                    ]
+                    # fmt: on
+                    run_command_with_logging([EXECUTABLE_PATH, *args])
 
                 for scan_method_setting in SettingIterator(scan_method_settings).iterate(
                     desc="Scan method settings", leave=False

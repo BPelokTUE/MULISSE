@@ -343,7 +343,8 @@ void QueryLogger::write_entry() {
 }
 
 // QueryStatsLogger
-void QueryStatsLogger::write_entry(uint query_id, const vec<vec<float>> &query, QueryStats stats) {
+void QueryStatsLogger::write_entry(uint query_id, const vec<vec<float>> &query, QueryStats stats, bool normalized,
+                                   float noise) {
 #ifndef DISABLE_LOGGING
     QueryStatsLogger instance;
     auto &RS = RunSettings::get_instance();
@@ -375,6 +376,8 @@ void QueryStatsLogger::write_entry(uint query_id, const vec<vec<float>> &query, 
                            {QSTC::DIST_STD_DEV, to_string(stats.dist_std_dev)},
                            {QSTC::RC_USING_MAX, to_string(stats.rc_using_max)},
                            {QSTC::RC_USING_MEAN, to_string(stats.rc_using_mean)},
+                           {QSTC::NORMALIZED, to_string(normalized)},
+                           {QSTC::QUERY_NOISE, to_string(noise)},
                        },
                        QUERY_STATS_COL_ENUMS);
 #endif
