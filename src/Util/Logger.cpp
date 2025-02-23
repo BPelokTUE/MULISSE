@@ -360,7 +360,9 @@ void QueryStatsLogger::write_entry(uint query_id, const vec<vec<float>> &query, 
     }
     str query_len_str = to_string(query_len);
 
-    instance.write_row(fs::path(RS.get_logs_path()) / instance.QUERY_STATS_FILE,
+    str query_stats_path = fs::path(RS.get_logs_path()) / instance.QUERY_STATS_FILE;
+    instance.file_setup(query_stats_path, QUERY_STATS_COL_STRS);
+    instance.write_row(query_stats_path,
                        {
                            {QSTC::ID, to_string(query_id)},
                            {QSTC::DATASET_FILE, dataset_file},
@@ -371,6 +373,8 @@ void QueryStatsLogger::write_entry(uint query_id, const vec<vec<float>> &query, 
                            {QSTC::MAX_DIST, to_string(stats.max_dist)},
                            {QSTC::MEAN_DIST, to_string(stats.mean_dist)},
                            {QSTC::DIST_STD_DEV, to_string(stats.dist_std_dev)},
+                           {QSTC::RC_USING_MAX, to_string(stats.rc_using_max)},
+                           {QSTC::RC_USING_MEAN, to_string(stats.rc_using_mean)},
                        },
                        QUERY_STATS_COL_ENUMS);
 #endif

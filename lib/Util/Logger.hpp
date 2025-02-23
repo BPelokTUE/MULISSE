@@ -124,6 +124,8 @@ enum class QueryStatsColumn {
     MAX_DIST,        // Maximum distance of the query to any subsequence in the dataset
     MEAN_DIST,       // Mean distance of the query to subsequences in the dataset
     DIST_STD_DEV,    // Standard deviation of the distances of the query to subsequences in the dataset
+    RC_USING_MAX,    // Relative contrast of the query, calculated as (D_max - D_min) / D_min
+    RC_USING_MEAN,   // Relative contrast of the query, calculated as D_mean / D_min
 };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(QueryStatsColumn, QUERY_STATS_COL, false);
@@ -356,7 +358,7 @@ class QueryLogger : public Logger {
 };
 
 struct QueryStats {
-    float min_dist, max_dist, mean_dist, dist_std_dev;
+    float min_dist, max_dist, mean_dist, mean_sq_dist, dist_std_dev, subs_count, rc_using_max, rc_using_mean;
 };
 
 class QueryStatsLogger : public Logger {

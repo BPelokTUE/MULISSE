@@ -10,7 +10,7 @@
 
 vec<SearchResult> SequentialScan::search(const vec<vec<float>> &query, const SearchOptions &opts,
                                          std::ifstream &dataset_ifs) const {
-    auto [dataset_path, num_channels, series_len, num_series] = RunSettings::get_instance().get_dataset_props();
+    auto [file, num_channels, series_len, num_series] = RunSettings::get_instance().get_dataset_props();
     auto &logger = QueryLogger::get_instance();
 
     for (uint i = 0; i < num_series; ++i) {
