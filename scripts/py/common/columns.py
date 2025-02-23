@@ -101,3 +101,26 @@ class QueryColumn(Enum):
     @classmethod
     def get_csv_name(cls) -> str:
         return "runs.csv"
+
+
+class QueryStatsColumn(Enum):
+    ID = auto()
+    DATASET_FILE = auto()
+    QUERY_FILE = auto()
+    QUERY_LENGTH = auto()
+    QUERY_CHANNELS = auto()
+    NORMALIZED = auto()
+    QUERY_NOISE = auto()
+    MIN_DIST = auto()
+    MAX_DIST = auto()
+    MEAN_DIST = auto()
+    DIST_STD_DEV = auto()
+    RC_USING_MAX = auto()
+    RC_USING_MEAN = auto()
+
+    def __str__(self):
+        return self.name.lower()
+
+    @classmethod
+    def get_csv_name(cls) -> str:
+        return "query_stats.csv"

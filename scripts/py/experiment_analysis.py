@@ -33,6 +33,7 @@ from scripts.py.common.columns import DatasetSettingsColumn as DSC
 from scripts.py.common.columns import IndexSettingsColumn as ISC
 from scripts.py.common.columns import QueryColumn as QC
 from scripts.py.common.columns import QuerySettingsColumn as QSC
+from scripts.py.common.columns import QueryStatsColumn as QSTC
 from scripts.py.common.style import PALETTE
 from scripts.py.common.utils import COLS_FOR_METHOD_NAME, define_method_name_col
 
@@ -46,11 +47,13 @@ DATASETS_CSV = DSC.get_csv_name()
 INDEXES_CSV = ISC.get_csv_name()
 METHODS_CSV = QSC.get_csv_name()
 RUNS_CSV = QC.get_csv_name()
+QUERY_STATS_CSV = QSTC.get_csv_name()
 
 REQUIRED_DATASETS_COLS = [str(DSC.DATASET_FILE)]
 REQUIRED_INDEXES_COLS = [str(ISC.DATASET_FILE), str(ISC.INDEX_FILE)]
 REQUIRED_METHODS_COLS = [str(QSC.DATASET_FILE), str(QSC.INDEX_FILE), str(QSC.ID)]
 REQUIRED_RUNS_COLS = [str(QC.SETTINGS_ID)]
+REQUIRED_QUERY_STATS_COLS = [str(QSTC.DATASET_FILE)]
 
 
 class ExperimentResultDataframe(Enum):
@@ -58,6 +61,7 @@ class ExperimentResultDataframe(Enum):
     INDEXES_COLS = auto()
     METHODS_COLS = auto()
     RUNS_COLS = auto()
+    QUERY_STATS_COLS = auto()
 
     def __str__(self):
         return self.name.lower()
@@ -77,13 +81,21 @@ def rename_df_columns(df: pd.DataFrame, df_name: ERD) -> pd.DataFrame:
 
 
 class ExperimentResults(BaseModel):
+    logs_dir: str
     datasets_df: pd.DataFrame
     indexes_df: pd.DataFrame
     methods_df: pd.DataFrame
     runs_df: pd.DataFrame
+    query_stats_df: pd.DataFrame
 
     class Config:
         arbitrary_types_allowed = True
+
+    @classmethod
+    def load_csv_if_exists(cls, path: str) -> pd.DataFrame:
+        if os.path.exists(path):
+            return pd.read_csv(path)
+        return pd.DataFrame()
 
     @classmethod
     def load(
@@ -93,16 +105,19 @@ class ExperimentResults(BaseModel):
         indexes_cols: list[str] = [],
         methods_cols: list[str] = [],
         runs_cols: list[str] = [],
+        query_stats_cols: list[str] = [],
     ):  # -> ExperimentResults:
         act_datasets_cols = list(set(REQUIRED_DATASETS_COLS + datasets_cols))
         act_indexes_cols = list(set(REQUIRED_INDEXES_COLS + indexes_cols))
         act_methods_cols = list(set(REQUIRED_METHODS_COLS + methods_cols))
         act_runs_cols = list(set(REQUIRED_RUNS_COLS + runs_cols))
+        act_query_stats_cols = list(set(REQUIRED_QUERY_STATS_COLS + query_stats_cols))
 
         extra_datasets_cols = []
         extra_indexes_cols = []
         extra_methods_cols = []
         extra_runs_cols = []
+        extra_query_stats_cols = []
 
         # Handle method name column
         if str(QSC.METHOD_NAME) in methods_cols:
@@ -121,14 +136,15 @@ class ExperimentResults(BaseModel):
         extra_indexes_cols = list(set(extra_indexes_cols) - set(act_indexes_cols))
         extra_methods_cols = list(set(extra_methods_cols) - set(act_methods_cols))
         extra_runs_cols = list(set(extra_runs_cols) - set(act_runs_cols))
+        extra_query_stats_cols = list(set(extra_query_stats_cols) - set(act_query_stats_cols))
 
         results = cls(
-            datasets_df=pd.read_csv(
-                os.path.join(logs_dir, DATASETS_CSV), usecols=act_datasets_cols + extra_datasets_cols
-            ),
-            indexes_df=pd.read_csv(os.path.join(logs_dir, INDEXES_CSV), usecols=act_indexes_cols + extra_indexes_cols),
-            methods_df=pd.read_csv(os.path.join(logs_dir, METHODS_CSV), usecols=act_methods_cols + extra_methods_cols),
-            runs_df=pd.read_csv(os.path.join(logs_dir, RUNS_CSV), usecols=act_runs_cols + extra_runs_cols),
+            logs_dir=logs_dir,
+            datasets_df=cls.load_csv_if_exists(os.path.join(logs_dir, DATASETS_CSV)),
+            indexes_df=cls.load_csv_if_exists(os.path.join(logs_dir, INDEXES_CSV)),
+            methods_df=cls.load_csv_if_exists(os.path.join(logs_dir, METHODS_CSV)),
+            runs_df=cls.load_csv_if_exists(os.path.join(logs_dir, RUNS_CSV)),
+            query_stats_df=cls.load_csv_if_exists(os.path.join(logs_dir, QUERY_STATS_CSV)),
         )
 
         # Add method name column
@@ -181,26 +197,44 @@ class ExperimentResults(BaseModel):
         qc_settings_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.SETTINGS_ID))
         qc_id = get_merged_col_name(ERD.METHODS_COLS, str(QSC.ID))
 
-        merged_df = rename_df_columns(self.datasets_df, ERD.DATASETS_COLS).merge(
-            rename_df_columns(self.indexes_df, ERD.INDEXES_COLS),
-            left_on=dsc_dataset_file,
-            right_on=isc_dataset_file,
-            how="left",
-        )
-        merged_df = merged_df.merge(
-            rename_df_columns(self.methods_df, ERD.METHODS_COLS),
-            left_on=[dsc_dataset_file, isc_index_file],
-            right_on=[qsc_dataset_file, qsc_index_file],
-            how="left",
-        )
-        merged_df = merged_df.merge(
-            rename_df_columns(self.runs_df, ERD.RUNS_COLS),
-            left_on=qc_id,
-            right_on=qc_settings_id,
-            how="left",
-        )
+        columns_to_drop = []
+        merged_df = rename_df_columns(self.datasets_df, ERD.DATASETS_COLS)
 
-        return merged_df.drop(columns=[isc_dataset_file, qsc_dataset_file, qsc_index_file, qc_settings_id])
+        if os.path.exists(os.path.join(self.logs_dir, INDEXES_CSV)):
+            merged_df = merged_df.merge(
+                rename_df_columns(self.indexes_df, ERD.INDEXES_COLS),
+                left_on=dsc_dataset_file,
+                right_on=isc_dataset_file,
+                how="left",
+            )
+            columns_to_drop.append(isc_dataset_file)
+        if os.path.exists(os.path.join(self.logs_dir, METHODS_CSV)):
+            merged_df = merged_df.merge(
+                rename_df_columns(self.methods_df, ERD.METHODS_COLS),
+                left_on=[dsc_dataset_file, isc_index_file],
+                right_on=[qsc_dataset_file, qsc_index_file],
+                how="left",
+            )
+            columns_to_drop.extend([qsc_dataset_file, qsc_index_file])
+            if os.path.exists(os.path.join(self.logs_dir, RUNS_CSV)):
+                merged_df = merged_df.merge(
+                    rename_df_columns(self.runs_df, ERD.RUNS_COLS),
+                    left_on=qc_id,
+                    right_on=qc_settings_id,
+                    how="left",
+                )
+                columns_to_drop.append(qc_id)
+        if os.path.exists(os.path.join(self.logs_dir, QUERY_STATS_CSV)):
+            qstc_dataset_file = get_merged_col_name(ERD.QUERY_STATS_COLS, str(QSTC.DATASET_FILE))
+            merged_df = merged_df.merge(
+                rename_df_columns(self.query_stats_df, ERD.QUERY_STATS_COLS),
+                left_on=dsc_dataset_file,
+                right_on=qstc_dataset_file,
+                how="left",
+            )
+            columns_to_drop.append(qstc_dataset_file)
+
+        return merged_df.drop(columns=columns_to_drop)
 
 
 # %%[markdown]
@@ -236,7 +270,7 @@ ReductionResult = list[tuple[list, Any]]
 
 
 def execute_reduction(
-    experiments: list[ExperimentResults], targets: Targets, groups: Groups
+    experiments: list[ExperimentResults], targets: Targets, groups: Groups, na_replacement: Any = 0
 ) -> dict[str, ReductionResult]:
     """
     Executes a reduction on the given experiment results. The reduction result is a dictionary mapping each
@@ -255,13 +289,14 @@ def execute_reduction(
 
     for experiment in experiments:
         merged_df = experiment.get_merged_df()
+        merged_df = merged_df.fillna(na_replacement)
         grouped = merged_df.groupby(merged_groups)
 
         for group_keys, group_df in grouped:
             if not isinstance(group_keys, tuple):
                 group_keys = (group_keys,)
             for target, reducer in merged_targets.items():
-                reduced_value = reducer(group_df[target].dropna())
+                reduced_value = reducer(group_df[target])
                 reduction_result[target].append((list(group_keys), reduced_value))
 
     return reduction_result
@@ -432,12 +467,11 @@ def experiment_num_channels_and_dataset(target_col: str, y_label: str, y_scale: 
         "isax_envelope-ed-early",
         "isax_envelope-mass-ffts",
     ]
-    group_order = [
-        (4, "weather"),
-        (5, "stocks"),
-        (4, "synthetic"),
-        (5, "synthetic"),
-        (1024, "synthetic"),
+    dataset_order = [
+        "weather",
+        "stocks",
+        "random_walk",
+        "synthetic",
     ]
 
     mean_values_to_show = [entry for entry in mean_values if entry[0][2] in methods_to_show]
@@ -449,9 +483,7 @@ def experiment_num_channels_and_dataset(target_col: str, y_label: str, y_scale: 
         (num_channels, dataset): f"{dataset}\nC = {num_channels}"
         for (num_channels, dataset, _), _ in mean_values_to_show
     }
-    mean_values_to_show.sort(
-        key=lambda x: group_order.index((x[0][0], x[0][1])) * len(methods_to_show) + methods_to_show.index(x[0][2])
-    )
+    mean_values_to_show.sort(key=lambda x: (dataset_order.index(x[0][1]), x[0][0], methods_to_show.index(x[0][2])))
 
     plot_bars(mean_values_to_show, 2, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, scale=y_scale)
 
@@ -508,3 +540,76 @@ print("Experiment 2:")
 exp_2_logs_dir = "EXPERIMENT_LOGS/LOGS_envelope_size_parametrization_2"
 experiment_envelope_parametrization(str(QC.TOTAL_TIME_S), "Total time (S)", logs_dir=exp_2_logs_dir)
 experiment_envelope_parametrization(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear", logs_dir=exp_2_logs_dir)
+
+# %%[markdown]
+"""
+### Experiment: Relative contrast
+"""
+
+
+# %%
+NOISE_COLORS = {
+    0.1: PALETTE["Purples"][1],
+    0.5: PALETTE["Purples"][4],
+    1.0: PALETTE["Purples"][6],
+}
+NOISE_LABELS = {val: f"Noise={val}" for val in NOISE_COLORS.keys()}
+
+
+def experiment_relative_contrast(
+    target_col: str, y_label: str, query_noise_levels=list(NOISE_LABELS.keys()), y_scale: str = "linear"
+):
+    columns = {
+        str(ERD.DATASETS_COLS): [str(DSC.DATASET_FILE), str(DSC.NUM_CHANNELS), str(DSC.SD)],
+        str(ERD.QUERY_STATS_COLS): [str(QSTC.QUERY_NOISE), target_col],
+    }
+    rc_results = ExperimentResults.load(logs_dir="LOGS_rc", **columns)
+
+    targets = [(ERD.QUERY_STATS_COLS, target_col, MeanReducer())]
+    groups = [
+        (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
+        (ERD.DATASETS_COLS, str(DSC.NUM_CHANNELS)),
+        (ERD.DATASETS_COLS, str(DSC.SD)),
+        (ERD.QUERY_STATS_COLS, str(QSTC.QUERY_NOISE)),
+    ]
+    reduction_result = execute_reduction([rc_results], targets, groups)
+    mean_values = reduction_result[get_merged_col_name(ERD.QUERY_STATS_COLS, target_col)]
+    mean_values = [entry for entry in mean_values if entry[0][3] in query_noise_levels]
+
+    mean_values = [
+        ([dataset.split("/", 1)[0], num_channels, sd, noise], value)
+        for (dataset, num_channels, sd, noise), value in mean_values
+    ]
+    dataset_order = [
+        "weather",
+        "stocks",
+        "synthetic",
+    ]
+    mean_values.sort(key=lambda x: (x[0][1], dataset_order.index(x[0][0]), x[0][2]))
+    x_labels = {
+        (dataset, num_channels, sd): f"{dataset}\nC={num_channels}\nStep={sd}"
+        for (dataset, num_channels, sd, _), _ in mean_values
+    }
+
+    bar_width_inches = 0.9 / len(query_noise_levels)
+    plot_bars(
+        mean_values,
+        3,
+        NOISE_COLORS,
+        NOISE_LABELS,
+        x_labels,
+        y_label=y_label,
+        scale=y_scale,
+        bar_width_inches=bar_width_inches,
+    )
+
+
+# %%
+experiment_relative_contrast(str(QSTC.RC_USING_MAX), "RC using max", query_noise_levels=[0.1, 0.5, 1.0])
+experiment_relative_contrast(str(QSTC.RC_USING_MEAN), "RC using mean", query_noise_levels=[0.1, 0.5, 1.0])
+experiment_relative_contrast(
+    str(QSTC.DIST_STD_DEV), "Std. dev. of distance to query", query_noise_levels=[0.1, 0.5, 1.0]
+)
+experiment_relative_contrast(str(QSTC.MAX_DIST), "Maximum distance to query", query_noise_levels=[0.1, 0.5, 1.0])
+experiment_relative_contrast(str(QSTC.MIN_DIST), "Minimum distance to query", query_noise_levels=[0.1, 0.5, 1.0])
+experiment_relative_contrast(str(QSTC.MEAN_DIST), "Mean distance to query", query_noise_levels=[0.1, 0.5, 1.0])
