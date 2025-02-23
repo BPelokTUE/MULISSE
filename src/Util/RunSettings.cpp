@@ -14,15 +14,21 @@ std::shared_ptr<RunSettings> RunSettings::instance = std::make_shared<RunSetting
 bool RunSettings::initialized = false;
 RunSettings::RunSettings() {}
 
+void check_path_exists(str path, str name) {
+    if (!fs::exists(path)) {
+        throw std::runtime_error(name + " file " + path + " does not exist");
+    }
+}
+
 void RunSettings::initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
                              uint pos_per_env, const str index_path, const str ffts_path) {
     if (initialized) return;
     initialized = true;
 
     // Create directories if they do not exist
-    if (!std::filesystem::exists(instance->DATA_DIR)) std::filesystem::create_directories(instance->DATA_DIR);
+    if (!fs::exists(instance->DATA_DIR)) fs::create_directories(instance->DATA_DIR);
 #ifndef DISABLE_LOGGING
-    if (!std::filesystem::exists(instance->LOGS_DIR)) std::filesystem::create_directories(instance->LOGS_DIR);
+    if (!fs::exists(instance->LOGS_DIR)) fs::create_directories(instance->LOGS_DIR);
 #endif
 
     instance->m_command_type = command_type;
@@ -45,33 +51,33 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     instance->m_index_file = index_path;
     instance->m_ffts_file = ffts_path;
 
-    if (instance->m_command_type != CREATE_DS && instance->m_command_type != PARSE_CSV) {
-        str dataset_path = instance->get_dataset_path();
-        if (!std::filesystem::exists(dataset_path)) {
-            throw std::runtime_error("Dataset file " + dataset_path + " does not exist");
-        }
-    }
-
     switch (instance->m_command_type) {
         case CREATE_DS:
             break;
         case PARSE_CSV:
             break;
         case CREATE_QS:
+            check_path_exists(instance->get_dataset_path(), "Dataset");
+            break;
+        case CALC_Q_STATS:
+            check_path_exists(instance->get_dataset_path(), "Dataset");
+            check_path_exists(instance->get_query_path(), "Query");
             break;
         case INDEX:
+            check_path_exists(instance->get_dataset_path(), "Dataset");
             if (instance->ffts_supported() && envs_per_ts > 1) {
                 throw std::runtime_error(
                     "Precalculating FFTs are only supported for setups with one envelope per time series");
             }
             break;
         case CALC_FFTS:
+            check_path_exists(instance->get_dataset_path(), "Dataset");
             break;
         case SEARCH:
-            if (!std::filesystem::exists(instance->get_query_path())) {
-                throw std::runtime_error("Query file " + instance->get_query_path() + " does not exist");
-            }
+            check_path_exists(instance->get_dataset_path(), "Dataset");
+            check_path_exists(instance->get_query_path(), "Query");
             if (instance->ffts_supported()) {
+                check_path_exists(instance->get_ffts_path(), "FFTs");
                 instance->m_ffts_ifs.open(instance->get_ffts_path(), std::ios::binary);
                 instance->m_query_ffts.resize(instance->m_dataset_props.num_channels);
                 for (auto &channel_ffts : instance->m_query_ffts) channel_ffts = nullptr;
@@ -200,16 +206,12 @@ const iSaxProperties &RunSettings::get_isax_props() { return m_isax_props; }
 
 // Paths
 
-str RunSettings::get_dataset_path() const { return std::filesystem::path(DATA_DIR) / m_dataset_props.file; }
+str RunSettings::get_dataset_path() const { return fs::path(DATA_DIR) / m_dataset_props.file; }
 
-str RunSettings::get_query_path() const { return std::filesystem::path(DATA_DIR) / m_query_properties.file; }
+str RunSettings::get_query_path() const { return fs::path(DATA_DIR) / m_query_properties.file; }
 
-str RunSettings::get_index_path() const {
-    return m_index_file.empty() ? "" : std::filesystem::path(DATA_DIR) / m_index_file;
-}
+str RunSettings::get_index_path() const { return m_index_file.empty() ? "" : fs::path(DATA_DIR) / m_index_file; }
 
-str RunSettings::get_ffts_path() const {
-    return m_ffts_file.empty() ? "" : std::filesystem::path(DATA_DIR) / m_ffts_file;
-}
+str RunSettings::get_ffts_path() const { return m_ffts_file.empty() ? "" : fs::path(DATA_DIR) / m_ffts_file; }
 
 str RunSettings::get_logs_path() const { return LOGS_DIR; }

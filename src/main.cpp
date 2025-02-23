@@ -6,6 +6,7 @@
 #include "Modules/RandomWalk.hpp"
 #include "Modules/CsvParsing.hpp"
 #include "Modules/QueryGen.hpp"
+#include "Modules/QueryStats.hpp"
 #include "Modules/Indexing.hpp"
 #include "Modules/CalcFfts.hpp"
 #include "Modules/Searching.hpp"
@@ -20,6 +21,7 @@ int main(int argc, char **argv) {
     auto rw_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_DS), "Create random walk dataset");
     auto csv_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(PARSE_CSV), "Create dataset from CSV");
     auto qs_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_QS), "Create queries from dataset");
+    auto q_stats_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CALC_Q_STATS), "Calculate query statistics");
     auto index_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(INDEX), "Construct MULISSE index");
     auto ffts_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CALC_FFTS), "Calculate FFTs");
     auto search_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(SEARCH), "Search using MULISSE");
@@ -129,6 +131,15 @@ int main(int argc, char **argv) {
                      "used_channels if provided.")
         ->capture_default_str();
 
+    // Options for calculating query statistics
+    q_stats_subcommand->add_option("-d,--dataset", dataset_path, "Dataset path relative to `DATA`")->required();
+    q_stats_subcommand->add_option("-q,--query", query_path, "Query path relative to `DATA`")->required();
+    q_stats_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
+    q_stats_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
+        ->required()
+        ->check(positive_int);
+    q_stats_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
+
     // Options for indexing
     index_subcommand->add_option("-i,--index", index_path, "Output index path relative to `DATA`")->required();
     index_subcommand->add_option("-d,--dataset", dataset_path, "Dataset path relative to `DATA`")->required();
@@ -231,6 +242,8 @@ int main(int argc, char **argv) {
         create_dataset_from_csv(csv_paths, num_series, low_sd_len);
     } else if (command_type == CREATE_QS) {
         create_queries(noise, num_queries, exact_lengths, l_min, l_max, used_channels, channel_mask, seed);
+    } else if (command_type == CALC_Q_STATS) {
+        calculate_query_stats(!unnormalized);
     } else if (command_type == INDEX) {
         SearchMethodType index_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str);
         IIndexParams *index_params;

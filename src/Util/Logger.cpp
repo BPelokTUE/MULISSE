@@ -11,6 +11,8 @@
 
 using std::to_string;
 
+namespace fs = std::filesystem;
+
 // Logger
 
 uint Logger::determine_index(const str &file_path) {
@@ -56,7 +58,7 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
 #ifndef DISABLE_LOGGING
     DatasetLogger instance;
 
-    str dataset_settings_path = RunSettings::get_instance().get_logs_path() + instance.DATASET_SETTINGS_FILE;
+    str dataset_settings_path = fs::path(RunSettings::get_instance().get_logs_path()) / instance.DATASET_SETTINGS_FILE;
     instance.file_setup(dataset_settings_path, DATASET_SETTINGS_COL_STRS);
 
     // Append entry
@@ -102,7 +104,10 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
 // IndexLogger
 IndexLogger IndexLogger::instance = IndexLogger();
 bool IndexLogger::initialized = false;
-IndexLogger &IndexLogger::get_instance() { return instance; }
+IndexLogger &IndexLogger::get_instance() {
+    assert(initialized);
+    return instance;
+}
 
 using ISC = IndexSettingsColumn;
 
@@ -186,7 +191,10 @@ void IndexLogger::write_entry() {
 // QueryLogger
 QueryLogger QueryLogger::instance = QueryLogger();
 bool QueryLogger::initialized = false;
-QueryLogger &QueryLogger::get_instance() { return instance; }
+QueryLogger &QueryLogger::get_instance() {
+    assert(initialized);
+    return instance;
+}
 
 using QC = QueryColumn;
 using QSC = QuerySettingsColumn;
@@ -255,7 +263,7 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
 
     // Setup for run logging
     instance.reset_entry();
-    str run_log_path = RS.get_logs_path() + instance.RUN_LOG_FILE;
+    str run_log_path = fs::path(RS.get_logs_path()) / instance.RUN_LOG_FILE;
     instance.file_setup(run_log_path, QUERY_COL_STRS);
     instance.m_query_log_ofs.open(run_log_path, std::ios::app);
 }
@@ -320,7 +328,7 @@ str QueryLogger::get_collection_str(QC col) {
 }
 
 void QueryLogger::write_entry() {
-    str run_log_path = RunSettings::get_instance().get_logs_path() + instance.RUN_LOG_FILE;
+    str run_log_path = fs::path(RunSettings::get_instance().get_logs_path()) / instance.RUN_LOG_FILE;
     umap<QC, str> columns({
         {QC::ID, to_string(instance.determine_index(run_log_path))},
         {QC::SETTINGS_ID, m_query_settings_id_str},
@@ -332,4 +340,38 @@ void QueryLogger::write_entry() {
     for (const auto &col : QUERY_COLLECTION_COLUMNS) columns[col] = get_collection_str(col);
 
     write_row(run_log_path, columns, QUERY_COL_ENUMS);
+}
+
+// QueryStatsLogger
+void QueryStatsLogger::write_entry(uint query_id, const vec<vec<float>> &query, QueryStats stats) {
+#ifndef DISABLE_LOGGING
+    QueryStatsLogger instance;
+    auto &RS = RunSettings::get_instance();
+
+    str dataset_file = RS.m_dataset_props.file;
+    str query_file = RS.m_query_properties.file;
+
+    size_t query_len = 0;
+    str query_channels_str = "";
+    for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
+        query_channels_str += query[c].empty() ? "0" : "1";
+        if (c < query.size() - 1) query_channels_str += instance.ITEM_SEP;
+        query_len = std::max(query_len, query[c].size());
+    }
+    str query_len_str = to_string(query_len);
+
+    instance.write_row(fs::path(RS.get_logs_path()) / instance.QUERY_STATS_FILE,
+                       {
+                           {QSTC::ID, to_string(query_id)},
+                           {QSTC::DATASET_FILE, dataset_file},
+                           {QSTC::QUERY_FILE, query_file},
+                           {QSTC::QUERY_LENGTH, query_len_str},
+                           {QSTC::QUERY_CHANNELS, query_channels_str},
+                           {QSTC::MIN_DIST, to_string(stats.min_dist)},
+                           {QSTC::MAX_DIST, to_string(stats.max_dist)},
+                           {QSTC::MEAN_DIST, to_string(stats.mean_dist)},
+                           {QSTC::DIST_STD_DEV, to_string(stats.dist_std_dev)},
+                       },
+                       QUERY_STATS_COL_ENUMS);
+#endif
 }
