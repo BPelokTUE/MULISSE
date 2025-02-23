@@ -336,7 +336,7 @@ def plot_bars(
     ax.set_xticklabels(x_tick_labels)
 
     fig.set_size_inches((num_bars + len(bar_groups)) * bar_width_inches, 6)
-    fig.show()
+    plt.show()
 
 
 # %%[markdown]
@@ -468,15 +468,15 @@ experiment_num_channels_and_dataset(str(QC.PRUNING_RATIO), "Pruning ratio", y_sc
 """
 
 
-def experiment_envelope_parametrization(target_col: str, y_label: str, y_scale: str = "log"):
+def experiment_envelope_parametrization(
+    target_col: str, y_label: str, y_scale: str = "log", logs_dir="EXPERIMENT_LOGS/LOGS_envelope_size_parametrization"
+):
     columns = {
         str(ERD.INDEXES_COLS): [str(ISC.L_MIN), str(ISC.L_MAX), str(ISC.POS_PER_ENV)],
         str(ERD.METHODS_COLS): [str(QSC.METHOD_NAME)],
         str(ERD.RUNS_COLS): [target_col],
     }
-    parametrization_results = ExperimentResults.load(
-        logs_dir="EXPERIMENT_LOGS/LOGS_envelope_size_parametrization", **columns
-    )
+    parametrization_results = ExperimentResults.load(logs_dir=logs_dir, **columns)
 
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer())]
     groups = [
@@ -495,11 +495,16 @@ def experiment_envelope_parametrization(target_col: str, y_label: str, y_scale: 
         for (l_min, l_max, pos_per_env, _), _ in mean_values
     }
 
-    print(mean_values)
     plot_bars(mean_values, 3, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, scale=y_scale)
 
 
 # %%
 
+print("Experiment 1:")
 experiment_envelope_parametrization(str(QC.TOTAL_TIME_S), "Total time (S)")
 experiment_envelope_parametrization(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear")
+
+print("Experiment 2:")
+exp_2_logs_dir = "EXPERIMENT_LOGS/LOGS_envelope_size_parametrization_2"
+experiment_envelope_parametrization(str(QC.TOTAL_TIME_S), "Total time (S)", logs_dir=exp_2_logs_dir)
+experiment_envelope_parametrization(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear", logs_dir=exp_2_logs_dir)
