@@ -111,8 +111,8 @@ void iSaxEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, std::unique_ptr<iSa
     }
 }
 
-void iSaxEnvelopeIndex::insert(const EnvelopeEntry &entry) {
-    const vec<Envelope> &mts_envelope = entry.mts_envelope;
+void iSaxEnvelopeIndex::insert(const IndexEntry<Envelope> &entry) {
+    const vec<Envelope> &mts_envelope = entry.mts_summary;
     SubsequencePosition file_pos = entry.subsequence_position;
 
     assert(mts_envelope.size() == m_num_channels);
@@ -159,7 +159,7 @@ void iSaxEnvelopeIndex::insert(const EnvelopeEntry &entry) {
     }
 }
 
-std::unique_ptr<IFinalizedIndex<EnvelopeEntry>> iSaxEnvelopeIndex::finalize() {
+std::unique_ptr<IFinalizedIndex<Envelope>> iSaxEnvelopeIndex::finalize() {
     size_t size_first_layer = m_first_layer.size();
     vec<vec<vec<SaxSymbolT>>> first_layer_min_symbols(size_first_layer), first_layer_max_symbols(size_first_layer);
     vec<std::unique_ptr<iSaxFinalizedNode>> finalized_nodes(size_first_layer);

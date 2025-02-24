@@ -16,7 +16,6 @@
 
 /** @brief Interface for finalized indexes */
 template <typename T>
-    requires DerivedFromIndexEntry<T>
 class IFinalizedIndex : public ISearchMethod {
    public:
     virtual ~IFinalizedIndex() = default;
@@ -105,7 +104,6 @@ class IFinalizedIndex : public ISearchMethod {
  * @tparam The type of entry to insert into the index
  * */
 template <typename T>
-    requires DerivedFromIndexEntry<T>
 class IIndex {
    public:
     virtual ~IIndex() = default;
@@ -116,7 +114,7 @@ class IIndex {
              series_size = channel_size * num_channels;
         uint num_series = N / series_size;
 
-        vec<T> dataset_entries;
+        vec<IndexEntry<T>> dataset_entries;
 
 #ifndef DISABLE_PARALLELISM
 #pragma omp parallel
@@ -162,7 +160,7 @@ class IIndex {
      *
      * @param entry The entry to insert
      */
-    virtual void insert(const T &entry) = 0;
+    virtual void insert(const IndexEntry<T> &entry) = 0;
 };
 
 #endif  // INDEX_HPP

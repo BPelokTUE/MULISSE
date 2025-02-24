@@ -29,7 +29,7 @@ uptr<IiSaxSplitStrategy> get_split_strategy(const iSaxIndexParams *params, SaxSe
     return nullptr;
 }
 
-uptr<IIndex<EnvelopeEntry>> get_index(const IndexOptions &opts) {
+uptr<IIndex<Envelope>> get_index(const IndexOptions &opts) {
     SearchMethodType search_method_type = opts.index_params->get_type();
 
     if (search_method_type == ISAX_ENVELOPE) {
@@ -50,12 +50,12 @@ uptr<IIndex<EnvelopeEntry>> get_index(const IndexOptions &opts) {
 
         auto *index = new iSaxEnvelopeIndex(series_isax_prop, params->first_layer_num_bits, params->leaf_capacity,
                                             std::move(split_strategy));
-        return uptr<IIndex<EnvelopeEntry>>(index);
+        return uptr<IIndex<Envelope>>(index);
     }
     return nullptr;
 }
 
-uptr<IEntryGenerator<EnvelopeEntry>> get_envelope_generator(const IndexOptions &opts) {
+uptr<IEntryGenerator<Envelope>> get_envelope_generator(const IndexOptions &opts) {
     SearchMethodType search_method_type = opts.index_params->get_type();
 
     if (search_method_type == ISAX_ENVELOPE) {

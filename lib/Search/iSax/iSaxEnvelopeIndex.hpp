@@ -16,7 +16,7 @@ struct SaxSymbolsHash {
     std::size_t operator()(const vec<vec<SaxSymbolT>> &symbols) const;
 };
 
-class iSaxEnvelopeIndex : public IIndex<EnvelopeEntry> {
+class iSaxEnvelopeIndex : public IIndex<Envelope> {
    public:
     /**
      * @brief Construct a new iSaxEnvelopeIndex object
@@ -33,9 +33,9 @@ class iSaxEnvelopeIndex : public IIndex<EnvelopeEntry> {
 
     ~iSaxEnvelopeIndex() = default;
 
-    void insert(const EnvelopeEntry &entry) override;
+    void insert(const IndexEntry<Envelope> &entry) override;
 
-    uptr<IFinalizedIndex<EnvelopeEntry>> finalize() override;
+    uptr<IFinalizedIndex<Envelope>> finalize() override;
 
     const iSaxSplittableNode *get_first_layer_node(const vec<iSaxWord> &isax_mins) const;
 

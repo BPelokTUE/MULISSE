@@ -31,13 +31,11 @@ struct iSaxPaaParams {
     uint l_min;
     uint l_max;
 };
-struct PaaEntry : IndexEntry {
-    /** @brief Multivariate time series PAA */
-    vec<vec<float>> mts_paa;
-};
+
+using PaaEntry = IndexEntry<vec<float>>;
 
 /** @brief PAA generator for iSAX index */
-class iSaxPaaGenerator : public IEntryGenerator<PaaEntry> {
+class iSaxPaaGenerator : public IEntryGenerator<vec<float>> {
    public:
     /**
      * @brief Construct a new iSaxPaaGenerator object

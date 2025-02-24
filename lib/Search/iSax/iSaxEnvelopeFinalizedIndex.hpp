@@ -25,7 +25,7 @@ struct SeriesISaxProperties {
 };
 
 /** @brief Finalized iSAX (ULISSE) index */
-class iSaxEnvelopeFinalizedIndex : public IFinalizedIndex<EnvelopeEntry> {
+class iSaxEnvelopeFinalizedIndex : public IFinalizedIndex<Envelope> {
    public:
     iSaxEnvelopeFinalizedIndex() = default;
 

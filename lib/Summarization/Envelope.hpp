@@ -30,12 +30,6 @@ struct Envelope {
     void resize(size_t new_size);
 };
 
-/** @brief Entry to insert into the envelope index */
-struct EnvelopeEntry : IndexEntry {
-    /** @brief Multivariate time series envelope */
-    vec<Envelope> mts_envelope;
-};
-
 // ----------------------------------------------- //
 // --------------- ULISSE ENVELOPE --------------- //
 // ----------------------------------------------- //
@@ -82,7 +76,7 @@ vec<Envelope> ulisse_envelope_raw(const vec<float> &ts, const UlisseEnvelopePara
 vec<Envelope> ulisse_envelope_normalized(const vec<float> &ts, const UlisseEnvelopeParams &env_params);
 
 /** @brief Envelope generator for iSAX (ULISSE) envelopes */
-class iSaxEnvelopeGenerator : public IEntryGenerator<EnvelopeEntry> {
+class iSaxEnvelopeGenerator : public IEntryGenerator<Envelope> {
    public:
     /**
      * @brief Construct a new iSaxEnvelopeGenerator object
@@ -90,7 +84,7 @@ class iSaxEnvelopeGenerator : public IEntryGenerator<EnvelopeEntry> {
      */
     iSaxEnvelopeGenerator(MtsNumChannelsT num_channels, bool normalized, const UlisseEnvelopeParams &uli_params);
 
-    vec<EnvelopeEntry> get_entries(const vec<vec<float>> &mts, uint series_ind) override;
+    vec<IndexEntry<Envelope>> get_entries(const vec<vec<float>> &mts, uint series_ind) override;
 
    private:
     MtsNumChannelsT m_num_channels;
