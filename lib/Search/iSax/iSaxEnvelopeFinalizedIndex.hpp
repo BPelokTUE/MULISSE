@@ -7,7 +7,7 @@
 #include "Util/typedefs.hpp"
 #include "Search/Options/SearchOptions.hpp"
 #include "Search/ResultSet.hpp"
-#include "Search/EnvelopeIndex.hpp"
+#include "Search/Index.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
 
 /** @brief Properties of time series for iSAX indexes */
@@ -25,7 +25,7 @@ struct SeriesISaxProperties {
 };
 
 /** @brief Finalized iSAX (ULISSE) index */
-class iSaxEnvelopeFinalizedIndex : public IEnvelopeFinalizedIndex {
+class iSaxEnvelopeFinalizedIndex : public IFinalizedIndex<EnvelopeEntry> {
    public:
     iSaxEnvelopeFinalizedIndex() = default;
 

@@ -1,5 +1,5 @@
-#ifndef ENVELOPE_INDEX_HPP
-#define ENVELOPE_INDEX_HPP
+#ifndef INDEX_HPP
+#define INDEX_HPP
 
 #include <fstream>
 
@@ -10,13 +10,16 @@
 #include "Search/SearchMethod.hpp"
 #include "Search/Options/IndexOptions.hpp"
 #include "Search/Options/SearchOptions.hpp"
+#include "Summarization/IndexEntry.hpp"
 #include "Summarization/Envelope.hpp"
 #include "Summarization/iSaxWord.hpp"
 
-/** @brief Interface for finalized envelope indexes */
-class IEnvelopeFinalizedIndex : public ISearchMethod {
+/** @brief Interface for finalized indexes */
+template <typename T>
+    requires DerivedFromIndexEntry<T>
+class IFinalizedIndex : public ISearchMethod {
    public:
-    virtual ~IEnvelopeFinalizedIndex() = default;
+    virtual ~IFinalizedIndex() = default;
 
     /**
      * @brief Save the index into a file
@@ -39,14 +42,7 @@ class IEnvelopeFinalizedIndex : public ISearchMethod {
      *
      * @return The length of the series
      */
-    uint get_series_len() const;
-
-    /**
-     * @brief Get the number of positions per envelope in the index
-     *
-     * @return The number of positions per envelope
-     */
-    uint get_pos_per_env() const;
+    uint get_series_len() const { return m_series_len; }
 
    protected:
     uint m_series_len, m_pos_per_env;
@@ -81,7 +77,7 @@ class IEnvelopeFinalizedIndex : public ISearchMethod {
 
 /**
  * @brief Macro to make a class (de)serializable. Intended to be used in classes that inherit from
- * IEnvelopeFinalizedIndex.
+ * IFinalizedIndex.
  *
  * @param members Members of the class to be serialized
  */
@@ -104,30 +100,69 @@ class IEnvelopeFinalizedIndex : public ISearchMethod {
         SERIALIZATION_MACRO(ar_type, ifs, deserialize, InputArchive); \
     }
 
-/** @brief Interface for envelope indexes */
-class IEnvelopeIndex {
+/**
+ * @brief Interface for indexes
+ * @tparam The type of entry to insert into the index
+ * */
+template <typename T>
+    requires DerivedFromIndexEntry<T>
+class IIndex {
    public:
-    virtual ~IEnvelopeIndex() = default;
+    virtual ~IIndex() = default;
 
-    void construct(const str &dataset_path, IEnvelopeGenerator *generator, MtsNumChannelsT num_channels,
-                   uint series_len);
+    void construct(const str &dataset_path, IEntryGenerator<T> *generator, MtsNumChannelsT num_channels,
+                   uint series_len) {
+        uint N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(float),
+             series_size = channel_size * num_channels;
+        uint num_series = N / series_size;
+
+        vec<T> dataset_entries;
+
+#ifndef DISABLE_PARALLELISM
+#pragma omp parallel
+#endif
+        {
+            std::ifstream data_stream(dataset_path, std::ios::binary);
+#ifndef DISABLE_PARALLELISM
+#pragma omp for
+#endif
+            for (size_t i = 0; i < num_series; ++i) {
+                vec<vec<float>> mts(num_channels, vec<float>(series_len));
+                data_stream.seekg(i * series_size);
+                for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+                    data_stream.read(reinterpret_cast<char *>(mts[c].data()), channel_size);
+                }
+                auto mts_entries = generator->get_entries(mts, i);
+#ifndef DISABLE_PARALLELISM
+#pragma omp critical
+#endif
+                {
+                    dataset_entries.insert(dataset_entries.end(), mts_entries.begin(), mts_entries.end());
+                }
+            }
+        }
+
+        // TODO: adapt stuff based on entries, e.g. change breakpoint distribution mean
+
+        for (auto &entry : dataset_entries) insert(std::move(entry));
+    }
 
     /**
      * @brief Finalize the index
      *
      * Creates a finalized index, that can no longer be inserted into, but can be used for searching.
      *
-     * @return A unique pointer to the finalized envelope index
+     * @return A unique pointer to the finalized index
      */
-    virtual std::unique_ptr<IEnvelopeFinalizedIndex> finalize() = 0;
+    virtual std::unique_ptr<IFinalizedIndex<T>> finalize() = 0;
 
    private:
     /**
-     * @brief Insert an envelope entry into the index
+     * @brief Insert an entry into the index
      *
-     * @param entry The envelope entry to insert
+     * @param entry The entry to insert
      */
-    virtual void insert(const EnvelopeEntry &entry) = 0;
+    virtual void insert(const T &entry) = 0;
 };
 
-#endif  // ENVELOPE_INDEX_HPP
+#endif  // INDEX_HPP

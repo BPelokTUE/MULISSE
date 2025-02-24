@@ -3,7 +3,7 @@
 
 #include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
 #include "Search/ResultSet.hpp"
-#include "Search/EnvelopeIndex.hpp"
+#include "Search/Index.hpp"
 #include "Search/Options/SearchOptions.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
 #include "Summarization/Paa.hpp"
@@ -30,9 +30,9 @@ iSaxEnvelopeFinalizedIndex::iSaxEnvelopeFinalizedIndex(const SeriesISaxPropertie
     assert(m_first_layer_min_symbols.size() == m_first_layer_max_symbols.size());
 
     m_num_seg_per_channel = m_first_layer_max_symbols[0][0].size();
-    IEnvelopeFinalizedIndex::m_series_len = series_isax_prop.series_len;
-    IEnvelopeFinalizedIndex::m_pos_per_env = series_isax_prop.pos_per_env;
-    IEnvelopeFinalizedIndex::m_num_channels = series_isax_prop.num_channels;
+    IFinalizedIndex::m_series_len = series_isax_prop.series_len;
+    IFinalizedIndex::m_pos_per_env = series_isax_prop.pos_per_env;
+    IFinalizedIndex::m_num_channels = series_isax_prop.num_channels;
 }
 
 std::pair<float, float> iSaxEnvelopeFinalizedIndex::get_segment_limits(SaxNumBitsT num_bits, SaxSymbolT min_symbol,
@@ -149,7 +149,7 @@ vec<SearchResult> iSaxEnvelopeFinalizedIndex::search(const vec<vec<float>>& quer
 
                 if (data_remaining < query_len) continue;
 
-                size_t data_to_read = std::min(query_len + IEnvelopeFinalizedIndex::m_pos_per_env - 1, data_remaining);
+                size_t data_to_read = std::min(query_len + IFinalizedIndex::m_pos_per_env - 1, data_remaining);
                 vec<vec<float>> subsequence(m_num_channels);
                 logger.start_timer(QC::IO_TIME_S);
                 for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {

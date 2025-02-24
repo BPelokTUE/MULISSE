@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "Util/typedefs.hpp"
-#include "Search/EnvelopeIndex.hpp"
+#include "Search/Index.hpp"
 #include "Search/iSax/iSaxSplittableNode.hpp"
 #include "Search/iSax/iSaxSplitStrategy.hpp"
 #include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
@@ -16,7 +16,7 @@ struct SaxSymbolsHash {
     std::size_t operator()(const vec<vec<SaxSymbolT>> &symbols) const;
 };
 
-class iSaxEnvelopeIndex : public IEnvelopeIndex {
+class iSaxEnvelopeIndex : public IIndex<EnvelopeEntry> {
    public:
     /**
      * @brief Construct a new iSaxEnvelopeIndex object
@@ -35,7 +35,7 @@ class iSaxEnvelopeIndex : public IEnvelopeIndex {
 
     void insert(const EnvelopeEntry &entry) override;
 
-    uptr<IEnvelopeFinalizedIndex> finalize() override;
+    uptr<IFinalizedIndex<EnvelopeEntry>> finalize() override;
 
     const iSaxSplittableNode *get_first_layer_node(const vec<iSaxWord> &isax_mins) const;
 

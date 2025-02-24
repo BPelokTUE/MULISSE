@@ -2,6 +2,7 @@
 #define ENVELOPE_HPP
 
 #include "Util/typedefs.hpp"
+#include "Summarization/IndexEntry.hpp"
 
 /**
  * @brief Envelope of a multivariate time series
@@ -30,26 +31,9 @@ struct Envelope {
 };
 
 /** @brief Entry to insert into the envelope index */
-struct EnvelopeEntry {
+struct EnvelopeEntry : IndexEntry {
     /** @brief Multivariate time series envelope */
     vec<Envelope> mts_envelope;
-    /** @brief Position within the dataset of the subsequence summarized in the envelope */
-    SubsequencePosition subsequence_position;
-};
-
-/** @brief Interface for envelope generators */
-class IEnvelopeGenerator {
-   public:
-    virtual ~IEnvelopeGenerator() = default;
-
-    /**
-     * @brief Generate envelopes for a given time series
-     *
-     * @param mts Multivariate time series
-     * @param series_ind Index of the time series within the dataset
-     * @return Envelope entries
-     */
-    virtual vec<EnvelopeEntry> get_entries(const vec<vec<float>> &mts, uint series_ind) = 0;
 };
 
 // ----------------------------------------------- //
@@ -98,11 +82,10 @@ vec<Envelope> ulisse_envelope_raw(const vec<float> &ts, const UlisseEnvelopePara
 vec<Envelope> ulisse_envelope_normalized(const vec<float> &ts, const UlisseEnvelopeParams &env_params);
 
 /** @brief Envelope generator for iSAX (ULISSE) envelopes */
-class iSaxEnvelopeGenerator : public IEnvelopeGenerator {
+class iSaxEnvelopeGenerator : public IEntryGenerator<EnvelopeEntry> {
    public:
     /**
      * @brief Construct a new iSaxEnvelopeGenerator object
-     *
      * @param opts Indexing options
      */
     iSaxEnvelopeGenerator(MtsNumChannelsT num_channels, bool normalized, const UlisseEnvelopeParams &uli_params);

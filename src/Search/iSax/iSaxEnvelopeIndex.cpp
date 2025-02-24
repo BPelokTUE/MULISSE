@@ -1,5 +1,5 @@
 #include "Search/iSax/iSaxEnvelopeIndex.hpp"
-#include "Search/EnvelopeIndex.hpp"
+#include "Search/Index.hpp"
 #include "Search/iSax/iSaxSplittableNode.hpp"
 #include "Search/iSax/iSaxSplitStrategy.hpp"
 #include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
@@ -112,7 +112,9 @@ void iSaxEnvelopeIndex::split_leaf(vec<iSaxWord> &isax_mins, std::unique_ptr<iSa
 }
 
 void iSaxEnvelopeIndex::insert(const EnvelopeEntry &entry) {
-    auto [mts_envelope, file_pos] = entry;
+    const vec<Envelope> &mts_envelope = entry.mts_envelope;
+    SubsequencePosition file_pos = entry.subsequence_position;
+
     assert(mts_envelope.size() == m_num_channels);
     assert(mts_envelope[0].size() == m_num_seg_per_channel);
 
@@ -157,7 +159,7 @@ void iSaxEnvelopeIndex::insert(const EnvelopeEntry &entry) {
     }
 }
 
-std::unique_ptr<IEnvelopeFinalizedIndex> iSaxEnvelopeIndex::finalize() {
+std::unique_ptr<IFinalizedIndex<EnvelopeEntry>> iSaxEnvelopeIndex::finalize() {
     size_t size_first_layer = m_first_layer.size();
     vec<vec<vec<SaxSymbolT>>> first_layer_min_symbols(size_first_layer), first_layer_max_symbols(size_first_layer);
     vec<std::unique_ptr<iSaxFinalizedNode>> finalized_nodes(size_first_layer);

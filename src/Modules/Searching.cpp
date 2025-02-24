@@ -17,7 +17,7 @@ uptr<ISearchMethod> load_method(const SearchOptions &opts) {
 
             std::ifstream index_stream(index_path, std::ios::binary);
             auto index = std::make_unique<iSaxEnvelopeFinalizedIndex>();
-            static_cast<IEnvelopeFinalizedIndex *>(index.get())->load(index_stream, opts.index_format);
+            static_cast<IFinalizedIndex<EnvelopeEntry> *>(index.get())->load(index_stream, opts.index_format);
 
             return index;
         }
