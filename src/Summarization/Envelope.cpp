@@ -10,6 +10,8 @@ void Envelope::resize(size_t new_size) {
     upper.resize(new_size);
 }
 
+vec<float> Envelope::get_isax_input() { return lower; }
+
 // ----------------------------------------------- //
 // --------------- ULISSE ENVELOPE --------------- //
 // ----------------------------------------------- //

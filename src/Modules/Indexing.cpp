@@ -4,7 +4,7 @@
 #include "Modules/Indexing.hpp"
 #include "Search/Options/IndexOptions.hpp"
 #include "Search/Index.hpp"
-#include "Search/iSax/iSaxEnvelopeIndex.hpp"
+#include "Search/iSax/iSaxIndex.hpp"
 #include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
@@ -48,8 +48,8 @@ uptr<IIndex<Envelope>> get_index(const IndexOptions &opts) {
                                                          breakpoint_strategy->get_breakpoints(1 << breakpoint_num_bits),
                                                          breakpoint_num_bits});
 
-        auto *index = new iSaxEnvelopeIndex(series_isax_prop, params->first_layer_num_bits, params->leaf_capacity,
-                                            std::move(split_strategy));
+        auto *index = new iSaxIndex(series_isax_prop, params->first_layer_num_bits, params->leaf_capacity,
+                                    std::move(split_strategy));
         return uptr<IIndex<Envelope>>(index);
     }
     return nullptr;

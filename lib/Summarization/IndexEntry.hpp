@@ -5,7 +5,17 @@
 
 #include <Util/typedefs.hpp>
 
+struct EntryData {
+    virtual ~EntryData() = default;
+
+    virtual vec<float> get_isax_input() = 0;
+};
+
 template <typename T>
+concept DerivedFromEntryData = std::is_base_of_v<EntryData, T>;
+
+template <typename T>
+    requires DerivedFromEntryData<T>
 struct IndexEntry {
     virtual ~IndexEntry() = default;
 

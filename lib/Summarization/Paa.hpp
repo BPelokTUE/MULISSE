@@ -32,8 +32,6 @@ struct iSaxPaaParams {
     uint l_max;
 };
 
-using PaaEntry = IndexEntry<vec<float>>;
-
 /** @brief PAA generator for iSAX index */
 class iSaxPaaGenerator : public IEntryGenerator<vec<float>> {
    public:
@@ -43,7 +41,7 @@ class iSaxPaaGenerator : public IEntryGenerator<vec<float>> {
      */
     iSaxPaaGenerator(MtsNumChannelsT num_channels, bool normalized, const iSaxPaaParams &paa_params);
 
-    vec<PaaEntry> get_entries(const vec<vec<float>> &mts, uint series_ind) override;
+    vec<IndexEntry<vec<float>>> get_entries(const vec<vec<float>> &mts, uint series_ind) override;
 
    private:
     MtsNumChannelsT m_num_channels;

@@ -16,15 +16,31 @@ struct SeriesISaxProperties {
     uint segment_len;
     /** @brief Length of the time series in the dataset */
     uint series_len;
-    /** @brief Size of starting position groups */
-    uint pos_per_env;
     /** @brief Number of channels of each series */
     MtsNumChannelsT num_channels;
     /** @brief Number of segments per channel */
     SaxSegIndT num_seg_per_channel;
 };
 
-/** @brief Finalized iSAX (ULISSE) index */
+/** @brief Properties of time series for iSAX envelope indexes */
+struct SeriesISaxEnvelopeProperties : SeriesISaxProperties {
+    /** @brief Size of starting position groups */
+    uint pos_per_env;
+};
+
+struct EntryISax {
+    virtual ~EntryISax() = default;
+};
+
+struct PaaISax : EntryISax {
+    vec<iSaxWord> isax_words;
+};
+
+struct EnvelopeISax : EntryISax {
+    vec<iSaxWord> isax_mins;
+    vec<iSaxWord> isax_maxs;
+};
+
 class iSaxEnvelopeFinalizedIndex : public IFinalizedIndex<Envelope> {
    public:
     iSaxEnvelopeFinalizedIndex() = default;
@@ -41,11 +57,11 @@ class iSaxEnvelopeFinalizedIndex : public IFinalizedIndex<Envelope> {
      * @param breakpoints Breakpoints used for the iSAX index; assumed to be `2^alphabet_num_bits-1` long;
      *        does not include `-inf` and `inf`
      */
-    iSaxEnvelopeFinalizedIndex(const SeriesISaxProperties& series_isax_prop,
+    iSaxEnvelopeFinalizedIndex(uptr<SeriesISaxProperties> series_isax_prop,
                                vec<vec<vec<SaxSymbolT>>> first_layer_min_symbols,
                                vec<vec<vec<SaxSymbolT>>> first_layer_max_symbols,
-                               vec<std::unique_ptr<iSaxFinalizedNode>> first_layer_nodes,
-                               SaxNumBitsT first_layer_num_bits, SaxNumBitsT alphabet_num_bits, vec<float> breakpoints);
+                               vec<uptr<iSaxFinalizedNode>> first_layer_nodes, SaxNumBitsT first_layer_num_bits,
+                               SaxNumBitsT alphabet_num_bits, vec<float> breakpoints);
 
     ~iSaxEnvelopeFinalizedIndex() = default;
 
@@ -59,19 +75,17 @@ class iSaxEnvelopeFinalizedIndex : public IFinalizedIndex<Envelope> {
     SaxNumBitsT get_first_layer_num_bits() const;
 
    private:
-    uint m_segment_len;
     vec<vec<vec<SaxSymbolT>>> m_first_layer_min_symbols, m_first_layer_max_symbols;
     vec<std::unique_ptr<iSaxFinalizedNode>> m_first_layer_nodes;
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
-    SaxSegIndT m_num_seg_per_channel;
     vec<float> m_breakpoints;
+    uptr<SeriesISaxProperties> m_series_isax_prop;
 
     std::pair<float, float> get_segment_limits(SaxNumBitsT num_bits, SaxSymbolT min_symbol,
                                                SaxSymbolT max_symbol) const;
 
-    MAKE_SERIALIZABLE((m_segment_len, m_series_len, m_pos_per_env, m_first_layer_min_symbols, m_first_layer_max_symbols,
-                       m_first_layer_nodes, m_first_layer_num_bits, m_alphabet_num_bits, m_num_seg_per_channel,
-                       m_num_channels, m_breakpoints));
+    MAKE_SERIALIZABLE((m_series_isax_prop, m_first_layer_min_symbols, m_first_layer_max_symbols, m_first_layer_nodes,
+                       m_first_layer_num_bits, m_alphabet_num_bits, m_breakpoints));
 };
 
 #endif  // I_SAX_FINALIZED_ULI_ENV_INDEX_HPP
