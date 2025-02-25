@@ -8,7 +8,7 @@
 struct EntryData {
     virtual ~EntryData() = default;
 
-    virtual vec<float> get_isax_input() = 0;
+    virtual vec<float> get_isax_input() const = 0;
 };
 
 template <typename T>

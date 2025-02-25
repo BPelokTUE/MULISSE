@@ -3,7 +3,8 @@
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
 #include "Util/Logger.hpp"
-#include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
+#include "Search/iSax/iSaxFinalizedNode.hpp"
+#include "Search/iSax/iSaxFinalizedIndex.hpp"
 #include "Search/SequentialScan.hpp"
 
 uptr<ISearchMethod> load_method(const SearchOptions &opts) {
@@ -16,10 +17,13 @@ uptr<ISearchMethod> load_method(const SearchOptions &opts) {
             }
 
             std::ifstream index_stream(index_path, std::ios::binary);
-            auto index = std::make_unique<iSaxEnvelopeFinalizedIndex>();
-            static_cast<IFinalizedIndex<Envelope> *>(index.get())->load(index_stream, opts.index_format);
+            auto index = std::make_unique<iSaxFinalizedIndex<EnvelopeTag>>();
+            static_cast<IFinalizedIndex<EnvelopeTag> *>(index.get())->load(index_stream, opts.index_format);
 
             return index;
+        }
+        case ISAX: {
+            throw std::runtime_error("iSAX index search not implemented");
         }
         case SEQUENTIAL_SCAN:
             return std::make_unique<SequentialScan>();

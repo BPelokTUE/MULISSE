@@ -41,7 +41,7 @@ class iSaxEnvelopeSplittableNode : public iSaxSplittableNode<Envelope> {
      * @param isax_word_settings The settings for the iSAX word
      * @return A unique pointer to the finalized node and the iSAX max of the node
      */
-    virtual std::pair<uptr<iSaxFinalizedNode<Envelope>>, vec<iSaxWord>> finalize(
+    virtual std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> finalize(
         const iSaxWordSettings &isax_word_settings) = 0;
 };
 
@@ -52,6 +52,8 @@ class iSaxEnvelopeSplittableNode : public iSaxSplittableNode<Envelope> {
 template <typename T>
     requires DerivedFromEntryData<T>
 class iSaxSplittableInternal : public iSaxSplittableNode<T> {
+    template <typename U>
+        requires DerivedFromEntryData<U>
     friend class iSaxIndex;
 
    public:
@@ -94,7 +96,7 @@ class iSaxEnvelopeSplittableInternal : public iSaxSplittableInternal<Envelope>, 
     iSaxEnvelopeSplittableInternal(SaxSplitIndex split_ind, SaxSymbolT max_symbol_left, SaxSymbolT max_symbol_right,
                                    iSaxSplittableNode<Envelope> *left, iSaxSplittableNode<Envelope> *right);
 
-    std::pair<uptr<iSaxFinalizedNode<Envelope>>, vec<iSaxWord>> finalize(
+    std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> finalize(
         const iSaxWordSettings &isax_word_settings) override;
 
    private:
@@ -105,6 +107,8 @@ class iSaxEnvelopeSplittableInternal : public iSaxSplittableInternal<Envelope>, 
 template <typename T>
     requires DerivedFromEntryData<T>
 class iSaxSplittableLeaf : public iSaxSplittableNode<T> {
+    template <typename U>
+        requires DerivedFromEntryData<U>
     friend class iSaxIndex;
 
    public:
@@ -142,7 +146,7 @@ class iSaxEnvelopeSplittableLeaf : public iSaxSplittableLeaf<Envelope>, public i
      */
     iSaxEnvelopeSplittableLeaf(vec<SubsequencePosition> subsequence_positions, vec<vec<Envelope>> envelopes);
 
-    std::pair<uptr<iSaxFinalizedNode<Envelope>>, vec<iSaxWord>> finalize(
+    std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> finalize(
         const iSaxWordSettings &isax_word_settings) override;
 };
 

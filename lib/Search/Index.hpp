@@ -13,9 +13,24 @@
 #include "Summarization/IndexEntry.hpp"
 #include "Summarization/Envelope.hpp"
 #include "Summarization/iSaxWord.hpp"
+#include "Summarization/Paa.hpp"
+
+template <typename T>
+struct iSaxIndexTraits;
+
+template <>
+struct iSaxIndexTraits<Paa> {
+    using FinalizedTag = PaaTag;
+};
+
+template <>
+struct iSaxIndexTraits<Envelope> {
+    using FinalizedTag = EnvelopeTag;
+};
 
 /** @brief Interface for finalized indexes */
 template <typename T>
+    requires ValidSaxTraitsTag<T>
 class IFinalizedIndex : public ISearchMethod {
    public:
     virtual ~IFinalizedIndex() = default;
@@ -104,7 +119,10 @@ class IFinalizedIndex : public ISearchMethod {
  * @tparam The type of entry to insert into the index
  * */
 template <typename T>
+    requires DerivedFromEntryData<T>
 class IIndex {
+    using FTag = typename iSaxIndexTraits<T>::FinalizedTag;
+
    public:
     virtual ~IIndex() = default;
 
@@ -152,7 +170,7 @@ class IIndex {
      *
      * @return A unique pointer to the finalized index
      */
-    virtual std::unique_ptr<IFinalizedIndex<T>> finalize() = 0;
+    virtual uptr<IFinalizedIndex<FTag>> finalize() = 0;
 
    private:
     /**

@@ -13,7 +13,6 @@ struct IIndexParams {
 
     /**
      * @brief Get the type of the index
-     *
      * @return The type of the index
      */
     virtual SearchMethodType get_type() const = 0;
@@ -24,7 +23,7 @@ struct IIndexParams {
  *
  * Envelope indexes group together subsequences by their starting position into Envelope objects
  * */
-struct EnvelopeIndexParams : IIndexParams {
+struct EnvelopeIndexParams : virtual IIndexParams {
     /** @brief Size of the starting position groups */
     uint pos_per_env;
 };
@@ -34,7 +33,9 @@ struct EnvelopeIndexParams : IIndexParams {
  *
  * iSAX indexes split subsequences into segments and encode them using iSAX words
  */
-struct iSaxIndexParams {
+struct iSaxIndexParams : virtual IIndexParams {
+    SearchMethodType get_type() const override { return ISAX; }
+
     /** @brief Length of the segments */
     uint segment_len;
     /** @brief Number of symbols to use in the first layer of the index */
@@ -50,15 +51,36 @@ struct iSaxIndexParams {
     /** @brief Only used for EntropyMaximizingStrategy: whether to select the segment with the min number of bits in
      * case of a tie */
     bool min_num_bits_on_tie;
+
+    /**
+     * @brief Constructor
+     * @param segment_len Length of the segments
+     * @param first_layer_num_bits Number of symbols to use in the first layer of the index
+     * @param leaf_capacity Maximum number of entries in a leaf
+     * @param breakpoint_strategy_type Strategy for getting the breakpoints of the symbol intervals
+     * @param split_strategy_type Strategy for choosing the index to split on
+     * @param num_bits_limit Maximum number of bits per segment
+     * @param min_num_bits_on_tie Only used for EntropyMaximizingStrategy: whether to select the segment with the min
+     *        number of bits in case of a tie
+     */
+    iSaxIndexParams(uint segment_len, SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
+                    iSaxBreakpointStrategyType breakpoint_strategy_type, iSaxSplitStrategyType split_strategy_type,
+                    SaxNumBitsT num_bits_limit, bool min_num_bits_on_tie)
+        : segment_len(segment_len),
+          first_layer_num_bits(first_layer_num_bits),
+          leaf_capacity(leaf_capacity),
+          breakpoint_strategy_type(breakpoint_strategy_type),
+          split_strategy_type(split_strategy_type),
+          num_bits_limit(num_bits_limit),
+          min_num_bits_on_tie(min_num_bits_on_tie) {}
 };
 
 /** @brief Parameters for an iSAX envelope (ULISSE) index */
-struct iSaxEnvelopeIndexParams : EnvelopeIndexParams, iSaxIndexParams {
+struct iSaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual iSaxIndexParams {
     SearchMethodType get_type() const override { return ISAX_ENVELOPE; }
 
     /**
      * @brief Constructor
-     *
      * @param pos_per_env Size of the starting position groups
      * @param segment_len Length of the segments
      * @param first_layer_num_bits Number of symbols to use in the first layer of the index
@@ -72,15 +94,10 @@ struct iSaxEnvelopeIndexParams : EnvelopeIndexParams, iSaxIndexParams {
     iSaxEnvelopeIndexParams(uint pos_per_env, uint segment_len, SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
                             iSaxBreakpointStrategyType breakpoint_strategy_type,
                             iSaxSplitStrategyType split_strategy_type, SaxNumBitsT num_bits_limit,
-                            bool min_num_bits_on_tie) {
+                            bool min_num_bits_on_tie)
+        : iSaxIndexParams(segment_len, first_layer_num_bits, leaf_capacity, breakpoint_strategy_type,
+                          split_strategy_type, num_bits_limit, min_num_bits_on_tie) {
         this->pos_per_env = pos_per_env;
-        this->segment_len = segment_len;
-        this->first_layer_num_bits = first_layer_num_bits;
-        this->leaf_capacity = leaf_capacity;
-        this->breakpoint_strategy_type = breakpoint_strategy_type;
-        this->split_strategy_type = split_strategy_type;
-        this->num_bits_limit = num_bits_limit;
-        this->min_num_bits_on_tie = min_num_bits_on_tie;
     }
 };
 

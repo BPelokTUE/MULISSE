@@ -16,7 +16,7 @@ iSaxEnvelopeSplittableInternal::iSaxEnvelopeSplittableInternal(SaxSplitIndex spl
       m_max_symbol_left(max_symbol_left),
       m_max_symbol_right(max_symbol_right) {}
 
-std::pair<uptr<iSaxFinalizedNode<Envelope>>, vec<iSaxWord>> iSaxEnvelopeSplittableInternal::finalize(
+std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> iSaxEnvelopeSplittableInternal::finalize(
     const iSaxWordSettings &isax_word_settings) {
     assert(m_left && m_right);
 
@@ -31,8 +31,8 @@ std::pair<uptr<iSaxFinalizedNode<Envelope>>, vec<iSaxWord>> iSaxEnvelopeSplittab
     SaxSymbolT max_symbol_left = left_empty ? 0 : isax_max_left[channel_ind][seg_ind];
     SaxSymbolT max_symbol_right = right_empty ? 0 : isax_max_right[channel_ind][seg_ind];
 
-    auto finalized = std::make_unique<iSaxEnvelopeFinalizedInternal>(m_split_ind, max_symbol_left, max_symbol_right,
-                                                                     finalized_left, finalized_right);
+    uptr<iSaxFinalizedInternal<EnvelopeTag>> finalized = std::make_unique<iSaxEnvelopeFinalizedInternal>(
+        m_split_ind, max_symbol_left, max_symbol_right, std::move(finalized_left), std::move(finalized_right));
 
     // delete children
     m_left.reset();
@@ -44,13 +44,9 @@ std::pair<uptr<iSaxFinalizedNode<Envelope>>, vec<iSaxWord>> iSaxEnvelopeSplittab
                 isax_max_left[c].select_max_symbols(isax_max_right[c]);
             }
         }
-        return std::make_pair(finalized, isax_max_left);
-        // TODO: figure out why this doesn't work
-        // return std::make_pair(std::move(finalized), std::move(isax_max_left));
+        return std::make_pair(std::move(finalized), std::move(isax_max_left));
     } else {
-        return std::make_pair(finalized, isax_max_right);
-        // TODO: figure out why this doesn't work
-        // return std::make_pair(std::move(finalized), std::move(isax_max_right));
+        return std::make_pair(std::move(finalized), std::move(isax_max_right));
     }
 };
 
@@ -59,7 +55,7 @@ iSaxEnvelopeSplittableLeaf::iSaxEnvelopeSplittableLeaf(vec<SubsequencePosition> 
                                                        vec<vec<Envelope>> envelopes)
     : iSaxSplittableLeaf<Envelope>(subsequence_positions, envelopes) {}
 
-std::pair<uptr<iSaxFinalizedNode<Envelope>>, vec<iSaxWord>> iSaxEnvelopeSplittableLeaf::finalize(
+std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> iSaxEnvelopeSplittableLeaf::finalize(
     const iSaxWordSettings &isax_word_settings) {
     if (m_summaries.size() > 0) {
         assert(m_summaries[0].size() > 0);
@@ -75,10 +71,12 @@ std::pair<uptr<iSaxFinalizedNode<Envelope>>, vec<iSaxWord>> iSaxEnvelopeSplittab
                 isax_max[c].select_max_symbols(iSaxWord(m_summaries[i][c].upper, isax_word_settings));
             }
         }
-        auto finalized = std::make_unique<iSaxEnvelopeFinalizedLeaf>(m_subsequence_positions);
+        uptr<iSaxFinalizedLeaf<EnvelopeTag>> finalized =
+            std::make_unique<iSaxEnvelopeFinalizedLeaf>(m_subsequence_positions);
         return std::make_pair(std::move(finalized), std::move(isax_max));
     } else {
-        auto finalized = std::make_unique<iSaxEnvelopeFinalizedLeaf>(m_subsequence_positions);
+        uptr<iSaxFinalizedLeaf<EnvelopeTag>> finalized =
+            std::make_unique<iSaxEnvelopeFinalizedLeaf>(m_subsequence_positions);
         return std::make_pair(std::move(finalized), vec<iSaxWord>{});
     }
 }

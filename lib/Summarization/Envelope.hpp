@@ -15,6 +15,10 @@ struct Envelope : EntryData {
     /** @brief Upper bounds of the envelope */
     vec<float> upper;
 
+    Envelope(vec<float> lower, vec<float> upper);
+
+    Envelope() = default;
+
     /**
      * @brief Get the size (number of entries) of the envelope
      *
@@ -29,7 +33,7 @@ struct Envelope : EntryData {
      * */
     void resize(size_t new_size);
 
-    vec<float> get_isax_input() override;
+    vec<float> get_isax_input() const override;
 };
 
 // ----------------------------------------------- //

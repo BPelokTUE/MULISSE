@@ -129,7 +129,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(method_type);
 
         if (method_type == ISAX_ENVELOPE) {
-            auto *params = static_cast<iSaxEnvelopeIndexParams *>(index_options.index_params.get());
+            auto *params = dynamic_cast<iSaxEnvelopeIndexParams *>(index_options.index_params.get());
             segment_len = params->segment_len;
             pos_per_env = params->pos_per_env;
             first_layer_num_bits = params->first_layer_num_bits;

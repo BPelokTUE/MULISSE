@@ -7,10 +7,11 @@
 #include "Search/Index.hpp"
 #include "Search/iSax/iSaxSplittableNode.hpp"
 #include "Search/iSax/iSaxSplitStrategy.hpp"
-#include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
+#include "Search/iSax/iSaxFinalizedIndex.hpp"
 #include "Summarization/Envelope.hpp"
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/iSaxBreakpointStrategy.hpp"
+#include "Summarization/Paa.hpp"
 
 struct SaxSymbolsHash {
     std::size_t operator()(const vec<vec<SaxSymbolT>> &symbols) const;
@@ -22,7 +23,10 @@ struct SaxSymbolsHash {
  */
 template <typename T>
     requires DerivedFromEntryData<T>
-class iSaxIndex : public IIndex {
+class iSaxIndex : public IIndex<T> {
+    using FTag = typename iSaxIndexTraits<T>::FinalizedTag;
+    using SymbolType = typename SaxTraits<FTag>::SymbolType;
+
    public:
     /**
      * @brief Construct a new iSaxIndex object
@@ -33,7 +37,7 @@ class iSaxIndex : public IIndex {
      * @param split_strategy Split strategy
      */
     iSaxIndex(const SeriesISaxProperties &series_isax_prop, SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
-              uptr<IiSaxSplitStrategy> split_strategy)
+              uptr<IiSaxSplitStrategy<T>> split_strategy)
         : m_series_isax_prop(std::make_unique<SeriesISaxProperties>(series_isax_prop)),
           m_first_layer_num_bits(first_layer_num_bits),
           m_leaf_capacity(leaf_capacity),
@@ -58,16 +62,19 @@ class iSaxIndex : public IIndex {
         const vec<T> &mts_summary = entry.mts_summary;
         SubsequencePosition file_pos = entry.subsequence_position;
 
-        assert(mts_summary.size() == m_num_channels);
-        assert(mts_summary[0].size() == m_num_seg_per_channel);
+        MtsNumChannelsT num_channels = m_series_isax_prop->num_channels;
+        SaxSegIndT num_seg_per_channel = m_series_isax_prop->num_seg_per_channel;
 
-        vec<iSaxWord> isax_words(m_num_channels);
-        vec<vec<SaxSymbolT>> symbols(m_num_channels, vec<SaxSymbolT>(m_num_seg_per_channel));
-        for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
+        assert(mts_summary.size() == num_channels);
+        assert(mts_summary[0].size() == num_seg_per_channel);
+
+        vec<iSaxWord> isax_words(num_channels);
+        vec<vec<SaxSymbolT>> symbols(num_channels, vec<SaxSymbolT>(num_seg_per_channel));
+        for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             auto isax_input = mts_summary[c].get_isax_input();
             isax_words[c] = iSaxWord(isax_input, {vec<SaxNumBitsT>(isax_input.size(), m_first_layer_num_bits),
                                                   m_alphabet_num_bits, *m_breakpoints});
-            for (SaxSegIndT s = 0; s < m_num_seg_per_channel; ++s) symbols[c][s] = isax_words[c][s];
+            for (SaxSegIndT s = 0; s < num_seg_per_channel; ++s) symbols[c][s] = isax_words[c][s];
         }
 
         auto node_it = m_first_layer.find(symbols);
@@ -88,13 +95,13 @@ class iSaxIndex : public IIndex {
                 parent = static_cast<iSaxSplittableInternal<T> *>(node);
                 auto [segment_ind, channel_ind] = node->get_split_ind();
                 new_bit = isax_words[channel_ind].apply_split(segment_ind);
-                node = const_cast<iSaxSplittableNode *>(new_bit ? node->get_children().second
-                                                                : node->get_children().first);
+                node = const_cast<iSaxSplittableNode<T> *>(new_bit ? node->get_children().second
+                                                                   : node->get_children().first);
             }
             // Reached a leaf => insert
             auto *leaf = static_cast<iSaxSplittableLeaf<T> *>(node);
             leaf->m_subsequence_positions.push_back(file_pos);
-            leaf->m_summaries.push_back(mts_summary);  // TODO: get_mts_summary function
+            leaf->m_summaries.push_back(mts_summary);
 
             // Split if needed
             if (leaf->m_subsequence_positions.size() > m_leaf_capacity) {
@@ -104,19 +111,61 @@ class iSaxIndex : public IIndex {
         }
     }
 
-    uptr<IFinalizedIndex<T>> finalize() override;
+    uptr<IFinalizedIndex<FTag>> finalize() override {
+        size_t size_first_layer = m_first_layer.size();
+        vec<vec<vec<SymbolType>>> first_layer_symbols(size_first_layer);
+        vec<uptr<iSaxFinalizedNode<FTag>>> finalized_nodes(size_first_layer);
 
-    const iSaxSplittableNode *get_first_layer_node(const vec<iSaxWord> &isax_mins) const;
+        iSaxWordSettings isax_word_settings = {
+            vec<SaxNumBitsT>(m_series_isax_prop->num_seg_per_channel, m_alphabet_num_bits),
+            m_alphabet_num_bits,
+            *m_breakpoints,
+        };
 
-   private:
-    std::unordered_map<vec<vec<SaxSymbolT>>, uptr<iSaxSplittableNode>, SaxSymbolsHash> m_first_layer;
+        size_t i = 0;
+        for (auto it = m_first_layer.begin(); it != m_first_layer.end(); ++it) {
+            const auto &key_symbols = it->first;
+            auto &node = it->second;
+
+            auto [finalized_node, isax_symbols] = finalize_first_layer_node(key_symbols, node, isax_word_settings);
+            first_layer_symbols[i] = isax_symbols;
+            // first_layer_min_symbols[i] = min_symbols;
+            // first_layer_max_symbols[i] = max_symbols;
+            finalized_nodes[i] = std::move(finalized_node);
+            ++i;
+
+            node.reset();
+        }
+        return std::make_unique<iSaxFinalizedIndex<FTag>>(std::move(m_series_isax_prop), std::move(first_layer_symbols),
+                                                          std::move(finalized_nodes), m_first_layer_num_bits,
+                                                          m_alphabet_num_bits, *m_breakpoints);
+    }
+
+    const iSaxSplittableNode<T> *get_first_layer_node(const vec<iSaxWord> &isax_mins) const {
+        MtsNumChannelsT num_channels = m_series_isax_prop->num_channels;
+        SaxSegIndT num_seg_per_channel = m_series_isax_prop->num_seg_per_channel;
+
+        vec<vec<SaxSymbolT>> symbols(num_channels, vec<SaxSymbolT>(num_seg_per_channel));
+        for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+            for (SaxSegIndT s = 0; s < num_seg_per_channel; ++s) symbols[c][s] = isax_mins[c][s];
+        }
+        auto node_it = m_first_layer.find(symbols);
+        return node_it == m_first_layer.end() ? nullptr : node_it->second.get();
+    }
+
+   protected:
+    std::unordered_map<vec<vec<SaxSymbolT>>, uptr<iSaxSplittableNode<T>>, SaxSymbolsHash> m_first_layer;
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
     uptr<SeriesISaxProperties> m_series_isax_prop;
     size_t m_leaf_capacity;
     const vec<float> *m_breakpoints;
-    uptr<IiSaxSplitStrategy> m_split_strategy;
+    uptr<IiSaxSplitStrategy<T>> m_split_strategy;
 
-    void split_leaf(vec<iSaxWord> &isax_words, uptr<iSaxSplittableNode> &node_ref) {
+    virtual std::pair<uptr<iSaxFinalizedNode<FTag>>, vec<vec<SymbolType>>> finalize_first_layer_node(
+        vec<vec<SaxSymbolT>> key_symbols, uptr<iSaxSplittableNode<T>> &node, iSaxWordSettings &isax_word_settings) = 0;
+
+   private:
+    void split_leaf(vec<iSaxWord> &isax_words, uptr<iSaxSplittableNode<T>> &node_ref) {
         auto *leaf = static_cast<iSaxSplittableLeaf<T> *>(node_ref.get());
         // Split the leaf
         auto [segment_ind, channel_ind] = m_split_strategy->get_split_ind(leaf, isax_words);
@@ -143,13 +192,13 @@ class iSaxIndex : public IIndex {
         vec<vec<T>> left_mts_summary, right_mts_summary;
 
         for (size_t i = 0; i < leaf->m_subsequence_positions.size(); ++i) {
-            auto &seg_min = leaf->m_summaries[i][channel_ind].get_isax_input();  // TODO: replace with get_mts_summary
+            auto seg_min = leaf->m_summaries[i][channel_ind].get_isax_input();
             if (seg_min[segment_ind] <= mid_breakpoint) {
                 left_subsequence_positions.push_back(leaf->m_subsequence_positions[i]);
-                left_mts_summary.push_back(leaf->m_summaries[i]);  // TODO: replace with get_mts_summary
+                left_mts_summary.push_back(leaf->m_summaries[i]);
             } else {
                 right_subsequence_positions.push_back(leaf->m_subsequence_positions[i]);
-                right_mts_summary.push_back(leaf->m_summaries[i]);  // TODO: replace with get_mts_summary
+                right_mts_summary.push_back(leaf->m_summaries[i]);
             }
         }
 
@@ -167,7 +216,7 @@ class iSaxIndex : public IIndex {
         // Check if further splitting is necessary
         bool split_left = left_size > m_leaf_capacity, split_right = right_size > m_leaf_capacity;
         if (split_left || split_right) {
-            auto &parent = reinterpret_cast<std::unique_ptr<iSaxSplittableInternal<T>> &>(node_ref);
+            auto &parent = reinterpret_cast<uptr<iSaxSplittableInternal<T>> &>(node_ref);
             if (split_left) {
                 uint8_t new_bit = 0;
                 isax_words[channel_ind].append_to_symbol(segment_ind, new_bit);
@@ -184,6 +233,21 @@ class iSaxIndex : public IIndex {
             }
         }
     }
+};
+
+// iSaxEnvelopeIndex
+
+class iSaxEnvelopeIndex : public iSaxIndex<Envelope> {
+    using FTagEnv = typename iSaxIndexTraits<Envelope>::FinalizedTag;
+    using SymbolTypeEnv = typename SaxTraits<FTagEnv>::SymbolType;
+
+    std::pair<uptr<iSaxFinalizedNode<FTagEnv>>, vec<vec<SymbolTypeEnv>>> finalize_first_layer_node(
+        vec<vec<SaxSymbolT>> key_symbols, uptr<iSaxSplittableNode<Envelope>> &node,
+        iSaxWordSettings &isax_word_settings) override;
+
+   public:
+    iSaxEnvelopeIndex(const SeriesISaxProperties &series_isax_prop, SaxNumBitsT first_layer_num_bits,
+                      size_t leaf_capacity, uptr<IiSaxSplitStrategy<Envelope>> split_strategy);
 };
 
 #endif  // ISAX_INDEX_HPP
