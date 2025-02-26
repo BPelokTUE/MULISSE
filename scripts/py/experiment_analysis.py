@@ -557,15 +557,27 @@ NOISE_LABELS = {val: f"Noise={val}" for val in NOISE_COLORS.keys()}
 
 
 def experiment_relative_contrast(
-    target_col: str, y_label: str, query_noise_levels=list(NOISE_LABELS.keys()), y_scale: str = "linear"
+    target_col: str,
+    y_label: str,
+    query_noise_levels=list(NOISE_LABELS.keys()),
+    y_scale: str = "linear",
+    logs_dir="EXPERIMENT_LOGS/LOGS_relative_contrast_config",
+    # logs_dir="EXPERIMENT_LOGS/small/LOGS_rc",
+    remove_top=0.00,
+    datasets_to_show=["weather", "synthetic"],
 ):
     columns = {
         str(ERD.DATASETS_COLS): [str(DSC.DATASET_FILE), str(DSC.NUM_CHANNELS), str(DSC.SD)],
         str(ERD.QUERY_STATS_COLS): [str(QSTC.QUERY_NOISE), target_col],
     }
-    rc_results = ExperimentResults.load(logs_dir="LOGS_rc", **columns)
+    rc_results = ExperimentResults.load(logs_dir=logs_dir, **columns)
 
     targets = [(ERD.QUERY_STATS_COLS, target_col, MeanReducer())]
+    if remove_top > 0:
+        rc_results.query_stats_df = rc_results.query_stats_df[
+            rc_results.query_stats_df[target_col] < rc_results.query_stats_df[target_col].quantile(1 - remove_top)
+        ]
+
     groups = [
         (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
         (ERD.DATASETS_COLS, str(DSC.NUM_CHANNELS)),
@@ -580,6 +592,9 @@ def experiment_relative_contrast(
         ([dataset.split("/", 1)[0], num_channels, sd, noise], value)
         for (dataset, num_channels, sd, noise), value in mean_values
     ]
+    if datasets_to_show is not None:
+        mean_values = [entry for entry in mean_values if entry[0][0] in datasets_to_show]
+
     dataset_order = [
         "weather",
         "stocks",
@@ -613,3 +628,5 @@ experiment_relative_contrast(
 experiment_relative_contrast(str(QSTC.MAX_DIST), "Maximum distance to query", query_noise_levels=[0.1, 0.5, 1.0])
 experiment_relative_contrast(str(QSTC.MIN_DIST), "Minimum distance to query", query_noise_levels=[0.1, 0.5, 1.0])
 experiment_relative_contrast(str(QSTC.MEAN_DIST), "Mean distance to query", query_noise_levels=[0.1, 0.5, 1.0])
+
+# %%
