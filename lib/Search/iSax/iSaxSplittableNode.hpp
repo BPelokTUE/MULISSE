@@ -8,6 +8,19 @@
 #include "Summarization/IndexEntry.hpp"
 #include "Summarization/iSaxWord.hpp"
 
+struct FinalizationResult {
+    virtual ~FinalizationResult() = default;
+};
+
+struct PaaFinalizationResult : public FinalizationResult {
+    uptr<iSaxFinalizedNode<PaaTag>> finalized_node;
+};
+
+struct EnvelopeFinalizationResult : public FinalizationResult {
+    uptr<iSaxFinalizedNode<EnvelopeTag>> finalized_node;
+    vec<iSaxWord> isax_max;
+};
+
 /**
  * @brief Base class for nodes in a iSaxIndex
  * @tparam T The type of data stored in the index
@@ -32,17 +45,13 @@ class iSaxSplittableNode : public iSaxNode {
      * @return Vector of multivariate summaries
      */
     virtual vec<vec<T>> get_summaries() const = 0;
-};
 
-class iSaxEnvelopeSplittableNode : public iSaxSplittableNode<Envelope> {
-   public:
     /**
      * @brief Transform the node into a finalized node
      * @param isax_word_settings The settings for the iSAX word
-     * @return A unique pointer to the finalized node and the iSAX max of the node
+     * @return A unique pointer to the finalization result
      */
-    virtual std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> finalize(
-        const iSaxWordSettings &isax_word_settings) = 0;
+    virtual uptr<FinalizationResult> finalize(const iSaxWordSettings &isax_word_settings) = 0;
 };
 
 /**
@@ -86,18 +95,11 @@ class iSaxSplittableInternal : public iSaxSplittableNode<T> {
 
     vec<vec<T>> get_summaries() const override { return {}; }
 
+    uptr<FinalizationResult> finalize(const iSaxWordSettings &isax_word_settings) override;
+
    protected:
     SaxSplitIndex m_split_ind;
     uptr<iSaxSplittableNode<T>> m_left = nullptr, m_right = nullptr;
-};
-
-class iSaxEnvelopeSplittableInternal : public iSaxSplittableInternal<Envelope>, public iSaxEnvelopeSplittableNode {
-   public:
-    iSaxEnvelopeSplittableInternal(SaxSplitIndex split_ind, SaxSymbolT max_symbol_left, SaxSymbolT max_symbol_right,
-                                   iSaxSplittableNode<Envelope> *left, iSaxSplittableNode<Envelope> *right);
-
-    std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> finalize(
-        const iSaxWordSettings &isax_word_settings) override;
 
    private:
     SaxSymbolT m_max_symbol_left, m_max_symbol_right;
@@ -132,22 +134,11 @@ class iSaxSplittableLeaf : public iSaxSplittableNode<T> {
 
     vec<vec<T>> get_summaries() const override { return m_summaries; }
 
+    uptr<FinalizationResult> finalize(const iSaxWordSettings &isax_word_settings) override;
+
    protected:
     vec<vec<T>> m_summaries;
     vec<SubsequencePosition> m_subsequence_positions;
-};
-
-class iSaxEnvelopeSplittableLeaf : public iSaxSplittableLeaf<Envelope>, public iSaxEnvelopeSplittableNode {
-   public:
-    /**
-     * @brief Construct a new leaf node with the provided file positions and summaries
-     * @param subsequence_positions The positions within the dataset of the subsequences stored in the leaf
-     * @param envelopes The envelopes within the dataset of the subsequences stored in the leaf
-     */
-    iSaxEnvelopeSplittableLeaf(vec<SubsequencePosition> subsequence_positions, vec<vec<Envelope>> envelopes);
-
-    std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> finalize(
-        const iSaxWordSettings &isax_word_settings) override;
 };
 
 #endif  // ISAX_SPLITTABLE_NODE_HPP

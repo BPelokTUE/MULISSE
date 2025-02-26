@@ -8,23 +8,18 @@
 #include "Util/typedefs.hpp"
 
 // iSaxSplittableInternal
-iSaxEnvelopeSplittableInternal::iSaxEnvelopeSplittableInternal(SaxSplitIndex split_ind, SaxSymbolT max_symbol_left,
-                                                               SaxSymbolT max_symbol_right,
-                                                               iSaxSplittableNode<Envelope> *left,
-                                                               iSaxSplittableNode<Envelope> *right)
-    : iSaxSplittableInternal<Envelope>(split_ind, left, right),
-      m_max_symbol_left(max_symbol_left),
-      m_max_symbol_right(max_symbol_right) {}
-
-std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> iSaxEnvelopeSplittableInternal::finalize(
+template <>
+uptr<EnvelopeFinalizationResult> iSaxSplittableInternal<EnvelopeTag>::finalize(
     const iSaxWordSettings &isax_word_settings) {
     assert(m_left && m_right);
 
-    auto [finalized_left, isax_max_left] =
-        static_cast<iSaxEnvelopeSplittableNode *>(m_left.get())->finalize(isax_word_settings);
-    auto [finalized_right, isax_max_right] =
-        static_cast<iSaxEnvelopeSplittableNode *>(m_right.get())->finalize(isax_word_settings);
-    auto [seg_ind, channel_ind] = m_split_ind;
+    auto fin_result_left = static_cast<EnvelopeFinalizationResult *>(m_left->finalize(isax_word_settings));
+    auto finalized_left = std::move(fin_result_left->finalized_node);
+    auto isax_max_left = std::move(fin_result_left->isax_max);
+
+    auto fin_result_right = static_cast<EnvelopeFinalizationResult *>(m_right->finalize(isax_word_settings));
+    auto finalized_right = std::move(fin_result_right->finalized_node);
+    auto isax_max_right = std::move(fin_result_right->isax_max);
 
     bool left_empty = isax_max_left.empty(), right_empty = isax_max_right.empty();
 
@@ -51,12 +46,8 @@ std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> iSaxEnvelopeSplit
 };
 
 // iSaxSplittableLeaf
-iSaxEnvelopeSplittableLeaf::iSaxEnvelopeSplittableLeaf(vec<SubsequencePosition> subsequence_positions,
-                                                       vec<vec<Envelope>> envelopes)
-    : iSaxSplittableLeaf<Envelope>(subsequence_positions, envelopes) {}
-
-std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> iSaxEnvelopeSplittableLeaf::finalize(
-    const iSaxWordSettings &isax_word_settings) {
+template <>
+uptr<EnvelopeFinalizationResult> iSaxSplittableLeaf<EnvelopeTag>::finalize(const iSaxWordSettings &isax_word_settings) {
     if (m_summaries.size() > 0) {
         assert(m_summaries[0].size() > 0);
 

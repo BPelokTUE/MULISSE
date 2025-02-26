@@ -25,8 +25,9 @@ using SymbolTypeEnv = typename SaxTraits<FTagEnv>::SymbolType;
 
 std::pair<uptr<iSaxFinalizedNode<FTagEnv>>, vec<vec<SymbolTypeEnv>>> iSaxEnvelopeIndex::finalize_first_layer_node(
     vec<vec<SaxSymbolT>> key_symbols, uptr<iSaxSplittableNode<Envelope>> &node, iSaxWordSettings &isax_word_settings) {
-    auto [finalized_node, isax_max] =
-        static_cast<iSaxEnvelopeSplittableNode *>(node.get())->finalize(isax_word_settings);
+    auto finalization_result = static_cast<EnvelopeFinalizationResult *>(node->finalize(isax_word_settings).get());
+    auto finalized_node = std::move(finalization_result->finalized_node);
+    auto isax_max = std::move(finalization_result->isax_max);
 
     MtsNumChannelsT num_channels = m_series_isax_prop->num_channels;
     SaxSegIndT num_seg_per_channel = m_series_isax_prop->num_seg_per_channel;
