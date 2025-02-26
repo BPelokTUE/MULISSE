@@ -104,9 +104,8 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
           m_first_layer_num_bits(first_layer_num_bits),
           m_alphabet_num_bits(alphabet_num_bits),
           m_breakpoints(std::move(breakpoints)) {
-        assert(m_series_isax_propr->segment_len > 0);
-        assert(m_first_layer_min_symbols.size() > 0);
-        assert(m_first_layer_min_symbols.size() == m_first_layer_max_symbols.size());
+        assert(m_series_isax_prop->segment_len > 0);
+        assert(m_first_layer_symbols.size() > 0);
     }
 
     ~iSaxFinalizedIndex() = default;

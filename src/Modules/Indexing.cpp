@@ -40,8 +40,8 @@ uptr<IIndex<Envelope>> get_index(const IndexOptions &opts) {
         auto breakpoint_strategy = get_breakpoint_strategy(params);
         auto split_strategy = get_split_strategy<Envelope>(params, num_seg_per_channel, opts.num_channels);
 
-        SeriesISaxEnvelopeProperties series_isax_prop(params->segment_len, opts.series_len, params->pos_per_env,
-                                                      opts.num_channels, num_seg_per_channel);
+        SeriesISaxEnvelopeProperties series_isax_prop(params->segment_len, opts.series_len, opts.num_channels,
+                                                      num_seg_per_channel, params->pos_per_env);
 
         SaxNumBitsT breakpoint_num_bits = DEFAULT_NUM_BIT_LIMIT;
         RunSettings::get_instance().set_isax_properties({num_seg_per_channel, params->segment_len,
