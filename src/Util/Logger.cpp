@@ -104,10 +104,7 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
 // IndexLogger
 IndexLogger IndexLogger::instance = IndexLogger();
 bool IndexLogger::initialized = false;
-IndexLogger &IndexLogger::get_instance() {
-    assert(initialized);
-    return instance;
-}
+IndexLogger &IndexLogger::get_instance() { return instance; }
 
 using ISC = IndexSettingsColumn;
 
@@ -191,10 +188,7 @@ void IndexLogger::write_entry() {
 // QueryLogger
 QueryLogger QueryLogger::instance = QueryLogger();
 bool QueryLogger::initialized = false;
-QueryLogger &QueryLogger::get_instance() {
-    assert(initialized);
-    return instance;
-}
+QueryLogger &QueryLogger::get_instance() { return instance; }
 
 using QC = QueryColumn;
 using QSC = QuerySettingsColumn;
