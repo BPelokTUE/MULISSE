@@ -261,6 +261,16 @@ int main(int argc, char **argv) {
                     true,  // min_num_bits_on_tie,
                 };
                 break;
+            case ISAX:
+                index_params = new iSaxIndexParams{
+                    segment_len,
+                    first_layer_num_bits,
+                    leaf_capacity,
+                    STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str),
+                    STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str),
+                    DEFAULT_NUM_BIT_LIMIT,
+                    true,  // min_num_bits_on_tie,
+                };
             case SEQUENTIAL_SCAN:
                 std::cerr << "Sequential scan does not require indexation\n";
                 return 1;

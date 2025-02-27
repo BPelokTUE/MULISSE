@@ -114,18 +114,18 @@ if __name__ == "__main__":
     non_isax_index_methods: list[str] = []
     index_methods = non_isax_index_methods + isax_index_methods
 
-    if any(t in config["search_methods"] for t in isax_index_methods):
-        index_settings.append(
-            {
-                "index_type": "isax",
-                "split_strategy": config["isax_split_strategies"],
-                "breakpoint_strategy": config["isax_breakpoint_strategies"],
-                "leaf_capacity": config["isax_leaf_capacities"],
-                "first_layer_bits": config["isax_start_bit_numbers"],
-                "num_segments": config["num_segments"],
-                "pos_per_env": config["envelope_size_ratios"],
-            }
-        )
+    isax_methods_in_config = [t for t in config["search_methods"] if t in isax_index_methods]
+    index_settings.append(
+        {
+            "index_type": isax_methods_in_config,
+            "split_strategy": config["isax_split_strategies"],
+            "breakpoint_strategy": config["isax_breakpoint_strategies"],
+            "leaf_capacity": config["isax_leaf_capacities"],
+            "first_layer_bits": config["isax_start_bit_numbers"],
+            "num_segments": config["num_segments"],
+            "pos_per_env": config["envelope_size_ratios"],
+        }
+    )
 
     non_isax_indexes = [t for t in config["search_methods"] if t in non_isax_index_methods]
     if len(non_isax_indexes) > 0:

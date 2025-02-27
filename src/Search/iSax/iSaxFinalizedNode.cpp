@@ -1,51 +1,63 @@
-#include "Search/iSax/iSaxFinalizedNode.hpp"
-#include "Search/iSax/iSaxNode.hpp"
 #include "Util/typedefs.hpp"
+#include "Search/iSax/iSaxFinalizedNode.hpp"
+#include "Summarization/iSaxWord.hpp"
 
-// iSaxFinalizedInternal
+// PaaISax
 
-iSaxFinalizedInternal::iSaxFinalizedInternal(SaxSplitIndex split_ind, SaxSymbolT max_symbol_left,
-                                             SaxSymbolT max_symbol_right, uptr<iSaxFinalizedNode> left,
-                                             uptr<iSaxFinalizedNode> right)
-    : m_split_ind(split_ind),
-      m_max_symbol_left(max_symbol_left),
-      m_max_symbol_right(max_symbol_right),
-      m_left(std::move(left)),
-      m_right(std::move(right)) {}
-
-std::pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> iSaxFinalizedInternal::get_children() const {
-    return {m_left.get(), m_right.get()};
-}
-
-pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedInternal::get_children_max_symbols(SaxNumBitsT split_num_bits,
-                                                                             SaxNumBitsT symbol_num_bits) const {
-    SaxNumBitsT shift = symbol_num_bits - split_num_bits - 1;
-    assert(shift >= 0);
-    return {m_max_symbol_left >> shift, m_max_symbol_right >> shift};
-}
-
-SaxSplitIndex iSaxFinalizedInternal::get_split_ind() const { return m_split_ind; }
-
-vec<SubsequencePosition> iSaxFinalizedInternal::get_subsequence_positions() const { return {}; }
-
-bool iSaxFinalizedInternal::is_leaf() const { return false; }
-
-// iSaxFinalizedLeaf
-
-iSaxFinalizedLeaf::iSaxFinalizedLeaf(vec<SubsequencePosition> subsequence_positions)
-    : m_subsequence_positions(subsequence_positions) {}
-
-std::pair<const iSaxFinalizedNode *, const iSaxFinalizedNode *> iSaxFinalizedLeaf::get_children() const {
-    return {nullptr, nullptr};
+PaaISax::PaaISax(vec<PaaSaxSymbol> paa_sax_symbol, SaxNumBitsT num_bits) {
+    vec<SaxSymbolT> symbols(paa_sax_symbol.size());
+    for (size_t i = 0; i < symbols.size(); ++i) {
+        symbols[i] = paa_sax_symbol[i].symbol;
+    }
+    isax_word = iSaxWord(symbols, num_bits);
 };
 
-pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedLeaf::get_children_max_symbols(SaxNumBitsT split_num_bits,
-                                                                         SaxNumBitsT symbol_num_bits) const {
-    return {-1, -1};
+const vec<SaxNumBitsT> &PaaISax::get_num_bits() const { return isax_word.get_num_bits(); }
+
+PaaSaxSymbol PaaISax::symbol_no_shift(SaxSegIndT index) const { return {isax_word.symbol_no_shift(index)}; }
+
+template <>
+pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedInternal<PaaTag>::get_children_max_symbols(
+    SaxNumBitsT split_num_bits, SaxNumBitsT symbol_num_bits) const {
+    return iSaxFinalizedNode<PaaTag>::get_children_max_symbols(split_num_bits, symbol_num_bits);
 }
 
-SaxSplitIndex iSaxFinalizedLeaf::get_split_ind() const { return {0, 0}; }
+template <>
+pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedLeaf<PaaTag>::get_children_max_symbols(SaxNumBitsT split_num_bits,
+                                                                                 SaxNumBitsT symbol_num_bits) const {
+    return iSaxFinalizedNode<PaaTag>::get_children_max_symbols(split_num_bits, symbol_num_bits);
+}
 
-vec<SubsequencePosition> iSaxFinalizedLeaf::get_subsequence_positions() const { return m_subsequence_positions; }
+// EnvelopeISax
 
-bool iSaxFinalizedLeaf::is_leaf() const { return true; }
+EnvelopeISax::EnvelopeISax(vec<EnvelopeSaxSymbol> envelope_sax_symbol, SaxNumBitsT num_bits) {
+    vec<SaxSymbolT> min_symbols(envelope_sax_symbol.size()), max_symbols(envelope_sax_symbol.size());
+
+    for (size_t i = 0; i < min_symbols.size(); ++i) {
+        min_symbols[i] = envelope_sax_symbol[i].min_symbol;
+        max_symbols[i] = envelope_sax_symbol[i].max_symbol;
+    }
+    isax_min = iSaxWord(min_symbols, num_bits);
+    isax_max = iSaxWord(max_symbols, num_bits);
+};
+
+const vec<SaxNumBitsT> &EnvelopeISax::get_num_bits() const { return isax_min.get_num_bits(); }
+
+EnvelopeSaxSymbol EnvelopeISax::symbol_no_shift(SaxSegIndT index) const {
+    return {isax_min.symbol_no_shift(index), isax_max.symbol_no_shift(index)};
+}
+
+template <>
+pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedInternal<EnvelopeTag>::get_children_max_symbols(
+    SaxNumBitsT split_num_bits, SaxNumBitsT symbol_num_bits) const {
+    SaxNumBitsT shift = symbol_num_bits - split_num_bits - 1;
+    assert(shift >= 0);
+    auto envelope_args = static_cast<iSaxEnvelopeInternalNodeArgs *>(m_args.get());
+    return {envelope_args->max_symbol_left >> shift, envelope_args->max_symbol_right >> shift};
+}
+
+template <>
+pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedLeaf<EnvelopeTag>::get_children_max_symbols(
+    SaxNumBitsT split_num_bits, SaxNumBitsT symbol_num_bits) const {
+    return {-1, -1};
+}

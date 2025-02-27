@@ -1,3 +1,6 @@
+#ifndef CONSTANTS_HPP
+#define CONSTANTS_HPP
+
 #include <limits>
 #include <cassert>
 
@@ -13,3 +16,5 @@ const float INF = std::numeric_limits<float>::max();
 const float EPS_F = 1e-8;
 const double EPS = 1e-8;
 const double MIN_SUBS_SIGMA = 1e-3;
+
+#endif  // CONSTANTS_HPP

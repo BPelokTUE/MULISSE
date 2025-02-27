@@ -3,12 +3,19 @@
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 
+Envelope::Envelope(vec<float> lower, vec<float> upper) {
+    this->lower = std::move(lower);
+    this->upper = std::move(upper);
+}
+
 size_t Envelope::size() const { return lower.size(); }
 
 void Envelope::resize(size_t new_size) {
     lower.resize(new_size);
     upper.resize(new_size);
 }
+
+vec<float> Envelope::get_isax_input() const { return lower; }
 
 // ----------------------------------------------- //
 // --------------- ULISSE ENVELOPE --------------- //
