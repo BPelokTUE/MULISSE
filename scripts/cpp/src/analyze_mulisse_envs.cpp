@@ -4,7 +4,7 @@
 #include "CLI11/CLI11.hpp"
 
 #include "Util/typedefs.hpp"
-#include "Search/iSax/iSaxEnvelopeFinalizedIndex.hpp"
+#include "Search/iSax/iSaxFinalizedIndex.hpp"
 
 int main(int argc, char **argv) {
     // Parse arguments
@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 
     for (auto &index_path : index_paths) {
         // Load index
-        auto index = iSaxEnvelopeFinalizedIndex();
+        auto index = iSaxFinalizedIndex<EnvelopeTag>();
         std::ifstream ifs(index_path, std::ios::binary);
         index.load(ifs, STR_TO_ARCHIVE_TYPE.at(index_format_str));
 

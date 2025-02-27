@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include <cereal/types/polymorphic.hpp>
 #include <cereal/types/memory.hpp>
 #include <cereal/types/utility.hpp>
 #include <cereal/types/vector.hpp>
@@ -95,18 +96,18 @@ struct SaxTraits<struct EnvelopeTag> {
     using SymbolType = EnvelopeSaxSymbol;
 };
 
-template <typename T>
-concept ValidSaxTraitsTag = std::is_same_v<T, PaaTag> || std::is_same_v<T, EnvelopeTag>;
+template <typename FTag>
+concept ValidSaxTraitsTag = std::is_same_v<FTag, PaaTag> || std::is_same_v<FTag, EnvelopeTag>;
 
 /**
  * @brief Base class for nodes in a iSaxFinalizedIndex
  *
  * Derived classes of iSaxFinalizedNode contain information for facilitating search in the iSAX index
  *
- * @tparam T The SAX traits to use
+ * @tparam FTag The SAX traits to use
  */
-template <typename T>
-    requires ValidSaxTraitsTag<T>
+template <typename FTag>
+    requires ValidSaxTraitsTag<FTag>
 class iSaxFinalizedNode : public iSaxNode {
    public:
     virtual ~iSaxFinalizedNode() = default;
@@ -115,11 +116,8 @@ class iSaxFinalizedNode : public iSaxNode {
      * @brief Get the left and right children of the node, if any
      * @return Pointers (constant raw) to the left and right children
      */
-    virtual pair<const iSaxFinalizedNode<T> *, const iSaxFinalizedNode<T> *> get_children() const = 0;
-};
+    virtual pair<const iSaxFinalizedNode<FTag> *, const iSaxFinalizedNode<FTag> *> get_children() const = 0;
 
-class iSaxEnvelopeFinalizedNode : public iSaxFinalizedNode<EnvelopeTag> {
-   public:
     /**
      * @brief Get the iSAX max symbols of the children on the split index
      * @param split_num_bits The number of bits of the split segment before the split
@@ -128,106 +126,98 @@ class iSaxEnvelopeFinalizedNode : public iSaxFinalizedNode<EnvelopeTag> {
      * @return The iSAX max symbols of the children on the split index
      */
     virtual pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols(SaxNumBitsT split_num_bits,
-                                                                  SaxNumBitsT symbol_num_bits) const = 0;
+                                                                  SaxNumBitsT symbol_num_bits) const {
+        throw std::runtime_error("get_children_max_symbols is only implemented for EnvelopeTag");
+    }
+};
+
+template <typename FTag>
+    requires ValidSaxTraitsTag<FTag>
+struct iSaxInternalNodeArgs {
+    SaxSplitIndex split_ind;
+    uptr<iSaxFinalizedNode<FTag>> left;
+    uptr<iSaxFinalizedNode<FTag>> right;
+
+    iSaxInternalNodeArgs(SaxSplitIndex split_ind, uptr<iSaxFinalizedNode<EnvelopeTag>> left,
+                         uptr<iSaxFinalizedNode<EnvelopeTag>> right)
+        : split_ind(split_ind), left(std::move(left)), right(std::move(right)) {}
+
+    iSaxInternalNodeArgs() = default;
+
+   private:
+    friend class cereal::access;
+
+    template <class Archive>
+    void serialize(Archive &ar) {
+        ar(split_ind, left, right);
+    }
+};
+
+struct iSaxEnvelopeInternalNodeArgs : iSaxInternalNodeArgs<EnvelopeTag> {
+    SaxSymbolT max_symbol_left;
+    SaxSymbolT max_symbol_right;
+
+    iSaxEnvelopeInternalNodeArgs(SaxSplitIndex split_ind, SaxSymbolT max_symbol_left, SaxSymbolT max_symbol_right,
+                                 uptr<iSaxFinalizedNode<EnvelopeTag>> left, uptr<iSaxFinalizedNode<EnvelopeTag>> right)
+        : iSaxInternalNodeArgs(split_ind, std::move(left), std::move(right)),
+          max_symbol_left(max_symbol_left),
+          max_symbol_right(max_symbol_right) {}
+
+    iSaxEnvelopeInternalNodeArgs() = default;
+
+   private:
+    friend class cereal::access;
+
+    template <class Archive>
+    void serialize(Archive &ar) {
+        ar(cereal::base_class<iSaxInternalNodeArgs<EnvelopeTag>>(this), max_symbol_left, max_symbol_right);
+    }
 };
 
 /**
  * @brief Finalized internal node
- * @tparam T The SAX traits to use
+ * @tparam FTag The SAX traits to use
  * */
-template <typename T>
-    requires ValidSaxTraitsTag<T>
-class iSaxFinalizedInternal : public iSaxFinalizedNode<T> {
+template <typename FTag>
+    requires ValidSaxTraitsTag<FTag>
+class iSaxFinalizedInternal : public iSaxFinalizedNode<FTag> {
    public:
     iSaxFinalizedInternal() = default;
 
     /**
      * @brief Constructor
-     * @param split_ind Segment and channel index to split on (see SaxSplitIndex)
-     * @param left Unique pointer to the left child
-     * @param right Unique pointer to the right child
+     * @param args Arguments for the internal node, dependent on the SAX traits
      */
-    iSaxFinalizedInternal(SaxSplitIndex split_ind, uptr<iSaxFinalizedNode<T>> left, uptr<iSaxFinalizedNode<T>> right)
-        : m_split_ind(split_ind), m_left(std::move(left)), m_right(std::move(right)) {}
+    iSaxFinalizedInternal(uptr<iSaxInternalNodeArgs<FTag>> args) : m_args(std::move(args)) {};
 
-    virtual pair<const iSaxFinalizedNode<T> *, const iSaxFinalizedNode<T> *> get_children() const override {
-        return {m_left.get(), m_right.get()};
+    virtual pair<const iSaxFinalizedNode<FTag> *, const iSaxFinalizedNode<FTag> *> get_children() const override {
+        return {m_args->left.get(), m_args->right.get()};
     }
 
-    virtual SaxSplitIndex get_split_ind() const override { return m_split_ind; }
+    virtual SaxSplitIndex get_split_ind() const override { return m_args->split_ind; }
 
     virtual vec<SubsequencePosition> get_subsequence_positions() const override { return {}; }
 
     virtual bool is_leaf() const override { return false; }
 
-   protected:
-    SaxSplitIndex m_split_ind;
-    uptr<iSaxFinalizedNode<T>> m_left = nullptr, m_right = nullptr;
-
-   private:
-    // Required for Cereal (de)serialization
-    friend class cereal::access;
-
-    template <class Archive>
-    void serialize(Archive &ar) {
-        ar(m_split_ind, m_left, m_right);
-    }
-};
-
-class iSaxEnvelopeFinalizedInternal : public iSaxEnvelopeFinalizedNode, public iSaxFinalizedInternal<EnvelopeTag> {
-   public:
-    /**
-     * @brief Constructor
-     * @param split_ind Segment and channel index to split on (see SaxSplitIndex)
-     * @param isax_max_left iSAX max symbol of the left child in `split_ind`
-     * @param isax_max_right iSAX max symbol of the right child in `split_ind`
-     * @param left Unique pointer to the left child
-     * @param right Unique pointer to the right child
-     */
-    iSaxEnvelopeFinalizedInternal(SaxSplitIndex split_ind, SaxSymbolT max_symbol_left, SaxSymbolT max_symbol_right,
-                                  uptr<iSaxFinalizedNode<EnvelopeTag>> left, uptr<iSaxFinalizedNode<EnvelopeTag>> right)
-        : iSaxFinalizedInternal<EnvelopeTag>(split_ind, std::move(left), std::move(right)),
-          m_max_symbol_left(max_symbol_left),
-          m_max_symbol_right(max_symbol_right) {}
-
-    iSaxEnvelopeFinalizedInternal() = default;
-
     pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols(SaxNumBitsT split_num_bits,
-                                                          SaxNumBitsT symbol_num_bits) const override {
-        SaxNumBitsT shift = symbol_num_bits - split_num_bits - 1;
-        assert(shift >= 0);
-        return {m_max_symbol_left >> shift, m_max_symbol_right >> shift};
-    }
-
-    pair<const iSaxFinalizedNode<EnvelopeTag> *, const iSaxFinalizedNode<EnvelopeTag> *> get_children() const override {
-        return iSaxFinalizedInternal<EnvelopeTag>::get_children();
-    }
-
-    SaxSplitIndex get_split_ind() const override { return iSaxFinalizedInternal<EnvelopeTag>::get_split_ind(); }
-
-    vec<SubsequencePosition> get_subsequence_positions() const override {
-        return iSaxFinalizedInternal<EnvelopeTag>::get_subsequence_positions();
-    }
-
-    bool is_leaf() const override { return iSaxFinalizedInternal<EnvelopeTag>::is_leaf(); }
+                                                          SaxNumBitsT symbol_num_bits) const override;
 
    private:
-    SaxSymbolT m_max_symbol_left, m_max_symbol_right;
+    uptr<iSaxInternalNodeArgs<FTag>> m_args;
 
-   private:
     // Required for Cereal (de)serialization
     friend class cereal::access;
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(m_split_ind, m_max_symbol_left, m_max_symbol_right, m_left, m_right);
+        ar(m_args);
     }
 };
 
 // Required for Cereal (de)serialization
-CEREAL_REGISTER_TYPE(iSaxEnvelopeFinalizedInternal)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedInternal<EnvelopeTag>, iSaxEnvelopeFinalizedInternal)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxEnvelopeFinalizedNode, iSaxEnvelopeFinalizedInternal)
+CEREAL_REGISTER_TYPE(iSaxFinalizedInternal<EnvelopeTag>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<EnvelopeTag>, iSaxFinalizedInternal<EnvelopeTag>)
 
 /**
  * @brief Finalized leaf node
@@ -256,10 +246,12 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode<T> {
 
     virtual bool is_leaf() const override { return true; }
 
-   protected:
-    vec<SubsequencePosition> m_subsequence_positions;
+    pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols(SaxNumBitsT split_num_bits,
+                                                          SaxNumBitsT symbol_num_bits) const override;
 
    private:
+    vec<SubsequencePosition> m_subsequence_positions;
+
     // Required for Cereal (de)serialization
     friend class cereal::access;
 
@@ -269,38 +261,8 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode<T> {
     }
 };
 
-class iSaxEnvelopeFinalizedLeaf : public iSaxEnvelopeFinalizedNode, public iSaxFinalizedLeaf<EnvelopeTag> {
-   public:
-    /**
-     * @brief Construct a new leaf node with the provided file positions and envelopes
-     * @param subsequence_positions The position of th subsequence in the dataset
-     */
-    iSaxEnvelopeFinalizedLeaf(vec<SubsequencePosition> subsequence_positions)
-        : iSaxFinalizedLeaf<EnvelopeTag>(subsequence_positions) {}
-
-    iSaxEnvelopeFinalizedLeaf() = default;
-
-    pair<SaxSymbolT, SaxSymbolT> get_children_max_symbols(SaxNumBitsT split_num_bits,
-                                                          SaxNumBitsT symbol_num_bits) const override {
-        return {-1, -1};
-    }
-
-    pair<const iSaxFinalizedNode<EnvelopeTag> *, const iSaxFinalizedNode<EnvelopeTag> *> get_children() const override {
-        return iSaxFinalizedLeaf<EnvelopeTag>::get_children();
-    }
-
-    SaxSplitIndex get_split_ind() const override { return iSaxFinalizedLeaf<EnvelopeTag>::get_split_ind(); }
-
-    vec<SubsequencePosition> get_subsequence_positions() const override {
-        return iSaxFinalizedLeaf<EnvelopeTag>::get_subsequence_positions();
-    }
-
-    bool is_leaf() const override { return iSaxFinalizedLeaf<EnvelopeTag>::is_leaf(); }
-};
-
 // Required for Cereal (de)serialization
-CEREAL_REGISTER_TYPE(iSaxEnvelopeFinalizedLeaf)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedLeaf<EnvelopeTag>, iSaxEnvelopeFinalizedLeaf)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxEnvelopeFinalizedNode, iSaxEnvelopeFinalizedLeaf)
+CEREAL_REGISTER_TYPE(iSaxFinalizedLeaf<EnvelopeTag>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<EnvelopeTag>, iSaxFinalizedLeaf<EnvelopeTag>)
 
 #endif  // ISAX_FINALIZED_NODE_HPP

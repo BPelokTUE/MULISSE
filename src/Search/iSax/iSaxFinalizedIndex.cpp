@@ -39,7 +39,8 @@ std::pair<vec<EnvelopeISax>, vec<EnvelopeISax>> iSaxFinalizedIndex<EnvelopeTag>:
     const iSaxFinalizedNode<EnvelopeTag> *node, vec<EnvelopeISax> isax_words, MtsNumChannelsT c, SaxSegIndT s) const {
     SaxNumBitsT num_bits = isax_words[c].get_num_bits()[s];
     auto [max_symbol_left, max_symbol_right] =
-        static_cast<const iSaxEnvelopeFinalizedNode *>(node)->get_children_max_symbols(num_bits, m_alphabet_num_bits);
+        static_cast<const iSaxFinalizedNode<EnvelopeTag> *>(node)->get_children_max_symbols(num_bits,
+                                                                                            m_alphabet_num_bits);
     vec<EnvelopeISax> left_isax_words = isax_words;
     left_isax_words[c].isax_min.append_to_symbol(s, 0);
     left_isax_words[c].isax_max.set_symbol(s, num_bits, max_symbol_left);

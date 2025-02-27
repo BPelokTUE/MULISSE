@@ -16,6 +16,18 @@ const vec<SaxNumBitsT> &PaaISax::get_num_bits() const { return isax_word.get_num
 
 PaaSaxSymbol PaaISax::symbol_no_shift(SaxSegIndT index) const { return {isax_word.symbol_no_shift(index)}; }
 
+template <>
+pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedInternal<PaaTag>::get_children_max_symbols(
+    SaxNumBitsT split_num_bits, SaxNumBitsT symbol_num_bits) const {
+    return iSaxFinalizedNode<PaaTag>::get_children_max_symbols(split_num_bits, symbol_num_bits);
+}
+
+template <>
+pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedLeaf<PaaTag>::get_children_max_symbols(SaxNumBitsT split_num_bits,
+                                                                                 SaxNumBitsT symbol_num_bits) const {
+    return iSaxFinalizedNode<PaaTag>::get_children_max_symbols(split_num_bits, symbol_num_bits);
+}
+
 // EnvelopeISax
 
 EnvelopeISax::EnvelopeISax(vec<EnvelopeSaxSymbol> envelope_sax_symbol, SaxNumBitsT num_bits) {
@@ -33,4 +45,19 @@ const vec<SaxNumBitsT> &EnvelopeISax::get_num_bits() const { return isax_min.get
 
 EnvelopeSaxSymbol EnvelopeISax::symbol_no_shift(SaxSegIndT index) const {
     return {isax_min.symbol_no_shift(index), isax_max.symbol_no_shift(index)};
+}
+
+template <>
+pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedInternal<EnvelopeTag>::get_children_max_symbols(
+    SaxNumBitsT split_num_bits, SaxNumBitsT symbol_num_bits) const {
+    SaxNumBitsT shift = symbol_num_bits - split_num_bits - 1;
+    assert(shift >= 0);
+    auto envelope_args = static_cast<iSaxEnvelopeInternalNodeArgs *>(m_args.get());
+    return {envelope_args->max_symbol_left >> shift, envelope_args->max_symbol_right >> shift};
+}
+
+template <>
+pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedLeaf<EnvelopeTag>::get_children_max_symbols(
+    SaxNumBitsT split_num_bits, SaxNumBitsT symbol_num_bits) const {
+    return {-1, -1};
 }

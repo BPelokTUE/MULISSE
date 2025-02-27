@@ -117,7 +117,7 @@ if __name__ == "__main__":
     if any(t in config["search_methods"] for t in isax_index_methods):
         index_settings.append(
             {
-                "index_type": "isax",
+                "index_type": config["search_methods"],
                 "split_strategy": config["isax_split_strategies"],
                 "breakpoint_strategy": config["isax_breakpoint_strategies"],
                 "leaf_capacity": config["isax_leaf_capacities"],

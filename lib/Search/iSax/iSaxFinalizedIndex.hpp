@@ -85,7 +85,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
     iSaxFinalizedIndex() = default;
 
     /**
-     * @brief Construct a new iSaxEnvelopeFinalizedIndex object
+     * @brief Construct a new iSaxFinalizedIndex object
      *
      * @param series_isax_prop Properties of the time series
      * @param first_layer_symbols Symbols of the first layer

@@ -19,6 +19,9 @@ struct PaaFinalizationResult : public FinalizationResult {
 struct EnvelopeFinalizationResult : public FinalizationResult {
     uptr<iSaxFinalizedNode<EnvelopeTag>> finalized_node;
     vec<iSaxWord> isax_max;
+
+    EnvelopeFinalizationResult(uptr<iSaxFinalizedNode<EnvelopeTag>> finalized_node, vec<iSaxWord> isax_max)
+        : finalized_node(std::move(finalized_node)), isax_max(isax_max) {}
 };
 
 /**
@@ -140,5 +143,8 @@ class iSaxSplittableLeaf : public iSaxSplittableNode<T> {
     vec<vec<T>> m_summaries;
     vec<SubsequencePosition> m_subsequence_positions;
 };
+
+std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> get_envelope_node_finalization_result(
+    uptr<iSaxSplittableNode<Envelope>> &node, const iSaxWordSettings &isax_word_settings);
 
 #endif  // ISAX_SPLITTABLE_NODE_HPP
