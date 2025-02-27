@@ -39,6 +39,6 @@ std::pair<uptr<iSaxFinalizedNode<FTagEnv>>, vec<vec<SymbolTypeEnv>>> iSaxEnvelop
     return {std::move(finalized_node), std::move(symbols)};
 }
 
-iSaxEnvelopeIndex::iSaxEnvelopeIndex(const SeriesISaxProperties &series_isax_prop, SaxNumBitsT first_layer_num_bits,
+iSaxEnvelopeIndex::iSaxEnvelopeIndex(uptr<SeriesISaxProperties> series_isax_prop, SaxNumBitsT first_layer_num_bits,
                                      size_t leaf_capacity, uptr<IiSaxSplitStrategy<Envelope>> split_strategy)
-    : iSaxIndex(series_isax_prop, first_layer_num_bits, leaf_capacity, std::move(split_strategy)) {}
+    : iSaxIndex(std::move(series_isax_prop), first_layer_num_bits, leaf_capacity, std::move(split_strategy)) {}

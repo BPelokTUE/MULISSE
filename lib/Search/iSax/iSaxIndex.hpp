@@ -36,9 +36,9 @@ class iSaxIndex : public IIndex<T> {
      * @param leaf_capacity Capacity of the leaf nodes
      * @param split_strategy Split strategy
      */
-    iSaxIndex(const SeriesISaxProperties &series_isax_prop, SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
+    iSaxIndex(uptr<SeriesISaxProperties> series_isax_prop, SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
               uptr<IiSaxSplitStrategy<T>> split_strategy)
-        : m_series_isax_prop(std::make_unique<SeriesISaxProperties>(series_isax_prop)),
+        : m_series_isax_prop(std::move(series_isax_prop)),
           m_first_layer_num_bits(first_layer_num_bits),
           m_leaf_capacity(leaf_capacity),
           m_split_strategy(std::move(split_strategy)) {
@@ -246,7 +246,7 @@ class iSaxEnvelopeIndex : public iSaxIndex<Envelope> {
         iSaxWordSettings &isax_word_settings) override;
 
    public:
-    iSaxEnvelopeIndex(const SeriesISaxProperties &series_isax_prop, SaxNumBitsT first_layer_num_bits,
+    iSaxEnvelopeIndex(uptr<SeriesISaxProperties> series_isax_prop, SaxNumBitsT first_layer_num_bits,
                       size_t leaf_capacity, uptr<IiSaxSplitStrategy<Envelope>> split_strategy);
 };
 

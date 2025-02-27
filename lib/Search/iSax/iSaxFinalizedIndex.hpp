@@ -63,6 +63,10 @@ struct SeriesISaxEnvelopeProperties : SeriesISaxProperties {
     }
 };
 
+CEREAL_REGISTER_TYPE(SeriesISaxProperties)
+CEREAL_REGISTER_TYPE(SeriesISaxEnvelopeProperties)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(SeriesISaxProperties, SeriesISaxEnvelopeProperties)
+
 template <typename FTag>
     requires ValidSaxTraitsTag<FTag>
 struct PQueueEntry {
