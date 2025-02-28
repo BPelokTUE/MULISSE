@@ -96,6 +96,7 @@ int main(int argc, char **argv) {
             "Discard time series with any low standard deviation subsequence of this length. Pass 0 to disable.")
         ->required();
     csv_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
+    csv_subcommand->add_option("-S,--seed", seed, "Random seed")->capture_default_str();
 
     // Options for creating queries
     qs_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required();
@@ -240,7 +241,7 @@ int main(int argc, char **argv) {
     if (command_type == CREATE_DS) {
         create_random_walks(step_sd, zero_start, seed);
     } else if (command_type == PARSE_CSV) {
-        create_dataset_from_csv(csv_paths, num_series, low_sd_len);
+        create_dataset_from_csv(csv_paths, num_series, low_sd_len, seed);
     } else if (command_type == CREATE_QS) {
         create_queries(noise, num_queries, exact_lengths, l_min, l_max, used_channels, channel_mask, seed);
     } else if (command_type == CALC_Q_STATS) {

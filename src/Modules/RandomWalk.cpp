@@ -46,7 +46,7 @@ int create_random_walks(float step_sigma, bool zero_start, int seed) {
 
     outfile.close();
 
-    DatasetLogger::write_entry(std::make_unique<RandomWalkLogAttributes>(step_sigma));
+    DatasetLogger::write_entry(std::make_unique<RandomWalkLogAttributes>(step_sigma, seed));
 
     return 0;
 }

@@ -1,9 +1,11 @@
+#include <algorithm>
+#include <cstring>
 #include <fstream>
 #include <filesystem>
 #include <iostream>
 #include <memory>
 #include <sstream>
-#include <cstring>
+#include <random>
 
 #include "Modules/CsvParsing.hpp"
 #include "Util/constants.hpp"
@@ -12,7 +14,7 @@
 #include "Util/RunSettings.hpp"
 #include "Util/Logger.hpp"
 
-int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint low_sd_len, char col_sep) {
+int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint low_sd_len, int seed, char col_sep) {
     for (str csv_path : csv_paths) {
         if (!std::filesystem::exists(csv_path)) {
             std::cerr << "Error: Dataset " << csv_path << " does not exist\n";
@@ -45,13 +47,13 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint low
 
     str line;
     vec<vec<float>> mts(num_channels, vec<float>(series_len));
+    vec<vec<vec<float>>> all_mts;
     MtsNumChannelsT channel = 0;
     bool discard = false;
-    uint length = series_len, series_generated = 0;
+    uint length = series_len, ts_ind = 0;
 
     while (true) {
-        auto &csv_ifs = csv_streams[channel];
-        std::getline(csv_ifs, line);
+        std::getline(csv_streams[channel], line);
 
         if (!discard) {
             std::istringstream iss(line);
@@ -85,21 +87,34 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint low
         }
 
         if (++channel == num_channels) {
-            if (!discard) {
-                for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-                    dataset_ofs.write(reinterpret_cast<const char *>(mts[c].data()), sizeof(float) * series_len);
-                }
-                series_generated++;
-            }
+            if (!discard) all_mts.push_back(mts);
             channel = 0;
             length = series_len;
             discard = false;
+            ++ts_ind;
         }
-
-        if (csv_ifs.eof() || series_generated == num_series) break;
+        if (csv_streams[channel].eof() || (ts_ind > 2 * num_series && all_mts.size() >= num_series)) break;
     }
 
-    DatasetLogger::write_entry(std::make_unique<CsvDatasetLogAttributes>(csv_paths, series_generated, low_sd_len));
+    if (all_mts.empty()) {
+        throw std::runtime_error("Error: No valid time series found in the dataset");
+    }
+
+    std::default_random_engine generator(seed);
+
+    vec<uint> mts_indexes(all_mts.size());
+    std::iota(mts_indexes.begin(), mts_indexes.end(), 0);
+    std::shuffle(mts_indexes.begin(), mts_indexes.end(), generator);
+    if (mts_indexes.size() > num_series) mts_indexes.resize(num_series);
+
+    for (uint mts_ind : mts_indexes) {
+        for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+            dataset_ofs.write(reinterpret_cast<const char *>(all_mts[mts_ind][c].data()), sizeof(float) * series_len);
+        }
+    }
+
+    DatasetLogger::write_entry(
+        std::make_unique<CsvDatasetLogAttributes>(csv_paths, mts_indexes.size(), low_sd_len, seed));
 
     return 0;
 }

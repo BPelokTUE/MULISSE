@@ -24,6 +24,7 @@ enum class DatasetSettingsColumn {
     SOURCE_CSVS,    // Source CSV files used for generating the CSV dataset
     LOW_SD_LEN,     // Length of the subsequence with low standard deviation that causes the time series to be
                     // discarded
+    SEED,           // The random seed to generate the dataset
 };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(DatasetSettingsColumn, DATASET_SETTINGS_COL, false);
@@ -213,21 +214,23 @@ struct IDatasetLogAttributes {
 };
 
 struct RandomWalkLogAttributes : IDatasetLogAttributes {
-    RandomWalkLogAttributes(float noise);
+    RandomWalkLogAttributes(float noise, int seed);
 
     DatasetType get_type() override;
 
     float noise;
+    int seed;
 };
 
 struct CsvDatasetLogAttributes : IDatasetLogAttributes {
-    CsvDatasetLogAttributes(const vec<str> &source_csvs, uint series_generated, uint low_sd_len);
+    CsvDatasetLogAttributes(const vec<str> &source_csvs, uint series_generated, uint low_sd_len, int seed);
 
     DatasetType get_type() override;
 
     vec<str> source_csvs;
     uint series_generated;
     uint low_sd_len;
+    int seed;
 };
 class DatasetLogger : public Logger {
    public:
