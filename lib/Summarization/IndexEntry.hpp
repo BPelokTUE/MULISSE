@@ -19,8 +19,8 @@ template <typename T>
 struct IndexEntry {
     virtual ~IndexEntry() = default;
 
-    /** @brief Position within the dataset of the subsequence summarized in the entry */
-    SubsequencePosition subsequence_position;
+    /** @brief Position within the dataset and length of the subsequence summarized in the entry */
+    SubsequenceInfo subsequence_position;
     /** @brief Multivariate time series summary */
     vec<T> mts_summary;
 };

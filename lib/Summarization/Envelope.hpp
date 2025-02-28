@@ -86,7 +86,9 @@ class iSaxEnvelopeGenerator : public IEntryGenerator<Envelope> {
    public:
     /**
      * @brief Construct a new iSaxEnvelopeGenerator object
-     * @param opts Indexing options
+     * @param num_channels Number of channels in each series
+     * @param normalized Whether to normalize the subsequences
+     * @param uli_params Parameters for the ULISSE envelope computation
      */
     iSaxEnvelopeGenerator(MtsNumChannelsT num_channels, bool normalized, const UlisseEnvelopeParams &uli_params);
 

@@ -43,17 +43,19 @@ struct SaxSplitIndex {
     }
 };
 
-struct SubsequencePosition {
+struct SubsequenceInfo {
     /** @brief Index of the series within the file */
     uint series_ind;
     /** @brief Index of the start position of the subsequence within the series */
     uint start_pos;
+    /** @brief Length of the subsequence */
+    uint length;
 
-    bool operator<(const SubsequencePosition &other) const {
+    bool operator<(const SubsequenceInfo &other) const {
         return series_ind < other.series_ind || (series_ind == other.series_ind && start_pos < other.start_pos);
     }
 
-    bool operator==(const SubsequencePosition &other) const {
+    bool operator==(const SubsequenceInfo &other) const {
         return series_ind == other.series_ind && start_pos == other.start_pos;
     }
 
@@ -66,7 +68,7 @@ struct SubsequencePosition {
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(series_ind, start_pos);
+        ar(series_ind, start_pos, length);
     }
 };
 

@@ -60,7 +60,7 @@ class iSaxIndex : public IIndex<T> {
 
     void insert(const IndexEntry<T> &entry) override {
         const vec<T> &mts_summary = entry.mts_summary;
-        SubsequencePosition file_pos = entry.subsequence_position;
+        SubsequenceInfo file_pos = entry.subsequence_position;
 
         MtsNumChannelsT num_channels = m_series_isax_prop->num_channels;
         SaxSegIndT num_seg_per_channel = m_series_isax_prop->num_seg_per_channel;
@@ -80,7 +80,7 @@ class iSaxIndex : public IIndex<T> {
         auto node_it = m_first_layer.find(symbols);
         if (node_it == m_first_layer.end()) {
             // TODO: either function to generate pointers or second / third template parameter
-            m_first_layer.emplace(symbols, std::make_unique<iSaxSplittableLeaf<T>>(vec<SubsequencePosition>{file_pos},
+            m_first_layer.emplace(symbols, std::make_unique<iSaxSplittableLeaf<T>>(vec<SubsequenceInfo>{file_pos},
                                                                                    vec<vec<T>>{mts_summary}));
 
             auto &logger = IndexLogger::get_instance();
@@ -188,7 +188,7 @@ class iSaxIndex : public IIndex<T> {
         auto mid_breakpoint = m_breakpoints->at((symbol * 2 + 1) * (alphabet_size_ratio >> 1) - 1);
 
         // Distribute the mts_envelope across the two new leaves
-        vec<SubsequencePosition> left_subsequence_positions, right_subsequence_positions;
+        vec<SubsequenceInfo> left_subsequence_positions, right_subsequence_positions;
         vec<vec<T>> left_mts_summary, right_mts_summary;
 
         for (size_t i = 0; i < leaf->m_subsequence_positions.size(); ++i) {
@@ -235,8 +235,21 @@ class iSaxIndex : public IIndex<T> {
     }
 };
 
-// iSaxEnvelopeIndex
+// iSaxPaaIndex
+class iSaxPaaIndex : public iSaxIndex<Paa> {
+    using FTagPaa = typename iSaxIndexTraits<Paa>::FinalizedTag;
+    using SymbolTypePaa = typename SaxTraits<FTagPaa>::SymbolType;
 
+    std::pair<uptr<iSaxFinalizedNode<FTagPaa>>, vec<vec<SymbolTypePaa>>> finalize_first_layer_node(
+        vec<vec<SaxSymbolT>> key_symbols, uptr<iSaxSplittableNode<Paa>> &node,
+        iSaxWordSettings &isax_word_settings) override;
+
+   public:
+    iSaxPaaIndex(uptr<SeriesISaxProperties> series_isax_prop, SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
+                 uptr<IiSaxSplitStrategy<Paa>> split_strategy);
+};
+
+// iSaxEnvelopeIndex
 class iSaxEnvelopeIndex : public iSaxIndex<Envelope> {
     using FTagEnv = typename iSaxIndexTraits<Envelope>::FinalizedTag;
     using SymbolTypeEnv = typename SaxTraits<FTagEnv>::SymbolType;

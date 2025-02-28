@@ -16,7 +16,7 @@ EuclideanDistance::EuclideanDistance(bool normalized, bool use_early_abandoning)
 
 bool EuclideanDistance::uses_early_abandoning() const { return m_use_early_abandoning; }
 
-bool EuclideanDistance::update_result_set(IResultSet *result_set, SubsequencePosition subs_pos,
+bool EuclideanDistance::update_result_set(IResultSet *result_set, SubsequenceInfo subs_info,
                                           const vec<vec<float>> &query, const vec<vec<float>> &mts) {
     bool updated = false;
     int num_start_pos, mts_len, query_len;
@@ -51,7 +51,8 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, SubsequencePos
                     }
                 }
             }
-            result_set->insert({{subs_pos.series_ind, subs_pos.start_pos + start_pos}, dist_squared});
+            result_set->insert(
+                {{subs_info.series_ind, subs_info.start_pos + start_pos, subs_info.length}, dist_squared});
             updated = true;
         start_pos_it_end:;
             int end_pos = start_pos + query_len;
@@ -84,7 +85,7 @@ EuclideanDistanceWMass::EuclideanDistanceWMass(bool normalized) : EuclideanDista
 
 vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<DistanceT> &q_channel,
                                                               const vec<DistanceT> &mts_channel,
-                                                              SubsequencePosition subs_pos,
+                                                              SubsequenceInfo subs_info,
                                                               MtsNumChannelsT channel_ind) const {
     uint mts_len = mts_channel.size(), query_len = q_channel.size();
 
@@ -97,7 +98,7 @@ vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<Distance
         auto &logger = QueryLogger::get_instance();
 
         logger.start_timer(QC::IO_TIME_S);
-        mts_fft = run_settings.get_ffts(subs_pos, channel_ind, mts_len);
+        mts_fft = run_settings.get_ffts(subs_info, channel_ind, mts_len);
         logger.stop_timer(QC::IO_TIME_S);
 
         auto *query_fft_ptr = run_settings.get_query_ffts(channel_ind);
@@ -136,7 +137,7 @@ vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<Distance
 }
 
 // TODO: figure out where double is actually needed
-bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, SubsequencePosition subs_pos,
+bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, SubsequenceInfo subs_info,
                                                const vec<vec<float>> &query, const vec<vec<float>> &mts) {
     bool updated = false;
 
@@ -169,7 +170,7 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, Subsequen
         }
         auto [query_mu, query_sigma] = calculate_mu_and_sigma(query_sum, query_sum_sq, query_len);
 
-        vec<DistanceT> dot_products = calculate_dot_products(q_channel, mts_channel, subs_pos, c);
+        vec<DistanceT> dot_products = calculate_dot_products(q_channel, mts_channel, subs_info, c);
 
         if (m_normalized) {
             for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
@@ -193,7 +194,7 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, Subsequen
 
     for (uint start_pos = 0; start_pos < squared_dists.size(); ++start_pos) {
         if (squared_dists[start_pos] < result_set->get_distance_lb()) {
-            SubsequencePosition result_pos = {subs_pos.series_ind, subs_pos.start_pos + start_pos};
+            SubsequenceInfo result_pos = {subs_info.series_ind, subs_info.start_pos + start_pos};
             result_set->insert({result_pos, squared_dists[start_pos]});
             updated = true;
         }

@@ -11,11 +11,11 @@
 #include "Util/RunSettings.hpp"
 
 struct QueryDescriptor {
-    SubsequencePosition subs_pos;
+    SubsequenceInfo subs_info;
     uint length;
     vec<bool> channels;
 
-    bool operator<(const QueryDescriptor &other) const { return subs_pos < other.subs_pos; }
+    bool operator<(const QueryDescriptor &other) const { return subs_info < other.subs_info; }
 };
 
 int create_queries(QuerySetOptions opts) {
@@ -76,8 +76,8 @@ int create_queries(QuerySetOptions opts) {
         }
 
         auto start_pos_dist = std::uniform_int_distribution<uint>(0, series_len - length);
-        SubsequencePosition subs_pos = {series_uniform_dist(rng), start_pos_dist(rng)};
-        return {subs_pos, length, channels};
+        SubsequenceInfo subs_info = {series_uniform_dist(rng), start_pos_dist(rng)};
+        return {subs_info, length, channels};
     };
 
     for (uint i = 0; i < opts.num_queries; ++i) {
@@ -92,8 +92,8 @@ int create_queries(QuerySetOptions opts) {
     std::sort(query_descriptors.begin(), query_descriptors.end());
 
     for (size_t q = 0; q < query_descriptors.size(); ++q) {
-        const auto &[subs_pos, length, channels] = query_descriptors[q];
-        SubsequencePosition series_start = {subs_pos.series_ind, 0};
+        const auto &[subs_info, length, channels] = query_descriptors[q];
+        SubsequenceInfo series_start = {subs_info.series_ind, 0, series_len};
 
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             if (channels[c]) {
@@ -106,7 +106,7 @@ int create_queries(QuerySetOptions opts) {
                 }
                 float sigma = calculate_mu_and_sigma(sum, sum_sq, series_len).second;
 
-                data_file.seekg(subs_pos.get_file_pos(series_len, num_channels, c));
+                data_file.seekg(subs_info.get_file_pos(series_len, num_channels, c));
                 for (uint j = 0; j < length; ++j) {
                     data_file.read(reinterpret_cast<char *>(&value), sizeof(value));
                     value += noise_normal_dist(rng) * sigma;

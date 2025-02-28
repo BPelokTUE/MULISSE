@@ -15,14 +15,6 @@ SeriesISaxEnvelopeProperties::SeriesISaxEnvelopeProperties(uint segment_len, uin
                                                            uint pos_per_env)
     : SeriesISaxProperties(segment_len, series_len, num_channels, num_seg_per_channel), pos_per_env(pos_per_env) {}
 
-size_t SeriesISaxProperties::get_data_to_read(uint query_len, uint data_remaining) {
-    return std::min(query_len, data_remaining);
-}
-
-size_t SeriesISaxEnvelopeProperties::get_data_to_read(uint query_len, uint data_remaining) {
-    return std::min(query_len + pos_per_env - 1, data_remaining);
-}
-
 template <>
 std::pair<float, float> iSaxFinalizedIndex<EnvelopeTag>::get_segment_limits(SaxNumBitsT num_bits,
                                                                             EnvelopeSaxSymbol symbol) const {

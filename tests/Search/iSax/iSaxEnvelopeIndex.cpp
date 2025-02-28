@@ -53,7 +53,7 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
         REQUIRE(node != nullptr);
 
         REQUIRE(node->is_leaf());
-        REQUIRE(node->get_subsequence_positions() == vec<SubsequencePosition>{{13, 1}});
+        REQUIRE(node->get_subsequence_positions() == vec<SubsequenceInfo>{{13, 1}});
         check_envelope_equality(node->get_summaries(), vec<vec<Envelope>>{{{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}});
     }
 
@@ -71,7 +71,7 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
         REQUIRE(node != nullptr);
 
         REQUIRE(node->is_leaf());
-        REQUIRE(node->get_subsequence_positions() == vec<SubsequencePosition>{{13, 1}, {126, 9}});
+        REQUIRE(node->get_subsequence_positions() == vec<SubsequenceInfo>{{13, 1}, {126, 9}});
         check_envelope_equality(node->get_summaries(), vec<vec<Envelope>>{{{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}},
                                                                           {{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}});
     }
@@ -93,7 +93,7 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
         REQUIRE(node != nullptr);
 
         REQUIRE(node->is_leaf());
-        REQUIRE(node->get_subsequence_positions() == vec<SubsequencePosition>{{352, 111}});
+        REQUIRE(node->get_subsequence_positions() == vec<SubsequenceInfo>{{352, 111}});
         check_envelope_equality(node->get_summaries(), vec<vec<Envelope>>{{{{4.2, 2.4, -5.7}, {8.8, 3.8, 5.3}}}});
     }
 
@@ -123,12 +123,12 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
         REQUIRE(right != nullptr);
 
         REQUIRE(left->is_leaf());
-        REQUIRE(left->get_subsequence_positions() == vec<SubsequencePosition>{{126, 9}, {78, 91}});
+        REQUIRE(left->get_subsequence_positions() == vec<SubsequenceInfo>{{126, 9}, {78, 91}});
         check_envelope_equality(left->get_summaries(), vec<vec<Envelope>>{{{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}},
                                                                           {{{-4.1, 4.5, -1.6}, {-1.8, 6.9, -0.6}}}});
 
         REQUIRE(right->is_leaf());
-        REQUIRE(right->get_subsequence_positions() == vec<SubsequencePosition>{{13, 1}});
+        REQUIRE(right->get_subsequence_positions() == vec<SubsequenceInfo>{{13, 1}});
         check_envelope_equality(right->get_summaries(), vec<vec<Envelope>>{{{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}}});
     }
 
@@ -161,7 +161,7 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
         REQUIRE(right != nullptr);
 
         REQUIRE(right->is_leaf());
-        REQUIRE(right->get_subsequence_positions() == vec<SubsequencePosition>{{13, 1}, {555, 555}});
+        REQUIRE(right->get_subsequence_positions() == vec<SubsequenceInfo>{{13, 1}, {555, 555}});
         check_envelope_equality(right->get_summaries(), vec<vec<Envelope>>{{{{-1.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}},
                                                                            {{{-0.6, 1.3, -10.6}, {1.8, 3.1, -5.6}}}});
     }
@@ -191,7 +191,7 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
 
         REQUIRE(right != nullptr);
         REQUIRE(right->is_leaf());
-        REQUIRE(right->get_subsequence_positions() == vec<SubsequencePosition>{{555, 555}});
+        REQUIRE(right->get_subsequence_positions() == vec<SubsequenceInfo>{{555, 555}});
         check_envelope_equality(right->get_summaries(), vec<vec<Envelope>>{{{{-1.6, 5.3, -10.6}, {1.8, 3.1, -5.6}}}});
 
         // Trigger second split
@@ -217,13 +217,13 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
 
         REQUIRE(left->is_leaf());
         REQUIRE(left != nullptr);
-        REQUIRE(left->get_subsequence_positions() == vec<SubsequencePosition>{{13, 1}, {78, 91}});
+        REQUIRE(left->get_subsequence_positions() == vec<SubsequenceInfo>{{13, 1}, {78, 91}});
         check_envelope_equality(left->get_summaries(), vec<vec<Envelope>>{{{{-3.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}},
                                                                           {{{-4.1, 1.5, -1.6}, {-1.8, 6.9, -0.6}}}});
 
         REQUIRE(right->is_leaf());
         REQUIRE(right != nullptr);
-        REQUIRE(right->get_subsequence_positions() == vec<SubsequencePosition>{{126, 9}});
+        REQUIRE(right->get_subsequence_positions() == vec<SubsequenceInfo>{{126, 9}});
         check_envelope_equality(right->get_summaries(), vec<vec<Envelope>>{{{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}}});
     }
 
@@ -263,13 +263,13 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
 
         REQUIRE(left->is_leaf());
         REQUIRE(left != nullptr);
-        REQUIRE(left->get_subsequence_positions() == vec<SubsequencePosition>{{13, 1}, {78, 91}});
+        REQUIRE(left->get_subsequence_positions() == vec<SubsequenceInfo>{{13, 1}, {78, 91}});
         check_envelope_equality(left->get_summaries(), vec<vec<Envelope>>{{{{-3.1, 0.1, -3.9}, {1.3, 2.3, 0.8}}},
                                                                           {{{-4.1, 1.5, -1.6}, {-1.8, 6.9, -0.6}}}});
 
         REQUIRE(right->is_leaf());
         REQUIRE(right != nullptr);
-        REQUIRE(right->get_subsequence_positions() == vec<SubsequencePosition>{{126, 9}, {555, 555}});
+        REQUIRE(right->get_subsequence_positions() == vec<SubsequenceInfo>{{126, 9}, {555, 555}});
         check_envelope_equality(right->get_summaries(), vec<vec<Envelope>>{{{{-9.1, 10.3, -0.3}, {-3.8, 11.9, 0.6}}},
                                                                            {{{-2.6, 5.3, -10.6}, {1.8, 3.1, -5.6}}}});
     }
@@ -300,7 +300,7 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
         REQUIRE(node != nullptr);
         REQUIRE(node->is_leaf());
 
-        REQUIRE(node->get_subsequence_positions() == vec<SubsequencePosition>{{100, 300}, {200, 200}, {300, 100}});
+        REQUIRE(node->get_subsequence_positions() == vec<SubsequenceInfo>{{100, 300}, {200, 200}, {300, 100}});
         check_envelope_equality(node->get_summaries(), vec<vec<Envelope>>{envelope, envelope, envelope});
     }
 }
@@ -339,7 +339,7 @@ TEST_CASE("iSaxIndex insert MTS envelope works") {
 
         REQUIRE(node != nullptr);
         REQUIRE(node->is_leaf());
-        REQUIRE(node->get_subsequence_positions() == vec<SubsequencePosition>{{64, 37}});
+        REQUIRE(node->get_subsequence_positions() == vec<SubsequenceInfo>{{64, 37}});
         check_envelope_equality(
             node->get_summaries(),
             vec<vec<Envelope>>{{{{0.2, -5.5}, {1.1, -3.1}}, {{-1.9, 2.7}, {-0.6, 3.8}}, {{1.9, 2.7}, {3.1, 5.7}}}});
@@ -369,7 +369,7 @@ TEST_CASE("iSaxIndex insert MTS envelope works") {
         REQUIRE(right != nullptr);
 
         REQUIRE(left->is_leaf());
-        REQUIRE(left->get_subsequence_positions() == vec<SubsequencePosition>{});
+        REQUIRE(left->get_subsequence_positions() == vec<SubsequenceInfo>{});
         check_envelope_equality(left->get_summaries(), vec<vec<Envelope>>{});
 
         REQUIRE(!(right->is_leaf()));
@@ -379,7 +379,7 @@ TEST_CASE("iSaxIndex insert MTS envelope works") {
 
         REQUIRE(left != nullptr);
         REQUIRE(left->is_leaf());
-        REQUIRE(left->get_subsequence_positions() == vec<SubsequencePosition>{{128, 81}, {256, 19}});
+        REQUIRE(left->get_subsequence_positions() == vec<SubsequenceInfo>{{128, 81}, {256, 19}});
         check_envelope_equality(
             left->get_summaries(),
             vec<vec<Envelope>>{{{{0.1, -0.5}, {0.8, 1.3}}, {{-1.3, 1.7}, {0.6, 2.3}}, {{1.3, 1.7}, {2.3, 3.7}}},
@@ -387,7 +387,7 @@ TEST_CASE("iSaxIndex insert MTS envelope works") {
 
         REQUIRE(right != nullptr);
         REQUIRE(right->is_leaf());
-        REQUIRE(right->get_subsequence_positions() == vec<SubsequencePosition>{{64, 37}});
+        REQUIRE(right->get_subsequence_positions() == vec<SubsequenceInfo>{{64, 37}});
         check_envelope_equality(
             right->get_summaries(),
             vec<vec<Envelope>>{{{{0.2, -5.5}, {1.1, -3.1}}, {{-1.9, 2.7}, {-0.6, 3.8}}, {{1.9, 2.7}, {3.1, 5.7}}}});
