@@ -14,7 +14,6 @@ using std::to_string;
 namespace fs = std::filesystem;
 
 // Logger
-
 uint Logger::determine_index(const str &file_path) {
     uint index = 0;
 #ifndef DISABLE_LOGGING
@@ -42,7 +41,6 @@ void Logger::file_setup(const str &file_path, const vec<str> &header) {
 }
 
 // DatasetLogger
-
 RandomWalkLogAttributes::RandomWalkLogAttributes(float noise, int seed) : noise(noise), seed(seed) {}
 
 DatasetType RandomWalkLogAttributes::get_type() { return RANDOM_WALK; }
@@ -102,6 +100,36 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
                            {DSC::SEED, seed_str},
                        },
                        DATASET_SETTINGS_COL_ENUMS);
+#endif
+}
+
+// QuerySetLogger
+using QSC = QuerySetSettingsColumn;
+
+void QuerySetLogger::write_entry(QuerySetOptions &opts) {
+#ifndef DISABLE_LOGGING
+    QuerySetLogger instance;
+
+    auto &RS = RunSettings::get_instance();
+
+    str query_settings_path = fs::path(RS.get_logs_path()) / instance.QUERY_SET_SETTINGS_FILE;
+    instance.file_setup(query_settings_path, QUERY_SET_SETTINGS_COL_STRS);
+
+    instance.write_row(query_settings_path,
+                       {
+                           {QSC::ID, to_string(instance.determine_index(query_settings_path))},
+                           {QSC::DATASET_FILE, RS.get_dataset_props().file},
+                           {QSC::QUERY_FILE, RS.get_query_props().file},
+                           {QSC::NUM_QUERIES, to_string(opts.num_queries)},
+                           {QSC::L_MIN, format_num_param(opts.l_min)},
+                           {QSC::L_MAX, format_num_param(opts.l_max)},
+                           {QSC::EXACT_LENGTHS, instance.get_num_vec_str(opts.exact_lengths)},
+                           {QSC::USED_CHANNELS, format_num_param(opts.used_channels)},
+                           {QSC::CHANNEL_MASK, instance.get_num_vec_str(opts.channel_mask)},
+                           {QSC::NOISE, to_string(opts.noise)},
+                           {QSC::SEED, to_string(opts.seed)},
+                       },
+                       QUERY_SET_SETTINGS_COL_ENUMS);
 #endif
 }
 
@@ -195,7 +223,7 @@ bool QueryLogger::initialized = false;
 QueryLogger &QueryLogger::get_instance() { return instance; }
 
 using QC = QueryColumn;
-using QSC = QuerySettingsColumn;
+using SSC = SearchSettingsColumn;
 
 void QueryLogger::initialize(const SearchOptions &search_options) {
     if (initialized) return;
@@ -203,12 +231,12 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
 
     auto &RS = RunSettings::get_instance();
 
-    str query_settings_path = RS.get_logs_path() + instance.QUERY_SETTINGS_FILE;
+    str search_settings_path = RS.get_logs_path() + instance.SEARCH_SETTINGS_FILE;
 
     // Write settings file
-    instance.file_setup(query_settings_path, QUERY_SETTINGS_COL_STRS);
+    instance.file_setup(search_settings_path, SEARCH_SETTINGS_COL_STRS);
 
-    instance.m_query_settings_id_str = to_string(instance.determine_index(query_settings_path));
+    instance.m_search_settings_id_str = to_string(instance.determine_index(search_settings_path));
     // Determine number of queries
     uint num_queries = 0;
     {
@@ -240,24 +268,24 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
     }
 
     instance.write_row(
-        query_settings_path,
+        search_settings_path,
         {
-            {QSC::ID, instance.m_query_settings_id_str},
-            {QSC::INDEX_FILE, RS.m_index_file},
-            {QSC::DATASET_FILE, RS.m_dataset_props.file},
-            {QSC::FFTS_FILE, RS.m_ffts_file},
-            {QSC::QUERY_FILE, RS.m_query_properties.file},
-            {QSC::NUM_QUERIES, to_string(num_queries)},
-            {QSC::QUERY_TYPE, SEARCH_TYPE_TO_STR.at(search_type)},
-            {QSC::R_RANGE_R, format_num_param(r_range_r)},
-            {QSC::KNN_K, format_num_param(knn_k)},
-            {QSC::EXACT, to_string(search_options.exact)},
-            {QSC::NORMALIZED, to_string(search_options.normalized)},
-            {QSC::SEARCH_METHOD, SEARCH_METHOD_TYPE_TO_STR.at(search_options.search_method_type)},
-            {QSC::DISTANCE_MEASURE, DISTANCE_TYPE_TO_STR.at(search_options.distance_measure->get_type())},
-            {QSC::EARLY_ABANDONING, early_abandon_str},
+            {SSC::ID, instance.m_search_settings_id_str},
+            {SSC::INDEX_FILE, RS.m_index_file},
+            {SSC::DATASET_FILE, RS.m_dataset_props.file},
+            {SSC::FFTS_FILE, RS.m_ffts_file},
+            {SSC::QUERY_FILE, RS.m_query_properties.file},
+            {SSC::NUM_QUERIES, to_string(num_queries)},
+            {SSC::QUERY_TYPE, SEARCH_TYPE_TO_STR.at(search_type)},
+            {SSC::R_RANGE_R, format_num_param(r_range_r)},
+            {SSC::KNN_K, format_num_param(knn_k)},
+            {SSC::EXACT, to_string(search_options.exact)},
+            {SSC::NORMALIZED, to_string(search_options.normalized)},
+            {SSC::SEARCH_METHOD, SEARCH_METHOD_TYPE_TO_STR.at(search_options.search_method_type)},
+            {SSC::DISTANCE_MEASURE, DISTANCE_TYPE_TO_STR.at(search_options.distance_measure->get_type())},
+            {SSC::EARLY_ABANDONING, early_abandon_str},
         },
-        QUERY_SETTINGS_COL_ENUMS);
+        SEARCH_SETTINGS_COL_ENUMS);
 
     // Setup for run logging
     instance.reset_entry();
@@ -329,7 +357,7 @@ void QueryLogger::write_entry() {
     str run_log_path = fs::path(RunSettings::get_instance().get_logs_path()) / instance.RUN_LOG_FILE;
     umap<QC, str> columns({
         {QC::ID, to_string(instance.determine_index(run_log_path))},
-        {QC::SETTINGS_ID, m_query_settings_id_str},
+        {QC::SETTINGS_ID, m_search_settings_id_str},
     });
 
     for (const auto &col : QUERY_NUMBER_COLUMNS) columns[col] = m_settable_cols[col];
@@ -341,8 +369,7 @@ void QueryLogger::write_entry() {
 }
 
 // QueryStatsLogger
-void QueryStatsLogger::write_entry(uint query_id, const vec<vec<float>> &query, QueryStats stats, bool normalized,
-                                   float noise) {
+void QueryStatsLogger::write_entry(uint query_id, const vec<vec<float>> &query, QueryStats stats, bool normalized) {
 #ifndef DISABLE_LOGGING
     QueryStatsLogger instance;
     auto &RS = RunSettings::get_instance();
@@ -375,7 +402,6 @@ void QueryStatsLogger::write_entry(uint query_id, const vec<vec<float>> &query, 
                            {QSTC::RC_USING_MAX, to_string(stats.rc_using_max)},
                            {QSTC::RC_USING_MEAN, to_string(stats.rc_using_mean)},
                            {QSTC::NORMALIZED, to_string(normalized)},
-                           {QSTC::QUERY_NOISE, to_string(noise)},
                        },
                        QUERY_STATS_COL_ENUMS);
 #endif

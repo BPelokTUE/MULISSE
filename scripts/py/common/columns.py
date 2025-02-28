@@ -49,7 +49,7 @@ class IndexSettingsColumn(Enum):
         return "index_settings.csv"
 
 
-class QuerySettingsColumn(Enum):
+class SearchSettingsColumn(Enum):
     ID = auto()
     INDEX_FILE = auto()
     DATASET_FILE = auto()
@@ -124,3 +124,24 @@ class QueryStatsColumn(Enum):
     @classmethod
     def get_csv_name(cls) -> str:
         return "query_stats.csv"
+
+
+class QuerySetSettingsColumn(Enum):
+    ID = auto()
+    DATASET_FILE = auto()
+    QUERY_FILE = auto()
+    NUM_QUERIES = auto()
+    L_MIN = auto()
+    L_MAX = auto()
+    EXACT_LENGTHS = auto()
+    USED_CHANNELS = auto()
+    CHANNEL_MASK = auto()
+    NOISE = auto()
+    SEED = auto()
+
+    def __str__(self):
+        return self.name.lower()
+
+    @classmethod
+    def get_csv_name(cls) -> str:
+        return "query_set_settings.csv"

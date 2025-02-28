@@ -139,7 +139,6 @@ int main(int argc, char **argv) {
     q_stats_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
         ->required()
         ->check(positive_int);
-    q_stats_subcommand->add_option("--noise", noise, "Query noise")->capture_default_str();
     q_stats_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
 
     // Options for indexing
@@ -243,9 +242,9 @@ int main(int argc, char **argv) {
     } else if (command_type == PARSE_CSV) {
         create_dataset_from_csv(csv_paths, num_series, low_sd_len, seed);
     } else if (command_type == CREATE_QS) {
-        create_queries(noise, num_queries, exact_lengths, l_min, l_max, used_channels, channel_mask, seed);
+        create_queries({noise, num_queries, exact_lengths, l_min, l_max, used_channels, channel_mask, seed});
     } else if (command_type == CALC_Q_STATS) {
-        calculate_query_stats(!unnormalized, noise);
+        calculate_query_stats(!unnormalized);
     } else if (command_type == INDEX) {
         SearchMethodType index_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str);
         IIndexParams *index_params;

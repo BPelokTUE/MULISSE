@@ -7,6 +7,7 @@
 #include "Modules/QueryGen.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
+#include "Util/Logger.hpp"
 #include "Util/RunSettings.hpp"
 
 struct QueryDescriptor {
@@ -17,8 +18,7 @@ struct QueryDescriptor {
     bool operator<(const QueryDescriptor &other) const { return subs_pos < other.subs_pos; }
 };
 
-int create_queries(float noise, uint num_queries, vec<uint> lengths, uint l_min, uint l_max,
-                   MtsNumChannelsT used_channels, vec<bool> channel_mask, int seed) {
+int create_queries(QuerySetOptions opts) {
     auto &RS = RunSettings::get_instance();
     const str &dataset_path = RS.get_dataset_path();
     const str &query_path = RS.get_query_path();
@@ -31,48 +31,48 @@ int create_queries(float noise, uint num_queries, vec<uint> lengths, uint l_min,
     }
 
     // Check channel selection
-    if (!channel_mask.empty()) {
-        if (channel_mask.size() != num_channels) {
+    if (!opts.channel_mask.empty()) {
+        if (opts.channel_mask.size() != num_channels) {
             std::cerr << "Error: Channel mask must have the same number of elements as the number of channels in the "
                          "dataset ("
-                      << num_channels << "), but has " << channel_mask.size() << '\n';
+                      << num_channels << "), but has " << opts.channel_mask.size() << '\n';
             return 2;
         }
-    } else if (used_channels != 0 && used_channels > num_channels) {
-        std::cerr << "Error: Number of used channels (" << used_channels
+    } else if (opts.used_channels != 0 && opts.used_channels > num_channels) {
+        std::cerr << "Error: Number of used channels (" << opts.used_channels
                   << ") must be less than or equal to the number of channels in the dataset (" << num_channels << ")\n";
         return 3;
     }
 
     // Check length specification
-    if ((l_min == 0 || l_max < l_min) && lengths.empty()) {
+    if ((opts.l_min == 0 || opts.l_max < opts.l_min) && opts.exact_lengths.empty()) {
         std::cerr << "Error: Either a list of exact lengths or a minimum and maximum length must be provided\n";
         return 4;
     }
 
     // Extract time series from dataset
-    std::default_random_engine rng(seed);
-    std::normal_distribution<float> noise_normal_dist(0.0, noise);
+    std::default_random_engine rng(opts.seed);
+    std::normal_distribution<float> noise_normal_dist(0.0, opts.noise);
 
     uint num_series = get_dataset_size(dataset_path) / (num_channels * series_len * sizeof(float));
     std::uniform_int_distribution<uint> series_uniform_dist(0, num_series - 1), channel_uniform_dist(1, num_channels),
-        length_uniform_dist(l_min, l_max);
+        length_uniform_dist(opts.l_min, opts.l_max);
 
     std::ifstream data_file(dataset_path, std::ios::binary);
     std::ofstream query_file(query_path);
 
-    bool random_lengths = (l_min > 0 && l_max >= l_min);
-    uint total_num_queries = random_lengths ? num_queries : num_queries * lengths.size();
+    bool random_lengths = (opts.l_min > 0 && opts.l_max >= opts.l_min);
+    uint total_num_queries = random_lengths ? opts.num_queries : opts.num_queries * opts.exact_lengths.size();
     vec<QueryDescriptor> query_descriptors(total_num_queries);
 
     auto generate_query_descriptor = [&](uint length) -> QueryDescriptor {
-        uint included_channels = used_channels == 0 ? channel_uniform_dist(rng) : used_channels;
+        uint included_channels = opts.used_channels == 0 ? channel_uniform_dist(rng) : opts.used_channels;
         vec<bool> channels(num_channels, false);
-        if (channel_mask.empty()) {
+        if (opts.channel_mask.empty()) {
             std::fill(channels.begin(), channels.begin() + included_channels, true);
             std::shuffle(channels.begin(), channels.end(), rng);
         } else {
-            channels = channel_mask;
+            channels = opts.channel_mask;
         }
 
         auto start_pos_dist = std::uniform_int_distribution<uint>(0, series_len - length);
@@ -80,12 +80,12 @@ int create_queries(float noise, uint num_queries, vec<uint> lengths, uint l_min,
         return {subs_pos, length, channels};
     };
 
-    for (uint i = 0; i < num_queries; ++i) {
+    for (uint i = 0; i < opts.num_queries; ++i) {
         if (random_lengths) {
             query_descriptors[i] = generate_query_descriptor(length_uniform_dist(rng));
         } else {
-            for (uint j = 0; j < lengths.size(); ++j) {
-                query_descriptors[i * lengths.size() + j] = generate_query_descriptor(lengths[j]);
+            for (uint j = 0; j < opts.exact_lengths.size(); ++j) {
+                query_descriptors[i * opts.exact_lengths.size() + j] = generate_query_descriptor(opts.exact_lengths[j]);
             }
         }
     }
@@ -119,6 +119,17 @@ int create_queries(float noise, uint num_queries, vec<uint> lengths, uint l_min,
             }
         }
     }
+
+    auto opts_to_log = opts;
+    opts_to_log.num_queries = total_num_queries;
+    if (random_lengths) {
+        opts_to_log.exact_lengths = vec<uint>{};
+    } else {
+        opts_to_log.l_min = 0;
+        opts_to_log.l_max = 0;
+    }
+    opts_to_log.used_channels = opts.channel_mask.empty() ? opts.used_channels : 0;
+    QuerySetLogger::write_entry(opts_to_log);
 
     return 0;
 }

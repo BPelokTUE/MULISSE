@@ -5,6 +5,7 @@
 
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
+#include "Search/Options/QuerySetOptions.hpp"
 #include "Search/Options/SearchOptions.hpp"
 #include "Search/Options/IndexOptions.hpp"
 
@@ -14,8 +15,9 @@ using std::to_string;
 // ----------------- COLUMN ENUMS --------------------- //
 // ---------------------------------------------------- //
 
+/** @brief Enum of the columns of the dataset settings log file */
 enum class DatasetSettingsColumn {
-    ID,             // Index of the setting within the file
+    ID,             // Index of the setting within the log file
     DATASET_FILE,   // Name to the dataset file
     SERIES_LENGTH,  // Length of each time series
     NUM_CHANNELS,   // Number of channels
@@ -29,9 +31,26 @@ enum class DatasetSettingsColumn {
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(DatasetSettingsColumn, DATASET_SETTINGS_COL, false);
 
-/** @brief Enum of the columns of the method settings log file */
+/** @brief Enum of the columns of the query set settings log file */
+enum class QuerySetSettingsColumn {
+    ID,             // Index of the setting within the log file
+    DATASET_FILE,   // Name of the dataset file the queries were generated from
+    QUERY_FILE,     // Name of the query file
+    NUM_QUERIES,    // Number of queries
+    L_MIN,          // Minimum length of the queries
+    L_MAX,          // Maximum length of the queries
+    EXACT_LENGTHS,  // List of exact query lengths used to generate
+    USED_CHANNELS,  // Number of channels used for the queries
+    CHANNEL_MASK,   // Mask of channels used in the queries
+    NOISE,          // The Gaussian noise added to the queries
+    SEED,           // The random seed used to generate the queries
+};
+
+DEFINE_ENUM_CONSTS_NO_EXTRA(QuerySetSettingsColumn, QUERY_SET_SETTINGS_COL, false);
+
+/** @brief Enum of the columns of the index settings log file */
 enum class IndexSettingsColumn {
-    ID,                    // Index of the setting within the file
+    ID,                    // Index of the setting within the log file
     DATASET_FILE,          // Name of the indexed dataset file
     INDEX_FILE,            // Name of the index file
     FFTS_FILE,             // Name of the FFTs file, empty if not used
@@ -62,14 +81,14 @@ const vec<ISC> INDEX_COUNT_COLUMNS = {ISC::NUM_LEAVES, ISC::NUM_NODES};
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(IndexSettingsColumn, INDEX_SETTINGS_COL, false);
 
-/** @brief Enum of the columns of the query settings log file */
-enum class QuerySettingsColumn {
-    ID,                // ID of the setting within the file
+/** @brief Enum of the columns of the search settings log file */
+enum class SearchSettingsColumn {
+    ID,                // ID of the setting within the log file
     INDEX_FILE,        // Name of the index file used for search (if applicable)
     DATASET_FILE,      // Name of the dataset file used for search
     FFTS_FILE,         // Name of the FFTs file, empty if not used
     QUERY_FILE,        // Name of the query file
-    NUM_QUERIES,       // Number of queries
+    NUM_QUERIES,       // Number of queries - required for backward compatibility
     QUERY_TYPE,        // Type of the query
     R_RANGE_R,         // R parameter for the R-range query
     KNN_K,             // K parameter for the KNN query
@@ -80,11 +99,11 @@ enum class QuerySettingsColumn {
     EARLY_ABANDONING,  // Whether early abandoning is used (for ED)
 };
 
-DEFINE_ENUM_CONSTS_NO_EXTRA(QuerySettingsColumn, QUERY_SETTINGS_COL, false);
+DEFINE_ENUM_CONSTS_NO_EXTRA(SearchSettingsColumn, SEARCH_SETTINGS_COL, false);
 
 /** @brief Enum of the columns of the query log file */
 enum class QueryColumn {
-    ID,                       // ID of the run within the file
+    ID,                       // ID of the run within the log file
     SETTINGS_ID,              // ID of the search settings within the settings file
     QUERY_ID,                 // ID of the query within the query file
     QUERY_LENGTH,             // Length of the query
@@ -117,12 +136,11 @@ const vec<QC> QUERY_TIME_COLUMNS = {QC::TOTAL_TIME_S, QC::FIRST_LAYER_TIME_S, QC
 /** @brief Enum of the columns of the query statistics log file */
 enum class QueryStatsColumn {
     ID,              // ID of the query within the query file
-    DATASET_FILE,    // Name of the dataset file the query were generated from
+    DATASET_FILE,    // Name of the dataset file the query were generated from - required for backward compatibility
     QUERY_FILE,      // Name of the query file
     QUERY_LENGTH,    // Length of the query
     QUERY_CHANNELS,  // Channels included in the query as a list of ITEM_SEP separated `0`s and `1`s
     NORMALIZED,      // Whether the query and subsequences are normalized
-    QUERY_NOISE,     // The standard deviation of the Gaussian noise used for generating the random walk query
     MIN_DIST,        // Minimum distance of the query to any subsequence in the dataset
     MAX_DIST,        // Maximum distance of the query to any subsequence in the dataset
     MEAN_DIST,       // Mean distance of the query to subsequences in the dataset
@@ -175,7 +193,11 @@ class Logger {
         ofs << ROW_SEP;
         for (uint i = 0; i < columns.size(); ++i) {
             C col = columns[i];
-            ofs << enum_to_val.at(col);
+            if (enum_to_val.find(col) != enum_to_val.end()) {
+                ofs << enum_to_val.at(col);
+            } else {
+                ofs << "";
+            }
             if (i < columns.size() - 1) ofs << COL_SEP;
         }
 #endif
@@ -193,14 +215,13 @@ class Logger {
     }
 
     // Separators
-
     const char COL_SEP = ',', ROW_SEP = '\n', ITEM_SEP = ';';
 
     // Paths
-
     const str DATASET_SETTINGS_FILE = "dataset_settings.csv";
+    const str QUERY_SET_SETTINGS_FILE = "query_set_settings.csv";
     const str INDEX_SETTINGS_FILE = "index_settings.csv";
-    const str QUERY_SETTINGS_FILE = "search_settings.csv";
+    const str SEARCH_SETTINGS_FILE = "search_settings.csv";
     const str RUN_LOG_FILE = "runs.csv";
     const str QUERY_STATS_FILE = "query_stats.csv";
 };
@@ -232,6 +253,8 @@ struct CsvDatasetLogAttributes : IDatasetLogAttributes {
     uint low_sd_len;
     int seed;
 };
+
+/** @brief Class for logging dataset settings */
 class DatasetLogger : public Logger {
    public:
     DatasetLogger(const DatasetLogger &) = delete;
@@ -247,6 +270,33 @@ class DatasetLogger : public Logger {
     DatasetLogger() = default;
 };
 
+/** @brief Class for logging query set settings */
+class QuerySetLogger : public Logger {
+   public:
+    QuerySetLogger(const QuerySetLogger &) = delete;
+    QuerySetLogger &operator=(const QuerySetLogger &) = delete;
+
+    /**
+     * @brief Write the entry
+     * @param opts Options used to generate the query set
+     */
+    static void write_entry(QuerySetOptions &opts);
+
+   private:
+    template <typename T>
+    str get_num_vec_str(const vec<T> &values) {
+        str result_str = "";
+        for (uint i = 0; i < values.size(); ++i) {
+            result_str += to_string(values[i]);
+            if (i < values.size() - 1) result_str += ITEM_SEP;
+        }
+        return result_str;
+    }
+
+    QuerySetLogger() = default;
+};
+
+/** @brief Class for logging index settings */
 class IndexLogger : public Logger {
    public:
     IndexLogger() = default;
@@ -289,6 +339,7 @@ class IndexLogger : public Logger {
     static bool initialized;
 };
 
+/** Class for logging search settings and query results */
 class QueryLogger : public Logger {
    public:
     static void initialize(const SearchOptions &search_options);
@@ -349,7 +400,7 @@ class QueryLogger : public Logger {
     str get_collection_str(QC col);
 
     std::ifstream m_query_log_ofs;
-    str m_query_settings_id_str;
+    str m_search_settings_id_str;
 
     umap<QC, str> m_settable_cols;
     umap<QC, uint> m_count_cols;
@@ -366,6 +417,7 @@ struct QueryStats {
     float min_dist, max_dist, mean_dist, mean_sq_dist, dist_std_dev, subs_count, rc_using_max, rc_using_mean;
 };
 
+/** @brief Class for logging query statistics */
 class QueryStatsLogger : public Logger {
    public:
     /**
@@ -374,10 +426,8 @@ class QueryStatsLogger : public Logger {
      * @param query The query
      * @param query_stats The statistics of the query
      * @param normalized Whether the query and subsequences are normalized
-     * @param noise The standard deviation of the Gaussian noise used for generating the random walk query
      * */
-    static void write_entry(uint query_id, const vec<vec<float>> &query, QueryStats stats, bool normalized,
-                            float noise);
+    static void write_entry(uint query_id, const vec<vec<float>> &query, QueryStats stats, bool normalized);
 
    private:
     QueryStatsLogger() = default;

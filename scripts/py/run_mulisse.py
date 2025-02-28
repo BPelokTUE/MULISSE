@@ -72,6 +72,7 @@ if __name__ == "__main__":
     # DATASET SETTINGS    #
     # --------------------#
 
+    dataset_seeds = config.get("dataset_seeds", [0])
     dataset_settings = [
         {
             "command": "create_ds",
@@ -79,6 +80,7 @@ if __name__ == "__main__":
             "size": config["dataset_sizes"],
             "num_channels": config["syn_num_channels"],
             "step_stdev": config["syn_step_stdevs"],
+            "dataset_seeds": dataset_seeds,
         }
     ]
     csv_data_paths = [os.path.join(local_settings["CSV_PATH"], data_dir) for data_dir in config["csv_data_dirs"]]
@@ -89,18 +91,20 @@ if __name__ == "__main__":
                 "location": os.path.basename(path),
                 "size": config["dataset_sizes"],
                 "num_channels": [len(os.listdir(path))],
+                "dataset_seeds": dataset_seeds,
             }
         )
 
     # --------------------#
-    # QUERY SETTINGS      #
+    # QUERY SET SETTINGS  #
     # --------------------#
 
-    query_settings = [
+    query_set_settings = [
         {
             "size": config["query_set_sizes"],
             "used_channel_ratio": config["used_channel_ratios"],
             "noise_stdev": config["query_noise_stdevs"],
+            "query_set_seeds": config.get("query_set_seeds", [0]),
         }
     ]
     calculate_query_stats = config.get("calculate_query_stats", False)
@@ -183,7 +187,7 @@ if __name__ == "__main__":
         settings_dict = {
             "Length": length_settings,
             "Dataset": dataset_settings,
-            "Query": query_settings,
+            "Query": query_set_settings,
             "Index": index_settings,
             "Index method": index_method_settings,
             "Scan method": scan_method_settings,
@@ -278,11 +282,12 @@ if __name__ == "__main__":
             command = dataset_setting["command"]
             num_series = dataset_setting["size"]
             num_channels = dataset_setting["num_channels"]
+            seed = dataset_setting["dataset_seeds"]
 
             data_file = os.path.join(dataset_setting["location"], f"data-{dataset_counter}.bin")
             dataset_counter += 1
 
-            args = [command, "-d", data_file, "-n", str(num_series), "-m", str(series_len)]
+            args = [command, "-d", data_file, "-n", str(num_series), "-m", str(series_len), "-S", str(seed)]
             if command == "parse_csv":
                 args += ["-l", str(l_min)]
                 csvs_dir = os.path.join(local_settings["CSV_PATH"], dataset_setting["location"])
@@ -321,10 +326,11 @@ if __name__ == "__main__":
                         args += [f"--{key}", str(value)]
                 return args
 
-            for query_setting in SettingIterator(query_settings).iterate(desc="Query settings", leave=False):
+            for query_setting in SettingIterator(query_set_settings).iterate(desc="Query settings", leave=False):
                 num_queries = query_setting["size"]
                 used_channels = int(num_channels * query_setting["used_channel_ratio"])
                 noise_stdev = query_setting["noise_stdev"]
+                seed = query_setting["query_set_seeds"]
 
                 query_file = os.path.join(dataset_setting["location"], f"queries-{query_counter}.txt")
                 query_counter += 1
@@ -332,7 +338,7 @@ if __name__ == "__main__":
                 args = [
                     "create_qs", "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
                     "-Q", str(num_queries), "-l", str(l_min), "-L", str(l_max), "-u", str(used_channels), "--noise",
-                    str(noise_stdev)
+                    str(noise_stdev), "-S", str(seed)
                 ]
                 # fmt: on
                 run_command_with_logging([EXECUTABLE_PATH, *args])
