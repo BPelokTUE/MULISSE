@@ -174,6 +174,10 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
                 auto *env_params = dynamic_cast<iSaxEnvelopeIndexParams *>(params);
                 pos_per_env = env_params->pos_per_env;
             }
+        } else if (method_type == ENVELOPE) {
+            auto *params = dynamic_cast<EnvelopeIndexParams *>(index_options.index_params.get());
+            segment_len = params->segment_len;
+            pos_per_env = params->pos_per_env;
         }
     }
 

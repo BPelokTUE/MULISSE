@@ -52,14 +52,14 @@ struct Paa : EntryData {
 };
 
 /** @brief PAA generator for iSAX index */
-class iSaxPaaGenerator : public IEntryGenerator<Paa> {
+class PaaEntryGenerator : public IEntryGenerator<Paa> {
    public:
     /**
-     * @brief Construct a new iSaxPaaGenerator object
+     * @brief Construct a new PaaEntryGenerator object
      * @param num_channels Number of channels of each series
      * @param uli_params Parameters for the ULISSE envelope computation
      */
-    iSaxPaaGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params);
+    PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params);
 
     vec<IndexEntry<Paa>> get_entries(const vec<vec<float>> &mts, uint series_ind) override;
 

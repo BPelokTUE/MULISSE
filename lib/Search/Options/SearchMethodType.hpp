@@ -5,13 +5,10 @@
 #include "Util/utilities.hpp"
 
 /** @brief Enumeration type for search methods */
-enum SearchMethodType { ISAX, ISAX_ENVELOPE, SEQUENTIAL_SCAN };
+enum SearchMethodType { ISAX, ISAX_ENVELOPE, ENVELOPE, SEQUENTIAL_SCAN };
 
 DEFINE_ENUM_CONSTS(SearchMethodType, SEARCH_METHOD_TYPE, false,
                    (umap<str, SearchMethodType>{
                        {"mulisse", ISAX_ENVELOPE}, {"scan", SEQUENTIAL_SCAN}, {"sequential", SEQUENTIAL_SCAN}}));
-
-/** @brief Vector of SearchMethodType values that refer to methods with envelopes */
-const vec<SearchMethodType> ENVELOPE_METHODS = {ISAX_ENVELOPE};
 
 #endif  // SEARCH_METHOD_TYPE_HPP

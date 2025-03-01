@@ -3,6 +3,7 @@
 
 #include <fstream>
 
+#include "Search/Options/SearchMethodType.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 #include "Util/FftArray.hpp"
@@ -48,7 +49,7 @@ class RunSettings {
     RunSettings();
 
     static void initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
-                           uint pos_per_env, const str index_path, const str ffts_path);
+                           uint pos_per_env, const str index_path, const str ffts_path, SearchMethodType method_type);
 
     static RunSettings& get_instance();
 
@@ -157,6 +158,7 @@ class RunSettings {
     str m_ffts_file;
     std::ifstream m_ffts_ifs;
     vec<uptr<FftArray>> m_query_ffts;
+    bool m_ffts_supported;
 
     // Static
     static std::shared_ptr<RunSettings> instance;

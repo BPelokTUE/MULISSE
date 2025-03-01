@@ -26,7 +26,7 @@ TEST_CASE("PAA happy-flow works") {
 TEST_CASE("get_paa_entries_normalized works") {
     uint segment_len = 3, l_min = 4, l_max = 7;
     iSaxPaaParams params = {segment_len, l_min, l_max};
-    iSaxPaaGenerator generator(1, params);
+    PaaEntryGenerator generator(1, params);
 
     vec<vec<float>> uts = {{3, 7, 1.2, 3.7, 9.1, -3.5, -1.5, 0, 0.8}};
     vec<IndexEntry<Paa>> entries = generator.get_entries(uts, 0);

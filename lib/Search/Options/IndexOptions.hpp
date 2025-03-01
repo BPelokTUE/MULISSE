@@ -17,27 +17,35 @@ struct IIndexParams {
      */
     virtual SearchMethodType get_type() const = 0;
 };
+struct PaaIndexParams : virtual IIndexParams {
+    /** @brief Length of the segments */
+    uint segment_len;
 
-/**
- * @brief Parameters for envelope indexes
- *
- * Envelope indexes group together subsequences by their starting position into Envelope objects
- * */
-struct EnvelopeIndexParams : virtual IIndexParams {
+    PaaIndexParams(uint segment_len) : segment_len(segment_len) {}
+};
+
+/** @brief Parameters for indexes that use envelopes */
+struct EnvelopeIndexParams : virtual PaaIndexParams {
+    SearchMethodType get_type() const override { return ENVELOPE; }
+
     /** @brief Size of the starting position groups */
     uint pos_per_env;
+
+    /**
+     * @brief Constructor
+     * @param pos_per_env Size of the starting position groups
+     * @param segment_len Length of the segments
+     */
+    EnvelopeIndexParams(uint pos_per_env, uint segment_len) : PaaIndexParams(segment_len), pos_per_env(pos_per_env) {}
 };
 
 /**
  * @brief Parameters for iSAX indexes
- *
  * iSAX indexes split subsequences into segments and encode them using iSAX words
  */
-struct iSaxIndexParams : virtual IIndexParams {
+struct iSaxIndexParams : virtual PaaIndexParams {
     SearchMethodType get_type() const override { return ISAX; }
 
-    /** @brief Length of the segments */
-    uint segment_len;
     /** @brief Number of symbols to use in the first layer of the index */
     SaxNumBitsT first_layer_num_bits;
     /** @brief Maximum number of entries in a leaf */
@@ -66,7 +74,7 @@ struct iSaxIndexParams : virtual IIndexParams {
     iSaxIndexParams(uint segment_len, SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
                     iSaxBreakpointStrategyType breakpoint_strategy_type, iSaxSplitStrategyType split_strategy_type,
                     SaxNumBitsT num_bits_limit, bool min_num_bits_on_tie)
-        : segment_len(segment_len),
+        : PaaIndexParams(segment_len),
           first_layer_num_bits(first_layer_num_bits),
           leaf_capacity(leaf_capacity),
           breakpoint_strategy_type(breakpoint_strategy_type),
@@ -96,9 +104,9 @@ struct iSaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual iSaxIndexP
                             iSaxSplitStrategyType split_strategy_type, SaxNumBitsT num_bits_limit,
                             bool min_num_bits_on_tie)
         : iSaxIndexParams(segment_len, first_layer_num_bits, leaf_capacity, breakpoint_strategy_type,
-                          split_strategy_type, num_bits_limit, min_num_bits_on_tie) {
-        this->pos_per_env = pos_per_env;
-    }
+                          split_strategy_type, num_bits_limit, min_num_bits_on_tie),
+          EnvelopeIndexParams(pos_per_env, segment_len),
+          PaaIndexParams(segment_len) {}
 };
 
 /** @brief Enumeration type for the cereal archives */

@@ -3,6 +3,7 @@
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
 #include "Util/Logger.hpp"
+#include "Search/Envelope/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
 #include "Search/iSax/iSaxFinalizedIndex.hpp"
 #include "Search/SequentialScan.hpp"
@@ -29,6 +30,12 @@ uptr<ISearchMethod> load_method(const SearchOptions &opts) {
             auto index_stream = get_index_stream();
             auto index = std::make_unique<iSaxFinalizedIndex<PaaTag>>();
             static_cast<IFinalizedIndex<PaaTag> *>(index.get())->load(index_stream, opts.index_format);
+            return index;
+        }
+        case ENVELOPE: {
+            auto index_stream = get_index_stream();
+            auto index = std::make_unique<FlatEnvelopeIndex>();
+            static_cast<IFinalizedIndex<EnvelopeTag> *>(index.get())->load(index_stream, opts.index_format);
             return index;
         }
         case SEQUENTIAL_SCAN:

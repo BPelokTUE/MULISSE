@@ -21,7 +21,8 @@ void check_path_exists(str path, str name) {
 }
 
 void RunSettings::initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
-                             uint pos_per_env, const str index_path, const str ffts_path) {
+                             uint pos_per_env, const str index_path, const str ffts_path,
+                             SearchMethodType method_type) {
     if (initialized) return;
     initialized = true;
 
@@ -50,6 +51,8 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
 
     instance->m_index_file = index_path;
     instance->m_ffts_file = ffts_path;
+    instance->m_ffts_supported =
+        instance->m_ffts_file != "" && (method_type == ISAX_ENVELOPE || method_type == ENVELOPE);
 
     switch (instance->m_command_type) {
         case CREATE_DS:
@@ -152,7 +155,7 @@ FftArray RunSettings::get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channe
     return ffts;
 }
 
-bool RunSettings::ffts_supported() const { return m_ffts_file != ""; }
+bool RunSettings::ffts_supported() const { return m_ffts_supported; }
 
 void RunSettings::calculate_query_ffts(const vec<DistanceT> &q_channel, MtsNumChannelsT channel_ind,
                                        uint num_components) {

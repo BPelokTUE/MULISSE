@@ -101,13 +101,13 @@ vec<Envelope> ulisse_envelope_normalized(const vec<float>& ts, const UlisseEnvel
     return envelopes;
 }
 
-iSaxEnvelopeGenerator::iSaxEnvelopeGenerator(MtsNumChannelsT num_channels, bool normalized,
-                                             const UlisseEnvelopeParams& uli_params)
+EnvelopeEntryGenerator::EnvelopeEntryGenerator(MtsNumChannelsT num_channels, bool normalized,
+                                               const UlisseEnvelopeParams& uli_params)
     : m_num_channels(num_channels), m_normalized(normalized), m_uli_params(uli_params) {
     m_envelope_func = m_normalized ? ulisse_envelope_normalized : ulisse_envelope_raw;
 }
 
-vec<IndexEntry<Envelope>> iSaxEnvelopeGenerator::get_entries(const vec<vec<float>>& mts, uint series_ind) {
+vec<IndexEntry<Envelope>> EnvelopeEntryGenerator::get_entries(const vec<vec<float>>& mts, uint series_ind) {
     uint series_len = mts[0].size();
     uint num_env = (series_len - m_uli_params.l_min + m_uli_params.pos_per_env) / m_uli_params.pos_per_env;
     vec<IndexEntry<Envelope>> entries(num_env);

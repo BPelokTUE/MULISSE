@@ -26,8 +26,8 @@ void Paa::resize(size_t new_size) { paa_values.resize(new_size); }
 
 vec<float> Paa::get_isax_input() const { return paa_values; }
 
-vec<std::tuple<Paa, uint, uint>> iSaxPaaGenerator::get_paa_entries_normalized(const vec<float> &ts,
-                                                                              const iSaxPaaParams &paa_params) {
+vec<std::tuple<Paa, uint, uint>> PaaEntryGenerator::get_paa_entries_normalized(const vec<float> &ts,
+                                                                               const iSaxPaaParams &paa_params) {
     vec<std::tuple<Paa, uint, uint>> entries;
 
     float sum = 0, sum_sq = 0;
@@ -62,10 +62,10 @@ vec<std::tuple<Paa, uint, uint>> iSaxPaaGenerator::get_paa_entries_normalized(co
     return entries;
 }
 
-iSaxPaaGenerator::iSaxPaaGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params)
+PaaEntryGenerator::PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params)
     : m_num_channels(num_channels), m_paa_params(paa_params) {}
 
-vec<IndexEntry<Paa>> iSaxPaaGenerator::get_entries(const vec<vec<float>> &mts, uint series_ind) {
+vec<IndexEntry<Paa>> PaaEntryGenerator::get_entries(const vec<vec<float>> &mts, uint series_ind) {
     uint series_len = mts[0].size();
     vec<IndexEntry<Paa>> entries;
 

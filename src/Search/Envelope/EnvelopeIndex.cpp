@@ -7,7 +7,11 @@ FlatEnvelopeIndex::FlatEnvelopeIndex(uint segment_len, uint pos_per_env)
 
 void FlatEnvelopeIndex::insert(const IndexEntry<Envelope> &entry) { m_entries.push_back(entry); }
 
-uptr<IFinalizedIndex<EnvelopeTag>> FlatEnvelopeIndex::finalize() { return uptr<IFinalizedIndex<EnvelopeTag>>(this); }
+uptr<IFinalizedIndex<EnvelopeTag>> FlatEnvelopeIndex::finalize() {
+    auto finalized = new FlatEnvelopeIndex(m_segment_len, m_pos_per_env);
+    finalized->m_entries = std::move(m_entries);
+    return uptr<IFinalizedIndex<EnvelopeTag>>(finalized);
+}
 
 struct PQueueEnvelopeEntry {
     DistanceT min_dist_squared;

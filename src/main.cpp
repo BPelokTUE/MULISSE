@@ -172,9 +172,11 @@ int main(int argc, char **argv) {
         ->check(positive_int);
     index_subcommand->add_option("-s,--segment_len", segment_len, "Segment length")->required()->check(positive_int);
     index_subcommand->add_option("-p,--pos_per_env", pos_per_env, "Positions per envelope")
-        ->required()
+        ->capture_default_str()
         ->check(positive_int);
-    index_subcommand->add_option("-C,--leaf_capacity", leaf_capacity, "Leaf capacity")->required()->check(positive_int);
+    index_subcommand->add_option("-C,--leaf_capacity", leaf_capacity, "Leaf capacity")
+        ->capture_default_str()
+        ->check(positive_int);
     index_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
     index_subcommand->add_option("-b,--first_layer_bits", first_layer_num_bits, "Number of bits for first layer")
         ->check(positive_int)
@@ -228,9 +230,30 @@ int main(int argc, char **argv) {
     // Parse arguments and initialize run settings
     CLI11_PARSE(app, argc, argv);
     CommandType command_type = STR_TO_CMD_TYPE.at(app.get_subcommands().front()->get_name());
+    SearchMethodType method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str);
+
+    // Extra parsing; TODO: handle this with CLI11 if possible
+    if (l_min > l_max) {
+        std::cerr << "Minimum length must be less than or equal to maximum length\n";
+        return 1;
+    }
+    if (used_channels > num_channels) {
+        std::cerr << "Number of used channels must be less than or equal to the number of channels\n";
+        return 1;
+    }
+    if (channel_mask.size() > 0 && channel_mask.size() != num_channels) {
+        std::cerr << "Channel mask must have the same length as the number of channels\n";
+        return 1;
+    }
+    if (command_type == INDEX && (method_type == ISAX || method_type == ISAX_ENVELOPE) && leaf_capacity == 0) {
+        std::cerr << "--leaf_capacity is required\n";
+        return 1;
+    }
+
+    // Initialize run settings
     try {
         RunSettings::initialize(command_type, {dataset_path, num_channels, series_len, num_series},
-                                {query_path, l_min, l_max}, pos_per_env, index_path, ffts_path);
+                                {query_path, l_min, l_max}, pos_per_env, index_path, ffts_path, method_type);
     } catch (const std::exception &e) {
         std::cerr << "Error configuring run: " << e.what() << '\n';
         return 1;
@@ -246,9 +269,8 @@ int main(int argc, char **argv) {
     } else if (command_type == CALC_Q_STATS) {
         calculate_query_stats(!unnormalized);
     } else if (command_type == INDEX) {
-        SearchMethodType index_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str);
         IIndexParams *index_params;
-        switch (index_type) {
+        switch (method_type) {
             case ISAX_ENVELOPE:
                 index_params = new iSaxEnvelopeIndexParams{
                     pos_per_env,
@@ -271,6 +293,9 @@ int main(int argc, char **argv) {
                     DEFAULT_NUM_BIT_LIMIT,
                     true,  // min_num_bits_on_tie,
                 };
+                break;
+            case ENVELOPE:
+                index_params = new EnvelopeIndexParams{pos_per_env, segment_len};
                 break;
             case SEQUENTIAL_SCAN:
                 std::cerr << "Sequential scan does not require indexation\n";

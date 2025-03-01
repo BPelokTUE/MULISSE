@@ -4,6 +4,7 @@
 #include "Modules/Indexing.hpp"
 #include "Search/Options/IndexOptions.hpp"
 #include "Search/Index.hpp"
+#include "Search/Envelope/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxIndex.hpp"
 #include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
@@ -60,24 +61,26 @@ uptr<IIndex<Envelope>> get_isax_index(const IndexOptions &opts, const iSaxIndexP
 
 template <typename T>
     requires DerivedFromEntryData<T>
-uptr<IIndex<T>> get_index(const IndexOptions &opts) {
-    SearchMethodType search_method_type = opts.index_params->get_type();
+uptr<IIndex<T>> get_isax_index(const IndexOptions &opts) {
+    auto *params = dynamic_cast<iSaxIndexParams *>(opts.index_params.get());
+    SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
 
-    if (search_method_type == ISAX_ENVELOPE || search_method_type == ISAX) {
-        auto *params = dynamic_cast<iSaxIndexParams *>(opts.index_params.get());
-        SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
+    auto breakpoint_strategy = get_breakpoint_strategy(params);
+    auto split_strategy = get_split_strategy<T>(params, num_seg_per_channel, opts.num_channels);
 
-        auto breakpoint_strategy = get_breakpoint_strategy(params);
-        auto split_strategy = get_split_strategy<T>(params, num_seg_per_channel, opts.num_channels);
+    SaxNumBitsT breakpoint_num_bits = DEFAULT_NUM_BIT_LIMIT;
+    RunSettings::get_instance().set_isax_properties({num_seg_per_channel, params->segment_len,
+                                                     breakpoint_strategy->get_breakpoints(1 << breakpoint_num_bits),
+                                                     breakpoint_num_bits});
 
-        SaxNumBitsT breakpoint_num_bits = DEFAULT_NUM_BIT_LIMIT;
-        RunSettings::get_instance().set_isax_properties({num_seg_per_channel, params->segment_len,
-                                                         breakpoint_strategy->get_breakpoints(1 << breakpoint_num_bits),
-                                                         breakpoint_num_bits});
+    return get_isax_index<T>(opts, params, num_seg_per_channel, std::move(split_strategy));
+}
 
-        return get_isax_index<T>(opts, params, num_seg_per_channel, std::move(split_strategy));
-    }
-    return nullptr;
+uptr<IIndex<Envelope>> get_envelope_index(const IndexOptions &opts) {
+    auto *params = dynamic_cast<EnvelopeIndexParams *>(opts.index_params.get());
+    SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
+    auto *index = new FlatEnvelopeIndex(params->segment_len, params->pos_per_env);
+    return uptr<IIndex<Envelope>>(index);
 }
 
 uptr<IEntryGenerator<Paa>> get_paa_generator(const IndexOptions &opts) {
@@ -87,18 +90,18 @@ uptr<IEntryGenerator<Paa>> get_paa_generator(const IndexOptions &opts) {
         .l_min = opts.l_min,
         .l_max = opts.l_max,
     };
-    return std::make_unique<iSaxPaaGenerator>(opts.num_channels, paa_params);
+    return std::make_unique<PaaEntryGenerator>(opts.num_channels, paa_params);
 }
 
 uptr<IEntryGenerator<Envelope>> get_envelope_generator(const IndexOptions &opts) {
-    auto *params = dynamic_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
+    auto *params = dynamic_cast<EnvelopeIndexParams *>(opts.index_params.get());
     UlisseEnvelopeParams uli_params = {
         .pos_per_env = params->pos_per_env,
         .segment_len = params->segment_len,
         .l_min = opts.l_min,
         .l_max = opts.l_max,
     };
-    return std::make_unique<iSaxEnvelopeGenerator>(opts.num_channels, opts.normalized, uli_params);
+    return std::make_unique<EnvelopeEntryGenerator>(opts.num_channels, opts.normalized, uli_params);
 }
 
 template <typename T>
@@ -125,10 +128,12 @@ int create_index(const IndexOptions &opts) {
     IndexLogger::initialize(opts);
     auto &logger = IndexLogger::get_instance();
 
-    if (std::ranges::find(ENVELOPE_METHODS, opts.index_params->get_type()) != ENVELOPE_METHODS.end()) {
-        construct_index(get_index<Envelope>(opts), get_envelope_generator(opts), opts, RS, logger);
-    } else {  // Index uses PAA directly instead of enveloping
-        construct_index(get_index<Paa>(opts), get_paa_generator(opts), opts, RS, logger);
+    if (opts.index_params->get_type() == ISAX_ENVELOPE) {
+        construct_index(get_isax_index<Envelope>(opts), get_envelope_generator(opts), opts, RS, logger);
+    } else if (opts.index_params->get_type() == ISAX) {
+        construct_index(get_isax_index<Paa>(opts), get_paa_generator(opts), opts, RS, logger);
+    } else {  // ENVELOPE
+        construct_index(get_envelope_index(opts), get_envelope_generator(opts), opts, RS, logger);
     }
 
     if (RS.ffts_supported()) {

@@ -77,15 +77,15 @@ vec<Envelope> ulisse_envelope_raw(const vec<float> &ts, const UlisseEnvelopePara
 vec<Envelope> ulisse_envelope_normalized(const vec<float> &ts, const UlisseEnvelopeParams &env_params);
 
 /** @brief Envelope generator for iSAX (ULISSE) envelopes */
-class iSaxEnvelopeGenerator : public IEntryGenerator<Envelope> {
+class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
    public:
     /**
-     * @brief Construct a new iSaxEnvelopeGenerator object
+     * @brief Construct a new EnvelopeEntryGenerator object
      * @param num_channels Number of channels in each series
      * @param normalized Whether to normalize the subsequences
      * @param uli_params Parameters for the ULISSE envelope computation
      */
-    iSaxEnvelopeGenerator(MtsNumChannelsT num_channels, bool normalized, const UlisseEnvelopeParams &uli_params);
+    EnvelopeEntryGenerator(MtsNumChannelsT num_channels, bool normalized, const UlisseEnvelopeParams &uli_params);
 
     vec<IndexEntry<Envelope>> get_entries(const vec<vec<float>> &mts, uint series_ind) override;
 

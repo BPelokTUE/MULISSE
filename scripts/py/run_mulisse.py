@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     index_settings = []
     isax_index_methods = ["isax", "isax_envelope"]
-    non_isax_index_methods: list[str] = []
+    non_isax_index_methods: list[str] = ["envelope"]
     index_methods = non_isax_index_methods + isax_index_methods
 
     isax_methods_in_config = [t for t in config["search_methods"] if t in isax_index_methods]
@@ -363,9 +363,8 @@ if __name__ == "__main__":
                     run_command_with_logging([EXECUTABLE_PATH, *args])
 
                 for index_setting in SettingIterator(index_settings).iterate(desc="Index settings", leave=False):
-                    index_file = os.path.join(
-                        dataset_setting["location"], f"index-{index_setting['index_type']}-{index_counter}.bin"
-                    )
+                    index_method = index_setting["index_type"]
+                    index_file = os.path.join(dataset_setting["location"], f"index-{index_method}-{index_counter}.bin")
                     index_counter += 1
                     index_setting_copy = index_setting.copy()
 
@@ -390,7 +389,10 @@ if __name__ == "__main__":
 
                     run_command_with_logging([EXECUTABLE_PATH, *args])
 
-                    for index_method_setting in SettingIterator(index_method_settings).iterate(
+                    relevant_search_settings = index_method_settings.copy()
+                    for i in range(len(relevant_search_settings)):
+                        relevant_search_settings[i]["method_type"] = [index_method]
+                    for index_method_setting in SettingIterator(relevant_search_settings).iterate(
                         desc="Indexing method settings", leave=False
                     ):
                         # fmt: off
