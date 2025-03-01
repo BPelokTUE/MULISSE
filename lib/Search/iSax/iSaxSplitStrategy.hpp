@@ -78,11 +78,11 @@ class EntropyMaximizingStrategy : public IiSaxSplitStrategy<T> {
         float max_score = -INF;
         SaxNumBitsT min_num_bits = RS.get_isax_props().m_breakpoint_num_bits;
 
-        const vec<vec<Envelope>> &envelopes = leaf->get_summaries();
+        const vec<vec<T>> &summaries = leaf->get_summaries();
         for (MtsNumChannelsT c = 0; c < RS.get_dataset_props().num_channels; ++c) {
             vec<SaxNumBitsT> num_bits = isax_mins[c].get_num_bits();
             for (SaxSegIndT s = 0; s < RS.get_isax_props().num_segments; ++s) {
-                float lower_sum = 0, lower_sum_sq = 0, score = 0;
+                float sum = 0, sum_sq = 0, score = 0;
                 uint count = 0;
 
                 uint alphabet_ratio = (breakpoints.size() + 1) / (1 << (num_bits[s] + 1));
@@ -91,27 +91,27 @@ class EntropyMaximizingStrategy : public IiSaxSplitStrategy<T> {
 
                 br_ind = alphabet_ratio - 1;
 
-                vec<float> lower_vals(envelopes.size());
-                for (uint i = 0; i < envelopes.size(); ++i) lower_vals[i] = envelopes[i][c].lower[s];
-                std::sort(lower_vals.begin(), lower_vals.end());
+                vec<float> isax_input_values(summaries.size());
+                for (uint i = 0; i < summaries.size(); ++i) isax_input_values[i] = summaries[i][c].get_isax_input()[s];
+                std::sort(isax_input_values.begin(), isax_input_values.end());
 
-                for (float lower : lower_vals) {
-                    if (br_ind >= breakpoints.size() || lower < breakpoints[br_ind]) {
+                for (float isax_input_val : isax_input_values) {
+                    if (br_ind >= breakpoints.size() || isax_input_val < breakpoints[br_ind]) {
                         ++count;
-                        lower_sum += lower;
-                        lower_sum_sq += lower * lower;
+                        sum += isax_input_val;
+                        sum_sq += isax_input_val * isax_input_val;
                     } else {
-                        float prob = (float)count / envelopes.size();
+                        float prob = (float)count / summaries.size();
                         if (prob > 0) score -= prob * log2(prob);
 
                         count = 0;
                         br_ind += alphabet_ratio;
                     }
                 }
-                float prob = (float)count / envelopes.size();
+                float prob = (float)count / summaries.size();
                 if (prob > 0) score -= prob * log2(prob);
 
-                score *= calculate_mu_and_sigma(lower_sum, lower_sum_sq, envelopes.size()).second;
+                score *= calculate_mu_and_sigma(sum, sum_sq, summaries.size()).second;
                 if (score > max_score ||
                     (m_choose_min_num_bits_when_tied && score == max_score && num_bits[s] < min_num_bits)) {
                     max_score = score;

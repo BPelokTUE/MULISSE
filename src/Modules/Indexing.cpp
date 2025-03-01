@@ -30,45 +30,86 @@ uptr<IiSaxSplitStrategy<T>> get_split_strategy(const iSaxIndexParams *params, Sa
     return nullptr;
 }
 
-uptr<IIndex<Envelope>> get_index(const IndexOptions &opts) {
+template <typename T>
+    requires DerivedFromEntryData<T>
+uptr<IIndex<T>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params, SaxSegIndT num_seg_per_channel,
+                               uptr<IiSaxSplitStrategy<T>> split_strategy);
+
+template <>
+uptr<IIndex<Paa>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params,
+                                 SaxSegIndT num_seg_per_channel, uptr<IiSaxSplitStrategy<Paa>> split_strategy) {
+    auto series_isax_prop = std::make_unique<SeriesISaxProperties>(params->segment_len, opts.series_len,
+                                                                   opts.num_channels, num_seg_per_channel);
+    auto *index = new iSaxPaaIndex(std::move(series_isax_prop), params->first_layer_num_bits, params->leaf_capacity,
+                                   std::move(split_strategy));
+    return uptr<IIndex<Paa>>(index);
+}
+
+template <>
+uptr<IIndex<Envelope>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params,
+                                      SaxSegIndT num_seg_per_channel,
+                                      uptr<IiSaxSplitStrategy<Envelope>> split_strategy) {
+    auto *env_params = dynamic_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
+    auto series_isax_prop = std::make_unique<SeriesISaxEnvelopeProperties>(
+        env_params->segment_len, opts.series_len, opts.num_channels, num_seg_per_channel, env_params->pos_per_env);
+
+    auto *index = new iSaxEnvelopeIndex(std::move(series_isax_prop), env_params->first_layer_num_bits,
+                                        env_params->leaf_capacity, std::move(split_strategy));
+    return uptr<IIndex<Envelope>>(index);
+}
+
+template <typename T>
+    requires DerivedFromEntryData<T>
+uptr<IIndex<T>> get_index(const IndexOptions &opts) {
     SearchMethodType search_method_type = opts.index_params->get_type();
 
-    if (search_method_type == ISAX_ENVELOPE) {
-        auto *params = dynamic_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
+    if (search_method_type == ISAX_ENVELOPE || search_method_type == ISAX) {
+        auto *params = dynamic_cast<iSaxIndexParams *>(opts.index_params.get());
         SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
 
         auto breakpoint_strategy = get_breakpoint_strategy(params);
-        auto split_strategy = get_split_strategy<Envelope>(params, num_seg_per_channel, opts.num_channels);
-
-        auto series_isax_prop = std::make_unique<SeriesISaxEnvelopeProperties>(
-            params->segment_len, opts.series_len, opts.num_channels, num_seg_per_channel, params->pos_per_env);
+        auto split_strategy = get_split_strategy<T>(params, num_seg_per_channel, opts.num_channels);
 
         SaxNumBitsT breakpoint_num_bits = DEFAULT_NUM_BIT_LIMIT;
         RunSettings::get_instance().set_isax_properties({num_seg_per_channel, params->segment_len,
                                                          breakpoint_strategy->get_breakpoints(1 << breakpoint_num_bits),
                                                          breakpoint_num_bits});
 
-        auto *index = new iSaxEnvelopeIndex(std::move(series_isax_prop), params->first_layer_num_bits,
-                                            params->leaf_capacity, std::move(split_strategy));
-        return uptr<IIndex<Envelope>>(index);
+        return get_isax_index<T>(opts, params, num_seg_per_channel, std::move(split_strategy));
     }
     return nullptr;
 }
 
-uptr<IEntryGenerator<Envelope>> get_envelope_generator(const IndexOptions &opts) {
-    SearchMethodType search_method_type = opts.index_params->get_type();
+uptr<IEntryGenerator<Paa>> get_paa_generator(const IndexOptions &opts) {
+    auto *params = dynamic_cast<iSaxIndexParams *>(opts.index_params.get());
+    iSaxPaaParams paa_params = {
+        .segment_len = params->segment_len,
+        .l_min = opts.l_min,
+        .l_max = opts.l_max,
+    };
+    return std::make_unique<iSaxPaaGenerator>(opts.num_channels, paa_params);
+}
 
-    if (search_method_type == ISAX_ENVELOPE) {
-        auto *params = dynamic_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
-        UlisseEnvelopeParams uli_params = {
-            .pos_per_env = params->pos_per_env,
-            .segment_len = params->segment_len,
-            .l_min = opts.l_min,
-            .l_max = opts.l_max,
-        };
-        return std::make_unique<iSaxEnvelopeGenerator>(opts.num_channels, opts.normalized, uli_params);
-    }
-    return nullptr;
+uptr<IEntryGenerator<Envelope>> get_envelope_generator(const IndexOptions &opts) {
+    auto *params = dynamic_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
+    UlisseEnvelopeParams uli_params = {
+        .pos_per_env = params->pos_per_env,
+        .segment_len = params->segment_len,
+        .l_min = opts.l_min,
+        .l_max = opts.l_max,
+    };
+    return std::make_unique<iSaxEnvelopeGenerator>(opts.num_channels, opts.normalized, uli_params);
+}
+
+template <typename T>
+    requires DerivedFromEntryData<T>
+void construct_index(uptr<IIndex<T>> index, uptr<IEntryGenerator<T>> generator, const IndexOptions &opts,
+                     RunSettings &RS, IndexLogger &logger) {
+    logger.start_timer(ISC::INDEXING_TIME_S);
+    index->construct(RS.get_dataset_path(), generator.get(), opts.num_channels, opts.series_len);
+    std::ofstream index_stream(RS.get_index_path(), std::ios::binary);
+    index->finalize()->save(index_stream, opts.index_format);
+    logger.stop_timer(ISC::INDEXING_TIME_S);
 }
 
 int create_index(const IndexOptions &opts) {
@@ -84,14 +125,10 @@ int create_index(const IndexOptions &opts) {
     IndexLogger::initialize(opts);
     auto &logger = IndexLogger::get_instance();
 
-    auto index = get_index(opts);
     if (std::ranges::find(ENVELOPE_METHODS, opts.index_params->get_type()) != ENVELOPE_METHODS.end()) {
-        auto envelope_generator = get_envelope_generator(opts);
-        logger.start_timer(ISC::INDEXING_TIME_S);
-        index->construct(dataset_path, envelope_generator.get(), opts.num_channels, opts.series_len);
-        std::ofstream index_stream(index_path, std::ios::binary);
-        index->finalize()->save(index_stream, opts.index_format);
-        logger.stop_timer(ISC::INDEXING_TIME_S);
+        construct_index(get_index<Envelope>(opts), get_envelope_generator(opts), opts, RS, logger);
+    } else {  // Index uses PAA directly instead of enveloping
+        construct_index(get_index<Paa>(opts), get_paa_generator(opts), opts, RS, logger);
     }
 
     if (RS.ffts_supported()) {

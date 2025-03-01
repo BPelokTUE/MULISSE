@@ -112,7 +112,14 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
 
     ~iSaxFinalizedIndex() = default;
 
-    std::pair<float, float> get_segment_limits(SaxNumBitsT num_bits, SymbolType symbol) const;
+    std::pair<float, float> get_segment_limits(SaxNumBitsT num_bits, SymbolType symbol) const {
+        uint num_shift = m_alphabet_num_bits - num_bits;
+        auto [lower_ind, upper_ind] = get_limit_breakpoint_indexes(symbol, num_shift);
+        return {
+            lower_ind == -1 ? -INF : m_breakpoints[lower_ind],
+            upper_ind == m_breakpoints.size() ? INF : m_breakpoints[upper_ind],
+        };
+    }
 
     std::pair<vec<iSaxType>, vec<iSaxType>> get_children_isax_words(const iSaxFinalizedNode<FTag>* node,
                                                                     vec<iSaxType> isax_words, MtsNumChannelsT c,
@@ -234,6 +241,8 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
     vec<float> m_breakpoints;
     uptr<SeriesISaxProperties> m_series_isax_prop;
+
+    std::pair<int, int> get_limit_breakpoint_indexes(SymbolType symbol, uint num_shift) const;
 
     MAKE_SERIALIZABLE((m_series_isax_prop, m_first_layer_symbols, m_first_layer_nodes, m_first_layer_num_bits,
                        m_alphabet_num_bits, m_breakpoints));

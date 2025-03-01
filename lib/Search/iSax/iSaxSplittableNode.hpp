@@ -5,8 +5,10 @@
 #include "Util/constants.hpp"
 #include "Search/iSax/iSaxNode.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
+#include "Summarization/Envelope.hpp"
 #include "Summarization/IndexEntry.hpp"
 #include "Summarization/iSaxWord.hpp"
+#include "Summarization/Paa.hpp"
 
 struct FinalizationResult {
     virtual ~FinalizationResult() = default;
@@ -14,6 +16,8 @@ struct FinalizationResult {
 
 struct PaaFinalizationResult : public FinalizationResult {
     uptr<iSaxFinalizedNode<PaaTag>> finalized_node;
+
+    PaaFinalizationResult(uptr<iSaxFinalizedNode<PaaTag>> finalized_node) : finalized_node(std::move(finalized_node)) {}
 };
 
 struct EnvelopeFinalizationResult : public FinalizationResult {
@@ -143,6 +147,9 @@ class iSaxSplittableLeaf : public iSaxSplittableNode<T> {
     vec<vec<T>> m_summaries;
     vec<SubsequenceInfo> m_subsequence_positions;
 };
+
+uptr<iSaxFinalizedNode<PaaTag>> get_paa_node_finalization_result(uptr<iSaxSplittableNode<Paa>> &node,
+                                                                 const iSaxWordSettings &isax_word_settings);
 
 std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> get_envelope_node_finalization_result(
     uptr<iSaxSplittableNode<Envelope>> &node, const iSaxWordSettings &isax_word_settings);

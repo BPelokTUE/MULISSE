@@ -129,8 +129,6 @@ class iSaxIndex : public IIndex<T> {
 
             auto [finalized_node, isax_symbols] = finalize_first_layer_node(key_symbols, node, isax_word_settings);
             first_layer_symbols[i] = isax_symbols;
-            // first_layer_min_symbols[i] = min_symbols;
-            // first_layer_max_symbols[i] = max_symbols;
             finalized_nodes[i] = std::move(finalized_node);
             ++i;
 
