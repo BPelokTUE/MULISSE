@@ -135,14 +135,15 @@ void RunSettings::calculate_ffts() const {
     }
 }
 
-FftArray RunSettings::get_ffts(SubsequencePosition subs_pos, MtsNumChannelsT channel_ind, uint num_component) {
+FftArray RunSettings::get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channel_ind, uint num_component) {
     if (!ffts_supported()) throw std::runtime_error("FFTs are not supported");
 
     // (*2) for using double instead of float
     // (*2) for real and imaginary parts
     // (*2) for extra components at the end
     uint file_size_ratio = 8;
-    size_t data_file_pos = subs_pos.get_file_pos(m_dataset_props.series_len, m_dataset_props.num_channels, channel_ind);
+    size_t data_file_pos =
+        subs_info.get_file_pos(m_dataset_props.series_len, m_dataset_props.num_channels, channel_ind);
     m_ffts_ifs.seekg(file_size_ratio * data_file_pos);
 
     FftArray ffts(2 * num_component);

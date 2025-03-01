@@ -27,7 +27,7 @@ vec<SearchResult> SequentialScan::search(const vec<vec<float>> &query, const Sea
         logger.stop_timer(QC::IO_TIME_S);
 
         logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-        opts.distance_measure->update_result_set(opts.result_set.get(), {i, 0}, query, mts);
+        opts.distance_measure->update_result_set(opts.result_set.get(), {i, 0, series_len}, query, mts);
         logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
 
         logger.increment_count_col(QC::NUM_TS_EXAMINED);

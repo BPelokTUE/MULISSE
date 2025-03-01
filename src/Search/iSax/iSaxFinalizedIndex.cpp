@@ -3,6 +3,8 @@
 #include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
 
+// iSaxFinalizedIndex<Paa>
+
 SeriesISaxProperties::SeriesISaxProperties(uint segment_len, uint series_len, MtsNumChannelsT num_channels,
                                            SaxSegIndT num_seg_per_channel)
     : segment_len(segment_len),
@@ -10,28 +12,34 @@ SeriesISaxProperties::SeriesISaxProperties(uint segment_len, uint series_len, Mt
       num_channels(num_channels),
       num_seg_per_channel(num_seg_per_channel) {}
 
+template <>
+std::pair<int, int> iSaxFinalizedIndex<PaaTag>::get_limit_breakpoint_indexes(PaaSaxSymbol symbol,
+                                                                             uint num_shift) const {
+    return {(symbol.symbol << num_shift) - 1, ((symbol.symbol + 1) << num_shift) - 1};
+}
+
+template <>
+std::pair<vec<PaaISax>, vec<PaaISax>> iSaxFinalizedIndex<PaaTag>::get_children_isax_words(
+    const iSaxFinalizedNode<PaaTag> *node, vec<PaaISax> isax_words, MtsNumChannelsT c, SaxSegIndT s) const {
+    vec<PaaISax> left_isax_words = isax_words;
+    left_isax_words[c].isax_word.append_to_symbol(s, 0);
+    vec<PaaISax> right_isax_words = isax_words;
+    right_isax_words[c].isax_word.append_to_symbol(s, 1);
+
+    return {left_isax_words, right_isax_words};
+}
+
+// iSaxFinalizedIndex<EnvelopeTag>
+
 SeriesISaxEnvelopeProperties::SeriesISaxEnvelopeProperties(uint segment_len, uint series_len,
                                                            MtsNumChannelsT num_channels, SaxSegIndT num_seg_per_channel,
                                                            uint pos_per_env)
     : SeriesISaxProperties(segment_len, series_len, num_channels, num_seg_per_channel), pos_per_env(pos_per_env) {}
 
-size_t SeriesISaxProperties::get_data_to_read(uint query_len, uint data_remaining) {
-    return std::min(query_len, data_remaining);
-}
-
-size_t SeriesISaxEnvelopeProperties::get_data_to_read(uint query_len, uint data_remaining) {
-    return std::min(query_len + pos_per_env - 1, data_remaining);
-}
-
 template <>
-std::pair<float, float> iSaxFinalizedIndex<EnvelopeTag>::get_segment_limits(SaxNumBitsT num_bits,
-                                                                            EnvelopeSaxSymbol symbol) const {
-    uint num_shift = m_alphabet_num_bits - num_bits;
-    int lower_ind = (symbol.min_symbol << num_shift) - 1, upper_ind = ((symbol.max_symbol + 1) << num_shift) - 1;
-    return {
-        lower_ind == -1 ? -INF : m_breakpoints[lower_ind],
-        upper_ind == m_breakpoints.size() ? INF : m_breakpoints[upper_ind],
-    };
+std::pair<int, int> iSaxFinalizedIndex<EnvelopeTag>::get_limit_breakpoint_indexes(EnvelopeSaxSymbol symbol,
+                                                                                  uint num_shift) const {
+    return {(symbol.min_symbol << num_shift) - 1, ((symbol.max_symbol + 1) << num_shift) - 1};
 }
 
 template <>

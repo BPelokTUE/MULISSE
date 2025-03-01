@@ -30,12 +30,12 @@ class IDistanceMeasure {
      * @brief Update the result set with the subsequences from the time series
      *
      * @param result_set Result set to update
-     * @param subs_pos Position of the subsequence in the dataset
+     * @param subs_info Information about the subsequence in the dataset
      * @param query Query time series
      * @param mts Time series to update the result set with
      * @return true if the result set was updated, false otherwise
      */
-    virtual bool update_result_set(IResultSet *result_set, SubsequencePosition subs_pos, const vec<vec<float>> &query,
+    virtual bool update_result_set(IResultSet *result_set, SubsequenceInfo subs_info, const vec<vec<float>> &query,
                                    const vec<vec<float>> &mts) = 0;
 
     /** @brief Get the type of the distance measure */
@@ -48,7 +48,7 @@ class EuclideanDistance : public IDistanceMeasure {
 
     DistanceT min_dist_squared(const float paa, float lower, float upper) const override;
 
-    bool update_result_set(IResultSet *result_set, SubsequencePosition subs_pos, const vec<vec<float>> &query,
+    bool update_result_set(IResultSet *result_set, SubsequenceInfo subs_info, const vec<vec<float>> &query,
                            const vec<vec<float>> &mts) override;
 
     DistanceType get_type() const override;
@@ -66,14 +66,14 @@ class EuclideanDistanceWMass : public EuclideanDistance {
    public:
     EuclideanDistanceWMass(bool normalized);
 
-    bool update_result_set(IResultSet *result_set, SubsequencePosition subs_pos, const vec<vec<float>> &query,
+    bool update_result_set(IResultSet *result_set, SubsequenceInfo subs_info, const vec<vec<float>> &query,
                            const vec<vec<float>> &mts) override;
 
     DistanceType get_type() const override;
 
    private:
     vec<DistanceT> calculate_dot_products(const vec<DistanceT> &query_channel, const vec<DistanceT> &mts_channel,
-                                          SubsequencePosition subs_pos, MtsNumChannelsT channel_ind) const;
+                                          SubsequenceInfo subs_info, MtsNumChannelsT channel_ind) const;
 };
 
 #endif  // DISTANCE_MEASURE_HPP

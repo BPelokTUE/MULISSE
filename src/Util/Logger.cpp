@@ -157,10 +157,9 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         auto method_type = index_options.index_params->get_type();
         method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(method_type);
 
-        if (method_type == ISAX_ENVELOPE) {
-            auto *params = dynamic_cast<iSaxEnvelopeIndexParams *>(index_options.index_params.get());
+        if (method_type == ISAX || method_type == ISAX_ENVELOPE) {
+            auto *params = dynamic_cast<iSaxIndexParams *>(index_options.index_params.get());
             segment_len = params->segment_len;
-            pos_per_env = params->pos_per_env;
             first_layer_num_bits = params->first_layer_num_bits;
             leaf_capacity = params->leaf_capacity;
             brs_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(params->breakpoint_strategy_type);
@@ -170,6 +169,11 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
 
             if (split_strategy == ENTROPY_MAXIMIZING) min_num_bits_on_tie_str = to_string(params->min_num_bits_on_tie);
             num_bits_limit = params->num_bits_limit;
+
+            if (method_type == ISAX_ENVELOPE) {
+                auto *env_params = dynamic_cast<iSaxEnvelopeIndexParams *>(params);
+                pos_per_env = env_params->pos_per_env;
+            }
         }
     }
 
@@ -336,7 +340,7 @@ void QueryLogger::log_results(const vec<SearchResult> &results) {
     auto &RS = RunSettings::get_instance();
     size_t series_size = RS.m_dataset_props.series_len * RS.m_dataset_props.num_channels;
     for (auto result : results) {
-        auto [ts_index, ts_position] = result.subs_pos;
+        auto [ts_index, ts_position, ts_length] = result.subs_info;
         instance.m_collection_cols[QC::RESULT_SET_TS_INDICES].push_back(to_string(ts_index));
         instance.m_collection_cols[QC::RESULT_SET_TS_POSITIONS].push_back(to_string(ts_position));
         instance.m_collection_cols[QC::RESULT_SET_DISTANCES].push_back(to_string(result.distance));

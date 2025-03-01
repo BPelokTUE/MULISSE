@@ -138,8 +138,8 @@ struct iSaxInternalNodeArgs {
     uptr<iSaxFinalizedNode<FTag>> left;
     uptr<iSaxFinalizedNode<FTag>> right;
 
-    iSaxInternalNodeArgs(SaxSplitIndex split_ind, uptr<iSaxFinalizedNode<EnvelopeTag>> left,
-                         uptr<iSaxFinalizedNode<EnvelopeTag>> right)
+    iSaxInternalNodeArgs(SaxSplitIndex split_ind, uptr<iSaxFinalizedNode<FTag>> left,
+                         uptr<iSaxFinalizedNode<FTag>> right)
         : split_ind(split_ind), left(std::move(left)), right(std::move(right)) {}
 
     iSaxInternalNodeArgs() = default;
@@ -196,7 +196,7 @@ class iSaxFinalizedInternal : public iSaxFinalizedNode<FTag> {
 
     virtual SaxSplitIndex get_split_ind() const override { return m_args->split_ind; }
 
-    virtual vec<SubsequencePosition> get_subsequence_positions() const override { return {}; }
+    virtual vec<SubsequenceInfo> get_subsequence_infos() const override { return {}; }
 
     virtual bool is_leaf() const override { return false; }
 
@@ -216,6 +216,8 @@ class iSaxFinalizedInternal : public iSaxFinalizedNode<FTag> {
 };
 
 // Required for Cereal (de)serialization
+CEREAL_REGISTER_TYPE(iSaxFinalizedInternal<PaaTag>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<PaaTag>, iSaxFinalizedInternal<PaaTag>)
 CEREAL_REGISTER_TYPE(iSaxFinalizedInternal<EnvelopeTag>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<EnvelopeTag>, iSaxFinalizedInternal<EnvelopeTag>)
 
@@ -231,10 +233,9 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode<T> {
 
     /**
      * @brief Construct a new leaf node with the provided file positions and summaries
-     * @param subsequence_positions The position of th subsequence in the dataset
+     * @param subsequence_positions The position and length of the subsequences in the dataset
      */
-    iSaxFinalizedLeaf(vec<SubsequencePosition> subsequence_positions)
-        : m_subsequence_positions(subsequence_positions) {}
+    iSaxFinalizedLeaf(vec<SubsequenceInfo> subsequence_positions) : m_subsequence_positions(subsequence_positions) {}
 
     virtual pair<const iSaxFinalizedNode<T> *, const iSaxFinalizedNode<T> *> get_children() const override {
         return {nullptr, nullptr};
@@ -242,7 +243,7 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode<T> {
 
     virtual SaxSplitIndex get_split_ind() const override { return {0, 0}; }
 
-    virtual vec<SubsequencePosition> get_subsequence_positions() const override { return m_subsequence_positions; }
+    virtual vec<SubsequenceInfo> get_subsequence_infos() const override { return m_subsequence_positions; }
 
     virtual bool is_leaf() const override { return true; }
 
@@ -250,7 +251,7 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode<T> {
                                                           SaxNumBitsT symbol_num_bits) const override;
 
    private:
-    vec<SubsequencePosition> m_subsequence_positions;
+    vec<SubsequenceInfo> m_subsequence_positions;
 
     // Required for Cereal (de)serialization
     friend class cereal::access;
@@ -262,6 +263,8 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode<T> {
 };
 
 // Required for Cereal (de)serialization
+CEREAL_REGISTER_TYPE(iSaxFinalizedLeaf<PaaTag>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<PaaTag>, iSaxFinalizedLeaf<PaaTag>)
 CEREAL_REGISTER_TYPE(iSaxFinalizedLeaf<EnvelopeTag>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<EnvelopeTag>, iSaxFinalizedLeaf<EnvelopeTag>)
 

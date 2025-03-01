@@ -363,7 +363,9 @@ if __name__ == "__main__":
                     run_command_with_logging([EXECUTABLE_PATH, *args])
 
                 for index_setting in SettingIterator(index_settings).iterate(desc="Index settings", leave=False):
-                    index_file = os.path.join(dataset_setting["location"], f"index-{index_counter}.bin")
+                    index_file = os.path.join(
+                        dataset_setting["location"], f"index-{index_setting['index_type']}-{index_counter}.bin"
+                    )
                     index_counter += 1
                     index_setting_copy = index_setting.copy()
 

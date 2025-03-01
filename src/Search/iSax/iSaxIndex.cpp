@@ -6,6 +6,7 @@
 #include "Summarization/Envelope.hpp"
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/iSaxBreakpointStrategy.hpp"
+#include "Summarization/Paa.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/Logger.hpp"
 #include "Util/RunSettings.hpp"
@@ -19,6 +20,31 @@ std::size_t SaxSymbolsHash::operator()(const vec<vec<SaxSymbolT>> &symbols) cons
     }
     return seed;
 }
+
+// iSaxPaaIndex
+
+using FTagPaa = typename iSaxIndexTraits<Paa>::FinalizedTag;
+using SymbolTypePaa = typename SaxTraits<FTagPaa>::SymbolType;
+
+std::pair<uptr<iSaxFinalizedNode<FTagPaa>>, vec<vec<SymbolTypePaa>>> iSaxPaaIndex::finalize_first_layer_node(
+    vec<vec<SaxSymbolT>> key_symbols, uptr<iSaxSplittableNode<Paa>> &node, iSaxWordSettings &isax_word_settings) {
+    auto finalized_node = get_paa_node_finalization_result(node, isax_word_settings);
+    MtsNumChannelsT num_channels = m_series_isax_prop->num_channels;
+    SaxSegIndT num_seg_per_channel = m_series_isax_prop->num_seg_per_channel;
+
+    vec<vec<SymbolTypePaa>> symbols(num_channels, vec<SymbolTypePaa>(num_seg_per_channel));
+    SaxNumBitsT shift = m_alphabet_num_bits - m_first_layer_num_bits;
+    for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+        for (SaxSegIndT s = 0; s < num_seg_per_channel; ++s) symbols[c][s] = SymbolTypePaa(key_symbols[c][s]);
+    }
+    return {std::move(finalized_node), std::move(symbols)};
+}
+
+iSaxPaaIndex::iSaxPaaIndex(uptr<SeriesISaxProperties> series_isax_prop, SaxNumBitsT first_layer_num_bits,
+                           size_t leaf_capacity, uptr<IiSaxSplitStrategy<Paa>> split_strategy)
+    : iSaxIndex(std::move(series_isax_prop), first_layer_num_bits, leaf_capacity, std::move(split_strategy)) {}
+
+// iSaxEnvelopeIndex
 
 using FTagEnv = typename iSaxIndexTraits<Envelope>::FinalizedTag;
 using SymbolTypeEnv = typename SaxTraits<FTagEnv>::SymbolType;

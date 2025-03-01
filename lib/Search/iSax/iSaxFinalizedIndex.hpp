@@ -26,12 +26,12 @@ struct SeriesISaxProperties {
     /** @brief Number of segments per channel */
     SaxSegIndT num_seg_per_channel;
 
+    virtual ~SeriesISaxProperties() = default;
+
     SeriesISaxProperties(uint segment_len, uint series_len, MtsNumChannelsT num_channels,
                          SaxSegIndT num_seg_per_channel);
 
     SeriesISaxProperties() = default;
-
-    virtual size_t get_data_to_read(uint query_len, uint data_remaining);
 
    private:
     friend class cereal::access;
@@ -46,8 +46,6 @@ struct SeriesISaxProperties {
 struct SeriesISaxEnvelopeProperties : SeriesISaxProperties {
     /** @brief Size of starting position groups */
     uint pos_per_env;
-
-    size_t get_data_to_read(uint query_len, uint data_remaining) override;
 
     SeriesISaxEnvelopeProperties(uint segment_len, uint series_len, MtsNumChannelsT num_channels,
                                  SaxSegIndT num_seg_per_channel, uint pos_per_env);
@@ -114,7 +112,14 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
 
     ~iSaxFinalizedIndex() = default;
 
-    std::pair<float, float> get_segment_limits(SaxNumBitsT num_bits, SymbolType symbol) const;
+    std::pair<float, float> get_segment_limits(SaxNumBitsT num_bits, SymbolType symbol) const {
+        uint num_shift = m_alphabet_num_bits - num_bits;
+        auto [lower_ind, upper_ind] = get_limit_breakpoint_indexes(symbol, num_shift);
+        return {
+            lower_ind == -1 ? -INF : m_breakpoints[lower_ind],
+            upper_ind == m_breakpoints.size() ? INF : m_breakpoints[upper_ind],
+        };
+    }
 
     std::pair<vec<iSaxType>, vec<iSaxType>> get_children_isax_words(const iSaxFinalizedNode<FTag>* node,
                                                                     vec<iSaxType> isax_words, MtsNumChannelsT c,
@@ -192,26 +197,26 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
                     pq.push({min_dist_squared + segment_len * (dist - prev_dist), right_isax_words, right});
                 }
             } else {
-                vec<SubsequencePosition> subsequence_positions = node->get_subsequence_positions();
-                for (SubsequencePosition subs_pos : subsequence_positions) {
-                    size_t data_remaining = series_len - subs_pos.start_pos;
+                vec<SubsequenceInfo> subsequence_infos = node->get_subsequence_infos();
+                for (SubsequenceInfo subs_info : subsequence_infos) {
+                    size_t data_remaining = series_len - subs_info.start_pos;
 
                     if (data_remaining < query_len) continue;
 
-                    size_t data_to_read = m_series_isax_prop->get_data_to_read(query_len, data_remaining);
+                    size_t data_to_read = subs_info.length;
                     vec<vec<float>> subsequence(num_channels);
                     logger.start_timer(QC::IO_TIME_S);
                     for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
                         if (query[c].empty()) continue;
 
                         subsequence[c].resize(data_to_read);
-                        dataset_ifs.seekg(subs_pos.get_file_pos(series_len, num_channels, c));
+                        dataset_ifs.seekg(subs_info.get_file_pos(series_len, num_channels, c));
                         dataset_ifs.read(reinterpret_cast<char*>(subsequence[c].data()), data_to_read * sizeof(float));
                     }
                     logger.stop_timer(QC::IO_TIME_S);
 
                     logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-                    distance_measure->update_result_set(result_set, subs_pos, query, subsequence);
+                    distance_measure->update_result_set(result_set, subs_info, query, subsequence);
                     logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
 
                     // TODO: Discuss how pruning ratio should be calculated when envs_per_ts > 1
@@ -236,6 +241,8 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
     vec<float> m_breakpoints;
     uptr<SeriesISaxProperties> m_series_isax_prop;
+
+    std::pair<int, int> get_limit_breakpoint_indexes(SymbolType symbol, uint num_shift) const;
 
     MAKE_SERIALIZABLE((m_series_isax_prop, m_first_layer_symbols, m_first_layer_nodes, m_first_layer_num_bits,
                        m_alphabet_num_bits, m_breakpoints));

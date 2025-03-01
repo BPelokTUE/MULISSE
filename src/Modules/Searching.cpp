@@ -7,23 +7,29 @@
 #include "Search/iSax/iSaxFinalizedIndex.hpp"
 #include "Search/SequentialScan.hpp"
 
+std::ifstream get_index_stream() {
+    str index_path = RunSettings::get_instance().get_index_path();
+    std::ifstream index_stream(index_path, std::ios::binary);
+    if (!index_stream) {
+        std::cerr << "Could not open index file " << index_path << std::endl;
+        return std::ifstream();
+    }
+    return index_stream;
+}
+
 uptr<ISearchMethod> load_method(const SearchOptions &opts) {
     switch (opts.search_method_type) {
         case ISAX_ENVELOPE: {
-            str index_path = RunSettings::get_instance().get_index_path();
-            if (index_path.empty()) {
-                std::cerr << "No index path provided for search with iSAX envelope index\n";
-                return nullptr;
-            }
-
-            std::ifstream index_stream(index_path, std::ios::binary);
+            auto index_stream = get_index_stream();
             auto index = std::make_unique<iSaxFinalizedIndex<EnvelopeTag>>();
             static_cast<IFinalizedIndex<EnvelopeTag> *>(index.get())->load(index_stream, opts.index_format);
-
             return index;
         }
         case ISAX: {
-            throw std::runtime_error("iSAX index search not implemented");
+            auto index_stream = get_index_stream();
+            auto index = std::make_unique<iSaxFinalizedIndex<PaaTag>>();
+            static_cast<IFinalizedIndex<PaaTag> *>(index.get())->load(index_stream, opts.index_format);
+            return index;
         }
         case SEQUENTIAL_SCAN:
             return std::make_unique<SequentialScan>();
@@ -33,7 +39,6 @@ uptr<ISearchMethod> load_method(const SearchOptions &opts) {
 
 /**
  * @brief Execute similarity search
- *
  * @param opts Options for searching
  */
 int search(const SearchOptions &opts) {

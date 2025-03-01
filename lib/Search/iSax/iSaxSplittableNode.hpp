@@ -5,8 +5,10 @@
 #include "Util/constants.hpp"
 #include "Search/iSax/iSaxNode.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
+#include "Summarization/Envelope.hpp"
 #include "Summarization/IndexEntry.hpp"
 #include "Summarization/iSaxWord.hpp"
+#include "Summarization/Paa.hpp"
 
 struct FinalizationResult {
     virtual ~FinalizationResult() = default;
@@ -14,6 +16,8 @@ struct FinalizationResult {
 
 struct PaaFinalizationResult : public FinalizationResult {
     uptr<iSaxFinalizedNode<PaaTag>> finalized_node;
+
+    PaaFinalizationResult(uptr<iSaxFinalizedNode<PaaTag>> finalized_node) : finalized_node(std::move(finalized_node)) {}
 };
 
 struct EnvelopeFinalizationResult : public FinalizationResult {
@@ -92,7 +96,7 @@ class iSaxSplittableInternal : public iSaxSplittableNode<T> {
 
     SaxSplitIndex get_split_ind() const override { return m_split_ind; }
 
-    vec<SubsequencePosition> get_subsequence_positions() const override { return {}; }
+    vec<SubsequenceInfo> get_subsequence_infos() const override { return {}; }
 
     bool is_leaf() const override { return false; }
 
@@ -119,10 +123,10 @@ class iSaxSplittableLeaf : public iSaxSplittableNode<T> {
    public:
     /**
      * @brief Construct a new leaf node with the provided file positions and summaries
-     * @param subsequence_positions The positions within the dataset of the subsequences stored in the leaf
+     * @param subsequence_positions The position within the dataset and length of the subsequences stored in the leaf
      * @param summaries The summaries of the subsequences stored in the leaf
      */
-    iSaxSplittableLeaf(vec<SubsequencePosition> subsequence_positions, vec<vec<T>> summaries)
+    iSaxSplittableLeaf(vec<SubsequenceInfo> subsequence_positions, vec<vec<T>> summaries)
         : m_subsequence_positions(subsequence_positions), m_summaries(summaries) {}
 
     virtual std::pair<const iSaxSplittableNode<T> *, const iSaxSplittableNode<T> *> get_children() const override {
@@ -131,7 +135,7 @@ class iSaxSplittableLeaf : public iSaxSplittableNode<T> {
 
     SaxSplitIndex get_split_ind() const override { return {0, 0}; }
 
-    vec<SubsequencePosition> get_subsequence_positions() const override { return m_subsequence_positions; }
+    vec<SubsequenceInfo> get_subsequence_infos() const override { return m_subsequence_positions; }
 
     bool is_leaf() const override { return true; }
 
@@ -141,8 +145,11 @@ class iSaxSplittableLeaf : public iSaxSplittableNode<T> {
 
    protected:
     vec<vec<T>> m_summaries;
-    vec<SubsequencePosition> m_subsequence_positions;
+    vec<SubsequenceInfo> m_subsequence_positions;
 };
+
+uptr<iSaxFinalizedNode<PaaTag>> get_paa_node_finalization_result(uptr<iSaxSplittableNode<Paa>> &node,
+                                                                 const iSaxWordSettings &isax_word_settings);
 
 std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> get_envelope_node_finalization_result(
     uptr<iSaxSplittableNode<Envelope>> &node, const iSaxWordSettings &isax_word_settings);

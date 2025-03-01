@@ -8,6 +8,22 @@
 struct EntryData {
     virtual ~EntryData() = default;
 
+    /**
+     * @brief Get the size (number of entries) of the envelope
+     * @return The size of the envelope
+     * */
+    virtual size_t size() const = 0;
+
+    /**
+     * @brief Resize the envelope
+     * @param new_size The new size of the envelope
+     * */
+    virtual void resize(size_t new_size) = 0;
+
+    /**
+     * @brief Get the input for the iSAX index
+     * @return The input for the iSAX index
+     * */
     virtual vec<float> get_isax_input() const = 0;
 };
 
@@ -17,10 +33,8 @@ concept DerivedFromEntryData = std::is_base_of_v<EntryData, T>;
 template <typename T>
     requires DerivedFromEntryData<T>
 struct IndexEntry {
-    virtual ~IndexEntry() = default;
-
-    /** @brief Position within the dataset of the subsequence summarized in the entry */
-    SubsequencePosition subsequence_position;
+    /** @brief Position within the dataset and length of the subsequence summarized in the entry */
+    SubsequenceInfo subsequence_info;
     /** @brief Multivariate time series summary */
     vec<T> mts_summary;
 };

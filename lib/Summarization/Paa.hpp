@@ -1,7 +1,7 @@
 #ifndef PAA_HPP
 #define PAA_HPP
 
-#include <vector>
+#include <tuple>
 
 #include "Util/typedefs.hpp"
 #include "Summarization/IndexEntry.hpp"
@@ -33,9 +33,17 @@ struct iSaxPaaParams {
 };
 
 struct Paa : EntryData {
-    vec<float> paa;
+    vec<float> paa_values;
 
-    vec<float> get_isax_input() const override { return paa; }
+    Paa(const vec<float> &paa_values);
+
+    Paa() = default;
+
+    size_t size() const override;
+
+    void resize(size_t new_size) override;
+
+    vec<float> get_isax_input() const override;
 };
 
 /** @brief PAA generator for iSAX index */
@@ -43,9 +51,10 @@ class iSaxPaaGenerator : public IEntryGenerator<Paa> {
    public:
     /**
      * @brief Construct a new iSaxPaaGenerator object
-     * @param opts Indexing options
+     * @param num_channels Number of channels of each series
+     * @param uli_params Parameters for the ULISSE envelope computation
      */
-    iSaxPaaGenerator(MtsNumChannelsT num_channels, bool normalized, const iSaxPaaParams &paa_params);
+    iSaxPaaGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params);
 
     vec<IndexEntry<Paa>> get_entries(const vec<vec<float>> &mts, uint series_ind) override;
 
@@ -53,7 +62,14 @@ class iSaxPaaGenerator : public IEntryGenerator<Paa> {
     MtsNumChannelsT m_num_channels;
     bool m_normalized;
     iSaxPaaParams m_paa_params;
-    vec<vec<float>> (*m_paa_func)(const vec<float> &, const iSaxPaaParams &);
+
+    /**
+     * @brief Get the PAA entries for all normalized subsequences of a UTS
+     * @param ts The time series
+     * @param paa_params The parameters for the PAA computation
+     * @return The PAA entries and their starting positions
+     */
+    vec<std::tuple<Paa, uint, uint>> get_paa_entries_normalized(const vec<float> &ts, const iSaxPaaParams &paa_params);
 };
 
 #endif  // PAA_HPP

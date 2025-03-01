@@ -22,5 +22,7 @@
     "search_ks": [1],
     "search_rs": [1.0],
     "search_approx": [false],
-    "search_raw": [false]
+    "search_raw": [false],
+    "dataset_seeds": [42],
+    "query_seeds": [42]
 }
