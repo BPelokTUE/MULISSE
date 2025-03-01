@@ -271,6 +271,7 @@ int main(int argc, char **argv) {
                     DEFAULT_NUM_BIT_LIMIT,
                     true,  // min_num_bits_on_tie,
                 };
+                break;
             case SEQUENTIAL_SCAN:
                 std::cerr << "Sequential scan does not require indexation\n";
                 return 1;

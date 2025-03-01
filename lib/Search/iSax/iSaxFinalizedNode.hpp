@@ -216,6 +216,8 @@ class iSaxFinalizedInternal : public iSaxFinalizedNode<FTag> {
 };
 
 // Required for Cereal (de)serialization
+CEREAL_REGISTER_TYPE(iSaxFinalizedInternal<PaaTag>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<PaaTag>, iSaxFinalizedInternal<PaaTag>)
 CEREAL_REGISTER_TYPE(iSaxFinalizedInternal<EnvelopeTag>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<EnvelopeTag>, iSaxFinalizedInternal<EnvelopeTag>)
 
@@ -261,6 +263,8 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode<T> {
 };
 
 // Required for Cereal (de)serialization
+CEREAL_REGISTER_TYPE(iSaxFinalizedLeaf<PaaTag>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<PaaTag>, iSaxFinalizedLeaf<PaaTag>)
 CEREAL_REGISTER_TYPE(iSaxFinalizedLeaf<EnvelopeTag>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<EnvelopeTag>, iSaxFinalizedLeaf<EnvelopeTag>)
 

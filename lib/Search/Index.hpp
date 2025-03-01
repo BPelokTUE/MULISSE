@@ -6,7 +6,6 @@
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
 
-#include "Util/typedefs.hpp"
 #include "Search/SearchMethod.hpp"
 #include "Search/Options/IndexOptions.hpp"
 #include "Search/Options/SearchOptions.hpp"
@@ -14,6 +13,8 @@
 #include "Summarization/Envelope.hpp"
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/Paa.hpp"
+#include "Util/typedefs.hpp"
+#include "Util/Logger.hpp"
 
 template <typename T>
 struct iSaxIndexTraits;
@@ -128,12 +129,15 @@ class IIndex {
 
     void construct(const str &dataset_path, IEntryGenerator<T> *generator, MtsNumChannelsT num_channels,
                    uint series_len) {
+        auto &logger = IndexLogger::get_instance();
+
         uint N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(float),
              series_size = channel_size * num_channels;
         uint num_series = N / series_size;
 
         vec<IndexEntry<T>> dataset_entries;
 
+        logger.start_timer(ISC::SUMMARIZATION_TIME_S);
 #ifndef DISABLE_PARALLELISM
 #pragma omp parallel
 #endif
@@ -157,10 +161,11 @@ class IIndex {
                 }
             }
         }
+        logger.stop_timer(ISC::SUMMARIZATION_TIME_S);
 
-        // TODO: adapt stuff based on entries, e.g. change breakpoint distribution mean
-
+        logger.start_timer(ISC::INSERTION_TIME_S);
         for (auto &entry : dataset_entries) insert(std::move(entry));
+        logger.stop_timer(ISC::INSERTION_TIME_S);
     }
 
     /**

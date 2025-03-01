@@ -70,12 +70,15 @@ enum class IndexSettingsColumn {
     NUM_LEAVES,            // Number of leaves in the index
     NUM_NODES,             // Number of nodes in the index, excluding the root
     INDEXING_TIME_S,       // Time taken to index the dataset in seconds
+    SUMMARIZATION_TIME_S,  // Time taken to summarize the subsequences in the dataset in seconds
+    INSERTION_TIME_S,      // Time taken to insert the subsequence summaries into the index in seconds
     FFT_CALC_TIME_S,       // Time taken to calculate the FFTs in seconds
 };
 
 using ISC = IndexSettingsColumn;
 
-const vec<ISC> INDEX_TIME_COLUMNS = {ISC::INDEXING_TIME_S, ISC::FFT_CALC_TIME_S};
+const vec<ISC> INDEX_TIME_COLUMNS = {ISC::INDEXING_TIME_S, ISC::SUMMARIZATION_TIME_S, ISC::INSERTION_TIME_S,
+                                     ISC::FFT_CALC_TIME_S};
 
 const vec<ISC> INDEX_COUNT_COLUMNS = {ISC::NUM_LEAVES, ISC::NUM_NODES};
 

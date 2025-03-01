@@ -173,12 +173,18 @@ class ExperimentResults(BaseModel):
             qc_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.ID))
             ssc_search_method = get_merged_col_name(ERD.METHODS_COLS, str(SSC.SEARCH_METHOD))
 
-            # Handle the fact that iSAX counts one series for each envelope examined
+            # MULISSE counts one examined series per envelope, iSAX counts one per subsequence
+            isc_l_max = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MAX))
+            merged_df["num_start"] = merged_df[dsc_series_length] - merged_df[isc_l_min] + merged_df[isc_pos_per_env]
+            merged_df["l_range"] = merged_df[isc_l_max] - merged_df[isc_l_min] + 1
+            merged_df["num_subs"] = merged_df["l_range"] * (
+                (merged_df[dsc_series_length] - merged_df[isc_l_max] + 1) + (merged_df["l_range"] - 1) / 2
+            )
+
             merged_df["num_series_multiplier"] = np.where(
-                merged_df[ssc_search_method].str.contains("isax"),
-                (merged_df[dsc_series_length] - merged_df[isc_l_min] + merged_df[isc_pos_per_env])
-                // merged_df[isc_pos_per_env],
-                1.0,
+                merged_df[ssc_search_method].str.contains("isax_envelope"),
+                merged_df["num_start"] // merged_df[isc_pos_per_env],
+                np.where(merged_df[ssc_search_method].str.contains("isax"), merged_df["num_subs"], 1.0),
             )
             merged_df[str(QC.PRUNING_RATIO)] = 1.0 - merged_df[qc_num_ts_examined] / (
                 merged_df[dsc_num_series] * merged_df["num_series_multiplier"]
@@ -213,40 +219,41 @@ class ExperimentResults(BaseModel):
                 how="left",
             )
 
-        if os.path.exists(os.path.join(self.logs_dir, INDEXES_CSV)):
-            isc_dataset_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.DATASET_FILE))
+        if os.path.exists(os.path.join(self.logs_dir, METHODS_CSV)):
+            ssc_dataset_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.DATASET_FILE))
 
             merged_df = merged_df.merge(
-                rename_df_columns(self.indexes_df, ERD.INDEXES_COLS),
+                rename_df_columns(self.methods_df, ERD.METHODS_COLS),
                 left_on=dsc_dataset_file,
-                right_on=isc_dataset_file,
+                right_on=ssc_dataset_file,
                 how="left",
             )
-            columns_to_drop.append(isc_dataset_file)
+            columns_to_drop.append(ssc_dataset_file)
 
-            if os.path.exists(os.path.join(self.logs_dir, METHODS_CSV)):
-                isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
-                ssc_dataset_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.DATASET_FILE))
+            if os.path.exists(os.path.join(self.logs_dir, INDEXES_CSV)):
                 ssc_index_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.INDEX_FILE))
+                isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
+                isc_dataset_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.DATASET_FILE))
 
                 merged_df = merged_df.merge(
-                    rename_df_columns(self.methods_df, ERD.METHODS_COLS),
-                    left_on=[dsc_dataset_file, isc_index_file],
-                    right_on=[ssc_dataset_file, ssc_index_file],
+                    rename_df_columns(self.indexes_df, ERD.INDEXES_COLS),
+                    left_on=ssc_index_file,
+                    right_on=isc_index_file,
+                    how="outer",
+                )
+                columns_to_drop.extend([ssc_index_file, isc_dataset_file])
+
+            if os.path.exists(os.path.join(self.logs_dir, RUNS_CSV)):
+                qc_settings_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.SETTINGS_ID))
+                qc_id = get_merged_col_name(ERD.METHODS_COLS, str(SSC.ID))
+
+                merged_df = merged_df.merge(
+                    rename_df_columns(self.runs_df, ERD.RUNS_COLS),
+                    left_on=qc_id,
+                    right_on=qc_settings_id,
                     how="left",
                 )
-                columns_to_drop.extend([ssc_dataset_file, ssc_index_file])
-                if os.path.exists(os.path.join(self.logs_dir, RUNS_CSV)):
-                    qc_settings_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.SETTINGS_ID))
-                    qc_id = get_merged_col_name(ERD.METHODS_COLS, str(SSC.ID))
-
-                    merged_df = merged_df.merge(
-                        rename_df_columns(self.runs_df, ERD.RUNS_COLS),
-                        left_on=qc_id,
-                        right_on=qc_settings_id,
-                        how="left",
-                    )
-                    columns_to_drop.append(qc_id)
+                columns_to_drop.append(qc_id)
 
         if os.path.exists(os.path.join(self.logs_dir, QUERY_STATS_CSV)):
             qstc_dataset_file = get_merged_col_name(ERD.QUERY_STATS_COLS, str(QSTC.DATASET_FILE))
@@ -374,14 +381,20 @@ def plot_bars(
     x_start = bar_width / 2
     x_ticks = []
     x_tick_labels = []
+    seen_labels = set()
+
     for i, (bar_group_key, bars) in enumerate(bar_groups.items()):
         values = [bar[1] for bar in bars]
         colors = [color_map[bar[0]] for bar in bars]
         x = np.arange(0, len(bars)) * bar_width + x_start
 
-        labels = None
-        if i == 0:
-            labels = [label_map[bar[0]] for bar in bars]
+        labels = []
+        for bar in bars:
+            label = label_map[bar[0]]
+            if label not in seen_labels:
+                seen_labels.add(label)
+                labels.append(label)
+        labels = labels if len(labels) > 0 else None
         ax.bar(x, values, bar_width, align="edge", color=colors, edgecolor="black", label=labels)
 
         x_ticks.append(x_start + len(bars) * bar_width / 2)
@@ -407,18 +420,33 @@ Misc. helpers
 # %%
 METHOD_COLORS = {
     "sequential_scan-ed": PALETTE["Greens"][1],
+    "sequential_scan-ed-early": PALETTE["Greens"][4],
     "sequential_scan-mass-ffts": PALETTE["Oranges"][2],
     "isax_envelope-ed-early": PALETTE["Blues"][4],
     "isax_envelope-mass": PALETTE["Blues"][2],
     "isax_envelope-mass-ffts": PALETTE["Blues"][1],
+    "isax-ed-early": PALETTE["Reds"][4],
+    "isax-mass": PALETTE["Reds"][2],
+    "isax-mass-ffts": PALETTE["Reds"][1],
 }
 METHOD_LABELS = {
     "sequential_scan-ed": "BF",
+    "sequential_scan-ed-early": "EAb",
     "sequential_scan-mass-ffts": "MASS",
-    "isax_envelope-ed-early": "MULISSE (ED)",
+    "isax_envelope-ed": "MULISSE (ED)",
+    "isax_envelope-ed-early": "MULISSE (ED - EAb)",
     "isax_envelope-mass": "MULISSE (MASS - no pre.)",
     "isax_envelope-mass-ffts": "MULISSE (MASS)",
+    "isax-ed-early": "iSAX (ED)",
+    "isax-mass": "iSAX (MASS - no pre.)",
+    "isax-mass-ffts": "iSAX (MASS)",
 }
+DATASET_ORDER = [
+    "weather",
+    "stocks",
+    "random_walk",
+    "synthetic",
+]
 
 
 def remove_index_name(method_name: str, index_prefix: str = "index") -> str:
@@ -492,13 +520,6 @@ def experiment_num_channels_and_dataset(target_col: str, y_label: str, y_scale: 
         "isax_envelope-ed-early",
         "isax_envelope-mass-ffts",
     ]
-    dataset_order = [
-        "weather",
-        "stocks",
-        "random_walk",
-        "synthetic",
-    ]
-
     mean_values_to_show = [entry for entry in mean_values if entry[0][2] in methods_to_show]
     mean_values_to_show = [
         ([num_channels, dataset.split("/", 1)[0], method], value)
@@ -508,7 +529,7 @@ def experiment_num_channels_and_dataset(target_col: str, y_label: str, y_scale: 
         (num_channels, dataset): f"{dataset}\nC = {num_channels}"
         for (num_channels, dataset, _), _ in mean_values_to_show
     }
-    mean_values_to_show.sort(key=lambda x: (dataset_order.index(x[0][1]), x[0][0], methods_to_show.index(x[0][2])))
+    mean_values_to_show.sort(key=lambda x: (DATASET_ORDER.index(x[0][1]), x[0][0], methods_to_show.index(x[0][2])))
 
     plot_bars(mean_values_to_show, 2, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, scale=y_scale)
 
@@ -620,12 +641,7 @@ def experiment_relative_contrast(
     if datasets_to_show is not None:
         mean_values = [entry for entry in mean_values if entry[0][0] in datasets_to_show]
 
-    dataset_order = [
-        "weather",
-        "stocks",
-        "synthetic",
-    ]
-    mean_values.sort(key=lambda x: (x[0][1], dataset_order.index(x[0][0]), x[0][2]))
+    mean_values.sort(key=lambda x: (x[0][1], DATASET_ORDER.index(x[0][0]), x[0][2]))
     x_labels = {
         (dataset, num_channels, sd): f"{dataset}\nC={num_channels}\nStep={sd}"
         for (dataset, num_channels, sd, _), _ in mean_values
@@ -653,5 +669,43 @@ experiment_relative_contrast(
 experiment_relative_contrast(str(QSTC.MAX_DIST), "Maximum distance to query", query_noise_levels=[0.1, 0.5, 1.0])
 experiment_relative_contrast(str(QSTC.MIN_DIST), "Minimum distance to query", query_noise_levels=[0.1, 0.5, 1.0])
 experiment_relative_contrast(str(QSTC.MEAN_DIST), "Mean distance to query", query_noise_levels=[0.1, 0.5, 1.0])
+
+# %%[markdown]
+"""
+Experiment: Comparison of iSAX+Envelope, pure iSAX and pure Envelope
+"""
+
+# %%
+
+
+def experiment_pure_methods(target_col, y_label, logs_dir="LOGS"):
+    columns = {
+        str(ERD.DATASETS_COLS): [str(DSC.DATASET_FILE)],
+        str(ERD.INDEXES_COLS): [str(ISC.FIRST_LAYER_NUM_BITS)],
+        str(ERD.METHODS_COLS): [str(SSC.METHOD_NAME)],
+        str(ERD.RUNS_COLS): [str(QC.TOTAL_TIME_S), str(QC.PRUNING_RATIO)],
+    }
+    results = ExperimentResults.load(logs_dir=logs_dir, **columns)
+    targets = [(ERD.RUNS_COLS, target_col, MeanReducer())]
+    groups = [
+        (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
+        (ERD.INDEXES_COLS, str(ISC.FIRST_LAYER_NUM_BITS)),
+        (ERD.METHODS_COLS, str(SSC.METHOD_NAME)),
+    ]
+    reduction_result = execute_reduction([results], targets, groups)
+    mean_values = reduction_result[get_merged_col_name(ERD.RUNS_COLS, target_col)]
+    mean_values = remove_index_name_from_reduction_result(mean_values, 2)
+    mean_values = [
+        ([dataset.split("/", 1)[0], num_bits, method], value) for (dataset, num_bits, method), value in mean_values
+    ]
+    mean_values.sort(key=lambda x: (DATASET_ORDER.index(x[0][0]), x[0][2], x[0][1]))
+    x_labels = {(dataset, num_bits): f"{dataset}\n{num_bits} bits" for (dataset, num_bits, _), _ in mean_values}
+    plot_bars(mean_values, 2, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, scale="log")
+
+
+# %%
+
+experiment_pure_methods(str(QC.TOTAL_TIME_S), "Total time (S)")
+experiment_pure_methods(str(QC.PRUNING_RATIO), "Pruning ratio")
 
 # %%

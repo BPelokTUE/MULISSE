@@ -52,7 +52,7 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, SubsequenceInf
                 }
             }
             result_set->insert(
-                {{subs_info.series_ind, subs_info.start_pos + start_pos, subs_info.length}, dist_squared});
+                {{subs_info.series_ind, subs_info.start_pos + start_pos, subs_info.length - start_pos}, dist_squared});
             updated = true;
         start_pos_it_end:;
             int end_pos = start_pos + query_len;
