@@ -44,6 +44,11 @@ struct Paa : EntryData {
     void resize(size_t new_size) override;
 
     vec<float> get_isax_input() const override;
+
+    template <class Archive>
+    void serialize(Archive &ar) {
+        ar(paa_values);
+    }
 };
 
 /** @brief PAA generator for iSAX index */

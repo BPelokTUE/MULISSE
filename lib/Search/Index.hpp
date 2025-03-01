@@ -17,15 +17,15 @@
 #include "Util/Logger.hpp"
 
 template <typename T>
-struct iSaxIndexTraits;
+struct IndexTraits;
 
 template <>
-struct iSaxIndexTraits<Paa> {
+struct IndexTraits<Paa> {
     using FinalizedTag = PaaTag;
 };
 
 template <>
-struct iSaxIndexTraits<Envelope> {
+struct IndexTraits<Envelope> {
     using FinalizedTag = EnvelopeTag;
 };
 
@@ -38,7 +38,6 @@ class IFinalizedIndex : public ISearchMethod {
 
     /**
      * @brief Save the index into a file
-     *
      * @param ofs Output file stream
      * @param ar_type Archive type
      */
@@ -46,7 +45,6 @@ class IFinalizedIndex : public ISearchMethod {
 
     /**
      * @brief Load the index from a file
-     *
      * @param ifs Input file stream
      * @param ar_type Archive type
      */
@@ -54,7 +52,6 @@ class IFinalizedIndex : public ISearchMethod {
 
     /**
      * @brief Get the length of the series in the index
-     *
      * @return The length of the series
      */
     uint get_series_len() const { return m_series_len; }
@@ -66,7 +63,6 @@ class IFinalizedIndex : public ISearchMethod {
 
 /**
  * @brief Macro to serializable / deserialize. Not intended to be used directly, but through MAKE_SERIALIZABLE.
- *
  * @param archive_type Archive type, should be an ArchiveType enum value
  * @param stream Stream to serialize / deserialize to / from, should be an std::ofstream or std::ifstream
  * @param operation Operation to perform on the archive, should be a function that takes an archive as an argument
@@ -93,7 +89,6 @@ class IFinalizedIndex : public ISearchMethod {
 /**
  * @brief Macro to make a class (de)serializable. Intended to be used in classes that inherit from
  * IFinalizedIndex.
- *
  * @param members Members of the class to be serialized
  */
 #define MAKE_SERIALIZABLE(members)                                    \
@@ -122,7 +117,7 @@ class IFinalizedIndex : public ISearchMethod {
 template <typename T>
     requires DerivedFromEntryData<T>
 class IIndex {
-    using FTag = typename iSaxIndexTraits<T>::FinalizedTag;
+    using FTag = typename IndexTraits<T>::FinalizedTag;
 
    public:
     virtual ~IIndex() = default;
@@ -180,7 +175,6 @@ class IIndex {
    private:
     /**
      * @brief Insert an entry into the index
-     *
      * @param entry The entry to insert
      */
     virtual void insert(const IndexEntry<T> &entry) = 0;

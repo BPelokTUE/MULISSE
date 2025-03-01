@@ -24,7 +24,7 @@ struct SaxSymbolsHash {
 template <typename T>
     requires DerivedFromEntryData<T>
 class iSaxIndex : public IIndex<T> {
-    using FTag = typename iSaxIndexTraits<T>::FinalizedTag;
+    using FTag = typename IndexTraits<T>::FinalizedTag;
     using SymbolType = typename SaxTraits<FTag>::SymbolType;
 
    public:
@@ -235,7 +235,7 @@ class iSaxIndex : public IIndex<T> {
 
 // iSaxPaaIndex
 class iSaxPaaIndex : public iSaxIndex<Paa> {
-    using FTagPaa = typename iSaxIndexTraits<Paa>::FinalizedTag;
+    using FTagPaa = typename IndexTraits<Paa>::FinalizedTag;
     using SymbolTypePaa = typename SaxTraits<FTagPaa>::SymbolType;
 
     std::pair<uptr<iSaxFinalizedNode<FTagPaa>>, vec<vec<SymbolTypePaa>>> finalize_first_layer_node(
@@ -249,7 +249,7 @@ class iSaxPaaIndex : public iSaxIndex<Paa> {
 
 // iSaxEnvelopeIndex
 class iSaxEnvelopeIndex : public iSaxIndex<Envelope> {
-    using FTagEnv = typename iSaxIndexTraits<Envelope>::FinalizedTag;
+    using FTagEnv = typename IndexTraits<Envelope>::FinalizedTag;
     using SymbolTypeEnv = typename SaxTraits<FTagEnv>::SymbolType;
 
     std::pair<uptr<iSaxFinalizedNode<FTagEnv>>, vec<vec<SymbolTypeEnv>>> finalize_first_layer_node(

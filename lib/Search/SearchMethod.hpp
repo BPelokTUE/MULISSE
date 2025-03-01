@@ -12,7 +12,6 @@ class ISearchMethod {
 
     /**
      * @brief Search for multivariate subsequence
-     *
      * @param query Multivariate subsequence to search for
      * @param search_options Search options
      * @param dataset_ifs Input file stream for the dataset

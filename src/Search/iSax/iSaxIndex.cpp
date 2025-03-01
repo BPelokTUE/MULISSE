@@ -23,7 +23,7 @@ std::size_t SaxSymbolsHash::operator()(const vec<vec<SaxSymbolT>> &symbols) cons
 
 // iSaxPaaIndex
 
-using FTagPaa = typename iSaxIndexTraits<Paa>::FinalizedTag;
+using FTagPaa = typename IndexTraits<Paa>::FinalizedTag;
 using SymbolTypePaa = typename SaxTraits<FTagPaa>::SymbolType;
 
 std::pair<uptr<iSaxFinalizedNode<FTagPaa>>, vec<vec<SymbolTypePaa>>> iSaxPaaIndex::finalize_first_layer_node(
@@ -46,7 +46,7 @@ iSaxPaaIndex::iSaxPaaIndex(uptr<SeriesISaxProperties> series_isax_prop, SaxNumBi
 
 // iSaxEnvelopeIndex
 
-using FTagEnv = typename iSaxIndexTraits<Envelope>::FinalizedTag;
+using FTagEnv = typename IndexTraits<Envelope>::FinalizedTag;
 using SymbolTypeEnv = typename SaxTraits<FTagEnv>::SymbolType;
 
 std::pair<uptr<iSaxFinalizedNode<FTagEnv>>, vec<vec<SymbolTypeEnv>>> iSaxEnvelopeIndex::finalize_first_layer_node(

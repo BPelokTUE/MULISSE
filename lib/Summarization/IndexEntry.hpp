@@ -37,6 +37,11 @@ struct IndexEntry {
     SubsequenceInfo subsequence_info;
     /** @brief Multivariate time series summary */
     vec<T> mts_summary;
+
+    template <class Archive>
+    void serialize(Archive &ar) {
+        ar(subsequence_info, mts_summary);
+    }
 };
 
 /**

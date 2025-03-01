@@ -67,14 +67,14 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION(SeriesISaxProperties, SeriesISaxEnvelopePro
 
 template <typename FTag>
     requires ValidSaxTraitsTag<FTag>
-struct PQueueEntry {
+struct PQueueISaxEntry {
     using iSaxType = typename SaxTraits<FTag>::iSaxType;
 
     DistanceT min_dist_squared;
     vec<iSaxType> isax_words;
     const iSaxFinalizedNode<FTag>* node;
 
-    bool operator<(const PQueueEntry& other) const { return min_dist_squared > other.min_dist_squared; }
+    bool operator<(const PQueueISaxEntry& other) const { return min_dist_squared > other.min_dist_squared; }
 };
 
 template <typename FTag>
@@ -135,7 +135,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
 
         auto& logger = QueryLogger::get_instance();
 
-        std::priority_queue<PQueueEntry<FTag>> pq;
+        std::priority_queue<PQueueISaxEntry<FTag>> pq;
 
         vec<vec<float>> query_paa(num_channels);
         size_t query_len = 0;
@@ -153,8 +153,8 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
             DistanceT min_dist_squared = 0;
             vec<iSaxType> isax_words(num_channels);
 
-            for (size_t c = 0; c < num_channels; ++c) {
-                for (size_t s = 0; s < query_paa[c].size(); ++s) {
+            for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+                for (SaxSegIndT s = 0; s < query_paa[c].size(); ++s) {
                     auto [lower, upper] = get_segment_limits(m_first_layer_num_bits, m_first_layer_symbols[i][c][s]);
                     min_dist_squared += distance_measure->min_dist_squared(query_paa[c][s], lower, upper);
                 }
