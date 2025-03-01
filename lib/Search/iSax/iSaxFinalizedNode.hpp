@@ -196,7 +196,7 @@ class iSaxFinalizedInternal : public iSaxFinalizedNode<FTag> {
 
     virtual SaxSplitIndex get_split_ind() const override { return m_args->split_ind; }
 
-    virtual vec<SubsequenceInfo> get_subsequence_positions() const override { return {}; }
+    virtual vec<SubsequenceInfo> get_subsequence_infos() const override { return {}; }
 
     virtual bool is_leaf() const override { return false; }
 
@@ -241,7 +241,7 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode<T> {
 
     virtual SaxSplitIndex get_split_ind() const override { return {0, 0}; }
 
-    virtual vec<SubsequenceInfo> get_subsequence_positions() const override { return m_subsequence_positions; }
+    virtual vec<SubsequenceInfo> get_subsequence_infos() const override { return m_subsequence_positions; }
 
     virtual bool is_leaf() const override { return true; }
 

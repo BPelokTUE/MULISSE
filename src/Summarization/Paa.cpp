@@ -20,9 +20,15 @@ vec<float> paa(const vec<float> &ts, uint segment_len) {
 
 Paa::Paa(const vec<float> &paa_values) : paa_values(paa_values) {}
 
+size_t Paa::size() const { return paa_values.size(); }
+
+void Paa::resize(size_t new_size) { paa_values.resize(new_size); }
+
+vec<float> Paa::get_isax_input() const { return paa_values; }
+
 vec<std::tuple<Paa, uint, uint>> iSaxPaaGenerator::get_paa_entries_normalized(const vec<float> &ts,
                                                                               const iSaxPaaParams &paa_params) {
-    vec<std::tuple<Paa, uint, uint>> paas_and_starts;
+    vec<std::tuple<Paa, uint, uint>> entries;
 
     float sum = 0, sum_sq = 0;
     for (int last_ind = 0; last_ind < ts.size(); ++last_ind) {
@@ -46,14 +52,14 @@ vec<std::tuple<Paa, uint, uint>> iSaxPaaGenerator::get_paa_entries_normalized(co
             for (int i = 0; i < subs_len; ++i) subsequence[i] = (ts[start_ind + i] - mu) / sigma;
             vec<float> paa_values = paa(subsequence, paa_params.segment_len);
 
-            paas_and_starts.push_back(
+            entries.push_back(
                 std::make_tuple(Paa(paa_values), static_cast<uint>(start_ind), static_cast<uint>(subs_len)));
 
             tmp_sum -= ts[start_ind];
             tmp_sum_sq -= ts[start_ind] * ts[start_ind];
         }
     }
-    return paas_and_starts;
+    return entries;
 }
 
 iSaxPaaGenerator::iSaxPaaGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params)
@@ -68,8 +74,8 @@ vec<IndexEntry<Paa>> iSaxPaaGenerator::get_entries(const vec<vec<float>> &mts, u
         for (uint i = 0; i < channel_items.size(); ++i) {
             if (c == 0) {
                 entries.push_back(IndexEntry<Paa>{});
-                entries.back().subsequence_position = {series_ind, std::get<1>(channel_items[i]),
-                                                       std::get<2>(channel_items[i])};
+                entries.back().subsequence_info = {series_ind, std::get<1>(channel_items[i]),
+                                                   std::get<2>(channel_items[i])};
                 entries.back().mts_summary.resize(m_num_channels);
             }
             entries[i].mts_summary[c] = std::move(std::get<0>(channel_items[i]));

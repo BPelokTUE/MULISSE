@@ -197,8 +197,8 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
                     pq.push({min_dist_squared + segment_len * (dist - prev_dist), right_isax_words, right});
                 }
             } else {
-                vec<SubsequenceInfo> subsequence_positions = node->get_subsequence_positions();
-                for (SubsequenceInfo subs_info : subsequence_positions) {
+                vec<SubsequenceInfo> subsequence_infos = node->get_subsequence_infos();
+                for (SubsequenceInfo subs_info : subsequence_infos) {
                     size_t data_remaining = series_len - subs_info.start_pos;
 
                     if (data_remaining < query_len) continue;

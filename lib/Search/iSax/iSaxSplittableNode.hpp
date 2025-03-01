@@ -96,7 +96,7 @@ class iSaxSplittableInternal : public iSaxSplittableNode<T> {
 
     SaxSplitIndex get_split_ind() const override { return m_split_ind; }
 
-    vec<SubsequenceInfo> get_subsequence_positions() const override { return {}; }
+    vec<SubsequenceInfo> get_subsequence_infos() const override { return {}; }
 
     bool is_leaf() const override { return false; }
 
@@ -135,7 +135,7 @@ class iSaxSplittableLeaf : public iSaxSplittableNode<T> {
 
     SaxSplitIndex get_split_ind() const override { return {0, 0}; }
 
-    vec<SubsequenceInfo> get_subsequence_positions() const override { return m_subsequence_positions; }
+    vec<SubsequenceInfo> get_subsequence_infos() const override { return m_subsequence_positions; }
 
     bool is_leaf() const override { return true; }
 

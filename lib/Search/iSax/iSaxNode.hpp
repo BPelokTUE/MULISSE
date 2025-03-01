@@ -13,7 +13,7 @@ class iSaxNode {
      *
      * @return Vector of subsequence positions
      */
-    virtual vec<SubsequenceInfo> get_subsequence_positions() const = 0;
+    virtual vec<SubsequenceInfo> get_subsequence_infos() const = 0;
 
     /**
      * @brief Get the segment and channel index to split the node on if any

@@ -119,7 +119,7 @@ vec<IndexEntry<Envelope>> iSaxEnvelopeGenerator::get_entries(const vec<vec<float
             uint length = std::min(series_len + m_uli_params.pos_per_env - 1, series_len - start_pos);
 
             if (c == 0) {
-                entries[i].subsequence_position = {series_ind, start_pos, length};
+                entries[i].subsequence_info = {series_ind, start_pos, length};
                 entries[i].mts_summary.resize(m_num_channels);
             }
             entries[i].mts_summary[c] = std::move(channel_envs[i]);

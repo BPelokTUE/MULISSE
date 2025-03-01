@@ -20,7 +20,7 @@ TEST_CASE("iSAX leaf finalization works") {
     auto isax_max = std::move(finalization_result->isax_max);
 
     REQUIRE(finalized->is_leaf());
-    REQUIRE(finalized->get_subsequence_positions() == subsequence_positions);
+    REQUIRE(finalized->get_subsequence_infos() == subsequence_positions);
     REQUIRE(isax_max.size() == 2);
     REQUIRE(isax_max[0] == iSaxWord({4, 6}, num_bits, 3));
     REQUIRE(isax_max[1] == iSaxWord({2, 5}, num_bits, 3));

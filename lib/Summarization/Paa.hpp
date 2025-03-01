@@ -39,7 +39,11 @@ struct Paa : EntryData {
 
     Paa() = default;
 
-    vec<float> get_isax_input() const override { return paa_values; }
+    size_t size() const override;
+
+    void resize(size_t new_size) override;
+
+    vec<float> get_isax_input() const override;
 };
 
 /** @brief PAA generator for iSAX index */

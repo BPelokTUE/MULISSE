@@ -60,7 +60,7 @@ class iSaxIndex : public IIndex<T> {
 
     void insert(const IndexEntry<T> &entry) override {
         const vec<T> &mts_summary = entry.mts_summary;
-        SubsequenceInfo file_pos = entry.subsequence_position;
+        SubsequenceInfo file_pos = entry.subsequence_info;
 
         MtsNumChannelsT num_channels = m_series_isax_prop->num_channels;
         SaxSegIndT num_seg_per_channel = m_series_isax_prop->num_seg_per_channel;
