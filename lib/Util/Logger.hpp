@@ -69,6 +69,7 @@ enum class IndexSettingsColumn {
     NUM_BITS_LIMIT,        // Maximum number of bits per segment for iSAX indexes
     NUM_LEAVES,            // Number of leaves in the index
     NUM_NODES,             // Number of nodes in the index, excluding the root
+    NUM_ENTRIES,           // Number of entries in the index
     INDEXING_TIME_S,       // Time taken to index the dataset in seconds
     SUMMARIZATION_TIME_S,  // Time taken to summarize the subsequences in the dataset in seconds
     INSERTION_TIME_S,      // Time taken to insert the subsequence summaries into the index in seconds
@@ -80,7 +81,7 @@ using ISC = IndexSettingsColumn;
 const vec<ISC> INDEX_TIME_COLUMNS = {ISC::INDEXING_TIME_S, ISC::SUMMARIZATION_TIME_S, ISC::INSERTION_TIME_S,
                                      ISC::FFT_CALC_TIME_S};
 
-const vec<ISC> INDEX_COUNT_COLUMNS = {ISC::NUM_LEAVES, ISC::NUM_NODES};
+const vec<ISC> INDEX_COUNT_COLUMNS = {ISC::NUM_LEAVES, ISC::NUM_NODES, ISC::NUM_ENTRIES};
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(IndexSettingsColumn, INDEX_SETTINGS_COL, false);
 
@@ -117,7 +118,7 @@ enum class QueryColumn {
     RESULT_SET_DISTANCES,     // The distances of the entries of the result set from the query, separated by ITEM_SEP
     NUM_LEAVES_VISITED,       // Number of leaves visited during the search
     NUM_NODES_VISITED,        // Number of nodes visited during the search
-    NUM_TS_EXAMINED,          // Number of time series examined during the search
+    NUM_ENTRIES_EXAMINED,     // Number of index entries examined during the search
     TOTAL_TIME_S,             // Total time taken by the search in seconds
     FIRST_LAYER_TIME_S,       // Time taken to process the first layer in the search in seconds
     TREE_TRAVERSAL_TIME_S,    // Time taken to traverse the tree in seconds
@@ -131,7 +132,7 @@ using QC = QueryColumn;
 
 const vec<QC> QUERY_TIME_COLUMNS = {QC::TOTAL_TIME_S, QC::FIRST_LAYER_TIME_S, QC::TREE_TRAVERSAL_TIME_S, QC::IO_TIME_S,
                                     QC::TS_EXAMINATION_TIME_S},
-              QUERY_COUNT_COLUMNS = {QC::NUM_LEAVES_VISITED, QC::NUM_NODES_VISITED, QC::NUM_TS_EXAMINED},
+              QUERY_COUNT_COLUMNS = {QC::NUM_LEAVES_VISITED, QC::NUM_NODES_VISITED, QC::NUM_ENTRIES_EXAMINED},
               QUERY_COLLECTION_COLUMNS = {QC::RESULT_SET_TS_INDICES, QC::RESULT_SET_TS_POSITIONS,
                                           QC::RESULT_SET_DISTANCES, QC::QUERY_CHANNELS},
               QUERY_NUMBER_COLUMNS = {QC::QUERY_ID, QC::QUERY_LENGTH};

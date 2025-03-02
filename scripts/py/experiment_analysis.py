@@ -136,7 +136,7 @@ class ExperimentResults(BaseModel):
             extra_datasets_cols += [str(DSC.NUM_SERIES), str(DSC.SERIES_LENGTH)]
             extra_indexes_cols += [str(ISC.L_MIN), str(ISC.POS_PER_ENV)]
             extra_methods_cols += [str(SSC.SEARCH_METHOD)]
-            extra_runs_cols += [str(QC.NUM_TS_EXAMINED), str(QC.ID)]
+            extra_runs_cols += [str(QC.NUM_ENTRIES_EXAMINED), str(QC.ID)]
             act_runs_cols.remove(str(QC.PRUNING_RATIO))
 
         extra_datasets_cols = list(set(extra_datasets_cols) - set(act_datasets_cols))
@@ -169,7 +169,7 @@ class ExperimentResults(BaseModel):
             dsc_series_length = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.SERIES_LENGTH))
             isc_l_min = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MIN))
             isc_pos_per_env = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.POS_PER_ENV))
-            qc_num_ts_examined = get_merged_col_name(ERD.RUNS_COLS, str(QC.NUM_TS_EXAMINED))
+            qc_num_ts_examined = get_merged_col_name(ERD.RUNS_COLS, str(QC.NUM_ENTRIES_EXAMINED))
             qc_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.ID))
             ssc_search_method = get_merged_col_name(ERD.METHODS_COLS, str(SSC.SEARCH_METHOD))
 
@@ -544,7 +544,7 @@ def experiment_num_channels_and_dataset(target_col: str, y_label: str, y_scale: 
 # %%
 
 experiment_num_channels_and_dataset(str(QC.TOTAL_TIME_S), "Total time (S)")
-experiment_num_channels_and_dataset(str(QC.NUM_TS_EXAMINED), "Number of TS examined")
+experiment_num_channels_and_dataset(str(QC.NUM_ENTRIES_EXAMINED), "Number of TS examined")
 experiment_num_channels_and_dataset(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear")
 
 # %%[markdown]

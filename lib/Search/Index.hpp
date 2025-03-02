@@ -158,6 +158,7 @@ class IIndex {
         }
         logger.stop_timer(ISC::SUMMARIZATION_TIME_S);
 
+        logger.increment_count_col(ISC::NUM_ENTRIES, dataset_entries.size());
         logger.start_timer(ISC::INSERTION_TIME_S);
         for (auto &entry : dataset_entries) insert(std::move(entry));
         logger.stop_timer(ISC::INSERTION_TIME_S);

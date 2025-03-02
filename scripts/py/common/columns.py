@@ -86,7 +86,7 @@ class QueryColumn(Enum):
     RESULT_SET_DISTANCES = auto()
     NUM_LEAVES_VISITED = auto()
     NUM_NODES_VISITED = auto()
-    NUM_TS_EXAMINED = auto()
+    NUM_ENTRIES_EXAMINED = auto()
     TOTAL_TIME_S = auto()
     FIRST_LAYER_TIME_S = auto()
     TREE_TRAVERSAL_TIME_S = auto()

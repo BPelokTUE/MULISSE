@@ -219,8 +219,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
                     distance_measure->update_result_set(result_set, subs_info, query, subsequence);
                     logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
 
-                    // TODO: Discuss how pruning ratio should be calculated when envs_per_ts > 1
-                    logger.increment_count_col(QC::NUM_TS_EXAMINED);
+                    logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED);
                 }
                 logger.increment_count_col(QC::NUM_LEAVES_VISITED);
             }
