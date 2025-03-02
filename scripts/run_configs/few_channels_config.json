@@ -8,7 +8,7 @@
     "l_range_ratios": [[0.762, 1.0]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
-    "search_methods": ["scan", "isax"],
+    "search_methods": ["scan", "isax_envelope"],
     "isax_split_strategies": ["em"],
     "isax_breakpoint_strategies": ["equiprobable"],
     "isax_leaf_capacities": [64],
