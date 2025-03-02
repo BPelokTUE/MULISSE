@@ -44,23 +44,11 @@ from scripts.py.common.utils import COLS_FOR_METHOD_NAME, define_method_name_col
 """
 
 # %%
-DATASETS_CSV = DSC.get_csv_name()
-QUERY_SETS_CSV = QSC.get_csv_name()
-INDEXES_CSV = ISC.get_csv_name()
-METHODS_CSV = SSC.get_csv_name()
-RUNS_CSV = QC.get_csv_name()
-QUERY_STATS_CSV = QSTC.get_csv_name()
-
-REQUIRED_DATASETS_COLS = [str(DSC.DATASET_FILE)]
-REQUIRED_QUERY_SET_COLS = [str(QSC.DATASET_FILE)]
-REQUIRED_INDEXES_COLS = [str(ISC.DATASET_FILE), str(ISC.INDEX_FILE)]
-REQUIRED_METHODS_COLS = [str(SSC.DATASET_FILE), str(SSC.INDEX_FILE), str(SSC.ID)]
-REQUIRED_RUNS_COLS = [str(QC.SETTINGS_ID)]
-REQUIRED_QUERY_STATS_COLS = [str(QSTC.DATASET_FILE)]
 
 
 class ExperimentResultDataframe(Enum):
     DATASETS_COLS = auto()
+    QUERY_SETS_COLS = auto()
     INDEXES_COLS = auto()
     METHODS_COLS = auto()
     RUNS_COLS = auto()
@@ -71,6 +59,23 @@ class ExperimentResultDataframe(Enum):
 
 
 ERD = ExperimentResultDataframe
+
+REQUIRED_COLS = {
+    ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
+    ERD.QUERY_SETS_COLS: [str(QSC.DATASET_FILE)],
+    ERD.INDEXES_COLS: [str(ISC.DATASET_FILE), str(ISC.INDEX_FILE)],
+    ERD.METHODS_COLS: [str(SSC.DATASET_FILE), str(SSC.INDEX_FILE), str(SSC.ID)],
+    ERD.RUNS_COLS: [str(QC.SETTINGS_ID)],
+    ERD.QUERY_STATS_COLS: [str(QSTC.DATASET_FILE)],
+}
+CSV_FILES = {
+    ERD.DATASETS_COLS: "dataset_settings.csv",
+    ERD.QUERY_SETS_COLS: "query_set_settings.csv",
+    ERD.INDEXES_COLS: "index_settings.csv",
+    ERD.METHODS_COLS: "search_settings.csv",
+    ERD.RUNS_COLS: "runs.csv",
+    ERD.QUERY_STATS_COLS: "query_stats.csv",
+}
 
 MERGED_COL_NAME_SEP = "::"
 
@@ -96,85 +101,42 @@ class ExperimentResults(BaseModel):
         arbitrary_types_allowed = True
 
     @classmethod
-    def load_csv_if_exists(cls, path: str) -> pd.DataFrame:
-        if os.path.exists(path):
-            return pd.read_csv(path)
-        return pd.DataFrame()
-
-    @classmethod
-    def load(
+    def add_extra_cols_for_pruning_ratio(
         cls,
         logs_dir: str,
-        datasets_cols: list[str] = [],
-        query_set_cols: list[str] = [],
-        indexes_cols: list[str] = [],
-        methods_cols: list[str] = [],
-        runs_cols: list[str] = [],
-        query_stats_cols: list[str] = [],
-    ):  # -> ExperimentResults:
-        act_datasets_cols = list(set(REQUIRED_DATASETS_COLS + datasets_cols))
-        act_query_set_cols = list(set(REQUIRED_QUERY_SET_COLS + query_set_cols))
-        act_indexes_cols = list(set(REQUIRED_INDEXES_COLS + indexes_cols))
-        act_methods_cols = list(set(REQUIRED_METHODS_COLS + methods_cols))
-        act_runs_cols = list(set(REQUIRED_RUNS_COLS + runs_cols))
-        act_query_stats_cols = list(set(REQUIRED_QUERY_STATS_COLS + query_stats_cols))
+        extra_cols: dict[ERD, list[str]],
+    ):
+        indexes_header = pd.read_csv(os.path.join(logs_dir, CSV_FILES[ERD.INDEXES_COLS]), nrows=0)
+        runs_header = pd.read_csv(os.path.join(logs_dir, CSV_FILES[ERD.RUNS_COLS]), nrows=0)
+        if str(ISC.NUM_ENTRIES) in indexes_header.columns and str(QC.NUM_ENTRIES_EXAMINED) in runs_header.columns:
+            extra_cols[ERD.INDEXES_COLS] += [str(ISC.NUM_ENTRIES)]
+            extra_cols[ERD.RUNS_COLS] += [str(QC.NUM_ENTRIES_EXAMINED), str(QC.ID)]
+        else:  # Handle case for backward compatibility
+            extra_cols[ERD.DATASETS_COLS] += [str(DSC.NUM_SERIES), str(DSC.SERIES_LENGTH)]
+            extra_cols[ERD.INDEXES_COLS] += [str(ISC.L_MIN), str(ISC.L_MAX), str(ISC.POS_PER_ENV)]
+            extra_cols[ERD.METHODS_COLS] += [str(SSC.SEARCH_METHOD)]
+            extra_cols[ERD.RUNS_COLS] += [str(QC.NUM_TS_EXAMINED), str(QC.ID)]
 
-        extra_datasets_cols = []
-        extra_query_set_cols = []
-        extra_indexes_cols = []
-        extra_methods_cols = []
-        extra_runs_cols = []
-        extra_query_stats_cols = []
+    def add_pruning_ratio_column(self):
+        merged_df = self.get_merged_df()
 
-        # Handle method name column
-        if str(SSC.METHOD_NAME) in methods_cols:
-            extra_methods_cols += [str(col) for col in COLS_FOR_METHOD_NAME]
-            act_methods_cols.remove(str(SSC.METHOD_NAME))
+        if str(ISC.NUM_ENTRIES) in self.indexes_df.columns and str(QC.NUM_ENTRIES_EXAMINED) in self.runs_df.columns:
+            isc_num_entries = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.NUM_ENTRIES))
+            qc_num_entries_examined = get_merged_col_name(ERD.RUNS_COLS, str(QC.NUM_ENTRIES_EXAMINED))
+            qc_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.ID))
 
-        # Handle pruning ratio column
-        if str(QC.PRUNING_RATIO) in runs_cols:
-            extra_datasets_cols += [str(DSC.NUM_SERIES), str(DSC.SERIES_LENGTH)]
-            extra_indexes_cols += [str(ISC.L_MIN), str(ISC.POS_PER_ENV)]
-            extra_methods_cols += [str(SSC.SEARCH_METHOD)]
-            extra_runs_cols += [str(QC.NUM_ENTRIES_EXAMINED), str(QC.ID)]
-            act_runs_cols.remove(str(QC.PRUNING_RATIO))
-
-        extra_datasets_cols = list(set(extra_datasets_cols) - set(act_datasets_cols))
-        extra_query_set_cols = list(set(extra_query_set_cols) - set(act_query_set_cols))
-        extra_indexes_cols = list(set(extra_indexes_cols) - set(act_indexes_cols))
-        extra_methods_cols = list(set(extra_methods_cols) - set(act_methods_cols))
-        extra_runs_cols = list(set(extra_runs_cols) - set(act_runs_cols))
-        extra_query_stats_cols = list(set(extra_query_stats_cols) - set(act_query_stats_cols))
-
-        results = cls(
-            logs_dir=logs_dir,
-            datasets_df=cls.load_csv_if_exists(os.path.join(logs_dir, DATASETS_CSV)),
-            query_sets_df=cls.load_csv_if_exists(os.path.join(logs_dir, QUERY_SETS_CSV)),
-            indexes_df=cls.load_csv_if_exists(os.path.join(logs_dir, INDEXES_CSV)),
-            methods_df=cls.load_csv_if_exists(os.path.join(logs_dir, METHODS_CSV)),
-            runs_df=cls.load_csv_if_exists(os.path.join(logs_dir, RUNS_CSV)),
-            query_stats_df=cls.load_csv_if_exists(os.path.join(logs_dir, QUERY_STATS_CSV)),
-        )
-
-        # Add method name column
-        if str(SSC.METHOD_NAME) in methods_cols:
-            act_methods_cols.append(str(SSC.METHOD_NAME))
-            results.methods_df = define_method_name_col(results.methods_df)
-
-        # Add pruning ratio column
-        if str(QC.PRUNING_RATIO) in runs_cols:
-            merged_df = results.get_merged_df()
-
+            merged_df[str(QC.PRUNING_RATIO)] = 1.0 - merged_df[qc_num_entries_examined] / merged_df[isc_num_entries]
+        else:  # Handle case for backward compatibility
             dsc_num_series = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.NUM_SERIES))
             dsc_series_length = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.SERIES_LENGTH))
             isc_l_min = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MIN))
+            isc_l_max = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MAX))
             isc_pos_per_env = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.POS_PER_ENV))
-            qc_num_ts_examined = get_merged_col_name(ERD.RUNS_COLS, str(QC.NUM_ENTRIES_EXAMINED))
+            qc_num_ts_examined = get_merged_col_name(ERD.RUNS_COLS, str(QC.NUM_TS_EXAMINED))
             qc_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.ID))
             ssc_search_method = get_merged_col_name(ERD.METHODS_COLS, str(SSC.SEARCH_METHOD))
 
             # MULISSE counts one examined series per envelope, iSAX counts one per subsequence
-            isc_l_max = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MAX))
             merged_df["num_start"] = merged_df[dsc_series_length] - merged_df[isc_l_min] + merged_df[isc_pos_per_env]
             merged_df["l_range"] = merged_df[isc_l_max] - merged_df[isc_l_min] + 1
             merged_df["num_subs"] = merged_df["l_range"] * (
@@ -189,18 +151,71 @@ class ExperimentResults(BaseModel):
             merged_df[str(QC.PRUNING_RATIO)] = 1.0 - merged_df[qc_num_ts_examined] / (
                 merged_df[dsc_num_series] * merged_df["num_series_multiplier"]
             )
-            merged_df = merged_df[[str(QC.PRUNING_RATIO), qc_id]]
-            results.runs_df = results.runs_df.merge(merged_df, left_on=str(QC.ID), right_on=qc_id, how="left")
+
+        merged_df = merged_df[[str(QC.PRUNING_RATIO), qc_id]]
+        self.runs_df = self.runs_df.merge(merged_df, left_on=str(QC.ID), right_on=qc_id, how="left")
+
+    @classmethod
+    def load_csv_if_exists(cls, path: str, cols: list[str]) -> pd.DataFrame:
+        if os.path.exists(path):
+            return pd.read_csv(path, usecols=cols)
+        return pd.DataFrame()
+
+    @classmethod
+    def load(
+        cls,
+        logs_dir: str,
+        cols: dict[ERD, list[str]],
+    ):  # -> ExperimentResults:
+        original_cols = cols.copy()
+        cols = {erd: cols[erd] if erd in cols else [] for erd in ERD}
+        act_cols = {erd: list(set(REQUIRED_COLS[erd] + cols[erd])) for erd in ERD}
+        extra_cols = {erd: [] for erd in ERD}
+
+        # Handle method name column
+        if str(SSC.METHOD_NAME) in cols[ERD.METHODS_COLS]:
+            extra_cols[ERD.METHODS_COLS] += [str(col) for col in COLS_FOR_METHOD_NAME]
+            act_cols[ERD.METHODS_COLS].remove(str(SSC.METHOD_NAME))
+
+        # Handle pruning ratio column
+        if str(QC.PRUNING_RATIO) in cols[ERD.RUNS_COLS]:
+            cls.add_extra_cols_for_pruning_ratio(logs_dir, extra_cols)
+            act_cols[ERD.RUNS_COLS].remove(str(QC.PRUNING_RATIO))
+
+        extra_cols = {erd: list(set(extra_cols[erd]) - set(act_cols[erd])) for erd in ERD}
+        cols_to_load = {erd: act_cols[erd] + extra_cols[erd] for erd in ERD}
+        csv_paths = {erd: os.path.join(logs_dir, CSV_FILES[erd]) for erd in ERD}
+        dfs = {erd: cls.load_csv_if_exists(csv_paths[erd], cols=cols_to_load[erd]) for erd in ERD}
+
+        results = cls(
+            logs_dir=logs_dir,
+            datasets_df=dfs[ERD.DATASETS_COLS],
+            query_sets_df=dfs[ERD.QUERY_SETS_COLS],
+            indexes_df=dfs[ERD.INDEXES_COLS],
+            methods_df=dfs[ERD.METHODS_COLS],
+            runs_df=dfs[ERD.RUNS_COLS],
+            query_stats_df=dfs[ERD.QUERY_STATS_COLS],
+        )
+
+        # Add method name column
+        if str(SSC.METHOD_NAME) in cols[ERD.METHODS_COLS]:
+            act_cols[ERD.METHODS_COLS].append(str(SSC.METHOD_NAME))
+            results.methods_df = define_method_name_col(results.methods_df)
+
+        # Add pruning ratio column
+        if str(QC.PRUNING_RATIO) in cols[ERD.RUNS_COLS]:
+            act_cols[ERD.RUNS_COLS].append(str(QC.PRUNING_RATIO))
+            results.add_pruning_ratio_column()
 
         # Drop extra columns
-        results.datasets_df = results.datasets_df.drop(columns=extra_datasets_cols)
-        results.indexes_df = results.indexes_df.drop(columns=extra_indexes_cols)
-        results.methods_df = results.methods_df.drop(columns=extra_methods_cols)
-        results.runs_df = results.runs_df.drop(columns=extra_runs_cols)
+        results.datasets_df = results.datasets_df.drop(columns=extra_cols[ERD.DATASETS_COLS])
+        results.query_sets_df = results.query_sets_df.drop(columns=extra_cols[ERD.QUERY_SETS_COLS])
+        results.indexes_df = results.indexes_df.drop(columns=extra_cols[ERD.INDEXES_COLS])
+        results.methods_df = results.methods_df.drop(columns=extra_cols[ERD.METHODS_COLS])
+        results.runs_df = results.runs_df.drop(columns=extra_cols[ERD.RUNS_COLS])
+        results.query_stats_df = results.query_stats_df.drop(columns=extra_cols[ERD.QUERY_STATS_COLS])
 
-        method_cols_to_drop = [col for col in results.methods_df.columns if col not in act_methods_cols]
-        results.methods_df = results.methods_df.drop(columns=method_cols_to_drop)
-
+        cols = original_cols
         return results
 
     def get_merged_df(self):
@@ -209,7 +224,7 @@ class ExperimentResults(BaseModel):
         columns_to_drop = []
         merged_df = rename_df_columns(self.datasets_df, ERD.DATASETS_COLS)
 
-        if os.path.exists(os.path.join(self.logs_dir, QUERY_SETS_CSV)):
+        if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.QUERY_SETS_COLS])):
             qsc_dataset_file = get_merged_col_name(ERD.QUERY_STATS_COLS, str(QSC.DATASET_FILE))
 
             merged_df = merged_df.merge(
@@ -219,7 +234,7 @@ class ExperimentResults(BaseModel):
                 how="left",
             )
 
-        if os.path.exists(os.path.join(self.logs_dir, METHODS_CSV)):
+        if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.METHODS_COLS])):
             ssc_dataset_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.DATASET_FILE))
 
             merged_df = merged_df.merge(
@@ -230,7 +245,7 @@ class ExperimentResults(BaseModel):
             )
             columns_to_drop.append(ssc_dataset_file)
 
-            if os.path.exists(os.path.join(self.logs_dir, INDEXES_CSV)):
+            if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEXES_COLS])):
                 ssc_index_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.INDEX_FILE))
                 isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
                 isc_dataset_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.DATASET_FILE))
@@ -243,7 +258,7 @@ class ExperimentResults(BaseModel):
                 )
                 columns_to_drop.extend([ssc_index_file, isc_dataset_file])
 
-            if os.path.exists(os.path.join(self.logs_dir, RUNS_CSV)):
+            if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.RUNS_COLS])):
                 qc_settings_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.SETTINGS_ID))
                 qc_id = get_merged_col_name(ERD.METHODS_COLS, str(SSC.ID))
 
@@ -255,7 +270,7 @@ class ExperimentResults(BaseModel):
                 )
                 columns_to_drop.append(qc_id)
 
-        if os.path.exists(os.path.join(self.logs_dir, QUERY_STATS_CSV)):
+        if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.QUERY_STATS_COLS])):
             qstc_dataset_file = get_merged_col_name(ERD.QUERY_STATS_COLS, str(QSTC.DATASET_FILE))
 
             merged_df = merged_df.merge(
@@ -349,6 +364,7 @@ def plot_bars(
     label_map: dict,
     x_labels: dict[tuple, str],
     y_label: str,
+    y_lim: tuple[float, float] = None,
     scale: str = "linear",
     bar_width_inches: float = 0.4,
 ):
@@ -361,6 +377,7 @@ def plot_bars(
     :param label_map: The label map to use for labeling the bars.
     :param x_labels: The labels for the x-axis for each group.
     :param y_label: The label for the y-axis.
+    :param y_range: The range to use for the y-axis. If None, the range is automatically determined.
     :param scale: The scale to use for the y-axis.
     :param bar_width_inches: The width of the bars in inches.
     """
@@ -405,6 +422,7 @@ def plot_bars(
     ax.set_yscale(scale)
     ax.yaxis.grid(True)
     ax.set_ylabel(y_label)
+    ax.set_ylim(y_lim)
     ax.set_xticks(x_ticks)
     ax.set_xticklabels(x_tick_labels)
 
@@ -471,10 +489,6 @@ def remove_index_name_from_reduction_result(
     return result
 
 
-def calculate_pruning_ratio():
-    pass
-
-
 # %%[markdown]
 """
 ## Running the Analyses
@@ -504,12 +518,12 @@ groups = [
 # %%
 def experiment_num_channels_and_dataset(target_col: str, y_label: str, y_scale: str = "log"):
     columns = {
-        str(ERD.DATASETS_COLS): [str(DSC.NUM_CHANNELS), str(DSC.DATASET_FILE)],
-        str(ERD.METHODS_COLS): [str(SSC.METHOD_NAME)],
-        str(ERD.RUNS_COLS): [target_col],
+        ERD.DATASETS_COLS: [str(DSC.NUM_CHANNELS), str(DSC.DATASET_FILE)],
+        ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
+        ERD.RUNS_COLS: [target_col],
     }
-    few_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_few_channels_config", **columns)
-    many_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_many_channels_config", **columns)
+    few_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_few_channels_config", cols=columns)
+    many_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_many_channels_config", cols=columns)
 
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer())]
     groups = [
@@ -544,7 +558,7 @@ def experiment_num_channels_and_dataset(target_col: str, y_label: str, y_scale: 
 # %%
 
 experiment_num_channels_and_dataset(str(QC.TOTAL_TIME_S), "Total time (S)")
-experiment_num_channels_and_dataset(str(QC.NUM_ENTRIES_EXAMINED), "Number of TS examined")
+experiment_num_channels_and_dataset(str(QC.NUM_TS_EXAMINED), "Number of TS examined")
 experiment_num_channels_and_dataset(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear")
 
 # %%[markdown]
@@ -557,11 +571,11 @@ def experiment_envelope_parametrization(
     target_col: str, y_label: str, y_scale: str = "log", logs_dir="EXPERIMENT_LOGS/LOGS_envelope_size_parametrization"
 ):
     columns = {
-        str(ERD.INDEXES_COLS): [str(ISC.L_MIN), str(ISC.L_MAX), str(ISC.POS_PER_ENV)],
-        str(ERD.METHODS_COLS): [str(SSC.METHOD_NAME)],
-        str(ERD.RUNS_COLS): [target_col],
+        ERD.INDEXES_COLS: [str(ISC.L_MIN), str(ISC.L_MAX), str(ISC.POS_PER_ENV)],
+        ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
+        ERD.RUNS_COLS: [target_col],
     }
-    parametrization_results = ExperimentResults.load(logs_dir=logs_dir, **columns)
+    parametrization_results = ExperimentResults.load(logs_dir=logs_dir, cols=columns)
 
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer())]
     groups = [
@@ -620,10 +634,10 @@ def experiment_relative_contrast(
     datasets_to_show=["weather", "synthetic"],
 ):
     columns = {
-        str(ERD.DATASETS_COLS): [str(DSC.DATASET_FILE), str(DSC.NUM_CHANNELS), str(DSC.SD)],
-        str(ERD.QUERY_STATS_COLS): [str(QSTC.QUERY_NOISE), target_col],
+        ERD.DATASETS_COLS: [str(DSC.DATASET_FILE), str(DSC.NUM_CHANNELS), str(DSC.SD)],
+        ERD.QUERY_STATS_COLS: [str(QSTC.QUERY_NOISE), target_col],
     }
-    rc_results = ExperimentResults.load(logs_dir=logs_dir, **columns)
+    rc_results = ExperimentResults.load(logs_dir=logs_dir, cols=columns)
 
     targets = [(ERD.QUERY_STATS_COLS, target_col, MeanReducer())]
     if remove_top > 0:
@@ -685,14 +699,14 @@ Experiment: Comparison of iSAX+Envelope, pure iSAX and pure Envelope
 # %%
 
 
-def experiment_pure_methods(target_col, y_label, logs_dir="LOGS"):
+def experiment_pure_methods(target_col, y_label, y_lim=None, y_scale="log", logs_dir="LOGS"):
     columns = {
-        str(ERD.DATASETS_COLS): [str(DSC.DATASET_FILE)],
-        str(ERD.INDEXES_COLS): [str(ISC.FIRST_LAYER_NUM_BITS)],
-        str(ERD.METHODS_COLS): [str(SSC.METHOD_NAME)],
-        str(ERD.RUNS_COLS): [str(QC.TOTAL_TIME_S), str(QC.PRUNING_RATIO)],
+        ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
+        ERD.INDEXES_COLS: [str(ISC.FIRST_LAYER_NUM_BITS)],
+        ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
+        ERD.RUNS_COLS: [str(QC.TOTAL_TIME_S), str(QC.PRUNING_RATIO)],
     }
-    results = ExperimentResults.load(logs_dir=logs_dir, **columns)
+    results = ExperimentResults.load(logs_dir=logs_dir, cols=columns)
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer())]
     groups = [
         (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
@@ -707,12 +721,12 @@ def experiment_pure_methods(target_col, y_label, logs_dir="LOGS"):
     ]
     mean_values.sort(key=lambda x: (DATASET_ORDER.index(x[0][0]), x[0][2], x[0][1]))
     x_labels = {(dataset, num_bits): f"{dataset}\n{num_bits} bits" for (dataset, num_bits, _), _ in mean_values}
-    plot_bars(mean_values, 2, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, scale="log")
+    plot_bars(mean_values, 2, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, y_lim=y_lim, scale=y_scale)
 
 
 # %%
 
 experiment_pure_methods(str(QC.TOTAL_TIME_S), "Total time (S)")
-experiment_pure_methods(str(QC.PRUNING_RATIO), "Pruning ratio")
+experiment_pure_methods(str(QC.PRUNING_RATIO), "Pruning ratio", y_lim=(0, 1), y_scale="linear")
 
 # %%

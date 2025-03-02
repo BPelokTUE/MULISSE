@@ -38,6 +38,7 @@ class IndexSettingsColumn(Enum):
     NUM_BITS_LIMIT = auto()
     NUM_LEAVES = auto()
     NUM_NODES = auto()
+    NUM_ENTRIES = auto()
     INDEXING_TIME_S = auto()
     FFT_CALC_TIME_S = auto()
 
@@ -86,6 +87,7 @@ class QueryColumn(Enum):
     RESULT_SET_DISTANCES = auto()
     NUM_LEAVES_VISITED = auto()
     NUM_NODES_VISITED = auto()
+    NUM_TS_EXAMINED = auto()  # For backward compatibility
     NUM_ENTRIES_EXAMINED = auto()
     TOTAL_TIME_S = auto()
     FIRST_LAYER_TIME_S = auto()
