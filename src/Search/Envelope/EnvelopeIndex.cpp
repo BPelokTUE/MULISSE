@@ -32,7 +32,10 @@ vec<SearchResult> FlatEnvelopeIndex::search(const vec<vec<float>> &query, const 
 
     vec<vec<float>> query_paa(num_channels);
     size_t query_len = 0;
-    for (size_t c = 0; c < num_channels; ++c) query_paa[c] = paa(query[c], m_segment_len);
+    for (size_t c = 0; c < num_channels; ++c) {
+        query_paa[c] = paa(query[c], m_segment_len);
+        query_len = std::max(query_len, query[c].size());
+    }
 
     std::priority_queue<PQueueEnvelopeEntry> pq;
 
@@ -41,12 +44,11 @@ vec<SearchResult> FlatEnvelopeIndex::search(const vec<vec<float>> &query, const 
         if (entry.subsequence_info.length < query_len) continue;
 
         DistanceT min_dist_squared = 0;
-        for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-            for (uint s = 0; s < entry.mts_summary[c].size(); ++s) {
+        for (MtsNumChannelsT c = 0; c < num_channels; ++c)
+            for (uint s = 0; s < query_paa[c].size(); ++s)
                 min_dist_squared += distance_measure->min_dist_squared(query_paa[c][s], entry.mts_summary[c].lower[s],
                                                                        entry.mts_summary[c].upper[s]);
-            }
-        }
+
         pq.push({min_dist_squared * m_segment_len, entry.subsequence_info});
     }
     logger.stop_timer(QC::FIRST_LAYER_TIME_S);

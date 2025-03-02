@@ -193,7 +193,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         {ISC::SEGMENT_LENGTH, format_num_param(segment_len)},
         {ISC::POS_PER_ENV, format_num_param(pos_per_env)},
         {ISC::FIRST_LAYER_NUM_BITS, format_num_param(first_layer_num_bits)},
-        {ISC::LEAF_CAPACITY, to_string(leaf_capacity)},
+        {ISC::LEAF_CAPACITY, format_num_param(leaf_capacity)},
         {ISC::BREAKPOINT_STRATEGY, brs_str},
         {ISC::SPLIT_STRATEGY, sps_str},
         {ISC::MIN_NUM_BITS_ON_TIE, min_num_bits_on_tie_str},
