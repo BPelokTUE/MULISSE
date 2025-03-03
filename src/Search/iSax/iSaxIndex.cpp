@@ -28,7 +28,6 @@ using SymbolTypePaa = typename SaxTraits<FTagPaa>::SymbolType;
 
 std::pair<uptr<iSaxFinalizedNode<FTagPaa>>, vec<vec<SymbolTypePaa>>> iSaxPaaIndex::finalize_first_layer_node(
     vec<vec<SaxSymbolT>> key_symbols, uptr<iSaxSplittableNode<Paa>> &node, iSaxWordSettings &isax_word_settings) {
-    auto finalized_node = get_paa_node_finalization_result(node, isax_word_settings);
     MtsNumChannelsT num_channels = m_series_isax_prop->num_channels;
     SaxSegIndT num_seg_per_channel = m_series_isax_prop->num_seg_per_channel;
 
@@ -37,6 +36,7 @@ std::pair<uptr<iSaxFinalizedNode<FTagPaa>>, vec<vec<SymbolTypePaa>>> iSaxPaaInde
     for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
         for (SaxSegIndT s = 0; s < num_seg_per_channel; ++s) symbols[c][s] = SymbolTypePaa(key_symbols[c][s]);
     }
+    auto finalized_node = get_paa_node_finalization_result(node, isax_word_settings);
     return {std::move(finalized_node), std::move(symbols)};
 }
 

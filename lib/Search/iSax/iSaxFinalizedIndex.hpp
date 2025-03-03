@@ -139,7 +139,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
 
         vec<vec<float>> query_paa(num_channels);
         size_t query_len = 0;
-        for (size_t c = 0; c < num_channels; ++c) {
+        for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             query_paa[c] = paa(query[c], segment_len);
             query_len = std::max(query_len, query[c].size());
         }
@@ -168,6 +168,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
         while (!pq.empty()) {
             auto [min_dist_squared, isax_words, node] = pq.top();
             pq.pop();
+            size_t pq_size = pq.size();
 
             if (min_dist_squared >= result_set->get_distance_lb()) break;
 
@@ -199,9 +200,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
             } else {
                 vec<SubsequenceInfo> subsequence_infos = node->get_subsequence_infos();
                 for (SubsequenceInfo subs_info : subsequence_infos) {
-                    size_t data_remaining = series_len - subs_info.start_pos;
-
-                    if (data_remaining < query_len) continue;
+                    if (skip_entry(query_len, series_len, subs_info)) continue;
 
                     size_t data_to_read = subs_info.length;
                     vec<vec<float>> subsequence(num_channels);
@@ -242,6 +241,8 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
     uptr<SeriesISaxProperties> m_series_isax_prop;
 
     std::pair<int, int> get_limit_breakpoint_indexes(SymbolType symbol, uint num_shift) const;
+
+    bool skip_entry(uint query_len, uint series_len, const SubsequenceInfo& subs_info) const;
 
     MAKE_SERIALIZABLE((m_series_isax_prop, m_first_layer_symbols, m_first_layer_nodes, m_first_layer_num_bits,
                        m_alphabet_num_bits, m_breakpoints));

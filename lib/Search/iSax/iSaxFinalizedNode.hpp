@@ -235,7 +235,7 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode<T> {
      * @brief Construct a new leaf node with the provided file positions and summaries
      * @param subsequence_positions The position and length of the subsequences in the dataset
      */
-    iSaxFinalizedLeaf(vec<SubsequenceInfo> subsequence_positions) : m_subsequence_positions(subsequence_positions) {}
+    iSaxFinalizedLeaf(vec<SubsequenceInfo> subsequence_positions) : m_subsequence_infos(subsequence_positions) {}
 
     virtual pair<const iSaxFinalizedNode<T> *, const iSaxFinalizedNode<T> *> get_children() const override {
         return {nullptr, nullptr};
@@ -243,7 +243,7 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode<T> {
 
     virtual SaxSplitIndex get_split_ind() const override { return {0, 0}; }
 
-    virtual vec<SubsequenceInfo> get_subsequence_infos() const override { return m_subsequence_positions; }
+    virtual vec<SubsequenceInfo> get_subsequence_infos() const override { return m_subsequence_infos; }
 
     virtual bool is_leaf() const override { return true; }
 
@@ -251,14 +251,14 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode<T> {
                                                           SaxNumBitsT symbol_num_bits) const override;
 
    private:
-    vec<SubsequenceInfo> m_subsequence_positions;
+    vec<SubsequenceInfo> m_subsequence_infos;
 
     // Required for Cereal (de)serialization
     friend class cereal::access;
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(m_subsequence_positions);
+        ar(m_subsequence_infos);
     }
 };
 

@@ -21,33 +21,37 @@ SaxSymbolT iSaxWord::operator[](SaxSegIndT index) const {
     return m_symbols[index] >> (m_alphabet_num_bits - m_num_bits[index]);
 }
 
-// TODO: move logic into operator[], remove this
 SaxSymbolT iSaxWord::symbol_no_shift(SaxSegIndT index) const { return m_symbols[index]; }
 
 const vec<SaxNumBitsT> &iSaxWord::get_num_bits() const { return m_num_bits; }
 
-// TODO: remove
-uint8_t iSaxWord::apply_split(SaxSegIndT split_ind) {
-    assert(m_num_bits[split_ind] < m_alphabet_num_bits);
+uint8_t iSaxWord::apply_split(SaxSegIndT seg_ind) {
+    assert(m_num_bits[seg_ind] < m_alphabet_num_bits);
 
-    ++m_num_bits[split_ind];
-    return operator[](split_ind) & 1;
+    ++m_num_bits[seg_ind];
+    return operator[](seg_ind) & 1;
+}
+
+void iSaxWord::unsplit(SaxSegIndT seg_ind) {
+    assert(m_num_bits[seg_ind] > 1);
+
+    --m_num_bits[seg_ind];
+}
+
+void iSaxWord::set_new_bit(SaxSegIndT seg_ind, uint8_t bit) {
+    SaxSymbolT mask = bit << (m_alphabet_num_bits - m_num_bits[seg_ind]);
+    m_symbols[seg_ind] = (m_symbols[seg_ind] & ~mask) | mask;
 }
 
 void iSaxWord::append_to_symbol(SaxSegIndT index, uint8_t bit) {
-    m_symbols[index] = (operator[](index) << 1) | bit;
+    m_symbols[index] = (symbol_no_shift(index) << 1) | bit;
     m_num_bits[index]++;
     m_alphabet_num_bits = std::max(m_alphabet_num_bits, m_num_bits[index]);
 }
 
-void iSaxWord::remove_from_symbol(SaxSegIndT index) {
-    m_symbols[index] >>= 1;
-    m_num_bits[index]--;
-}
-
 void iSaxWord::set_symbol(SaxSegIndT index, SaxNumBitsT num_bits, SaxSymbolT symbol) {
     m_alphabet_num_bits = std::max(m_alphabet_num_bits, num_bits);
-    m_symbols[index] = symbol;  // << (m_alphabet_num_bits - num_bits);
+    m_symbols[index] = symbol;
     m_num_bits[index] = num_bits;
 }
 

@@ -51,6 +51,7 @@ vec<std::tuple<Paa, uint, uint>> PaaEntryGenerator::get_paa_entries_normalized(c
             vec<float> subsequence(subs_len);
             for (int i = 0; i < subs_len; ++i) subsequence[i] = (ts[start_ind + i] - mu) / sigma;
             vec<float> paa_values = paa(subsequence, paa_params.segment_len);
+            paa_values.resize(ts.size() / paa_params.segment_len, 0.0);
 
             entries.push_back(
                 std::make_tuple(Paa(paa_values), static_cast<uint>(start_ind), static_cast<uint>(subs_len)));

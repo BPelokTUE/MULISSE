@@ -127,7 +127,7 @@ class iSaxSplittableLeaf : public iSaxSplittableNode<T> {
      * @param summaries The summaries of the subsequences stored in the leaf
      */
     iSaxSplittableLeaf(vec<SubsequenceInfo> subsequence_positions, vec<vec<T>> summaries)
-        : m_subsequence_positions(subsequence_positions), m_summaries(summaries) {}
+        : m_subsequence_infos(subsequence_positions), m_summaries(summaries) {}
 
     virtual std::pair<const iSaxSplittableNode<T> *, const iSaxSplittableNode<T> *> get_children() const override {
         return {nullptr, nullptr};
@@ -135,7 +135,7 @@ class iSaxSplittableLeaf : public iSaxSplittableNode<T> {
 
     SaxSplitIndex get_split_ind() const override { return {0, 0}; }
 
-    vec<SubsequenceInfo> get_subsequence_infos() const override { return m_subsequence_positions; }
+    vec<SubsequenceInfo> get_subsequence_infos() const override { return m_subsequence_infos; }
 
     bool is_leaf() const override { return true; }
 
@@ -145,7 +145,7 @@ class iSaxSplittableLeaf : public iSaxSplittableNode<T> {
 
    protected:
     vec<vec<T>> m_summaries;
-    vec<SubsequenceInfo> m_subsequence_positions;
+    vec<SubsequenceInfo> m_subsequence_infos;
 };
 
 uptr<iSaxFinalizedNode<PaaTag>> get_paa_node_finalization_result(uptr<iSaxSplittableNode<Paa>> &node,

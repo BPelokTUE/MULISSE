@@ -86,26 +86,30 @@ class iSaxWord : public SaxWord {
      * Updates the symbol specified by the split index after a split. Assumes that the number of bits of the segment is
      * less than the alphabet's.
      *
-     * @param split_ind The index of the symbol to update
+     * @param seg_ind The index of the symbol to update
      * @return The bit that was appended to the symbol
      */
-    uint8_t apply_split(SaxSegIndT split_ind);
+    uint8_t apply_split(SaxSegIndT seg_ind);
+
+    /**
+     * @brief Unsplit a segment; updates the iSAX word inplace
+     * @param seg_ind The index of the symbol to update
+     */
+    void unsplit(SaxSegIndT seg_ind);
+
+    /**
+     * @brief Increase the cardinality of a segment and set the new bit
+     * @param seg_ind The index of the symbol to update
+     * @param bit The new bit
+     */
+    void set_new_bit(SaxSegIndT seg_ind, uint8_t bit);
 
     /**
      * @brief Appends a bit to the symbol at the given index; updates the iSAX word inplace
-     *
      * @param index The index of the symbol
      * @param bit The bit to append
      */
     void append_to_symbol(SaxSegIndT index, uint8_t bit);
-
-    /**
-     * @brief Removes a bit from the symbol at the given index; updates the iSAX word inplace
-     *
-     * @param index The index of the symbol
-     * @param bit The bit to append
-     */
-    void remove_from_symbol(SaxSegIndT index);
 
     /**
      * @brief Set the symbol at the given index

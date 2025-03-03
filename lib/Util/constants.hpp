@@ -6,7 +6,7 @@
 
 #include "Util/typedefs.hpp"
 
-const uint8_t DEFAULT_NUM_BIT_LIMIT = 12;
+const uint8_t DEFAULT_NUM_BIT_LIMIT = 15;
 
 static_assert(DEFAULT_NUM_BIT_LIMIT <= sizeof(SaxSymbolT) * 8, "DEFAULT_NUM_BIT_LIMIT exceeds the size of SaxSymbolT");
 

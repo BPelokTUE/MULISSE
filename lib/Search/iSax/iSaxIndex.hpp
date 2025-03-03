@@ -60,7 +60,7 @@ class iSaxIndex : public IIndex<T> {
 
     void insert(const IndexEntry<T> &entry) override {
         const vec<T> &mts_summary = entry.mts_summary;
-        SubsequenceInfo file_pos = entry.subsequence_info;
+        SubsequenceInfo subs_info = entry.subsequence_info;
 
         MtsNumChannelsT num_channels = m_series_isax_prop->num_channels;
         SaxSegIndT num_seg_per_channel = m_series_isax_prop->num_seg_per_channel;
@@ -79,8 +79,7 @@ class iSaxIndex : public IIndex<T> {
 
         auto node_it = m_first_layer.find(symbols);
         if (node_it == m_first_layer.end()) {
-            // TODO: either function to generate pointers or second / third template parameter
-            m_first_layer.emplace(symbols, std::make_unique<iSaxSplittableLeaf<T>>(vec<SubsequenceInfo>{file_pos},
+            m_first_layer.emplace(symbols, std::make_unique<iSaxSplittableLeaf<T>>(vec<SubsequenceInfo>{subs_info},
                                                                                    vec<vec<T>>{mts_summary}));
 
             auto &logger = IndexLogger::get_instance();
@@ -100,11 +99,11 @@ class iSaxIndex : public IIndex<T> {
             }
             // Reached a leaf => insert
             auto *leaf = static_cast<iSaxSplittableLeaf<T> *>(node);
-            leaf->m_subsequence_positions.push_back(file_pos);
+            leaf->m_subsequence_infos.push_back(subs_info);
             leaf->m_summaries.push_back(mts_summary);
 
             // Split if needed
-            if (leaf->m_subsequence_positions.size() > m_leaf_capacity) {
+            if (leaf->m_subsequence_infos.size() > m_leaf_capacity) {
                 auto &node_ref = parent ? (new_bit ? parent->m_right : parent->m_left) : node_it->second;
                 split_leaf(isax_words, node_ref);
             }
@@ -189,13 +188,13 @@ class iSaxIndex : public IIndex<T> {
         vec<SubsequenceInfo> left_subsequence_positions, right_subsequence_positions;
         vec<vec<T>> left_mts_summary, right_mts_summary;
 
-        for (size_t i = 0; i < leaf->m_subsequence_positions.size(); ++i) {
+        for (size_t i = 0; i < leaf->m_subsequence_infos.size(); ++i) {
             auto seg_min = leaf->m_summaries[i][channel_ind].get_isax_input();
             if (seg_min[segment_ind] <= mid_breakpoint) {
-                left_subsequence_positions.push_back(leaf->m_subsequence_positions[i]);
+                left_subsequence_positions.push_back(leaf->m_subsequence_infos[i]);
                 left_mts_summary.push_back(leaf->m_summaries[i]);
             } else {
-                right_subsequence_positions.push_back(leaf->m_subsequence_positions[i]);
+                right_subsequence_positions.push_back(leaf->m_subsequence_infos[i]);
                 right_mts_summary.push_back(leaf->m_summaries[i]);
             }
         }
@@ -216,18 +215,20 @@ class iSaxIndex : public IIndex<T> {
         if (split_left || split_right) {
             auto &parent = reinterpret_cast<uptr<iSaxSplittableInternal<T>> &>(node_ref);
             if (split_left) {
-                uint8_t new_bit = 0;
-                isax_words[channel_ind].append_to_symbol(segment_ind, new_bit);
+                uint8_t old_bit = isax_words[channel_ind].apply_split(segment_ind);
+                isax_words[channel_ind].set_new_bit(segment_ind, 0);
                 leaf = static_cast<iSaxSplittableLeaf<T> *>(parent->m_left.get());
                 split_leaf(isax_words, parent->m_left);
-                isax_words[channel_ind].remove_from_symbol(segment_ind);
+                isax_words[channel_ind].set_new_bit(segment_ind, old_bit);
+                isax_words[channel_ind].unsplit(segment_ind);
             }
             if (split_right) {
-                uint8_t new_bit = 1;
-                isax_words[channel_ind].append_to_symbol(segment_ind, new_bit);
+                uint8_t old_bit = isax_words[channel_ind].apply_split(segment_ind);
+                isax_words[channel_ind].set_new_bit(segment_ind, 1);
                 leaf = static_cast<iSaxSplittableLeaf<T> *>(parent->m_right.get());
                 split_leaf(isax_words, parent->m_right);
-                isax_words[channel_ind].remove_from_symbol(segment_ind);
+                isax_words[channel_ind].set_new_bit(segment_ind, old_bit);
+                isax_words[channel_ind].unsplit(segment_ind);
             }
         }
     }

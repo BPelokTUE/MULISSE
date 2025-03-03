@@ -225,10 +225,10 @@ class ExperimentResults(BaseModel):
         merged_df = rename_df_columns(self.datasets_df, ERD.DATASETS_COLS)
 
         if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.QUERY_SETS_COLS])):
-            qsc_dataset_file = get_merged_col_name(ERD.QUERY_STATS_COLS, str(QSC.DATASET_FILE))
+            qsc_dataset_file = get_merged_col_name(ERD.QUERY_SETS_COLS, str(QSC.DATASET_FILE))
 
             merged_df = merged_df.merge(
-                rename_df_columns(self.query_sets_df, ERD.QUERY_STATS_COLS),
+                rename_df_columns(self.query_sets_df, ERD.QUERY_SETS_COLS),
                 left_on=dsc_dataset_file,
                 right_on=qsc_dataset_file,
                 how="left",
@@ -367,6 +367,8 @@ def plot_bars(
     y_lim: tuple[float, float] = None,
     scale: str = "linear",
     bar_width_inches: float = 0.4,
+    legend_max_cols: int = 4,
+    title: str = None,
 ):
     """
     Plot bars for the given reduction result.
@@ -377,9 +379,10 @@ def plot_bars(
     :param label_map: The label map to use for labeling the bars.
     :param x_labels: The labels for the x-axis for each group.
     :param y_label: The label for the y-axis.
-    :param y_range: The range to use for the y-axis. If None, the range is automatically determined.
+    :param y_range: The range to use for the y-axis. If `None`, the range is automatically determined.
     :param scale: The scale to use for the y-axis.
     :param bar_width_inches: The width of the bars in inches.
+    :param title: The title of the plot.
     """
 
     bar_groups = {}
@@ -418,13 +421,18 @@ def plot_bars(
         x_tick_labels.append(x_labels[bar_group_key])
         x_start += (len(bars) + 1) * bar_width
 
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, 1.125), ncol=len(label_map))
+    legend_num_cols = min(len(seen_labels), legend_max_cols)
+    legend_num_rows = (len(seen_labels) + legend_num_cols - 1) // legend_num_cols
+    legend_y_coord = 1.050 + 0.075 * legend_num_rows
+
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, legend_y_coord), ncol=legend_num_cols)
     ax.set_yscale(scale)
     ax.yaxis.grid(True)
     ax.set_ylabel(y_label)
     ax.set_ylim(y_lim)
     ax.set_xticks(x_ticks)
     ax.set_xticklabels(x_tick_labels)
+    ax.set_title(title)
 
     fig.set_size_inches((num_bars + len(bar_groups)) * bar_width_inches, 6)
     plt.show()
@@ -439,6 +447,7 @@ Misc. helpers
 METHOD_COLORS = {
     "sequential_scan-ed": PALETTE["Greens"][1],
     "sequential_scan-ed-early": PALETTE["Greens"][4],
+    "sequential_scan-mass": PALETTE["Oranges"][0],
     "sequential_scan-mass-ffts": PALETTE["Oranges"][2],
     "isax_envelope-ed-early": PALETTE["Blues"][4],
     "isax_envelope-mass": PALETTE["Blues"][2],
@@ -693,40 +702,73 @@ experiment_relative_contrast(str(QSTC.MEAN_DIST), "Mean distance to query", quer
 
 # %%[markdown]
 """
-Experiment: Comparison of iSAX+Envelope, pure iSAX and pure Envelope
+Experiment: Comparison of different methods
 """
 
+
 # %%
-
-
-def experiment_pure_methods(target_col, y_label, y_lim=None, y_scale="log", logs_dir="LOGS"):
+def experiment_compare_methods(target_col, y_label, y_lim=None, y_scale="log", logs_dirs=["LOGS"]):
     columns = {
         ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
-        ERD.INDEXES_COLS: [str(ISC.FIRST_LAYER_NUM_BITS)],
+        ERD.INDEXES_COLS: [str(ISC.POS_PER_ENV), str(ISC.FIRST_LAYER_NUM_BITS)],
+        ERD.QUERY_SETS_COLS: [str(QSC.L_MIN), str(QSC.L_MAX)],
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
         ERD.RUNS_COLS: [str(QC.TOTAL_TIME_S), str(QC.PRUNING_RATIO)],
     }
-    results = ExperimentResults.load(logs_dir=logs_dir, cols=columns)
+    results_list = [ExperimentResults.load(logs_dir=logs_dir, cols=columns) for logs_dir in logs_dirs]
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer())]
     groups = [
         (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
-        (ERD.INDEXES_COLS, str(ISC.FIRST_LAYER_NUM_BITS)),
+        (ERD.QUERY_SETS_COLS, str(QSC.L_MIN)),
+        (ERD.QUERY_SETS_COLS, str(QSC.L_MAX)),
         (ERD.METHODS_COLS, str(SSC.METHOD_NAME)),
+        (ERD.INDEXES_COLS, str(ISC.POS_PER_ENV)),
+        (ERD.INDEXES_COLS, str(ISC.FIRST_LAYER_NUM_BITS)),
     ]
-    reduction_result = execute_reduction([results], targets, groups)
+    reduction_result = execute_reduction(results_list, targets, groups)
     mean_values = reduction_result[get_merged_col_name(ERD.RUNS_COLS, target_col)]
-    mean_values = remove_index_name_from_reduction_result(mean_values, 2)
-    mean_values = [
-        ([dataset.split("/", 1)[0], num_bits, method], value) for (dataset, num_bits, method), value in mean_values
-    ]
-    mean_values.sort(key=lambda x: (DATASET_ORDER.index(x[0][0]), x[0][2], x[0][1]))
-    x_labels = {(dataset, num_bits): f"{dataset}\n{num_bits} bits" for (dataset, num_bits, _), _ in mean_values}
-    plot_bars(mean_values, 2, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, y_lim=y_lim, scale=y_scale)
+    mean_values = remove_index_name_from_reduction_result(mean_values, 3)
+
+    def get_label(key: list[str]) -> str:
+        dataset, _, pos_per_env, first_layer_num_bits = key
+        ppe_str = f"PPE={int(pos_per_env)}" if pos_per_env is not None and pos_per_env > 0 else ""
+        bits_str = (
+            f"Bits={int(first_layer_num_bits)}" if first_layer_num_bits is not None and first_layer_num_bits > 0 else ""
+        )
+        return f"{dataset}\n{ppe_str}\n{bits_str}"
+
+    l_ranges = {(key[1], key[2]) for key, _ in mean_values}
+    for l_min, l_max in l_ranges:
+        mean_values_tmp = [([key[0], *key[3:]], val) for key, val in mean_values if (key[1], key[2]) == (l_min, l_max)]
+        mean_values_tmp = [([key[0].split("/", 1)[0], *key[1:]], value) for key, value in mean_values_tmp]
+        mean_values_tmp.sort(key=lambda x: (DATASET_ORDER.index(x[0][0]), *x[0][1:]))
+
+        x_labels = {(key[0], *key[2:]): get_label(key) for key, _ in mean_values_tmp}
+        plot_bars(
+            mean_values_tmp,
+            1,
+            METHOD_COLORS,
+            METHOD_LABELS,
+            x_labels,
+            y_label=y_label,
+            y_lim=y_lim,
+            scale=y_scale,
+            title=f"l_min={l_min}, l_max={l_max}",
+            legend_max_cols=3,
+        )
 
 
 # %%
+pure_isax_logs = ["EXPERIMENT_LOGS/LOGS_pure_isax"]
+experiment_compare_methods(str(QC.TOTAL_TIME_S), "Total time (S)", logs_dirs=pure_isax_logs)
+experiment_compare_methods(
+    str(QC.PRUNING_RATIO), "Pruning ratio", logs_dirs=pure_isax_logs, y_lim=(0, 1), y_scale="linear"
+)
 
-experiment_pure_methods(str(QC.TOTAL_TIME_S), "Total time (S)")
-experiment_pure_methods(str(QC.PRUNING_RATIO), "Pruning ratio", y_lim=(0, 1), y_scale="linear")
+pure_envelope_logs = ["EXPERIMENT_LOGS/LOGS_pure_envelope"]
+experiment_compare_methods(str(QC.TOTAL_TIME_S), "Total time (S)", logs_dirs=pure_envelope_logs)
+experiment_compare_methods(
+    str(QC.PRUNING_RATIO), "Pruning ratio", logs_dirs=pure_envelope_logs, y_lim=(0, 1), y_scale="linear"
+)
 
 # %%

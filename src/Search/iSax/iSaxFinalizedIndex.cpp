@@ -19,6 +19,11 @@ std::pair<int, int> iSaxFinalizedIndex<PaaTag>::get_limit_breakpoint_indexes(Paa
 }
 
 template <>
+bool iSaxFinalizedIndex<PaaTag>::skip_entry(uint query_len, uint series_len, const SubsequenceInfo &subs_info) const {
+    return subs_info.length != query_len;
+}
+
+template <>
 std::pair<vec<PaaISax>, vec<PaaISax>> iSaxFinalizedIndex<PaaTag>::get_children_isax_words(
     const iSaxFinalizedNode<PaaTag> *node, vec<PaaISax> isax_words, MtsNumChannelsT c, SaxSegIndT s) const {
     vec<PaaISax> left_isax_words = isax_words;
@@ -40,6 +45,12 @@ template <>
 std::pair<int, int> iSaxFinalizedIndex<EnvelopeTag>::get_limit_breakpoint_indexes(EnvelopeSaxSymbol symbol,
                                                                                   uint num_shift) const {
     return {(symbol.min_symbol << num_shift) - 1, ((symbol.max_symbol + 1) << num_shift) - 1};
+}
+
+template <>
+bool iSaxFinalizedIndex<EnvelopeTag>::skip_entry(uint query_len, uint series_len,
+                                                 const SubsequenceInfo &subs_info) const {
+    return series_len - subs_info.start_pos < query_len;
 }
 
 template <>

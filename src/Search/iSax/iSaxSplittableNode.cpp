@@ -42,7 +42,7 @@ uptr<FinalizationResult> iSaxSplittableInternal<Paa>::finalize(const iSaxWordSet
 
 template <>
 uptr<FinalizationResult> iSaxSplittableLeaf<Paa>::finalize(const iSaxWordSettings &isax_word_settings) {
-    uptr<iSaxFinalizedLeaf<PaaTag>> finalized = std::make_unique<iSaxFinalizedLeaf<PaaTag>>(m_subsequence_positions);
+    uptr<iSaxFinalizedLeaf<PaaTag>> finalized = std::make_unique<iSaxFinalizedLeaf<PaaTag>>(m_subsequence_infos);
     return std::make_unique<PaaFinalizationResult>(std::move(finalized));
 }
 
@@ -100,11 +100,11 @@ uptr<FinalizationResult> iSaxSplittableLeaf<Envelope>::finalize(const iSaxWordSe
             }
         }
         uptr<iSaxFinalizedLeaf<EnvelopeTag>> finalized =
-            std::make_unique<iSaxFinalizedLeaf<EnvelopeTag>>(m_subsequence_positions);
+            std::make_unique<iSaxFinalizedLeaf<EnvelopeTag>>(m_subsequence_infos);
         return std::make_unique<EnvelopeFinalizationResult>(std::move(finalized), std::move(isax_max));
     } else {
         uptr<iSaxFinalizedLeaf<EnvelopeTag>> finalized =
-            std::make_unique<iSaxFinalizedLeaf<EnvelopeTag>>(m_subsequence_positions);
+            std::make_unique<iSaxFinalizedLeaf<EnvelopeTag>>(m_subsequence_infos);
         return std::make_unique<EnvelopeFinalizationResult>(std::move(finalized), vec<iSaxWord>{});
     }
 }
