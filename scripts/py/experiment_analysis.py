@@ -31,10 +31,13 @@ if os.getcwd().endswith("scripts/py"):
 
 from scripts.py.common.columns import DatasetSettingsColumn as DSC
 from scripts.py.common.columns import IndexSettingsColumn as ISC
+from scripts.py.common.columns import IndexStatsColumn as ISTC
 from scripts.py.common.columns import QueryColumn as QC
 from scripts.py.common.columns import QuerySetSettingsColumn as QSC
 from scripts.py.common.columns import QueryStatsColumn as QSTC
 from scripts.py.common.columns import SearchSettingsColumn as SSC
+from scripts.py.common.columns import StatsColumnPrefix as SCP
+from scripts.py.common.columns import get_stats_col
 from scripts.py.common.style import PALETTE
 from scripts.py.common.utils import COLS_FOR_METHOD_NAME, define_method_name_col
 
@@ -295,12 +298,12 @@ class Reducer(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    def __call__(self, value: Any):
+    def __call__(self, value: float):
         raise NotImplementedError
 
 
 class MeanReducer(Reducer):
-    def __call__(self, value: Any):
+    def __call__(self, value: float):
         return np.mean(value)
 
 
@@ -313,16 +316,15 @@ class MeanReducer(Reducer):
 
 Targets = list[tuple[ERD, str, Reducer]]
 Groups = list[tuple[ERD, str]]
-ReductionResult = list[tuple[list, Any]]
+ReductionResult = dict[tuple, list[float]]
 
 
 def execute_reduction(
     experiments: list[ExperimentResults], targets: Targets, groups: Groups, na_replacement: Any = 0
-) -> dict[str, ReductionResult]:
+) -> ReductionResult:
     """
-    Executes a reduction on the given experiment results. The reduction result is a dictionary mapping each
-    target to a tuple of two lists. The first list contains the list of values of the group columns, and the second
-    contains the reduced values of the target column.
+    Executes a reduction on the given experiment results. The reduction result is a dictionary mapping the group
+    tuples to a list of reduced values for each target.
 
     :param experiments: The list of experiment results to reduce.
     :param targets: The list of targets to reduce.
@@ -332,19 +334,20 @@ def execute_reduction(
 
     merged_targets = {get_merged_col_name(target_df, target_col): reducer for target_df, target_col, reducer in targets}
     merged_groups = [get_merged_col_name(group, group_col) for group, group_col in groups]
-    reduction_result = {target: [] for target in merged_targets}
+    reduction_result = {}
 
-    for experiment in experiments:
-        merged_df = experiment.get_merged_df()
-        merged_df = merged_df.fillna(na_replacement)
-        grouped = merged_df.groupby(merged_groups)
+    merged_df = pd.concat([experiment.get_merged_df() for experiment in experiments], ignore_index=True)
+    merged_df = merged_df.fillna(na_replacement)
+    grouped = merged_df.groupby(merged_groups)
 
-        for group_keys, group_df in grouped:
-            if not isinstance(group_keys, tuple):
-                group_keys = (group_keys,)
-            for target, reducer in merged_targets.items():
-                reduced_value = reducer(group_df[target])
-                reduction_result[target].append((list(group_keys), reduced_value))
+    for group_keys, group_df in grouped:
+        if not isinstance(group_keys, tuple):
+            group_keys = (group_keys,)
+        for target, reducer in merged_targets.items():
+            reduced_value = reducer(group_df[target])
+            if group_keys not in reduction_result:
+                reduction_result[group_keys] = []
+            reduction_result[group_keys].append(reduced_value)
 
     return reduction_result
 
@@ -385,13 +388,13 @@ def plot_bars(
     :param title: The title of the plot.
     """
 
-    bar_groups = {}
+    bar_groups: dict[tuple, tuple[Any, list[float]]] = {}
     num_bars = 0
-    for group, target in reduction_result:
+    for group, target_values in reduction_result.items():
         bar_group_key = tuple([group[i] for i in range(len(group)) if i != color_group_ind])
         if bar_group_key not in bar_groups:
             bar_groups[bar_group_key] = []
-        bar_groups[bar_group_key].append((group[color_group_ind], target))
+        bar_groups[bar_group_key].append((group[color_group_ind], target_values))
         num_bars += 1
 
     fig, ax = plt.subplots()
@@ -403,10 +406,9 @@ def plot_bars(
     x_tick_labels = []
     seen_labels = set()
 
-    for i, (bar_group_key, bars) in enumerate(bar_groups.items()):
-        values = [bar[1] for bar in bars]
+    for bar_group_key, bars in bar_groups.items():
+        bars_values = [bar[1] for bar in bars]
         colors = [color_map[bar[0]] for bar in bars]
-        x = np.arange(0, len(bars)) * bar_width + x_start
 
         labels = []
         for bar in bars:
@@ -415,7 +417,19 @@ def plot_bars(
                 seen_labels.add(label)
                 labels.append(label)
         labels = labels if len(labels) > 0 else None
-        ax.bar(x, values, bar_width, align="edge", color=colors, edgecolor="black", label=labels)
+
+        for b_ind, bar_values in enumerate(bars_values):
+            bar_start = 0
+            for v_ind, value in enumerate(bar_values):
+                label = labels[b_ind] if labels is not None and v_ind == 0 else None
+                color = colors[b_ind]
+                # fmt: off
+                ax.bar(
+                    b_ind * bar_width + x_start, height=value, bottom=bar_start, width=bar_width, align="edge",
+                    color=color, edgecolor="black", label=label
+                )
+                # fmt: on
+                bar_start += value
 
         x_ticks.append(x_start + len(bars) * bar_width / 2)
         x_tick_labels.append(x_labels[bar_group_key])
@@ -490,12 +504,17 @@ def remove_index_name(method_name: str, index_prefix: str = "index") -> str:
 def remove_index_name_from_reduction_result(
     reduction_result: ReductionResult, method_name_ind: int, index_prefix: str = "index"
 ) -> ReductionResult:
-    result = []
-    for group, target in reduction_result:
+    result = {}
+    for group, target_values in reduction_result.items():
         method_name = group[method_name_ind]
-        group[method_name_ind] = remove_index_name(method_name, index_prefix)
-        result.append((group, target))
+        group_list = list(group)
+        group_list[method_name_ind] = remove_index_name(method_name, index_prefix)
+        result[tuple(group_list)] = target_values
     return result
+
+
+def sort_dict(d: dict, key_func: callable) -> dict:
+    return {k: v for k, v in sorted(d.items(), key=key_func)}
 
 
 # %%[markdown]
@@ -540,8 +559,7 @@ def experiment_num_channels_and_dataset(target_col: str, y_label: str, y_scale: 
         (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
         (ERD.METHODS_COLS, str(SSC.METHOD_NAME)),
     ]
-    reduction_result = execute_reduction([few_channels_results, many_channels_results], targets, groups)
-    mean_values = reduction_result[get_merged_col_name(ERD.RUNS_COLS, target_col)]
+    mean_values = execute_reduction([few_channels_results, many_channels_results], targets, groups)
     mean_values = remove_index_name_from_reduction_result(mean_values, 2)
 
     methods_to_show = [
@@ -550,16 +568,18 @@ def experiment_num_channels_and_dataset(target_col: str, y_label: str, y_scale: 
         "isax_envelope-ed-early",
         "isax_envelope-mass-ffts",
     ]
-    mean_values_to_show = [entry for entry in mean_values if entry[0][2] in methods_to_show]
-    mean_values_to_show = [
-        ([num_channels, dataset.split("/", 1)[0], method], value)
-        for (num_channels, dataset, method), value in mean_values_to_show
-    ]
+    mean_values_to_show = {group: values for group, values in mean_values.items() if group[2] in methods_to_show}
+    mean_values_to_show = {
+        (num_channels, dataset.split("/", 1)[0], method): value
+        for (num_channels, dataset, method), value in mean_values_to_show.items()
+    }
     x_labels = {
         (num_channels, dataset): f"{dataset}\nC = {num_channels}"
-        for (num_channels, dataset, _), _ in mean_values_to_show
+        for (num_channels, dataset, _), _ in mean_values_to_show.items()
     }
-    mean_values_to_show.sort(key=lambda x: (DATASET_ORDER.index(x[0][1]), x[0][0], methods_to_show.index(x[0][2])))
+    mean_values_to_show = sort_dict(
+        mean_values_to_show, lambda x: (DATASET_ORDER.index(x[0][1]), x[0][0], methods_to_show.index(x[0][2]))
+    )
 
     plot_bars(mean_values_to_show, 2, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, scale=y_scale)
 
@@ -595,20 +615,19 @@ def experiment_envelope_parametrization(
         (ERD.METHODS_COLS, str(SSC.METHOD_NAME)),
         (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
     ]
-    reduction_result = execute_reduction([parametrization_results], targets, groups)
-    mean_values = reduction_result[get_merged_col_name(ERD.RUNS_COLS, target_col)]
+    mean_values = execute_reduction([parametrization_results], targets, groups)
     mean_values = remove_index_name_from_reduction_result(mean_values, 3)
-    mean_values = [((*key[:4], key[4].rsplit("/")[0]), value) for key, value in mean_values]
+    mean_values = {(*group[:4], group[4].rsplit("/")[0]): values for group, values in mean_values.items()}
 
     def get_x_label(key: tuple):
         l_min, l_max, pos_per_env, _, _ = key
         return f"l_min={l_min}\nl_max={l_max}\nPPE={pos_per_env}"
 
-    datasets = {key[4] for key, _ in mean_values}
+    datasets = {group[4] for group in mean_values}
     for dataset in datasets:
-        mean_values_ds = [entry for entry in mean_values if entry[0][4] == dataset]
-        mean_values_ds.sort(key=lambda x: (x[0][4], *x[0][:3], x[0][3]))
-        x_labels = {(*key[:3], key[4]): get_x_label(key) for key, _ in mean_values_ds}
+        mean_values_ds = {group: values for group, values in mean_values.items() if group[4] == dataset}
+        mean_values_ds = sort_dict(mean_values_ds, lambda x: (x[0][4], *x[0][:3], x[0][3]))
+        x_labels = {(*group[:3], group[4]): get_x_label(group) for group in mean_values_ds}
 
         plot_bars(
             mean_values_ds, 3, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, scale=y_scale, title=dataset
@@ -645,9 +664,9 @@ experiment_envelope_parametrization(str(QC.PRUNING_RATIO), "Pruning ratio", y_sc
 
 # %%
 NOISE_COLORS = {
-    0.1: PALETTE["Purples"][1],
-    0.5: PALETTE["Purples"][4],
-    1.0: PALETTE["Purples"][6],
+    0.1: PALETTE["Pinks"][0],
+    0.5: PALETTE["Pinks"][2],
+    1.0: PALETTE["Pinks"][4],
 }
 NOISE_LABELS = {val: f"Noise={val}" for val in NOISE_COLORS.keys()}
 
@@ -680,21 +699,20 @@ def experiment_relative_contrast(
         (ERD.DATASETS_COLS, str(DSC.SD)),
         (ERD.QUERY_STATS_COLS, str(QSTC.QUERY_NOISE)),
     ]
-    reduction_result = execute_reduction([rc_results], targets, groups)
-    mean_values = reduction_result[get_merged_col_name(ERD.QUERY_STATS_COLS, target_col)]
-    mean_values = [entry for entry in mean_values if entry[0][3] in query_noise_levels]
+    mean_values = execute_reduction([rc_results], targets, groups)
+    mean_values = {group: values for group, values in mean_values.items() if group[3] in query_noise_levels}
 
-    mean_values = [
-        ([dataset.split("/", 1)[0], num_channels, sd, noise], value)
-        for (dataset, num_channels, sd, noise), value in mean_values
-    ]
+    mean_values = {
+        (dataset.split("/", 1)[0], num_channels, sd, noise): value
+        for (dataset, num_channels, sd, noise), value in mean_values.items()
+    }
     if datasets_to_show is not None:
-        mean_values = [entry for entry in mean_values if entry[0][0] in datasets_to_show]
+        mean_values = {group: values for group, values in mean_values.items() if group[0] in datasets_to_show}
 
-    mean_values.sort(key=lambda x: (x[0][1], DATASET_ORDER.index(x[0][0]), x[0][2]))
+    mean_values = sort_dict(mean_values, lambda x: (x[0][1], DATASET_ORDER.index(x[0][0]), x[0][2]))
     x_labels = {
         (dataset, num_channels, sd): f"{dataset}\nC={num_channels}\nStep={sd}"
-        for (dataset, num_channels, sd, _), _ in mean_values
+        for dataset, num_channels, sd, _ in mean_values
     }
 
     bar_width_inches = 0.9 / len(query_noise_levels)
@@ -713,10 +731,18 @@ def experiment_relative_contrast(
 # %%
 experiment_relative_contrast(str(QSTC.RC_USING_MAX), "RC using max", query_noise_levels=[0.1, 0.5, 1.0])
 experiment_relative_contrast(str(QSTC.RC_USING_MEAN), "RC using mean", query_noise_levels=[0.1, 0.5, 1.0])
-experiment_relative_contrast(str(QSTC.STD_DIST), "Std. dev. of distance to query", query_noise_levels=[0.1, 0.5, 1.0])
-experiment_relative_contrast(str(QSTC.MAX_DIST), "Maximum distance to query", query_noise_levels=[0.1, 0.5, 1.0])
-experiment_relative_contrast(str(QSTC.MIN_DIST), "Minimum distance to query", query_noise_levels=[0.1, 0.5, 1.0])
-experiment_relative_contrast(str(QSTC.MEAN_DIST), "Mean distance to query", query_noise_levels=[0.1, 0.5, 1.0])
+experiment_relative_contrast(
+    get_stats_col(QSTC.DIST_STATS, SCP.STD), "Std. dev. of distance to query", query_noise_levels=[0.1, 0.5, 1.0]
+)
+experiment_relative_contrast(
+    get_stats_col(QSTC.DIST_STATS, SCP.MAX), "Maximum distance to query", query_noise_levels=[0.1, 0.5, 1.0]
+)
+experiment_relative_contrast(
+    get_stats_col(QSTC.DIST_STATS, SCP.MIN), "Minimum distance to query", query_noise_levels=[0.1, 0.5, 1.0]
+)
+experiment_relative_contrast(
+    get_stats_col(QSTC.DIST_STATS, SCP.MEAN), "Mean distance to query", query_noise_levels=[0.1, 0.5, 1.0]
+)
 
 # %%[markdown]
 """
@@ -743,8 +769,7 @@ def experiment_compare_methods(target_col, y_label, y_lim=None, y_scale="log", l
         (ERD.INDEXES_COLS, str(ISC.POS_PER_ENV)),
         (ERD.INDEXES_COLS, str(ISC.FIRST_LAYER_NUM_BITS)),
     ]
-    reduction_result = execute_reduction(results_list, targets, groups)
-    mean_values = reduction_result[get_merged_col_name(ERD.RUNS_COLS, target_col)]
+    mean_values = execute_reduction(results_list, targets, groups)
     mean_values = remove_index_name_from_reduction_result(mean_values, 3)
 
     def get_label(key: list[str]) -> str:
@@ -755,15 +780,17 @@ def experiment_compare_methods(target_col, y_label, y_lim=None, y_scale="log", l
         )
         return f"{dataset}\n{ppe_str}\n{bits_str}"
 
-    l_ranges = {(key[1], key[2]) for key, _ in mean_values}
+    l_ranges = {(key[1], key[2]) for key in mean_values}
     for l_min, l_max in l_ranges:
-        mean_values_tmp = [([key[0], *key[3:]], val) for key, val in mean_values if (key[1], key[2]) == (l_min, l_max)]
-        mean_values_tmp = [([key[0].split("/", 1)[0], *key[1:]], value) for key, value in mean_values_tmp]
-        mean_values_tmp.sort(key=lambda x: (DATASET_ORDER.index(x[0][0]), *x[0][1:]))
+        mean_values_l_range = {
+            (key[0], *key[3:]): val for key, val in mean_values.items() if (key[1], key[2]) == (l_min, l_max)
+        }
+        mean_values_l_range = {(key[0].split("/", 1)[0], *key[1:]): value for key, value in mean_values_l_range.items()}
+        mean_values_l_range = sort_dict(mean_values_l_range, lambda x: (DATASET_ORDER.index(x[0][0]), *x[0][1:]))
 
-        x_labels = {(key[0], *key[2:]): get_label(key) for key, _ in mean_values_tmp}
+        x_labels = {(key[0], *key[2:]): get_label(key) for key in mean_values_l_range}
         plot_bars(
-            mean_values_tmp,
+            mean_values_l_range,
             1,
             METHOD_COLORS,
             METHOD_LABELS,

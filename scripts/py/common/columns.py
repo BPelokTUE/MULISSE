@@ -76,6 +76,27 @@ class SearchSettingsColumn(Enum):
         return "search_settings.csv"
 
 
+class QuerySetSettingsColumn(Enum):
+    ID = auto()
+    DATASET_FILE = auto()
+    QUERY_FILE = auto()
+    NUM_QUERIES = auto()
+    L_MIN = auto()
+    L_MAX = auto()
+    EXACT_LENGTHS = auto()
+    USED_CHANNELS = auto()
+    CHANNEL_MASK = auto()
+    NOISE = auto()
+    SEED = auto()
+
+    def __str__(self):
+        return self.name.lower()
+
+    @classmethod
+    def get_csv_name(cls) -> str:
+        return "query_set_settings.csv"
+
+
 class QueryColumn(Enum):
     ID = auto()
     SETTINGS_ID = auto()
@@ -105,6 +126,34 @@ class QueryColumn(Enum):
         return "runs.csv"
 
 
+class StatsColumnPrefix(Enum):
+    MIN = auto()
+    MAX = auto()
+    MEAN = auto()
+    STD = auto()
+
+    def __str__(self):
+        return self.name.lower()
+
+
+class IndexStatsColumn(Enum):
+    INDEX_FILE = auto()
+    LEAF_SIZE_STATS = auto()
+    LEAF_HEIGHT_STATS = auto()
+    SEG_RANGE_STATS = auto()
+    SEG_LOWER_STATS = auto()
+    SEG_UPPER_STATS = auto()
+    NUM_INF_LOWER = auto()
+    NUM_INF_UPPER = auto()
+
+    def __str__(self):
+        return self.name.lower()
+
+    @classmethod
+    def get_csv_name(cls) -> str:
+        return "index_stats.csv"
+
+
 class QueryStatsColumn(Enum):
     ID = auto()
     DATASET_FILE = auto()
@@ -113,10 +162,7 @@ class QueryStatsColumn(Enum):
     QUERY_CHANNELS = auto()
     NORMALIZED = auto()
     QUERY_NOISE = auto()
-    MIN_DIST = auto()
-    MAX_DIST = auto()
-    MEAN_DIST = auto()
-    STD_DIST = auto()
+    DIST_STATS = auto()
     RC_USING_MAX = auto()
     RC_USING_MEAN = auto()
 
@@ -128,22 +174,5 @@ class QueryStatsColumn(Enum):
         return "query_stats.csv"
 
 
-class QuerySetSettingsColumn(Enum):
-    ID = auto()
-    DATASET_FILE = auto()
-    QUERY_FILE = auto()
-    NUM_QUERIES = auto()
-    L_MIN = auto()
-    L_MAX = auto()
-    EXACT_LENGTHS = auto()
-    USED_CHANNELS = auto()
-    CHANNEL_MASK = auto()
-    NOISE = auto()
-    SEED = auto()
-
-    def __str__(self):
-        return self.name.lower()
-
-    @classmethod
-    def get_csv_name(cls) -> str:
-        return "query_set_settings.csv"
+def get_stats_col(col: IndexStatsColumn | QueryStatsColumn, prefix: StatsColumnPrefix) -> str:
+    return f"{str(prefix)}_{str(col).replace('_stats', '')}"
