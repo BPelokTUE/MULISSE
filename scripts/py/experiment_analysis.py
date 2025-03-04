@@ -580,6 +580,7 @@ def experiment_envelope_parametrization(
     target_col: str, y_label: str, y_scale: str = "log", logs_dir="EXPERIMENT_LOGS/LOGS_envelope_size_parametrization"
 ):
     columns = {
+        ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
         ERD.INDEXES_COLS: [str(ISC.L_MIN), str(ISC.L_MAX), str(ISC.POS_PER_ENV)],
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
         ERD.RUNS_COLS: [target_col],
@@ -592,30 +593,49 @@ def experiment_envelope_parametrization(
         (ERD.INDEXES_COLS, str(ISC.L_MAX)),
         (ERD.INDEXES_COLS, str(ISC.POS_PER_ENV)),
         (ERD.METHODS_COLS, str(SSC.METHOD_NAME)),
+        (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
     ]
     reduction_result = execute_reduction([parametrization_results], targets, groups)
     mean_values = reduction_result[get_merged_col_name(ERD.RUNS_COLS, target_col)]
     mean_values = remove_index_name_from_reduction_result(mean_values, 3)
+    mean_values = [((*key[:4], key[4].rsplit("/")[0]), value) for key, value in mean_values]
 
-    mean_values.sort(key=lambda x: (x[0][0], x[0][2]))
-    x_labels = {
-        (l_min, l_max, pos_per_env): f"l_min={l_min}\nl_max={l_max}\nPPE={pos_per_env}"
-        for (l_min, l_max, pos_per_env, _), _ in mean_values
-    }
+    def get_x_label(key: tuple):
+        l_min, l_max, pos_per_env, _, _ = key
+        return f"l_min={l_min}\nl_max={l_max}\nPPE={pos_per_env}"
 
-    plot_bars(mean_values, 3, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, scale=y_scale)
+    datasets = {key[4] for key, _ in mean_values}
+    for dataset in datasets:
+        mean_values_ds = [entry for entry in mean_values if entry[0][4] == dataset]
+        mean_values_ds.sort(key=lambda x: (x[0][4], *x[0][:3], x[0][3]))
+        x_labels = {(*key[:3], key[4]): get_x_label(key) for key, _ in mean_values_ds}
+
+        plot_bars(
+            mean_values_ds, 3, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, scale=y_scale, title=dataset
+        )
 
 
 # %%
 
 print("Experiment 1:")
+print("Total time:")
 experiment_envelope_parametrization(str(QC.TOTAL_TIME_S), "Total time (S)")
+print("Pruning ratio:")
 experiment_envelope_parametrization(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear")
 
 print("Experiment 2:")
 exp_2_logs_dir = "EXPERIMENT_LOGS/LOGS_envelope_size_parametrization_2"
+print("Total time:")
 experiment_envelope_parametrization(str(QC.TOTAL_TIME_S), "Total time (S)", logs_dir=exp_2_logs_dir)
+print("Pruning ratio:")
 experiment_envelope_parametrization(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear", logs_dir=exp_2_logs_dir)
+
+print("Experiment 3:")
+exp_3_logs_dir = "EXPERIMENT_LOGS/LOGS_envelope_size_parametrization_3"
+print("Total time:")
+experiment_envelope_parametrization(str(QC.TOTAL_TIME_S), "Total time (S)", logs_dir=exp_3_logs_dir)
+print("Pruning ratio:")
+experiment_envelope_parametrization(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear", logs_dir=exp_3_logs_dir)
 
 # %%[markdown]
 """
