@@ -372,6 +372,8 @@ def plot_bars(
     bar_width_inches: float = 0.4,
     legend_max_cols: int = 4,
     title: str = None,
+    hatches: list[str] = None,
+    hatch_labels: list[str] = None,
 ):
     """
     Plot bars for the given reduction result.
@@ -386,6 +388,8 @@ def plot_bars(
     :param scale: The scale to use for the y-axis.
     :param bar_width_inches: The width of the bars in inches.
     :param title: The title of the plot.
+    :param hatches: The hatches to use for the bars. If `None`, no hatches are used.
+    :param hatch_labels: The labels for the hatches. If `None`, no hatch labels are used.
     """
 
     bar_groups: dict[tuple, tuple[Any, list[float]]] = {}
@@ -405,6 +409,7 @@ def plot_bars(
     x_ticks = []
     x_tick_labels = []
     seen_labels = set()
+    seen_hatches = set()
 
     for bar_group_key, bars in bar_groups.items():
         bars_values = [bar[1] for bar in bars]
@@ -421,25 +426,41 @@ def plot_bars(
         for b_ind, bar_values in enumerate(bars_values):
             bar_start = 0
             for v_ind, value in enumerate(bar_values):
-                label = labels[b_ind] if labels is not None and v_ind == 0 else None
                 color = colors[b_ind]
+                hatch = hatches[v_ind] if hatches is not None and len(hatches) >= v_ind else None
                 # fmt: off
                 ax.bar(
                     b_ind * bar_width + x_start, height=value, bottom=bar_start, width=bar_width, align="edge",
-                    color=color, edgecolor="black", label=label
+                    color=color, edgecolor="black", hatch=hatch
                 )
                 # fmt: on
                 bar_start += value
+
+                label = labels[b_ind] if labels is not None and v_ind == 0 else None
+                ax.bar(0, 0, color=color, label=label, edgecolor="black")
+                if hatch is not None and hatch not in seen_hatches:
+                    seen_hatches.add(v_ind)
 
         x_ticks.append(x_start + len(bars) * bar_width / 2)
         x_tick_labels.append(x_labels[bar_group_key])
         x_start += (len(bars) + 1) * bar_width
 
-    legend_num_cols = min(len(seen_labels), legend_max_cols)
-    legend_num_rows = (len(seen_labels) + legend_num_cols - 1) // legend_num_cols
-    legend_y_coord = 1.050 + 0.075 * legend_num_rows
+    for h_ind in seen_hatches:
+        ax.bar(0, 0, color="white", edgecolor="black", hatch=hatches[h_ind], label=hatch_labels[h_ind])
 
+    def get_legend_num_cols(num_labels):
+        return min(num_labels, legend_max_cols)
+
+    def get_legend_y_coord(num_labels):
+        legend_num_cols = get_legend_num_cols(num_labels)
+        legend_num_rows = (num_labels + legend_num_cols - 1) // legend_num_cols
+        return 1.050 + 0.075 * legend_num_rows
+
+    num_labels = len(seen_labels) + len(seen_hatches)
+    legend_num_cols = get_legend_num_cols(num_labels)
+    legend_y_coord = get_legend_y_coord(num_labels)
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, legend_y_coord), ncol=legend_num_cols)
+
     ax.set_yscale(scale)
     ax.yaxis.grid(True)
     ax.set_ylabel(y_label)
