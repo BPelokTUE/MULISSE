@@ -115,6 +115,7 @@ class QueryColumn(Enum):
     TREE_TRAVERSAL_TIME_S = auto()
     IO_TIME_S = auto()
     TS_EXAMINATION_TIME_S = auto()
+    AMORTIZED_PREP_TIME_S = auto()
 
     PRUNING_RATIO = auto()
 

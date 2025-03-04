@@ -55,6 +55,7 @@ class ExperimentResultDataframe(Enum):
     INDEXES_COLS = auto()
     METHODS_COLS = auto()
     RUNS_COLS = auto()
+    INDEX_STATS_COLS = auto()
     QUERY_STATS_COLS = auto()
 
     def __str__(self):
@@ -69,6 +70,7 @@ REQUIRED_COLS = {
     ERD.INDEXES_COLS: [str(ISC.DATASET_FILE), str(ISC.INDEX_FILE)],
     ERD.METHODS_COLS: [str(SSC.DATASET_FILE), str(SSC.INDEX_FILE), str(SSC.ID)],
     ERD.RUNS_COLS: [str(QC.SETTINGS_ID)],
+    ERD.INDEX_STATS_COLS: [str(ISTC.INDEX_FILE)],
     ERD.QUERY_STATS_COLS: [str(QSTC.DATASET_FILE)],
 }
 CSV_FILES = {
@@ -77,6 +79,7 @@ CSV_FILES = {
     ERD.INDEXES_COLS: "index_settings.csv",
     ERD.METHODS_COLS: "search_settings.csv",
     ERD.RUNS_COLS: "runs.csv",
+    ERD.INDEX_STATS_COLS: "index_stats.csv",
     ERD.QUERY_STATS_COLS: "query_stats.csv",
 }
 
@@ -98,6 +101,7 @@ class ExperimentResults(BaseModel):
     indexes_df: pd.DataFrame
     methods_df: pd.DataFrame
     runs_df: pd.DataFrame
+    index_stats_df: pd.DataFrame
     query_stats_df: pd.DataFrame
 
     class Config:
@@ -159,6 +163,28 @@ class ExperimentResults(BaseModel):
         self.runs_df = self.runs_df.merge(merged_df, left_on=str(QC.ID), right_on=qc_id, how="left")
 
     @classmethod
+    def add_extra_cols_for_amortized_prep_time(
+        cls,
+        extra_cols: dict[ERD, list[str]],
+    ):
+        extra_cols[ERD.METHODS_COLS] += [str(SSC.ID), str(SSC.INDEX_FILE), str(SSC.FFTS_FILE)]
+        extra_cols[ERD.INDEXES_COLS] += [str(ISC.INDEXING_TIME_S), str(ISC.FFT_CALC_TIME_S)]
+
+    def add_amortized_prep_time_column(self):
+        merged_df = self.get_merged_df()
+
+        isc_indexing_time = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEXING_TIME_S))
+        isc_fft_calc_time = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.FFT_CALC_TIME_S))
+        qc_settings_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.SETTINGS_ID))
+
+        merged_df["num_runs"] = merged_df.groupby(qc_settings_id)[qc_settings_id].transform("count")
+        merged_df[str(QC.AMORTIZED_PREP_TIME_S)] = (
+            merged_df[isc_indexing_time] + merged_df[isc_fft_calc_time]
+        ) / merged_df["num_runs"]
+        merged_df = merged_df[[str(QC.AMORTIZED_PREP_TIME_S), qc_settings_id]]
+        self.runs_df = self.runs_df.merge(merged_df, left_on=str(QC.SETTINGS_ID), right_on=qc_settings_id, how="left")
+
+    @classmethod
     def load_csv_if_exists(cls, path: str, cols: list[str]) -> pd.DataFrame:
         if os.path.exists(path):
             return pd.read_csv(path, usecols=cols)
@@ -185,6 +211,11 @@ class ExperimentResults(BaseModel):
             cls.add_extra_cols_for_pruning_ratio(logs_dir, extra_cols)
             act_cols[ERD.RUNS_COLS].remove(str(QC.PRUNING_RATIO))
 
+        # Handle amortized prep time column
+        if str(QC.AMORTIZED_PREP_TIME_S) in cols[ERD.RUNS_COLS]:
+            cls.add_extra_cols_for_amortized_prep_time(extra_cols)
+            act_cols[ERD.RUNS_COLS].remove(str(QC.AMORTIZED_PREP_TIME_S))
+
         extra_cols = {erd: list(set(extra_cols[erd]) - set(act_cols[erd])) for erd in ERD}
         cols_to_load = {erd: act_cols[erd] + extra_cols[erd] for erd in ERD}
         csv_paths = {erd: os.path.join(logs_dir, CSV_FILES[erd]) for erd in ERD}
@@ -197,6 +228,7 @@ class ExperimentResults(BaseModel):
             indexes_df=dfs[ERD.INDEXES_COLS],
             methods_df=dfs[ERD.METHODS_COLS],
             runs_df=dfs[ERD.RUNS_COLS],
+            index_stats_df=dfs[ERD.INDEX_STATS_COLS],
             query_stats_df=dfs[ERD.QUERY_STATS_COLS],
         )
 
@@ -210,12 +242,18 @@ class ExperimentResults(BaseModel):
             act_cols[ERD.RUNS_COLS].append(str(QC.PRUNING_RATIO))
             results.add_pruning_ratio_column()
 
+        # Add amortized prep time column
+        if str(QC.AMORTIZED_PREP_TIME_S) in cols[ERD.RUNS_COLS]:
+            act_cols[ERD.RUNS_COLS].append(str(QC.AMORTIZED_PREP_TIME_S))
+            results.add_amortized_prep_time_column()
+
         # Drop extra columns
         results.datasets_df = results.datasets_df.drop(columns=extra_cols[ERD.DATASETS_COLS])
         results.query_sets_df = results.query_sets_df.drop(columns=extra_cols[ERD.QUERY_SETS_COLS])
         results.indexes_df = results.indexes_df.drop(columns=extra_cols[ERD.INDEXES_COLS])
         results.methods_df = results.methods_df.drop(columns=extra_cols[ERD.METHODS_COLS])
         results.runs_df = results.runs_df.drop(columns=extra_cols[ERD.RUNS_COLS])
+        results.index_stats_df = results.index_stats_df.drop(columns=extra_cols[ERD.INDEX_STATS_COLS])
         results.query_stats_df = results.query_stats_df.drop(columns=extra_cols[ERD.QUERY_STATS_COLS])
 
         cols = original_cols
@@ -263,15 +301,15 @@ class ExperimentResults(BaseModel):
 
             if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.RUNS_COLS])):
                 qc_settings_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.SETTINGS_ID))
-                qc_id = get_merged_col_name(ERD.METHODS_COLS, str(SSC.ID))
+                ssc_id = get_merged_col_name(ERD.METHODS_COLS, str(SSC.ID))
 
                 merged_df = merged_df.merge(
                     rename_df_columns(self.runs_df, ERD.RUNS_COLS),
-                    left_on=qc_id,
+                    left_on=ssc_id,
                     right_on=qc_settings_id,
                     how="left",
                 )
-                columns_to_drop.append(qc_id)
+                columns_to_drop.append(ssc_id)
 
         if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.QUERY_STATS_COLS])):
             qstc_dataset_file = get_merged_col_name(ERD.QUERY_STATS_COLS, str(QSTC.DATASET_FILE))
@@ -565,16 +603,28 @@ groups = [
 
 
 # %%
-def experiment_num_channels_and_dataset(target_col: str, y_label: str, y_scale: str = "log"):
+
+TIME_TARGETS = [str(QC.TOTAL_TIME_S), str(QC.AMORTIZED_PREP_TIME_S)]
+TIME_LABELS = ["Search time", "Prep. time"]
+PREP_TIME_HATCH = "/////"
+TOTAL_TIME_Y_LABEL = "Total time (S)"
+PRUNING_RATIO_Y_LABEL = "Pruning ratio"
+
+
+def experiment_num_channels_and_dataset(
+    target_cols: str | list[str], y_label: str, target_labels: list[str] = None, y_scale: str = "log"
+):
+    if isinstance(target_cols, str):
+        target_cols = [target_cols]
     columns = {
         ERD.DATASETS_COLS: [str(DSC.NUM_CHANNELS), str(DSC.DATASET_FILE)],
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
-        ERD.RUNS_COLS: [target_col],
+        ERD.RUNS_COLS: target_cols,
     }
     few_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_few_channels_config", cols=columns)
     many_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_many_channels_config", cols=columns)
 
-    targets = [(ERD.RUNS_COLS, target_col, MeanReducer())]
+    targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
     groups = [
         (ERD.DATASETS_COLS, str(DSC.NUM_CHANNELS)),
         (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
@@ -602,14 +652,23 @@ def experiment_num_channels_and_dataset(target_col: str, y_label: str, y_scale: 
         mean_values_to_show, lambda x: (DATASET_ORDER.index(x[0][1]), x[0][0], methods_to_show.index(x[0][2]))
     )
 
-    plot_bars(mean_values_to_show, 2, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, scale=y_scale)
+    plot_bars(
+        mean_values_to_show,
+        2,
+        METHOD_COLORS,
+        METHOD_LABELS,
+        x_labels,
+        y_label=y_label,
+        scale=y_scale,
+        hatches=["", PREP_TIME_HATCH] if target_labels is not None else None,
+        hatch_labels=target_labels,
+    )
 
 
 # %%
 
-experiment_num_channels_and_dataset(str(QC.TOTAL_TIME_S), "Total time (S)")
-experiment_num_channels_and_dataset(str(QC.NUM_TS_EXAMINED), "Number of TS examined")
-experiment_num_channels_and_dataset(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear")
+experiment_num_channels_and_dataset(TIME_TARGETS, TOTAL_TIME_Y_LABEL, target_labels=TIME_LABELS)
+experiment_num_channels_and_dataset(str(QC.PRUNING_RATIO), PRUNING_RATIO_Y_LABEL, y_scale="linear")
 
 # %%[markdown]
 """
@@ -618,17 +677,23 @@ experiment_num_channels_and_dataset(str(QC.PRUNING_RATIO), "Pruning ratio", y_sc
 
 
 def experiment_envelope_parametrization(
-    target_col: str, y_label: str, y_scale: str = "log", logs_dir="EXPERIMENT_LOGS/LOGS_envelope_size_parametrization"
+    target_cols: list[str] | str,
+    y_label: str,
+    y_scale: str = "log",
+    target_labels: list[str] = None,
+    logs_dir="EXPERIMENT_LOGS/LOGS_envelope_size_parametrization",
 ):
+    if isinstance(target_cols, str):
+        target_cols = [target_cols]
     columns = {
         ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
         ERD.INDEXES_COLS: [str(ISC.L_MIN), str(ISC.L_MAX), str(ISC.POS_PER_ENV)],
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
-        ERD.RUNS_COLS: [target_col],
+        ERD.RUNS_COLS: target_cols,
     }
     parametrization_results = ExperimentResults.load(logs_dir=logs_dir, cols=columns)
 
-    targets = [(ERD.RUNS_COLS, target_col, MeanReducer())]
+    targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
     groups = [
         (ERD.INDEXES_COLS, str(ISC.L_MIN)),
         (ERD.INDEXES_COLS, str(ISC.L_MAX)),
@@ -651,31 +716,32 @@ def experiment_envelope_parametrization(
         x_labels = {(*group[:3], group[4]): get_x_label(group) for group in mean_values_ds}
 
         plot_bars(
-            mean_values_ds, 3, METHOD_COLORS, METHOD_LABELS, x_labels, y_label=y_label, scale=y_scale, title=dataset
+            mean_values_ds,
+            3,
+            METHOD_COLORS,
+            METHOD_LABELS,
+            x_labels,
+            y_label=y_label,
+            scale=y_scale,
+            title=dataset,
+            hatches=["", PREP_TIME_HATCH] if target_labels is not None else None,
+            hatch_labels=target_labels,
         )
 
 
 # %%
 
-print("Experiment 1:")
-print("Total time:")
-experiment_envelope_parametrization(str(QC.TOTAL_TIME_S), "Total time (S)")
-print("Pruning ratio:")
-experiment_envelope_parametrization(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear")
-
-print("Experiment 2:")
-exp_2_logs_dir = "EXPERIMENT_LOGS/LOGS_envelope_size_parametrization_2"
-print("Total time:")
-experiment_envelope_parametrization(str(QC.TOTAL_TIME_S), "Total time (S)", logs_dir=exp_2_logs_dir)
-print("Pruning ratio:")
-experiment_envelope_parametrization(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear", logs_dir=exp_2_logs_dir)
-
-print("Experiment 3:")
-exp_3_logs_dir = "EXPERIMENT_LOGS/LOGS_envelope_size_parametrization_3"
-print("Total time:")
-experiment_envelope_parametrization(str(QC.TOTAL_TIME_S), "Total time (S)", logs_dir=exp_3_logs_dir)
-print("Pruning ratio:")
-experiment_envelope_parametrization(str(QC.PRUNING_RATIO), "Pruning ratio", y_scale="linear", logs_dir=exp_3_logs_dir)
+for i in range(1, 4):
+    print(f"Experiment {i}:")
+    exp_logs_dir = "EXPERIMENT_LOGS/LOGS_envelope_size_parametrization" + (f"_{i}" if i > 1 else "")
+    print("Total time:")
+    experiment_envelope_parametrization(
+        TIME_TARGETS, TOTAL_TIME_Y_LABEL, target_labels=TIME_LABELS, logs_dir=exp_logs_dir
+    )
+    print("Pruning ratio:")
+    experiment_envelope_parametrization(
+        str(QC.PRUNING_RATIO), PRUNING_RATIO_Y_LABEL, y_scale="linear", logs_dir=exp_logs_dir
+    )
 
 # %%[markdown]
 """
@@ -697,6 +763,7 @@ def experiment_relative_contrast(
     y_label: str,
     query_noise_levels=list(NOISE_LABELS.keys()),
     y_scale: str = "linear",
+    target_labels: list[str] = None,
     logs_dir="EXPERIMENT_LOGS/LOGS_relative_contrast_config",
     # logs_dir="EXPERIMENT_LOGS/small/LOGS_rc",
     remove_top=0.00,
@@ -772,16 +839,25 @@ Experiment: Comparison of different methods
 
 
 # %%
-def experiment_compare_methods(target_col, y_label, y_lim=None, y_scale="log", logs_dirs=["LOGS"]):
+def experiment_compare_methods(
+    target_cols: str | list[str],
+    y_label,
+    y_lim=None,
+    y_scale="log",
+    target_labels: list[str] = None,
+    logs_dirs=["LOGS"],
+):
+    if isinstance(target_cols, str):
+        target_cols = [target_cols]
     columns = {
         ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
         ERD.INDEXES_COLS: [str(ISC.POS_PER_ENV), str(ISC.FIRST_LAYER_NUM_BITS)],
         ERD.QUERY_SETS_COLS: [str(QSC.L_MIN), str(QSC.L_MAX)],
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
-        ERD.RUNS_COLS: [str(QC.TOTAL_TIME_S), str(QC.PRUNING_RATIO)],
+        ERD.RUNS_COLS: target_cols,
     }
     results_list = [ExperimentResults.load(logs_dir=logs_dir, cols=columns) for logs_dir in logs_dirs]
-    targets = [(ERD.RUNS_COLS, target_col, MeanReducer())]
+    targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
     groups = [
         (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
         (ERD.QUERY_SETS_COLS, str(QSC.L_MIN)),
@@ -821,20 +897,22 @@ def experiment_compare_methods(target_col, y_label, y_lim=None, y_scale="log", l
             scale=y_scale,
             title=f"l_min={l_min}, l_max={l_max}",
             legend_max_cols=3,
+            hatches=["", PREP_TIME_HATCH] if target_labels is not None else None,
+            hatch_labels=target_labels,
         )
 
 
 # %%
 pure_isax_logs = ["EXPERIMENT_LOGS/LOGS_pure_isax"]
-experiment_compare_methods(str(QC.TOTAL_TIME_S), "Total time (S)", logs_dirs=pure_isax_logs)
-experiment_compare_methods(
-    str(QC.PRUNING_RATIO), "Pruning ratio", logs_dirs=pure_isax_logs, y_lim=(0, 1), y_scale="linear"
-)
-
 pure_envelope_logs = ["EXPERIMENT_LOGS/LOGS_pure_envelope"]
-experiment_compare_methods(str(QC.TOTAL_TIME_S), "Total time (S)", logs_dirs=pure_envelope_logs)
-experiment_compare_methods(
-    str(QC.PRUNING_RATIO), "Pruning ratio", logs_dirs=pure_envelope_logs, y_lim=(0, 1), y_scale="linear"
-)
+
+for logs_dirs in [pure_isax_logs, pure_envelope_logs]:
+    # experiment_compare_methods(
+    #     TIME_TARGETS, TOTAL_TIME_Y_LABEL, target_labels=TIME_LABELS, logs_dirs=logs_dirs, y_scale="log"
+    # )
+    experiment_compare_methods(str(QC.TOTAL_TIME_S), TOTAL_TIME_Y_LABEL, logs_dirs=logs_dirs, y_scale="log")
+    experiment_compare_methods(
+        str(QC.PRUNING_RATIO), PRUNING_RATIO_Y_LABEL, logs_dirs=logs_dirs, y_lim=(0, 1), y_scale="linear"
+    )
 
 # %%
