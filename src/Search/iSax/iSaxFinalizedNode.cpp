@@ -16,6 +16,8 @@ const vec<SaxNumBitsT> &PaaISax::get_num_bits() const { return isax_word.get_num
 
 PaaSaxSymbol PaaISax::symbol_no_shift(SaxSegIndT index) const { return {isax_word.symbol_no_shift(index)}; }
 
+size_t PaaISax::size() const { return isax_word.size(); }
+
 template <>
 pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedInternal<PaaTag>::get_children_max_symbols(
     SaxNumBitsT split_num_bits, SaxNumBitsT symbol_num_bits) const {
@@ -46,6 +48,8 @@ const vec<SaxNumBitsT> &EnvelopeISax::get_num_bits() const { return isax_min.get
 EnvelopeSaxSymbol EnvelopeISax::symbol_no_shift(SaxSegIndT index) const {
     return {isax_min.symbol_no_shift(index), isax_max.symbol_no_shift(index)};
 }
+
+size_t EnvelopeISax::size() const { return isax_min.size(); }
 
 template <>
 pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedInternal<EnvelopeTag>::get_children_max_symbols(

@@ -73,6 +73,9 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
                     "Precalculating FFTs are only supported for setups with one envelope per time series");
             }
             break;
+        case CALC_I_STATS:
+            check_path_exists(instance->get_index_path(), "Index");
+            break;
         case CALC_FFTS:
             check_path_exists(instance->get_dataset_path(), "Dataset");
             break;

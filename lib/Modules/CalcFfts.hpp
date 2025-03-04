@@ -9,7 +9,8 @@
  * This function calculates the FFTs of a dataset
  *
  * @param normalized Whether to normalize the dataset
+ * @return int 0 if successful
  */
-void calculate_ffts(bool normalized);
+int calculate_ffts(bool normalized);
 
 #endif  // CALC_FFTS_HPP

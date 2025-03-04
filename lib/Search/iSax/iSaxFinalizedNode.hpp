@@ -60,6 +60,8 @@ struct EntryISax {
     virtual const std::vector<SaxNumBitsT> &get_num_bits() const = 0;
 
     virtual T symbol_no_shift(SaxSegIndT index) const = 0;
+
+    virtual size_t size() const = 0;
 };
 
 struct PaaISax : EntryISax<PaaSaxSymbol> {
@@ -69,6 +71,7 @@ struct PaaISax : EntryISax<PaaSaxSymbol> {
     PaaISax() = default;
     const vec<SaxNumBitsT> &get_num_bits() const override;
     PaaSaxSymbol symbol_no_shift(SaxSegIndT index) const override;
+    size_t size() const override;
 };
 
 struct EnvelopeISax : EntryISax<EnvelopeSaxSymbol> {
@@ -79,6 +82,7 @@ struct EnvelopeISax : EntryISax<EnvelopeSaxSymbol> {
     EnvelopeISax() = default;
     const vec<SaxNumBitsT> &get_num_bits() const override;
     EnvelopeSaxSymbol symbol_no_shift(SaxSegIndT index) const override;
+    size_t size() const override;
 };
 
 template <typename T>

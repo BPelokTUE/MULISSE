@@ -21,7 +21,7 @@ uint Logger::determine_index(const str &file_path) {
     str line;
     std::getline(file_stream, line);  // Skip the header
     while (std::getline(file_stream, line)) ++index;
-#endif
+#endif  // DISABLE_LOGGING
     return index;
 }
 
@@ -30,14 +30,19 @@ void Logger::file_setup(const str &file_path, const vec<str> &header) {
     // If the directory does not exist, create it
     std::filesystem::create_directories(std::filesystem::path(file_path).parent_path());
 
-    if (std::filesystem::exists(file_path)) return;
+    if (std::filesystem::exists(file_path)) {
+        std::ifstream file(file_path);
+        if (file.peek() != std::ifstream::traits_type::eof()) {
+            return;
+        }
+    }
 
     std::ofstream ofs(file_path);
     for (uint i = 0; i < header.size(); ++i) {
         ofs << header[i];
         if (i < header.size() - 1) ofs << COL_SEP;
     }
-#endif
+#endif  // DISABLE_LOGGING
 }
 
 // DatasetLogger
@@ -100,7 +105,7 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
                            {DSC::SEED, seed_str},
                        },
                        DATASET_SETTINGS_COL_ENUMS);
-#endif
+#endif  // DISABLE_LOGGING
 }
 
 // QuerySetLogger
@@ -130,7 +135,7 @@ void QuerySetLogger::write_entry(QuerySetOptions &opts) {
                            {QSC::SEED, to_string(opts.seed)},
                        },
                        QUERY_SET_SETTINGS_COL_ENUMS);
-#endif
+#endif  // DISABLE_LOGGING
 }
 
 // IndexLogger
@@ -376,7 +381,79 @@ void QueryLogger::write_entry() {
     write_row(run_log_path, columns, QUERY_COL_ENUMS);
 }
 
+// Stats
+
+AttributeStats::AttributeStats() {
+    min = INF;
+    max = sum = sum_sq = 0;
+}
+
+void AttributeStats::update(float value) {
+    min = std::min(min, value);
+    max = std::max(max, value);
+    sum += value;
+    sum_sq += value * value;
+}
+
+void AttributeStats::update(float value, size_t count) {
+    min = std::min(min, value);
+    max = std::max(max, value);
+    sum += value * count;
+    sum_sq += value * value * count;
+}
+
+void AttributeStats::calculate(uint count) {
+    auto mu_and_sigma = calculate_mu_and_sigma(sum, sum_sq, count);
+    mean = mu_and_sigma.first;
+    st_dev = mu_and_sigma.second;
+}
+
+void QueryStats::calculate() {
+    dist_stats.calculate(subs_count);
+    rc_using_max = (dist_stats.max - dist_stats.min) / dist_stats.min;
+    rc_using_mean = dist_stats.mean / dist_stats.min;
+}
+
+void IndexStats::update_leaf_stats(float fill, float height) {
+    leaf_size_stats.update(fill);
+    leaf_height_stats.update(height);
+    ++leaf_count;
+}
+
+void IndexStats::update_seg_stats(float lower, float upper, size_t count) {
+    if (lower == -INF) {
+        ++num_inf_lower;
+        return;
+    }
+    if (upper == INF) {
+        ++num_inf_upper;
+        return;
+    }
+    seg_lower_stats.update(lower, count);
+    seg_upper_stats.update(upper, count);
+    seg_range_stats.update(upper - lower, count);
+    seg_count += count;
+}
+
+void IndexStats::calculate() {
+    vec<AttributeStats *> leaf_type_stats = {&leaf_size_stats, &leaf_height_stats},
+                          seg_type_stats = {&seg_range_stats, &seg_lower_stats, &seg_upper_stats};
+    for (AttributeStats *leaf_stats : leaf_type_stats) leaf_stats->calculate(leaf_count);
+    for (AttributeStats *seg_stats : seg_type_stats) seg_stats->calculate(seg_count);
+}
+
 // QueryStatsLogger
+
+// clang-format off
+#define ADD_STATS_TO_ROW(ENUM, SUFFIX, stats)       \
+    {ENUM::MIN_##SUFFIX, to_string(stats.min)},   \
+    {ENUM::MAX_##SUFFIX, to_string(stats.max)},   \
+    {ENUM::MEAN_##SUFFIX, to_string(stats.mean)}, \
+    {ENUM::STD_##SUFFIX, to_string(stats.st_dev)}
+// clang-format on
+
+using QSTC = QueryStatsColumn;
+
 void QueryStatsLogger::write_entry(uint query_id, const vec<vec<float>> &query, QueryStats stats, bool normalized) {
 #ifndef DISABLE_LOGGING
     QueryStatsLogger instance;
@@ -403,14 +480,38 @@ void QueryStatsLogger::write_entry(uint query_id, const vec<vec<float>> &query, 
                            {QSTC::QUERY_FILE, query_file},
                            {QSTC::QUERY_LENGTH, query_len_str},
                            {QSTC::QUERY_CHANNELS, query_channels_str},
-                           {QSTC::MIN_DIST, to_string(stats.min_dist)},
-                           {QSTC::MAX_DIST, to_string(stats.max_dist)},
-                           {QSTC::MEAN_DIST, to_string(stats.mean_dist)},
-                           {QSTC::STD_DIST, to_string(stats.std_dist)},
+                           ADD_STATS_TO_ROW(QSTC, DIST, stats.dist_stats),
                            {QSTC::RC_USING_MAX, to_string(stats.rc_using_max)},
                            {QSTC::RC_USING_MEAN, to_string(stats.rc_using_mean)},
                            {QSTC::NORMALIZED, to_string(normalized)},
                        },
                        QUERY_STATS_COL_ENUMS);
-#endif
+#endif  // DISABLE_LOGGING
+}
+
+// IndexStatsLogger
+
+using ISTC = IndexStatsColumn;
+
+void IndexStatsLogger::write_entry(const IndexStats &stats) {
+#ifndef DISABLE_LOGGING
+    IndexStatsLogger instance;
+    auto &RS = RunSettings::get_instance();
+
+    str index_file = RS.m_index_file;
+    str index_stats_path = fs::path(RS.get_logs_path()) / instance.INDEX_STATS_FILE;
+    instance.file_setup(index_stats_path, INDEX_STATS_COL_STRS);
+    instance.write_row(index_stats_path,
+                       {
+                           {ISTC::INDEX_FILE, index_file},
+                           ADD_STATS_TO_ROW(ISTC, LEAF_SIZE, stats.leaf_size_stats),
+                           ADD_STATS_TO_ROW(ISTC, LEAF_HEIGHT, stats.leaf_height_stats),
+                           ADD_STATS_TO_ROW(ISTC, SEG_RANGE, stats.seg_range_stats),
+                           ADD_STATS_TO_ROW(ISTC, SEG_LOWER, stats.seg_lower_stats),
+                           ADD_STATS_TO_ROW(ISTC, SEG_UPPER, stats.seg_upper_stats),
+                           {ISTC::NUM_INF_LOWER, to_string(stats.num_inf_lower)},
+                           {ISTC::NUM_INF_UPPER, to_string(stats.num_inf_upper)},
+                       },
+                       INDEX_STATS_COL_ENUMS);
+#endif  // DISABLE_LOGGING
 }

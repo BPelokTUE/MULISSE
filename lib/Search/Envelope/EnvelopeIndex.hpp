@@ -15,6 +15,8 @@ class FlatEnvelopeIndex : public IIndex<Envelope>, public IFinalizedIndex<Envelo
     vec<SearchResult> search(const vec<vec<float>> &query, const SearchOptions &opts,
                              std::ifstream &dataset_ifs) const override;
 
+    const vec<IndexEntry<Envelope>> &get_entries() const;
+
    private:
     void insert(const IndexEntry<Envelope> &entry) override;
 

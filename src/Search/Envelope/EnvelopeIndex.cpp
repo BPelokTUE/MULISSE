@@ -81,3 +81,5 @@ vec<SearchResult> FlatEnvelopeIndex::search(const vec<vec<float>> &query, const 
 
     return result_set->get_results();
 }
+
+const vec<IndexEntry<Envelope>> &FlatEnvelopeIndex::get_entries() const { return m_entries; }

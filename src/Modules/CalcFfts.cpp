@@ -3,7 +3,7 @@
 #include "Util/RunSettings.hpp"
 #include "Util/Logger.hpp"
 
-void calculate_ffts(bool normalized) {
+int calculate_ffts(bool normalized) {
     auto &RS = RunSettings::get_instance();
     uint series_len = RS.get_dataset_props().series_len;
     MtsNumChannelsT num_channels = RS.get_dataset_props().num_channels;
@@ -26,4 +26,6 @@ void calculate_ffts(bool normalized) {
     }
 
     logger.write_entry();
+
+    return 0;
 }

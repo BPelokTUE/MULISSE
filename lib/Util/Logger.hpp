@@ -156,19 +156,19 @@ enum class QueryStatsColumn {
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(QueryStatsColumn, QUERY_STATS_COL, false);
 
-using QSTC = QueryStatsColumn;
-
 /** @brief Enum of the columns of the index statistics log file */
 enum class IndexStatsColumn {
     INDEX_FILE,                        // Name of the index file
-    DEFINE_STAT_COLUMNS(LEAF_FILL),    // Statistics of the fill ratio of the leaves
+    DEFINE_STAT_COLUMNS(LEAF_SIZE),    // Statistics of the sizes of the leaves / # entries in the leaves
     DEFINE_STAT_COLUMNS(LEAF_HEIGHT),  // Statistics of the height of the leaves
     DEFINE_STAT_COLUMNS(SEG_RANGE),    // Statistics of the range of the segments
     DEFINE_STAT_COLUMNS(SEG_LOWER),    // Statistics of the lower bound of the segments
     DEFINE_STAT_COLUMNS(SEG_UPPER),    // Statistics of the upper bound of the segments
-    CORRELATIONS,  // Correlations between the statistics. The correlations are written as the flattened
-                   // upper-triangular matrix of the statistics, in the order of their declaration
+    NUM_INF_LOWER,                     // Number of segments with `-INF` as the lower bound
+    NUM_INF_UPPER,                     // Number of segments with `INF` as the upper bound
 };
+
+DEFINE_ENUM_CONSTS_NO_EXTRA(IndexStatsColumn, INDEX_STATS_COL, false);
 
 // ---------------------------------------------------- //
 // ----------------- LOGGER CLASSES ------------------- //
@@ -237,10 +237,11 @@ class Logger {
     // Paths
     const str DATASET_SETTINGS_FILE = "dataset_settings.csv";
     const str QUERY_SET_SETTINGS_FILE = "query_set_settings.csv";
+    const str QUERY_STATS_FILE = "query_stats.csv";
     const str INDEX_SETTINGS_FILE = "index_settings.csv";
+    const str INDEX_STATS_FILE = "index_stats.csv";
     const str SEARCH_SETTINGS_FILE = "search_settings.csv";
     const str RUN_LOG_FILE = "runs.csv";
-    const str QUERY_STATS_FILE = "query_stats.csv";
 };
 
 enum DatasetType { RANDOM_WALK, CSV };
@@ -432,13 +433,45 @@ class QueryLogger : public Logger {
 
 // Statistics
 
-#define DEFINE_STAT_ATTRS(ATTR_SUFFIX) \
-    float min_##ATTR_SUFFIX, max_##ATTR_SUFFIX, mean_##ATTR_SUFFIX, mean_sq_##ATTR_SUFFIX, std_##ATTR_SUFFIX;
+struct AttributeStats {
+    float min, max, mean, st_dev, sum, sum_sq;
+
+    AttributeStats();
+
+    void update(float value);
+
+    void update(float value, size_t count);
+
+    void calculate(uint count);
+};
 
 struct QueryStats {
-    DEFINE_STAT_ATTRS(dist);
-    uint subs_count;
+    AttributeStats dist_stats;
+    size_t subs_count = 0;
     float rc_using_max, rc_using_mean;
+
+    QueryStats() = default;
+
+    void calculate();
+};
+
+struct IndexStats {
+    AttributeStats leaf_size_stats;
+    AttributeStats leaf_height_stats;
+    AttributeStats seg_range_stats;
+    AttributeStats seg_lower_stats;
+    AttributeStats seg_upper_stats;
+
+    size_t leaf_count = 0, seg_count = 0;
+    size_t num_inf_lower = 0, num_inf_upper = 0;
+
+    IndexStats() = default;
+
+    void update_leaf_stats(float fill, float height);
+
+    void update_seg_stats(float lower, float upper, size_t count = 1);
+
+    void calculate();
 };
 
 /** @brief Class for logging query statistics */
@@ -457,24 +490,14 @@ class QueryStatsLogger : public Logger {
     QueryStatsLogger() = default;
 };
 
-struct IndexStats {
-    DEFINE_STAT_ATTRS(leaf_fill);
-    DEFINE_STAT_ATTRS(leaf_height);
-    DEFINE_STAT_ATTRS(seg_range);
-    DEFINE_STAT_ATTRS(seg_lower);
-    DEFINE_STAT_ATTRS(seg_upper);
-    vec<float> correlations;
-};
-
 /** @brief Class for logging index statistics */
 class IndexStatsLogger : public Logger {
    public:
     /**
      * @brief Write an index statistics entry
-     * @param index_file The name of the index file
      * @param stats The statistics of the index
      */
-    static void write_entry(str index_file, const IndexStats &stats);
+    static void write_entry(const IndexStats &stats);
 
    private:
     IndexStatsLogger() = default;

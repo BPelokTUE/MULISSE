@@ -38,10 +38,7 @@ void update_query_stats(QueryStats &stats, const vec<vec<float>> &query, const v
                 }
             }
             float dist = std::sqrt(dist_squared);
-            stats.min_dist = std::min(stats.min_dist, dist);
-            stats.max_dist = std::max(stats.max_dist, dist);
-            stats.mean_dist += dist;
-            stats.mean_sq_dist += dist_squared;
+            stats.dist_stats.update(dist);
             stats.subs_count++;
 
             int end_pos = start_pos + query_len;
@@ -87,10 +84,7 @@ int calculate_query_stats(bool normalized) {
 
         if (c == num_channels - 1) {
             dataset_ifs.seekg(0);
-            QueryStats stats = {
-                .min_dist = INF,
-                .max_dist = 0,
-            };
+            QueryStats stats;
             for (uint i = 0; i < num_series; ++i) {
                 vec<vec<float>> mts(num_channels);
                 for (uint c = 0; c < num_channels; ++c) {
@@ -103,11 +97,10 @@ int calculate_query_stats(bool normalized) {
                 }
                 update_query_stats(stats, query, mts, normalized);
             }
-            auto [dist_mean, std_dist] = calculate_mu_and_sigma(stats.mean_dist, stats.mean_sq_dist, stats.subs_count);
-            stats.mean_dist = dist_mean;
-            stats.std_dist = std_dist;
-            stats.rc_using_max = (stats.max_dist - stats.min_dist) / stats.min_dist;
-            stats.rc_using_mean = stats.mean_dist / stats.min_dist;
+
+            stats.dist_stats.calculate(stats.subs_count);
+            stats.rc_using_max = (stats.dist_stats.max - stats.dist_stats.min) / stats.dist_stats.min;
+            stats.rc_using_mean = stats.dist_stats.mean / stats.dist_stats.min;
 
             QueryStatsLogger::write_entry(query_count++, query, stats, normalized);
         }

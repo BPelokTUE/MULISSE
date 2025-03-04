@@ -233,6 +233,8 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
 
     SaxNumBitsT get_first_layer_num_bits() const { return m_first_layer_num_bits; }
 
+    const iSaxFinalizedNode<FTag>* get_first_layer_node(size_t ind) const { return m_first_layer_nodes[ind].get(); }
+
    private:
     vec<vec<vec<SymbolType>>> m_first_layer_symbols;
     vec<uptr<iSaxFinalizedNode<FTag>>> m_first_layer_nodes;

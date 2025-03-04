@@ -8,6 +8,7 @@
 #include "Modules/QueryGen.hpp"
 #include "Modules/QueryStats.hpp"
 #include "Modules/Indexing.hpp"
+#include "Modules/IndexStats.hpp"
 #include "Modules/CalcFfts.hpp"
 #include "Modules/Searching.hpp"
 #include "Util/constants.hpp"
@@ -23,6 +24,7 @@ int main(int argc, char **argv) {
     auto qs_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_QS), "Create queries from dataset");
     auto q_stats_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CALC_Q_STATS), "Calculate query statistics");
     auto index_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(INDEX), "Construct MULISSE index");
+    auto i_stats_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CALC_I_STATS), "Calculate index statistics");
     auto ffts_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CALC_FFTS), "Calculate FFTs");
     auto search_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(SEARCH), "Search using MULISSE");
     app.require_subcommand(1);
@@ -182,6 +184,18 @@ int main(int argc, char **argv) {
         ->check(positive_int)
         ->capture_default_str();
 
+    // Options for calculating index statistics
+    i_stats_subcommand->add_option("-i,--index", index_path, "Index file path relative to `DATA`")->required();
+    i_stats_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
+        ->required()
+        ->check(positive_int);
+    i_stats_subcommand->add_option("-f,--format", index_format_str, "Index format")
+        ->capture_default_str()
+        ->check(CLI::IsMember(ACCEPTED_ARCHIVE_TYPE_STRS));
+    i_stats_subcommand->add_option("-t,--index_type", search_method_type_str, "Index type")
+        ->capture_default_str()
+        ->check(CLI::IsMember(ACCEPTED_SEARCH_METHOD_TYPE_STRS));
+
     // Options for calculating FFTs
     ffts_subcommand->add_option("-d,--dataset", dataset_path, "Dataset path relative to `DATA`")->required();
     ffts_subcommand->add_option("-F,--ffts", ffts_path, "Path to save FFTs relative to `DATA`")->required();
@@ -260,97 +274,108 @@ int main(int argc, char **argv) {
     }
 
     // Execute subcommand
-    if (command_type == CREATE_DS) {
-        create_random_walks(step_sd, zero_start, seed);
-    } else if (command_type == PARSE_CSV) {
-        create_dataset_from_csv(csv_paths, num_series, low_sd_len, seed);
-    } else if (command_type == CREATE_QS) {
-        create_queries({noise, num_queries, exact_lengths, l_min, l_max, used_channels, channel_mask, seed});
-    } else if (command_type == CALC_Q_STATS) {
-        calculate_query_stats(!unnormalized);
-    } else if (command_type == INDEX) {
-        IIndexParams *index_params;
-        switch (method_type) {
-            case ISAX_ENVELOPE:
-                index_params = new iSaxEnvelopeIndexParams{
-                    pos_per_env,
-                    segment_len,
-                    first_layer_num_bits,
-                    leaf_capacity,
-                    STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str),
-                    STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str),
-                    DEFAULT_NUM_BIT_LIMIT,
-                    true,  // min_num_bits_on_tie,
-                };
-                break;
-            case ISAX:
-                index_params = new iSaxIndexParams{
-                    segment_len,
-                    first_layer_num_bits,
-                    leaf_capacity,
-                    STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str),
-                    STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str),
-                    DEFAULT_NUM_BIT_LIMIT,
-                    true,  // min_num_bits_on_tie,
-                };
-                break;
-            case ENVELOPE:
-                index_params = new EnvelopeIndexParams{pos_per_env, segment_len};
-                break;
-            case SEQUENTIAL_SCAN:
-                std::cerr << "Sequential scan does not require indexation\n";
-                return 1;
-            default:
-                std::cerr << "Index type \"" << search_method_type_str << "\" is not implemented\n";
-                return 1;
+    switch (command_type) {
+        case CREATE_DS: {
+            return create_random_walks(step_sd, zero_start, seed);
         }
-        IndexOptions index_options{
-            .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
-            .l_min = l_min,
-            .l_max = l_max,
-            .series_len = series_len,
-            .num_channels = num_channels,
-            .normalized = !unnormalized,
-            .index_params = std::unique_ptr<IIndexParams>(index_params),
-        };
-        create_index(index_options);
-    } else if (command_type == CALC_FFTS) {
-        calculate_ffts(!unnormalized);
-    } else if (command_type == SEARCH) {
-        SearchType search_type = STR_TO_SEARCH_TYPE.at(search_type_str);
-        IDistanceMeasure *distance_measure;
-        switch (STR_TO_DISTANCE_TYPE.at(distance_measure_str)) {
-            case ED:
-                distance_measure = new EuclideanDistance(!unnormalized, early_abandon);
-                break;
-            case MASS:
-                distance_measure = new EuclideanDistanceWMass(!unnormalized);
-                break;
-            default:
-                std::cerr << "Distance measure \"" << distance_measure_str << "\" is not implemented\n";
-                return 1;
+        case PARSE_CSV: {
+            return create_dataset_from_csv(csv_paths, num_series, low_sd_len, seed);
         }
-        IResultSet *result_set;
-        switch (search_type) {
-            case KNN:
-                result_set = new KnnResultSet(knn_k);
-                break;
-            case R_RANGE:
-                result_set = new RRangeResultSet(r_range_r);
-                break;
-            default:
-                std::cerr << "Search type \"" << search_type_str << "\" is not implemented\n";
-                return 1;
+        case CREATE_QS: {
+            return create_queries({noise, num_queries, exact_lengths, l_min, l_max, used_channels, channel_mask, seed});
         }
-        SearchOptions search_options = {
-            .search_method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str),
-            .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
-            .exact = !approximate,
-            .normalized = !unnormalized,
-            .result_set = uptr<IResultSet>(result_set),
-            .distance_measure = uptr<IDistanceMeasure>(distance_measure),
-        };
-        search(search_options);
+        case CALC_Q_STATS: {
+            return calculate_query_stats(!unnormalized);
+        }
+        case INDEX: {
+            IIndexParams *index_params;
+            switch (method_type) {
+                case ISAX_ENVELOPE:
+                    index_params = new iSaxEnvelopeIndexParams{
+                        pos_per_env,
+                        segment_len,
+                        first_layer_num_bits,
+                        leaf_capacity,
+                        STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str),
+                        STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str),
+                        DEFAULT_NUM_BIT_LIMIT,
+                        true,  // min_num_bits_on_tie,
+                    };
+                    break;
+                case ISAX:
+                    index_params = new iSaxIndexParams{
+                        segment_len,
+                        first_layer_num_bits,
+                        leaf_capacity,
+                        STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str),
+                        STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str),
+                        DEFAULT_NUM_BIT_LIMIT,
+                        true,  // min_num_bits_on_tie,
+                    };
+                    break;
+                case ENVELOPE:
+                    index_params = new EnvelopeIndexParams{pos_per_env, segment_len};
+                    break;
+                case SEQUENTIAL_SCAN:
+                    std::cerr << "Sequential scan does not require indexation\n";
+                    return 1;
+                default:
+                    std::cerr << "Index type \"" << search_method_type_str << "\" is not implemented\n";
+                    return 1;
+            }
+            IndexOptions index_options{
+                .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
+                .l_min = l_min,
+                .l_max = l_max,
+                .series_len = series_len,
+                .num_channels = num_channels,
+                .normalized = !unnormalized,
+                .index_params = std::unique_ptr<IIndexParams>(index_params),
+            };
+            return create_index(index_options);
+        }
+        case CALC_I_STATS: {
+            return calculate_index_stats(method_type, STR_TO_ARCHIVE_TYPE.at(index_format_str));
+        }
+        case CALC_FFTS: {
+            return calculate_ffts(!unnormalized);
+        }
+        case SEARCH: {
+            SearchType search_type = STR_TO_SEARCH_TYPE.at(search_type_str);
+            IDistanceMeasure *distance_measure;
+            switch (STR_TO_DISTANCE_TYPE.at(distance_measure_str)) {
+                case ED:
+                    distance_measure = new EuclideanDistance(!unnormalized, early_abandon);
+                    break;
+                case MASS:
+                    distance_measure = new EuclideanDistanceWMass(!unnormalized);
+                    break;
+                default:
+                    std::cerr << "Distance measure \"" << distance_measure_str << "\" is not implemented\n";
+                    return 1;
+            }
+            IResultSet *result_set;
+            switch (search_type) {
+                case KNN:
+                    result_set = new KnnResultSet(knn_k);
+                    break;
+                case R_RANGE:
+                    result_set = new RRangeResultSet(r_range_r);
+                    break;
+                default:
+                    std::cerr << "Search type \"" << search_type_str << "\" is not implemented\n";
+                    return 1;
+            }
+            SearchOptions search_options = {
+                .search_method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str),
+                .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
+                .exact = !approximate,
+                .normalized = !unnormalized,
+                .result_set = uptr<IResultSet>(result_set),
+                .distance_measure = uptr<IDistanceMeasure>(distance_measure),
+            };
+            return search(search_options);
+        }
     }
 
     return 0;

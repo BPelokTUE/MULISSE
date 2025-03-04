@@ -141,6 +141,8 @@ if __name__ == "__main__":
             }
         )
 
+    calculate_index_stats = config.get("calculate_index_stats", False)
+
     # -------------------#
     # SEARCH SETTINGS    #
     # -------------------#
@@ -388,6 +390,10 @@ if __name__ == "__main__":
                         args += [f"--{key}", str(value)]
 
                     run_command_with_logging([EXECUTABLE_PATH, *args])
+
+                    if calculate_index_stats:
+                        args = ["calc_i_stats", "-i", index_file, "-c", str(num_channels), "-t", index_method]
+                        run_command_with_logging([EXECUTABLE_PATH, *args])
 
                     relevant_search_settings = index_method_settings.copy()
                     for i in range(len(relevant_search_settings)):
