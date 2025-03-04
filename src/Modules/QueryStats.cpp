@@ -103,10 +103,9 @@ int calculate_query_stats(bool normalized) {
                 }
                 update_query_stats(stats, query, mts, normalized);
             }
-            auto [dist_mean, dist_std_dev] =
-                calculate_mu_and_sigma(stats.mean_dist, stats.mean_sq_dist, stats.subs_count);
+            auto [dist_mean, std_dist] = calculate_mu_and_sigma(stats.mean_dist, stats.mean_sq_dist, stats.subs_count);
             stats.mean_dist = dist_mean;
-            stats.dist_std_dev = dist_std_dev;
+            stats.std_dist = std_dist;
             stats.rc_using_max = (stats.max_dist - stats.min_dist) / stats.min_dist;
             stats.rc_using_mean = stats.mean_dist / stats.min_dist;
 

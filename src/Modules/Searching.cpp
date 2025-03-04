@@ -8,34 +8,24 @@
 #include "Search/iSax/iSaxFinalizedIndex.hpp"
 #include "Search/SequentialScan.hpp"
 
-std::ifstream get_index_stream() {
-    str index_path = RunSettings::get_instance().get_index_path();
-    std::ifstream index_stream(index_path, std::ios::binary);
-    if (!index_stream) {
-        std::cerr << "Could not open index file " << index_path << std::endl;
-        return std::ifstream();
-    }
-    return index_stream;
-}
+#define LOAD_INDEX(INDEX_TYPE)                   \
+    auto index_stream = RS.get_index_ifs();      \
+    auto index = std::make_unique<INDEX_TYPE>(); \
+    index->load(index_stream, opts.index_format);
 
 uptr<ISearchMethod> load_method(const SearchOptions &opts) {
+    auto &RS = RunSettings::get_instance();
     switch (opts.search_method_type) {
         case ISAX_ENVELOPE: {
-            auto index_stream = get_index_stream();
-            auto index = std::make_unique<iSaxFinalizedIndex<EnvelopeTag>>();
-            static_cast<IFinalizedIndex<EnvelopeTag> *>(index.get())->load(index_stream, opts.index_format);
+            LOAD_INDEX(iSaxFinalizedIndex<EnvelopeTag>);
             return index;
         }
         case ISAX: {
-            auto index_stream = get_index_stream();
-            auto index = std::make_unique<iSaxFinalizedIndex<PaaTag>>();
-            static_cast<IFinalizedIndex<PaaTag> *>(index.get())->load(index_stream, opts.index_format);
+            LOAD_INDEX(iSaxFinalizedIndex<PaaTag>);
             return index;
         }
         case ENVELOPE: {
-            auto index_stream = get_index_stream();
-            auto index = std::make_unique<FlatEnvelopeIndex>();
-            static_cast<IFinalizedIndex<EnvelopeTag> *>(index.get())->load(index_stream, opts.index_format);
+            LOAD_INDEX(FlatEnvelopeIndex);
             return index;
         }
         case SEQUENTIAL_SCAN:

@@ -713,9 +713,7 @@ def experiment_relative_contrast(
 # %%
 experiment_relative_contrast(str(QSTC.RC_USING_MAX), "RC using max", query_noise_levels=[0.1, 0.5, 1.0])
 experiment_relative_contrast(str(QSTC.RC_USING_MEAN), "RC using mean", query_noise_levels=[0.1, 0.5, 1.0])
-experiment_relative_contrast(
-    str(QSTC.DIST_STD_DEV), "Std. dev. of distance to query", query_noise_levels=[0.1, 0.5, 1.0]
-)
+experiment_relative_contrast(str(QSTC.STD_DIST), "Std. dev. of distance to query", query_noise_levels=[0.1, 0.5, 1.0])
 experiment_relative_contrast(str(QSTC.MAX_DIST), "Maximum distance to query", query_noise_levels=[0.1, 0.5, 1.0])
 experiment_relative_contrast(str(QSTC.MIN_DIST), "Minimum distance to query", query_noise_levels=[0.1, 0.5, 1.0])
 experiment_relative_contrast(str(QSTC.MEAN_DIST), "Mean distance to query", query_noise_levels=[0.1, 0.5, 1.0])

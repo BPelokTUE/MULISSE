@@ -137,6 +137,10 @@ const vec<QC> QUERY_TIME_COLUMNS = {QC::TOTAL_TIME_S, QC::FIRST_LAYER_TIME_S, QC
                                           QC::RESULT_SET_DISTANCES, QC::QUERY_CHANNELS},
               QUERY_NUMBER_COLUMNS = {QC::QUERY_ID, QC::QUERY_LENGTH};
 
+// Enums for statistics
+
+#define DEFINE_STAT_COLUMNS(ENUM_SUFFIX) MIN_##ENUM_SUFFIX, MAX_##ENUM_SUFFIX, MEAN_##ENUM_SUFFIX, STD_##ENUM_SUFFIX
+
 /** @brief Enum of the columns of the query statistics log file */
 enum class QueryStatsColumn {
     ID,              // ID of the query within the query file
@@ -145,17 +149,26 @@ enum class QueryStatsColumn {
     QUERY_LENGTH,    // Length of the query
     QUERY_CHANNELS,  // Channels included in the query as a list of ITEM_SEP separated `0`s and `1`s
     NORMALIZED,      // Whether the query and subsequences are normalized
-    MIN_DIST,        // Minimum distance of the query to any subsequence in the dataset
-    MAX_DIST,        // Maximum distance of the query to any subsequence in the dataset
-    MEAN_DIST,       // Mean distance of the query to subsequences in the dataset
-    DIST_STD_DEV,    // Standard deviation of the distances of the query to subsequences in the dataset
-    RC_USING_MAX,    // Relative contrast of the query, calculated as (D_max - D_min) / D_min
-    RC_USING_MEAN,   // Relative contrast of the query, calculated as D_mean / D_min
+    DEFINE_STAT_COLUMNS(DIST),  // Statistics of the distances of the query to subsequences in the dataset
+    RC_USING_MAX,               // Relative contrast of the query, calculated as (D_max - D_min) / D_min
+    RC_USING_MEAN,              // Relative contrast of the query, calculated as D_mean / D_min
 };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(QueryStatsColumn, QUERY_STATS_COL, false);
 
 using QSTC = QueryStatsColumn;
+
+/** @brief Enum of the columns of the index statistics log file */
+enum class IndexStatsColumn {
+    INDEX_FILE,                        // Name of the index file
+    DEFINE_STAT_COLUMNS(LEAF_FILL),    // Statistics of the fill ratio of the leaves
+    DEFINE_STAT_COLUMNS(LEAF_HEIGHT),  // Statistics of the height of the leaves
+    DEFINE_STAT_COLUMNS(SEG_RANGE),    // Statistics of the range of the segments
+    DEFINE_STAT_COLUMNS(SEG_LOWER),    // Statistics of the lower bound of the segments
+    DEFINE_STAT_COLUMNS(SEG_UPPER),    // Statistics of the upper bound of the segments
+    CORRELATIONS,  // Correlations between the statistics. The correlations are written as the flattened
+                   // upper-triangular matrix of the statistics, in the order of their declaration
+};
 
 // ---------------------------------------------------- //
 // ----------------- LOGGER CLASSES ------------------- //
@@ -417,8 +430,15 @@ class QueryLogger : public Logger {
     static bool initialized;
 };
 
+// Statistics
+
+#define DEFINE_STAT_ATTRS(ATTR_SUFFIX) \
+    float min_##ATTR_SUFFIX, max_##ATTR_SUFFIX, mean_##ATTR_SUFFIX, mean_sq_##ATTR_SUFFIX, std_##ATTR_SUFFIX;
+
 struct QueryStats {
-    float min_dist, max_dist, mean_dist, mean_sq_dist, dist_std_dev, subs_count, rc_using_max, rc_using_mean;
+    DEFINE_STAT_ATTRS(dist);
+    uint subs_count;
+    float rc_using_max, rc_using_mean;
 };
 
 /** @brief Class for logging query statistics */
@@ -435,6 +455,29 @@ class QueryStatsLogger : public Logger {
 
    private:
     QueryStatsLogger() = default;
+};
+
+struct IndexStats {
+    DEFINE_STAT_ATTRS(leaf_fill);
+    DEFINE_STAT_ATTRS(leaf_height);
+    DEFINE_STAT_ATTRS(seg_range);
+    DEFINE_STAT_ATTRS(seg_lower);
+    DEFINE_STAT_ATTRS(seg_upper);
+    vec<float> correlations;
+};
+
+/** @brief Class for logging index statistics */
+class IndexStatsLogger : public Logger {
+   public:
+    /**
+     * @brief Write an index statistics entry
+     * @param index_file The name of the index file
+     * @param stats The statistics of the index
+     */
+    static void write_entry(str index_file, const IndexStats &stats);
+
+   private:
+    IndexStatsLogger() = default;
 };
 
 #endif  // LOGGER_HPP

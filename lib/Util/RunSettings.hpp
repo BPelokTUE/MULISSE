@@ -132,6 +132,10 @@ class RunSettings {
 
     str get_logs_path() const;
 
+    // Load index
+
+    std::ifstream get_index_ifs() const;
+
     // ---------------------------------------------------- //
 
    private:

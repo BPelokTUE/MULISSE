@@ -116,7 +116,7 @@ class QueryStatsColumn(Enum):
     MIN_DIST = auto()
     MAX_DIST = auto()
     MEAN_DIST = auto()
-    DIST_STD_DEV = auto()
+    STD_DIST = auto()
     RC_USING_MAX = auto()
     RC_USING_MEAN = auto()
 
