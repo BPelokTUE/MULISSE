@@ -47,7 +47,7 @@ if __name__ == "__main__":
         [
             "csv_data_dirs", "dataset_sizes", "series_lengths", "syn_num_channels", "query_set_sizes",
             "syn_step_stdevs", "l_range_ratios", "used_channel_ratios", "query_noise_stdevs", "search_methods",
-            "isax_split_strategies", "isax_breakpoint_strategies", "isax_leaf_capacities", "isax_start_bit_numbers",
+            "isax_split_strategies", "isax_breakpoint_strategies", "isax_leaf_cap_ratios", "isax_start_bit_numbers",
             "num_segments", "envelope_size_ratios", "distance_measures", "early_abandon", "precalculate_ffts", 
             "search_types", "search_ks", "search_rs", "search_approx", "search_raw"
         ],
@@ -83,17 +83,24 @@ if __name__ == "__main__":
             "dataset_seeds": dataset_seeds,
         }
     ]
+
+    separate_csv_datasets = config.get("separate_csv_datasets", False)
     csv_data_paths = [os.path.join(local_settings["CSV_PATH"], data_dir) for data_dir in config["csv_data_dirs"]]
     for path in csv_data_paths:
-        dataset_settings.append(
-            {
-                "command": "parse_csv",
-                "location": os.path.basename(path),
-                "size": config["dataset_sizes"],
-                "num_channels": [len(os.listdir(path))],
-                "dataset_seeds": dataset_seeds,
-            }
-        )
+        item = {
+            "command": "parse_csv",
+            "location": os.path.basename(path),
+            "size": config["dataset_sizes"],
+            "num_channels": [len(os.listdir(path))],
+            "dataset_seeds": dataset_seeds,
+        }
+        if not separate_csv_datasets:
+            dataset_settings.append(item)
+        else:
+            item["num_channels"] = 1
+            for csv_dir in os.listdir(path):
+                item["location"] = os.path.join(os.path.basename(path), csv_dir)
+                dataset_settings.append(item.copy())
 
     # --------------------#
     # QUERY SET SETTINGS  #
@@ -114,32 +121,38 @@ if __name__ == "__main__":
     # --------------------#
 
     index_settings = []
-    isax_index_methods = ["isax", "isax_envelope"]
-    non_isax_index_methods: list[str] = ["envelope"]
-    index_methods = non_isax_index_methods + isax_index_methods
-
-    isax_methods_in_config = [t for t in config["search_methods"] if t in isax_index_methods]
-    index_settings.append(
-        {
-            "index_type": isax_methods_in_config,
-            "split_strategy": config["isax_split_strategies"],
-            "breakpoint_strategy": config["isax_breakpoint_strategies"],
-            "leaf_capacity": config["isax_leaf_capacities"],
-            "first_layer_bits": config["isax_start_bit_numbers"],
-            "num_segments": config["num_segments"],
-            "pos_per_env": config["envelope_size_ratios"],
-        }
-    )
-
-    non_isax_indexes = [t for t in config["search_methods"] if t in non_isax_index_methods]
-    if len(non_isax_indexes) > 0:
+    if "isax" in config["search_methods"]:
         index_settings.append(
             {
-                "index_type": non_isax_indexes,
+                "index_type": "isax",
+                "split_strategy": config["isax_split_strategies"],
+                "breakpoint_strategy": config["isax_breakpoint_strategies"],
+                "leaf_capacity": config["isax_leaf_cap_ratios"],
+                "first_layer_bits": config["isax_start_bit_numbers"],
+                "num_segments": config["num_segments"],
+            }
+        )
+    if "isax_envelope" in config["search_methods"]:
+        index_settings.append(
+            {
+                "index_type": "isax_envelope",
+                "split_strategy": config["isax_split_strategies"],
+                "breakpoint_strategy": config["isax_breakpoint_strategies"],
+                "leaf_capacity": config["isax_leaf_cap_ratios"],
+                "first_layer_bits": config["isax_start_bit_numbers"],
                 "num_segments": config["num_segments"],
                 "pos_per_env": config["envelope_size_ratios"],
             }
         )
+    if "envelope" in config["search_methods"]:
+        index_settings.append(
+            {
+                "index_type": "envelope",
+                "num_segments": config["num_segments"],
+                "pos_per_env": config["envelope_size_ratios"],
+            }
+        )
+    index_methods = [setting["index_type"] for setting in index_settings]
 
     calculate_index_stats = config.get("calculate_index_stats", False)
 
@@ -292,8 +305,11 @@ if __name__ == "__main__":
             args = [command, "-d", data_file, "-n", str(num_series), "-m", str(series_len), "-S", str(seed)]
             if command == "parse_csv":
                 args += ["-l", str(l_min)]
-                csvs_dir = os.path.join(local_settings["CSV_PATH"], dataset_setting["location"])
-                args += ["-i", *[os.path.join(csvs_dir, f) for f in os.listdir(csvs_dir)]]
+                csv_location = os.path.join(local_settings["CSV_PATH"], dataset_setting["location"])
+                if os.path.isdir(csv_location):
+                    args += ["-i", *[os.path.join(csv_location, f) for f in os.listdir(csv_location)]]
+                else:
+                    args += ["-i", csv_location]
             if command == "create_ds":
                 args += ["-c", str(num_channels)]
                 args += ["-s", str(dataset_setting["step_stdev"])]
@@ -377,6 +393,7 @@ if __name__ == "__main__":
                     ]
                     # fmt: on
 
+                    max_pos_per_env = 1
                     if "num_segments" in index_setting_copy:
                         args += ["-s", str(series_len // index_setting_copy.pop("num_segments"))]
                     if "pos_per_env" in index_setting_copy:
@@ -385,6 +402,17 @@ if __name__ == "__main__":
                             "-p",
                             str(int(max_pos_per_env * index_setting_copy.pop("pos_per_env"))),
                         ]
+
+                    if "leaf_capacity" in index_setting_copy:
+                        num_entries = num_series
+                        if index_method == "isax":
+                            l_range = l_max - l_min + 1
+                            num_entries = l_range * ((series_len - l_max + 1) + (l_range - 1) / 2) * num_series
+                        elif index_method == "isax_envelope":
+                            num_entries = ((series_len - l_min + max_pos_per_env) // max_pos_per_env) * num_series
+                        leaf_capacity = int(index_setting_copy.pop("leaf_capacity") * num_entries)
+                        leaf_capacity = max(1, leaf_capacity)
+                        args += ["-C", str(leaf_capacity)]
 
                     for key, value in index_setting_copy.items():
                         args += [f"--{key}", str(value)]

@@ -11,7 +11,7 @@
     "search_methods": [],
     "isax_split_strategies": [],
     "isax_breakpoint_strategies": [],
-    "isax_leaf_capacities": [],
+    "isax_leaf_cap_ratios": [],
     "isax_start_bit_numbers": [],
     "num_segments": [],
     "envelope_size_ratios": [],

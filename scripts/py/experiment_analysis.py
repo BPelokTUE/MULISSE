@@ -178,10 +178,18 @@ class ExperimentResults(BaseModel):
         qc_settings_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.SETTINGS_ID))
 
         merged_df["num_runs"] = merged_df.groupby(qc_settings_id)[qc_settings_id].transform("count")
+
+        cols_to_drop = [
+            col for col in merged_df.columns if col.startswith(str(ERD.RUNS_COLS)) and col != qc_settings_id
+        ]
+        merged_df = merged_df.drop(columns=cols_to_drop)
+        merged_df = merged_df.drop_duplicates()
+
         merged_df[str(QC.AMORTIZED_PREP_TIME_S)] = (
             merged_df[isc_indexing_time] + merged_df[isc_fft_calc_time]
         ) / merged_df["num_runs"]
         merged_df = merged_df[[str(QC.AMORTIZED_PREP_TIME_S), qc_settings_id]]
+
         self.runs_df = self.runs_df.merge(merged_df, left_on=str(QC.SETTINGS_ID), right_on=qc_settings_id, how="left")
 
     @classmethod
@@ -325,7 +333,7 @@ class ExperimentResults(BaseModel):
         return merged_df.drop(columns=columns_to_drop)
 
 
-# %%[markdown]
+## %%[markdown]
 """
 ### Reducers
 """
@@ -376,6 +384,7 @@ def execute_reduction(
 
     merged_df = pd.concat([experiment.get_merged_df() for experiment in experiments], ignore_index=True)
     merged_df = merged_df.fillna(na_replacement)
+
     grouped = merged_df.groupby(merged_groups)
 
     for group_keys, group_df in grouped:
@@ -914,5 +923,112 @@ for logs_dirs in [pure_isax_logs, pure_envelope_logs]:
     experiment_compare_methods(
         str(QC.PRUNING_RATIO), PRUNING_RATIO_Y_LABEL, logs_dirs=logs_dirs, y_lim=(0, 1), y_scale="linear"
     )
+
+# %%
+
+
+def dict_to_tuples(d: dict[ERD, list[str]]) -> list[tuple[ERD, str]]:
+    tuples = []
+    for key, values in d.items():
+        for value in values:
+            tuples.append((key, value))
+    return tuples
+
+
+def get_col_index(col: str, tuples: list[tuple[ERD, str]]) -> int:
+    for i, (_, col_name) in enumerate(tuples):
+        if col_name == col:
+            return i
+    return -1
+
+
+def merge_univariate_datasets(mean_values):
+    merged_mean_values = {}
+    for group, values in mean_values.items():
+        dataset = group[0].split("/", 1)[0]
+        merged_group = (dataset, *group[1:])
+        if merged_group not in merged_mean_values:
+            merged_mean_values[merged_group] = [[] for _ in range(len(values))]
+        for i, value in enumerate(values):
+            merged_mean_values[merged_group][i].append(value)
+
+    for group, values_lists in merged_mean_values.items():
+        merged_mean_values[group] = [np.mean(values) for values in values_lists]
+
+    return merged_mean_values
+
+
+def experiment_univariate_parametrization(
+    targets_dict: dict[ERD, list[str]],
+    logs_dirs: list[str],
+    y_label: str,
+    merge_dataset: bool = True,
+    hatches=None,
+    hatch_labels=None,
+):
+    groups_dict = {
+        ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
+        ERD.QUERY_SETS_COLS: [str(QSC.L_MIN), str(QSC.L_MAX)],
+        ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
+        ERD.INDEXES_COLS: [str(ISC.POS_PER_ENV), str(ISC.FIRST_LAYER_NUM_BITS), str(ISC.LEAF_CAPACITY)],
+    }
+    columns = {**groups_dict, **targets_dict}
+    results_list = [ExperimentResults.load(logs_dir=logs_dir, cols=columns) for logs_dir in logs_dirs]
+
+    targets = [(csv, target, MeanReducer()) for csv, target in dict_to_tuples(targets_dict)]
+    groups = dict_to_tuples(groups_dict)
+    mean_values = execute_reduction(results_list, targets, groups)
+    method_name_ind = get_col_index(str(SSC.METHOD_NAME), groups)
+    mean_values = remove_index_name_from_reduction_result(mean_values, method_name_ind)
+
+    dataset_order = [key[0] for key in mean_values]
+    if merge_dataset:
+        mean_values = merge_univariate_datasets(mean_values)
+        dataset_order = DATASET_ORDER
+
+    def get_x_label(key: tuple):
+        dataset, l_min, l_max, _, pos_per_env, first_layer_bits, leaf_capacity = key
+        ppe_str = f"\nPPE={int(pos_per_env)}" if pos_per_env is not None and pos_per_env > 0 else ""
+        bits_str = f"\nBits={int(first_layer_bits)}" if first_layer_bits is not None and first_layer_bits > 0 else ""
+        leaf_str = f"\nLC={int(leaf_capacity)}" if leaf_capacity is not None and leaf_capacity > 0 else ""
+        return f"l_min={l_min}\nl_max={l_max}{ppe_str}{bits_str}{leaf_str}"
+
+    datasets = {group[0] for group in mean_values}
+    for dataset in datasets:
+        l_ranges = {(key[1], key[2]) for key in mean_values if key[0] == dataset}
+        for l_range in l_ranges:
+            mean_values_ds = {
+                group: values for group, values in mean_values.items() if group[0] == dataset and group[1:3] == l_range
+            }
+            mean_values_ds = sort_dict(mean_values_ds, lambda x: (dataset_order.index(x[0][0]), *x[0][1:]))
+            x_labels = {(*key[:3], *key[4:]): get_x_label(key) for key in mean_values_ds}
+
+            plot_bars(
+                mean_values_ds,
+                method_name_ind,
+                METHOD_COLORS,
+                METHOD_LABELS,
+                x_labels,
+                y_label=y_label,
+                scale="log",
+                bar_width_inches=0.4,
+                title=f"{dataset}: l_min={l_range[0]}, l_max={l_range[1]}",
+                hatches=hatches,
+                hatch_labels=hatch_labels,
+            )
+
+
+# %%
+
+logs_dirs = "EXPERIMENT_LOGS/LOGS_univariate_parametrization_1"
+experiment_univariate_parametrization(
+    # {ERD.RUNS_COLS: [str(QC.TOTAL_TIME_S), str(QC.AMORTIZED_PREP_TIME_S)]},
+    {ERD.RUNS_COLS: [str(QC.TOTAL_TIME_S)]},
+    [logs_dirs],
+    TOTAL_TIME_Y_LABEL,
+    # hatches=["", PREP_TIME_HATCH],
+    # hatch_labels=TIME_LABELS,
+    merge_dataset=True,
+)
 
 # %%

@@ -11,7 +11,7 @@
     "search_methods": ["isax_envelope"],
     "isax_split_strategies": ["em"],
     "isax_breakpoint_strategies": ["equiprobable"],
-    "isax_leaf_capacities": [64],
+    "isax_leaf_cap_ratios": [0.0128],
     "isax_start_bit_numbers": [4],
     "num_segments": [16],
     "envelope_size_ratios": [0.05, 0.2, 0.4, 0.6, 0.8, 1.0],
