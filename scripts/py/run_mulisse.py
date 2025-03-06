@@ -48,8 +48,8 @@ if __name__ == "__main__":
             "csv_data_dirs", "dataset_sizes", "series_lengths", "syn_num_channels", "query_set_sizes",
             "syn_step_stdevs", "l_range_ratios", "used_channel_ratios", "query_noise_stdevs", "search_methods",
             "isax_split_strategies", "isax_breakpoint_strategies", "isax_leaf_cap_ratios", "isax_start_bit_numbers",
-            "num_segments", "envelope_size_ratios", "distance_measures", "early_abandon", "precalculate_ffts", 
-            "search_types", "search_ks", "search_rs", "search_approx", "search_raw"
+            "num_segments", "envelope_size_ratios", "distance_measures", "early_abandon", "precalculate_ffts",
+            "adapt_index", "search_types", "search_ks", "search_rs", "search_approx", "search_raw"
         ],
     )
     # fmt: on
@@ -130,6 +130,7 @@ if __name__ == "__main__":
                 "leaf_capacity": config["isax_leaf_cap_ratios"],
                 "first_layer_bits": config["isax_start_bit_numbers"],
                 "num_segments": config["num_segments"],
+                "adapt": config["adapt_index"],
             }
         )
     if "isax_envelope" in config["search_methods"]:
@@ -142,6 +143,7 @@ if __name__ == "__main__":
                 "first_layer_bits": config["isax_start_bit_numbers"],
                 "num_segments": config["num_segments"],
                 "pos_per_env": config["envelope_size_ratios"],
+                "adapt": config["adapt_index"],
             }
         )
     if "envelope" in config["search_methods"]:
@@ -402,7 +404,6 @@ if __name__ == "__main__":
                             "-p",
                             str(int(max_pos_per_env * index_setting_copy.pop("pos_per_env"))),
                         ]
-
                     if "leaf_capacity" in index_setting_copy:
                         num_entries = num_series
                         if index_method == "isax":
@@ -413,6 +414,10 @@ if __name__ == "__main__":
                         leaf_capacity = int(index_setting_copy.pop("leaf_capacity") * num_entries)
                         leaf_capacity = max(1, leaf_capacity)
                         args += ["-C", str(leaf_capacity)]
+                    if "adapt" in index_setting_copy:
+                        adapt = index_setting_copy.pop("adapt")
+                        if not adapt:
+                            args += ["--no_adapt"]
 
                     for key, value in index_setting_copy.items():
                         args += [f"--{key}", str(value)]

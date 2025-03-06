@@ -67,6 +67,7 @@ enum class IndexSettingsColumn {
     MIN_NUM_BITS_ON_TIE,   // Whether to choose the segment with the minimum number of bits when tied for
                            // EntropyMaximizing split strategy for iSAX indexes
     NUM_BITS_LIMIT,        // Maximum number of bits per segment for iSAX indexes
+    ADAPT_TO_DATASET,      // Whether to adapt the index properties to the dataset
     NUM_LEAVES,            // Number of leaves in the index
     NUM_NODES,             // Number of nodes in the index, excluding the root
     NUM_ENTRIES,           // Number of entries in the index

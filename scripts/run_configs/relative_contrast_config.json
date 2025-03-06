@@ -18,6 +18,7 @@
     "distance_measures": [],
     "early_abandon": [],
     "precalculate_ffts": [],
+    "adapt_index": [],
     "search_types": [],
     "search_ks": [],
     "search_rs": [],

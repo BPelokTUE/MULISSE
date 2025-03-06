@@ -18,6 +18,7 @@
     "distance_measures": ["ed", "mass"],
     "early_abandon": [true],
     "precalculate_ffts": [false],
+    "adapt_index": [false],
     "search_types": ["knn"],
     "search_ks": [1],
     "search_rs": [1.0],
