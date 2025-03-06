@@ -76,7 +76,7 @@ class EntropyMaximizingStrategy : public IiSaxSplitStrategy<T> {
 
         SaxSplitIndex split_ind{0, 0};
         float max_score = -INF;
-        SaxNumBitsT min_num_bits = RS.get_isax_props().m_breakpoint_num_bits;
+        SaxNumBitsT min_num_bits = RS.get_isax_props().breakpoint_num_bits;
 
         const vec<vec<T>> &summaries = leaf->get_summaries();
         for (MtsNumChannelsT c = 0; c < RS.get_dataset_props().num_channels; ++c) {

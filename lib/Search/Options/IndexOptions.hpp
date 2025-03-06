@@ -128,6 +128,8 @@ struct IndexOptions {
     MtsNumChannelsT num_channels;
     /** @brief Whether to Z-normalize the subsequences */
     bool normalized;
+    /** @brief Whether to adapt the index properties to the dataset entries */
+    bool adapt;
     /** @brief Unique pointer to the index parameters */
     std::unique_ptr<IIndexParams> index_params;
 };

@@ -122,8 +122,16 @@ class IIndex {
    public:
     virtual ~IIndex() = default;
 
+    /**
+     * @brief Construct the index from a dataset
+     * @param dataset_path Path to the dataset
+     * @param generator Generator to produce the entries from the dataset
+     * @param num_channels Number of channels in the dataset
+     * @param series_len Length of the series
+     * @param adapt Whether to adapt the index properties to the dataset
+     */
     void construct(const str &dataset_path, IEntryGenerator<T> *generator, MtsNumChannelsT num_channels,
-                   uint series_len) {
+                   uint series_len, bool adapt) {
         auto &logger = IndexLogger::get_instance();
 
         uint N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(float),
@@ -158,11 +166,19 @@ class IIndex {
         }
         logger.stop_timer(ISC::SUMMARIZATION_TIME_S);
 
+        if (adapt) adapt_to_dataset(dataset_entries);
+
         logger.increment_count_col(ISC::NUM_ENTRIES, dataset_entries.size());
         logger.start_timer(ISC::INSERTION_TIME_S);
         for (auto &entry : dataset_entries) insert(std::move(entry));
         logger.stop_timer(ISC::INSERTION_TIME_S);
     }
+
+    /**
+     * @brief Adapt the index to the dataset entries
+     * @param dataset_entries The entries to adapt to
+     */
+    virtual void adapt_to_dataset(const vec<IndexEntry<T>> &dataset_entries) {}
 
     /**
      * @brief Finalize the index

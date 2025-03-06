@@ -24,7 +24,7 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
 
     vec<float> breakpoints = {-2.0, 0.0, 2.0};
     SaxNumBitsT breakpoint_num_bits = 2;
-    iSaxProperties isax_props = {33, 3, breakpoints, breakpoint_num_bits};
+    iSaxProperties isax_props = {33, 3, nullptr, breakpoints, breakpoint_num_bits};
 
     auto series_isax_prop = std::make_unique<SeriesISaxEnvelopeProperties>(isax_props.segment_len, 100, 1, 3, 11);
     SaxSplitIndex split1{0, 0}, split2{1, 0}, split3{0, 0};
@@ -251,7 +251,7 @@ TEST_CASE("iSaxIndex insert MTS envelope works") {
 
     vec<float> breakpoints = {-2.0, 0.0, 2.0};
     SaxNumBitsT breakpoint_num_bits = 2;
-    iSaxProperties isax_props = {33, 3, breakpoints, breakpoint_num_bits};
+    iSaxProperties isax_props = {33, 3, nullptr, breakpoints, breakpoint_num_bits};
     auto series_isax_prop = std::make_unique<SeriesISaxEnvelopeProperties>(isax_props.segment_len, 100, 3, 2, 11);
     SaxSplitIndex split1{0, 1}, split2{1, 2};
 

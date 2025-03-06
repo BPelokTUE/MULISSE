@@ -18,3 +18,7 @@ vec<float> EquiprobableBreakpointStrategy::get_breakpoints(SaxSymbolT alphabet_s
     }
     return thresholds;
 }
+
+void EquiprobableBreakpointStrategy::adapt_to_dataset(float mu, float sigma) {
+    m_distribution = boost::math::normal_distribution<float>(mu, sigma);
+}

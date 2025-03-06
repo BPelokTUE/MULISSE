@@ -307,6 +307,18 @@ class ExperimentResults(BaseModel):
                 )
                 columns_to_drop.extend([ssc_index_file, isc_dataset_file])
 
+                if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEX_STATS_COLS])):
+                    isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
+                    istc_index_file = get_merged_col_name(ERD.INDEX_STATS_COLS, str(ISTC.INDEX_FILE))
+
+                    merged_df = merged_df.merge(
+                        rename_df_columns(self.index_stats_df, ERD.INDEX_STATS_COLS),
+                        left_on=isc_index_file,
+                        right_on=istc_index_file,
+                        how="left",
+                    )
+                    columns_to_drop.append(istc_index_file)
+
             if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.RUNS_COLS])):
                 qc_settings_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.SETTINGS_ID))
                 ssc_id = get_merged_col_name(ERD.METHODS_COLS, str(SSC.ID))
@@ -585,6 +597,21 @@ def sort_dict(d: dict, key_func: callable) -> dict:
     return {k: v for k, v in sorted(d.items(), key=key_func)}
 
 
+def dict_to_tuples(d: dict[ERD, list[str]]) -> list[tuple[ERD, str]]:
+    tuples = []
+    for key, values in d.items():
+        for value in values:
+            tuples.append((key, value))
+    return tuples
+
+
+def get_col_index(col: str, tuples: list[tuple[ERD, str]]) -> int:
+    for i, (_, col_name) in enumerate(tuples):
+        if col_name == col:
+            return i
+    return -1
+
+
 # %%[markdown]
 """
 ## Running the Analyses
@@ -625,20 +652,17 @@ def experiment_num_channels_and_dataset(
 ):
     if isinstance(target_cols, str):
         target_cols = [target_cols]
-    columns = {
+
+    groups_dict = {
         ERD.DATASETS_COLS: [str(DSC.NUM_CHANNELS), str(DSC.DATASET_FILE)],
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
-        ERD.RUNS_COLS: target_cols,
     }
+    columns = {**groups_dict, ERD.RUNS_COLS: target_cols}
     few_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_few_channels_config", cols=columns)
     many_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_many_channels_config", cols=columns)
 
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
-    groups = [
-        (ERD.DATASETS_COLS, str(DSC.NUM_CHANNELS)),
-        (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
-        (ERD.METHODS_COLS, str(SSC.METHOD_NAME)),
-    ]
+    groups = dict_to_tuples(groups_dict)
     mean_values = execute_reduction([few_channels_results, many_channels_results], targets, groups)
     mean_values = remove_index_name_from_reduction_result(mean_values, 2)
 
@@ -694,22 +718,16 @@ def experiment_envelope_parametrization(
 ):
     if isinstance(target_cols, str):
         target_cols = [target_cols]
-    columns = {
-        ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
+    group_dict = {
         ERD.INDEXES_COLS: [str(ISC.L_MIN), str(ISC.L_MAX), str(ISC.POS_PER_ENV)],
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
-        ERD.RUNS_COLS: target_cols,
+        ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
     }
+    columns = {**group_dict, ERD.RUNS_COLS: target_cols}
     parametrization_results = ExperimentResults.load(logs_dir=logs_dir, cols=columns)
 
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
-    groups = [
-        (ERD.INDEXES_COLS, str(ISC.L_MIN)),
-        (ERD.INDEXES_COLS, str(ISC.L_MAX)),
-        (ERD.INDEXES_COLS, str(ISC.POS_PER_ENV)),
-        (ERD.METHODS_COLS, str(SSC.METHOD_NAME)),
-        (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
-    ]
+    groups = dict_to_tuples(group_dict)
     mean_values = execute_reduction([parametrization_results], targets, groups)
     mean_values = remove_index_name_from_reduction_result(mean_values, 3)
     mean_values = {(*group[:4], group[4].rsplit("/")[0]): values for group, values in mean_values.items()}
@@ -858,23 +876,16 @@ def experiment_compare_methods(
 ):
     if isinstance(target_cols, str):
         target_cols = [target_cols]
-    columns = {
+    group_dict = {
         ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
-        ERD.INDEXES_COLS: [str(ISC.POS_PER_ENV), str(ISC.FIRST_LAYER_NUM_BITS)],
         ERD.QUERY_SETS_COLS: [str(QSC.L_MIN), str(QSC.L_MAX)],
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
-        ERD.RUNS_COLS: target_cols,
+        ERD.INDEXES_COLS: [str(ISC.POS_PER_ENV), str(ISC.FIRST_LAYER_NUM_BITS)],
     }
+    columns = {**group_dict, ERD.RUNS_COLS: target_cols}
     results_list = [ExperimentResults.load(logs_dir=logs_dir, cols=columns) for logs_dir in logs_dirs]
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
-    groups = [
-        (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
-        (ERD.QUERY_SETS_COLS, str(QSC.L_MIN)),
-        (ERD.QUERY_SETS_COLS, str(QSC.L_MAX)),
-        (ERD.METHODS_COLS, str(SSC.METHOD_NAME)),
-        (ERD.INDEXES_COLS, str(ISC.POS_PER_ENV)),
-        (ERD.INDEXES_COLS, str(ISC.FIRST_LAYER_NUM_BITS)),
-    ]
+    groups = dict_to_tuples(group_dict)
     mean_values = execute_reduction(results_list, targets, groups)
     mean_values = remove_index_name_from_reduction_result(mean_values, 3)
 
@@ -924,24 +935,8 @@ for logs_dirs in [pure_isax_logs, pure_envelope_logs]:
         str(QC.PRUNING_RATIO), PRUNING_RATIO_Y_LABEL, logs_dirs=logs_dirs, y_lim=(0, 1), y_scale="linear"
     )
 
+
 # %%
-
-
-def dict_to_tuples(d: dict[ERD, list[str]]) -> list[tuple[ERD, str]]:
-    tuples = []
-    for key, values in d.items():
-        for value in values:
-            tuples.append((key, value))
-    return tuples
-
-
-def get_col_index(col: str, tuples: list[tuple[ERD, str]]) -> int:
-    for i, (_, col_name) in enumerate(tuples):
-        if col_name == col:
-            return i
-    return -1
-
-
 def merge_univariate_datasets(mean_values):
     merged_mean_values = {}
     for group, values in mean_values.items():
@@ -962,6 +957,7 @@ def experiment_univariate_parametrization(
     targets_dict: dict[ERD, list[str]],
     logs_dirs: list[str],
     y_label: str,
+    y_scale: str = "log",
     merge_dataset: bool = True,
     hatches=None,
     hatch_labels=None,
@@ -1010,7 +1006,7 @@ def experiment_univariate_parametrization(
                 METHOD_LABELS,
                 x_labels,
                 y_label=y_label,
-                scale="log",
+                scale=y_scale,
                 bar_width_inches=0.4,
                 title=f"{dataset}: l_min={l_range[0]}, l_max={l_range[1]}",
                 hatches=hatches,
@@ -1030,5 +1026,14 @@ experiment_univariate_parametrization(
     # hatch_labels=TIME_LABELS,
     merge_dataset=True,
 )
+
+for stat in [SCP.STD]:
+    experiment_univariate_parametrization(
+        {ERD.INDEX_STATS_COLS: [get_stats_col(ISTC.LEAF_HEIGHT_STATS, stat)]},
+        [logs_dirs],
+        f"Leaf height {str(stat)}",
+        merge_dataset=True,
+        y_scale="linear",
+    )
 
 # %%

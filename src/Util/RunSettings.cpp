@@ -194,11 +194,16 @@ void RunSettings::reset_query_ffts() {
 
 // iSAX
 
-const vec<float> &RunSettings::get_breakpoints() { return m_isax_props.m_breakpoints; }
+const vec<float> &RunSettings::get_breakpoints() { return m_isax_props.breakpoints; }
+
+void RunSettings::update_breakpoints() {
+    auto &breakpoint_strategy = m_isax_props.breakpoint_strategy;
+    m_isax_props.breakpoints = breakpoint_strategy->get_breakpoints(1 << m_isax_props.breakpoint_num_bits);
+}
 
 void RunSettings::set_isax_properties(iSaxProperties isax_props) {
     if (!m_isax_props_set) {
-        m_isax_props = isax_props;
+        m_isax_props = std::move(isax_props);
         m_isax_props_set = true;
     }
 }

@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "Search/Options/SearchMethodType.hpp"
+#include "Summarization/iSaxBreakpointStrategy.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 #include "Util/FftArray.hpp"
@@ -35,8 +36,9 @@ struct EnvelopeProperties {
 struct iSaxProperties {
     SaxSegIndT num_segments;
     uint segment_len;
-    vec<float> m_breakpoints;
-    SaxNumBitsT m_breakpoint_num_bits;
+    uptr<IiSaxBreakpointStrategy> breakpoint_strategy;
+    vec<float> breakpoints;
+    SaxNumBitsT breakpoint_num_bits;
 };
 
 class RunSettings {
@@ -108,8 +110,15 @@ class RunSettings {
      * @brief Get the currently used iSAX interval breakpoints
      * @return The vector of breakpoints, excluding `-INF` and `INF` at the ends
      */
-    virtual const vec<float>& get_breakpoints();
+    const vec<float>& get_breakpoints();
 
+    /** @brief Update the iSAX interval breakpoints */
+    void update_breakpoints();
+
+    /**
+     * @brief Set the iSAX properties for the run
+     * @param isax_props The iSAX properties
+     */
     void set_isax_properties(iSaxProperties isax_props);
 
     // Properties
@@ -152,6 +161,7 @@ class RunSettings {
     EnvelopeProperties m_envelope_props;
 
     // iSAX properties
+    uptr<IiSaxBreakpointStrategy> m_breakpoint_strategy;
     iSaxProperties m_isax_props;
     bool m_isax_props_set = false;
 

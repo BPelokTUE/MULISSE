@@ -69,9 +69,9 @@ uptr<IIndex<T>> get_isax_index(const IndexOptions &opts) {
     auto split_strategy = get_split_strategy<T>(params, num_seg_per_channel, opts.num_channels);
 
     SaxNumBitsT breakpoint_num_bits = DEFAULT_NUM_BIT_LIMIT;
-    RunSettings::get_instance().set_isax_properties({num_seg_per_channel, params->segment_len,
-                                                     breakpoint_strategy->get_breakpoints(1 << breakpoint_num_bits),
-                                                     breakpoint_num_bits});
+    auto breakpoints = breakpoint_strategy->get_breakpoints(1 << breakpoint_num_bits);
+    RunSettings::get_instance().set_isax_properties(
+        {num_seg_per_channel, params->segment_len, std::move(breakpoint_strategy), breakpoints, breakpoint_num_bits});
 
     return get_isax_index<T>(opts, params, num_seg_per_channel, std::move(split_strategy));
 }
@@ -109,7 +109,7 @@ template <typename T>
 void construct_index(uptr<IIndex<T>> index, uptr<IEntryGenerator<T>> generator, const IndexOptions &opts,
                      RunSettings &RS, IndexLogger &logger) {
     logger.start_timer(ISC::INDEXING_TIME_S);
-    index->construct(RS.get_dataset_path(), generator.get(), opts.num_channels, opts.series_len);
+    index->construct(RS.get_dataset_path(), generator.get(), opts.num_channels, opts.series_len, opts.adapt);
     std::ofstream index_stream(RS.get_index_path(), std::ios::binary);
     index->finalize()->save(index_stream, opts.index_format);
     logger.stop_timer(ISC::INDEXING_TIME_S);

@@ -4,6 +4,8 @@
 #include <unordered_map>
 
 #include "Util/typedefs.hpp"
+#include "Util/constants.hpp"
+#include "Util/utilities.hpp"
 #include "Search/Index.hpp"
 #include "Search/iSax/iSaxSplittableNode.hpp"
 #include "Search/iSax/iSaxSplitStrategy.hpp"
@@ -47,7 +49,7 @@ class iSaxIndex : public IIndex<T> {
         assert(first_layer_num_bits > 0);
 
         auto &RS = RunSettings::get_instance();
-        m_alphabet_num_bits = RS.get_isax_props().m_breakpoint_num_bits;
+        m_alphabet_num_bits = RS.get_isax_props().breakpoint_num_bits;
         m_breakpoints = &RS.get_breakpoints();
 
         assert(m_breakpoints->size() == (1 << m_alphabet_num_bits) - 1);
@@ -151,13 +153,6 @@ class iSaxIndex : public IIndex<T> {
     }
 
    protected:
-    std::unordered_map<vec<vec<SaxSymbolT>>, uptr<iSaxSplittableNode<T>>, SaxSymbolsHash> m_first_layer;
-    SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
-    uptr<SeriesISaxProperties> m_series_isax_prop;
-    size_t m_leaf_capacity;
-    const vec<float> *m_breakpoints;
-    uptr<IiSaxSplitStrategy<T>> m_split_strategy;
-
     virtual std::pair<uptr<iSaxFinalizedNode<FTag>>, vec<vec<SymbolType>>> finalize_first_layer_node(
         vec<vec<SaxSymbolT>> key_symbols, uptr<iSaxSplittableNode<T>> &node, iSaxWordSettings &isax_word_settings) = 0;
 
@@ -232,6 +227,36 @@ class iSaxIndex : public IIndex<T> {
             }
         }
     }
+
+    void adapt_to_dataset(const vec<IndexEntry<T>> &dataset_entries) override {
+        auto &RS = RunSettings::get_instance();
+        auto &isax_props = RS.get_isax_props();
+
+        float sum = 0, sum_sq = 0, count = 0;
+        for (const auto &entry : dataset_entries) {
+            for (const auto &summary : entry.mts_summary) {
+                auto isax_input = summary.get_isax_input();
+                for (auto val : isax_input) {
+                    if (val == -INF || val == INF) continue;
+                    sum += val;
+                    sum_sq += val * val;
+                }
+                count += isax_input.size();
+            }
+        }
+        auto [mu, sigma] = calculate_mu_and_sigma(sum, sum_sq, count);
+
+        isax_props.breakpoint_strategy->adapt_to_dataset(mu, sigma);
+        RS.update_breakpoints();
+    }
+
+   protected:
+    std::unordered_map<vec<vec<SaxSymbolT>>, uptr<iSaxSplittableNode<T>>, SaxSymbolsHash> m_first_layer;
+    SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
+    uptr<SeriesISaxProperties> m_series_isax_prop;
+    size_t m_leaf_capacity;
+    const vec<float> *m_breakpoints;
+    uptr<IiSaxSplitStrategy<T>> m_split_strategy;
 };
 
 // iSaxPaaIndex
