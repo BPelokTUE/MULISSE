@@ -36,6 +36,7 @@ class IndexSettingsColumn(Enum):
     SPLIT_STRATEGY = auto()
     MIN_NUM_BITS_ON_TIE = auto()
     NUM_BITS_LIMIT = auto()
+    ADAPT_TO_DATASET = auto()
     NUM_LEAVES = auto()
     NUM_NODES = auto()
     NUM_ENTRIES = auto()

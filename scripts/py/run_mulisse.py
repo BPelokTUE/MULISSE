@@ -7,11 +7,280 @@ import os
 import subprocess
 from typing import Any, Iterator
 
+from pydantic import BaseModel
+
 
 def require_keys(d: dict, keys: list[str]):
     for key in keys:
         if key not in d:
             raise KeyError(f"Key {key} not found in dictionary.")
+
+
+Settings = list[dict[str, Any]]
+
+
+class ParsedConfig(BaseModel):
+    length_settings: Settings
+    dataset_settings: Settings
+    query_set_settings: Settings
+    index_settings: Settings
+    index_method_settings: Settings
+    scan_method_settings: Settings
+
+    def __str__(self) -> str:
+        string = ""
+        string += "Length settings:\n"
+        string += json.dumps(self.length_settings, indent=4) + "\n"
+        string += "Dataset settings:\n"
+        string += json.dumps(self.dataset_settings, indent=4) + "\n"
+        string += "Query set settings:\n"
+        string += json.dumps(self.query_set_settings, indent=4) + "\n"
+        string += "Index settings:\n"
+        string += json.dumps(self.index_settings, indent=4) + "\n"
+        string += "Index method settings:\n"
+        string += json.dumps(self.index_method_settings, indent=4) + "\n"
+        string += "Scan method settings:\n"
+        string += json.dumps(self.scan_method_settings, indent=4) + "\n"
+        return string
+
+
+def combine_parsed_configs(parsed_configs: list[ParsedConfig]) -> ParsedConfig:
+    def combine_settings(settings_list: list[Settings]) -> Settings:
+        combined_settings: Settings = []
+        for settings in settings_list:
+            combined_settings.extend(settings)
+        return combined_settings
+
+    return ParsedConfig(
+        length_settings=combine_settings([config.length_settings for config in parsed_configs]),
+        dataset_settings=combine_settings([config.dataset_settings for config in parsed_configs]),
+        query_set_settings=combine_settings([config.query_set_settings for config in parsed_configs]),
+        index_settings=combine_settings([config.index_settings for config in parsed_configs]),
+        index_method_settings=combine_settings([config.index_method_settings for config in parsed_configs]),
+        scan_method_settings=combine_settings([config.scan_method_settings for config in parsed_configs]),
+    )
+
+
+def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
+    config = json.load(open(input_config))
+    # fmt: off
+    require_keys(
+        config,
+        [
+            "csv_data_dirs", "dataset_sizes", "series_lengths", "syn_num_channels", "query_set_sizes",
+            "syn_step_stdevs", "l_range_ratios", "used_channel_ratios", "query_noise_stdevs", "search_methods",
+            "isax_split_strategies", "isax_breakpoint_strategies", "isax_leaf_cap_ratios", "isax_start_bit_numbers",
+            "num_segments", "envelope_size_ratios", "distance_measures", "early_abandon", "precalculate_ffts",
+            "adapt_index", "search_types", "search_ks", "search_rs", "search_approx", "search_raw"
+        ],
+    )
+    # fmt: on
+
+    def parse_flat_config(config) -> ParsedConfig:
+        def get_length_settings() -> Settings:
+            return [{"series_len": config["series_lengths"], "l_range": config["l_range_ratios"]}]
+
+        def get_dataset_settings() -> Settings:
+            dataset_seeds = config.get("dataset_seeds", [0])
+            dataset_settings = [
+                {
+                    "command": "create_ds",
+                    "location": "synthetic",
+                    "size": config["dataset_sizes"],
+                    "num_channels": config["syn_num_channels"],
+                    "step_stdev": config["syn_step_stdevs"],
+                    "dataset_seeds": dataset_seeds,
+                }
+            ]
+
+            separate_csv_datasets = config.get("separate_csv_datasets", False)
+            csv_data_paths = [
+                os.path.join(local_settings["CSV_PATH"], data_dir) for data_dir in config["csv_data_dirs"]
+            ]
+            for path in csv_data_paths:
+                item = {
+                    "command": "parse_csv",
+                    "location": os.path.basename(path),
+                    "size": config["dataset_sizes"],
+                    "num_channels": [len(os.listdir(path))],
+                    "dataset_seeds": dataset_seeds,
+                }
+                if not separate_csv_datasets:
+                    dataset_settings.append(item)
+                else:
+                    item["num_channels"] = 1
+                    for csv_dir in os.listdir(path):
+                        item["location"] = os.path.join(os.path.basename(path), csv_dir)
+                        dataset_settings.append(item.copy())
+            return dataset_settings
+
+        def get_query_set_settings() -> Settings:
+            return [
+                {
+                    "size": config["query_set_sizes"],
+                    "used_channel_ratio": config["used_channel_ratios"],
+                    "noise_stdev": config["query_noise_stdevs"],
+                    "query_set_seeds": config.get("query_set_seeds", [0]),
+                }
+            ]
+
+        def get_index_settings() -> Settings:
+            index_settings = []
+            if "isax" in config["search_methods"]:
+                index_settings.append(
+                    {
+                        "index_type": "isax",
+                        "split_strategy": config["isax_split_strategies"],
+                        "breakpoint_strategy": config["isax_breakpoint_strategies"],
+                        "leaf_capacity": config["isax_leaf_cap_ratios"],
+                        "first_layer_bits": config["isax_start_bit_numbers"],
+                        "num_segments": config["num_segments"],
+                        "adapt": config["adapt_index"],
+                    }
+                )
+            if "isax_envelope" in config["search_methods"]:
+                index_settings.append(
+                    {
+                        "index_type": "isax_envelope",
+                        "split_strategy": config["isax_split_strategies"],
+                        "breakpoint_strategy": config["isax_breakpoint_strategies"],
+                        "leaf_capacity": config["isax_leaf_cap_ratios"],
+                        "first_layer_bits": config["isax_start_bit_numbers"],
+                        "num_segments": config["num_segments"],
+                        "pos_per_env": config["envelope_size_ratios"],
+                        "adapt": config["adapt_index"],
+                    }
+                )
+            if "envelope" in config["search_methods"]:
+                index_settings.append(
+                    {
+                        "index_type": "envelope",
+                        "num_segments": config["num_segments"],
+                        "pos_per_env": config["envelope_size_ratios"],
+                    }
+                )
+            return index_settings
+
+        def get_method_settings(index_settings: Settings) -> tuple[Settings, Settings]:
+            method_settings_base = []
+            if "knn" in config["search_types"]:
+                method_settings_base.append({"search_type": "knn", "k": config["search_ks"]})
+            if "r_range" in config["search_types"]:
+                method_settings_base.append({"search_type": "r_range", "r": config["search_rs"]})
+
+            for i, settings in enumerate(method_settings_base):
+                method_settings_base[i] = dict(
+                    settings, **{"approx": config["search_approx"], "raw": config["search_raw"]}
+                )
+
+            def combine_settings(settings1, settings2):
+                return [dict(**d1, **d2) for d1 in settings1 for d2 in settings2]
+
+            index_methods = {setting["index_type"] for setting in index_settings}
+            index_method_settings_base = [
+                {"method_type": [method for method in config["search_methods"] if method in index_methods]}
+            ]
+            index_method_settings_base = combine_settings(index_method_settings_base, method_settings_base)
+            scan_method_settings_base = [
+                {"method_type": [method for method in config["search_methods"] if method not in index_methods]}
+            ]
+            scan_method_settings_base = combine_settings(scan_method_settings_base, method_settings_base)
+
+            index_method_settings = []
+            scan_method_settings = []
+            distance_measures_settings = {
+                "ed": {"distance": "ed", "early_abandon": config["early_abandon"]},
+                "euclidean": {"distance": "ed", "early_abandon": config["early_abandon"]},
+                "mass": {"distance": "mass", "precalculate_ffts": config["precalculate_ffts"]},
+            }
+            for distance_measure, settings in distance_measures_settings.items():
+                if any(d in config["distance_measures"] for d in [distance_measure]):
+                    for base_setting in index_method_settings_base:
+                        index_method_settings.append(dict(base_setting, **settings))
+                    for base_setting in scan_method_settings_base:
+                        scan_method_settings.append(dict(base_setting, **settings))
+
+            return index_method_settings, scan_method_settings
+
+        index_settings = get_index_settings()
+        index_method_settings, scan_method_settings = get_method_settings(index_settings)
+        return ParsedConfig(
+            length_settings=get_length_settings(),
+            dataset_settings=get_dataset_settings(),
+            query_set_settings=get_query_set_settings(),
+            index_settings=index_settings,
+            index_method_settings=index_method_settings,
+            scan_method_settings=scan_method_settings,
+        )
+
+    calculate_query_stats = config.get("calculate_query_stats", False)
+    calculate_index_stats = config.get("calculate_index_stats", False)
+
+    profiles: set[str] = set()
+    for val in config.values():
+        if isinstance(val, dict):
+            profiles.update(val.keys())
+
+    if len(profiles) == 0:
+        return (parse_flat_config(config), calculate_query_stats, calculate_index_stats)
+
+    parsed_configs: list[ParsedConfig] = []
+    for profile in profiles:
+        profile_config = {}
+        for key, val in config.items():
+            profile_config[key] = val
+            if isinstance(val, dict):
+                profile_config[key] = val.get(profile, [])
+
+        parsed_configs.append(parse_flat_config(profile_config))
+
+    return (combine_parsed_configs(parsed_configs), calculate_query_stats, calculate_index_stats)
+
+
+class SettingIterator:
+    """
+    Iterator class for all setting combinations. Setting combination are calculated as the union of the Descartes
+    products of the values of setting dictionaries. For example, given the settings:
+    ```
+    [
+        {"a": [1, 2], "b": [3, 4]},
+        {"a": 1, "b": 3, "c": [5, 6]}
+    ]
+    ```
+    The following setting combinations are produced:
+    ```
+    {"a": 1, "b": 3}
+    {"a": 1, "b": 4},
+    {"a": 2, "b": 3},
+    {"a": 2, "b": 4},
+    {"a": 1, "b": 3, "c": 5},
+    {"a": 1, "b": 3, "c": 6}
+    ```
+    """
+
+    def __init__(self, settings: Settings):
+        self.settings = settings
+        for setting in self.settings:
+            for key, value in setting.items():
+                if not isinstance(value, list):
+                    setting[key] = [value]
+
+        self.all_combinations = []
+        for setting in self.settings:
+            keys, values = zip(*setting.items())
+            for combination in itertools.product(*values):
+                self.all_combinations.append(dict(zip(keys, combination)))
+
+    def __len__(self) -> int:
+        return len(self.all_combinations)
+
+    def __iter__(self) -> Iterator[dict[str, Any]]:
+        return iter(self.all_combinations)
+
+    def iterate(self, desc: str = "", leave=True):
+        if input_args.progress_bar:
+            return tqdm(self, desc=desc, leave=leave)
+        return self.__iter__()
 
 
 if __name__ == "__main__":
@@ -30,7 +299,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input_config", default=local_settings["DEFAULT_RUN_CONFIG"])
     parser.add_argument("-d", "--no_cleanup", "--dirty", action="store_true", help="Do not remove generated data files")
-    parser.add_argument("-s", "--print_settings", action="store_true", help="Print settings")
+    parser.add_argument("-p", "--print_settings", action="store_true", help="Print settings")
     parser.add_argument("-b", "--progress_bar", action="store_true", help="Show progress bar")
     input_args = parser.parse_args()
 
@@ -40,20 +309,6 @@ if __name__ == "__main__":
     if not os.path.exists(input_args.input_config):
         raise FileNotFoundError(f"Config file {input_args.input_config} not found.")
 
-    config = json.load(open(input_args.input_config))
-    # fmt: off
-    require_keys(
-        config,
-        [
-            "csv_data_dirs", "dataset_sizes", "series_lengths", "syn_num_channels", "query_set_sizes",
-            "syn_step_stdevs", "l_range_ratios", "used_channel_ratios", "query_noise_stdevs", "search_methods",
-            "isax_split_strategies", "isax_breakpoint_strategies", "isax_leaf_cap_ratios", "isax_start_bit_numbers",
-            "num_segments", "envelope_size_ratios", "distance_measures", "early_abandon", "precalculate_ffts",
-            "adapt_index", "search_types", "search_ks", "search_rs", "search_approx", "search_raw"
-        ],
-    )
-    # fmt: on
-
     def file_cleanup(file: str):
         if input_args.no_cleanup:
             return
@@ -62,206 +317,17 @@ if __name__ == "__main__":
         if os.path.exists(data_path):
             os.remove(data_path)
 
-    # --------------------#
-    # LENGTH SETTINGS     #
-    # --------------------#
-
-    length_settings = [{"series_len": config["series_lengths"], "l_range": config["l_range_ratios"]}]
-
-    # --------------------#
-    # DATASET SETTINGS    #
-    # --------------------#
-
-    dataset_seeds = config.get("dataset_seeds", [0])
-    dataset_settings = [
-        {
-            "command": "create_ds",
-            "location": "synthetic",
-            "size": config["dataset_sizes"],
-            "num_channels": config["syn_num_channels"],
-            "step_stdev": config["syn_step_stdevs"],
-            "dataset_seeds": dataset_seeds,
-        }
-    ]
-
-    separate_csv_datasets = config.get("separate_csv_datasets", False)
-    csv_data_paths = [os.path.join(local_settings["CSV_PATH"], data_dir) for data_dir in config["csv_data_dirs"]]
-    for path in csv_data_paths:
-        item = {
-            "command": "parse_csv",
-            "location": os.path.basename(path),
-            "size": config["dataset_sizes"],
-            "num_channels": [len(os.listdir(path))],
-            "dataset_seeds": dataset_seeds,
-        }
-        if not separate_csv_datasets:
-            dataset_settings.append(item)
-        else:
-            item["num_channels"] = 1
-            for csv_dir in os.listdir(path):
-                item["location"] = os.path.join(os.path.basename(path), csv_dir)
-                dataset_settings.append(item.copy())
-
-    # --------------------#
-    # QUERY SET SETTINGS  #
-    # --------------------#
-
-    query_set_settings = [
-        {
-            "size": config["query_set_sizes"],
-            "used_channel_ratio": config["used_channel_ratios"],
-            "noise_stdev": config["query_noise_stdevs"],
-            "query_set_seeds": config.get("query_set_seeds", [0]),
-        }
-    ]
-    calculate_query_stats = config.get("calculate_query_stats", False)
-
-    # --------------------#
-    # INDEX SETTINGS      #
-    # --------------------#
-
-    index_settings = []
-    if "isax" in config["search_methods"]:
-        index_settings.append(
-            {
-                "index_type": "isax",
-                "split_strategy": config["isax_split_strategies"],
-                "breakpoint_strategy": config["isax_breakpoint_strategies"],
-                "leaf_capacity": config["isax_leaf_cap_ratios"],
-                "first_layer_bits": config["isax_start_bit_numbers"],
-                "num_segments": config["num_segments"],
-                "adapt": config["adapt_index"],
-            }
-        )
-    if "isax_envelope" in config["search_methods"]:
-        index_settings.append(
-            {
-                "index_type": "isax_envelope",
-                "split_strategy": config["isax_split_strategies"],
-                "breakpoint_strategy": config["isax_breakpoint_strategies"],
-                "leaf_capacity": config["isax_leaf_cap_ratios"],
-                "first_layer_bits": config["isax_start_bit_numbers"],
-                "num_segments": config["num_segments"],
-                "pos_per_env": config["envelope_size_ratios"],
-                "adapt": config["adapt_index"],
-            }
-        )
-    if "envelope" in config["search_methods"]:
-        index_settings.append(
-            {
-                "index_type": "envelope",
-                "num_segments": config["num_segments"],
-                "pos_per_env": config["envelope_size_ratios"],
-            }
-        )
-    index_methods = [setting["index_type"] for setting in index_settings]
-
-    calculate_index_stats = config.get("calculate_index_stats", False)
-
-    # -------------------#
-    # SEARCH SETTINGS    #
-    # -------------------#
-
-    method_settings_base = []
-    if "knn" in config["search_types"]:
-        method_settings_base.append({"search_type": "knn", "k": config["search_ks"]})
-    if "r_range" in config["search_types"]:
-        method_settings_base.append({"search_type": "r_range", "r": config["search_rs"]})
-
-    for i, settings in enumerate(method_settings_base):
-        method_settings_base[i] = dict(settings, **{"approx": config["search_approx"], "raw": config["search_raw"]})
-
-    def combine_settings(settings1, settings2):
-        return [dict(**d1, **d2) for d1 in settings1 for d2 in settings2]
-
-    index_method_settings_base = [
-        {"method_type": [method for method in config["search_methods"] if method in index_methods]}
-    ]
-    index_method_settings_base = combine_settings(index_method_settings_base, method_settings_base)
-    scan_method_settings_base = [
-        {"method_type": [method for method in config["search_methods"] if method not in index_methods]}
-    ]
-    scan_method_settings_base = combine_settings(scan_method_settings_base, method_settings_base)
-
-    index_method_settings = []
-    scan_method_settings = []
-
-    if any(d in config["distance_measures"] for d in ["ed", "euclidean"]):
-        ed_settings = {"distance": "ed", "early_abandon": config["early_abandon"]}
-        for base_setting in index_method_settings_base:
-            index_method_settings.append(dict(base_setting, **ed_settings))
-        for base_setting in scan_method_settings_base:
-            scan_method_settings.append(dict(base_setting, **ed_settings))
-
-    if any(d in config["distance_measures"] for d in ["mass"]):
-        mass_settings = {"distance": "mass", "precalculate_ffts": config["precalculate_ffts"]}
-        for base_setting in index_method_settings_base:
-            index_method_settings.append(dict(base_setting, **mass_settings))
-        for base_setting in scan_method_settings_base:
-            scan_method_settings.append(dict(base_setting, **mass_settings))
+    parsed_config, calculate_query_stats, calculate_index_stats = parse_config_file(input_args.input_config)
 
     if input_args.print_settings:
-        settings_dict = {
-            "Length": length_settings,
-            "Dataset": dataset_settings,
-            "Query": query_set_settings,
-            "Index": index_settings,
-            "Index method": index_method_settings,
-            "Scan method": scan_method_settings,
-        }
-        for name, s in settings_dict.items():
-            print(f"{name} settings:")
-            print(json.dumps(s, indent=4))
-            print()
+        print(parsed_config)
 
-    # --------------------#
-    # ITERATOR CLASS      #
-    # --------------------#
-
-    class SettingIterator:
-        """
-        Iterator class for all setting combinations. Setting combination are calculated as the union of the Descartes
-        products of the values of setting dictionaries. For example, given the settings:
-        ```
-        [
-            {"a": [1, 2], "b": [3, 4]},
-            {"a": 1, "b": 3, "c": [5, 6]}
-        ]
-        ```
-        The following setting combinations are produced:
-        ```
-        {"a": 1, "b": 3}
-        {"a": 1, "b": 4},
-        {"a": 2, "b": 3},
-        {"a": 2, "b": 4},
-        {"a": 1, "b": 3, "c": 5},
-        {"a": 1, "b": 3, "c": 6}
-        ```
-        """
-
-        def __init__(self, settings: list[dict[str, Any]]):
-            self.settings = settings
-            for setting in self.settings:
-                for key, value in setting.items():
-                    if not isinstance(value, list):
-                        setting[key] = [value]
-
-            self.all_combinations = []
-            for setting in self.settings:
-                keys, values = zip(*setting.items())
-                for combination in itertools.product(*values):
-                    self.all_combinations.append(dict(zip(keys, combination)))
-
-        def __len__(self) -> int:
-            return len(self.all_combinations)
-
-        def __iter__(self) -> Iterator[dict[str, Any]]:
-            return iter(self.all_combinations)
-
-        def iterate(self, desc: str = "", leave=True):
-            if input_args.progress_bar:
-                return tqdm(self, desc=desc, leave=leave)
-            return self.__iter__()
+    length_settings = parsed_config.length_settings
+    dataset_settings = parsed_config.dataset_settings
+    query_set_settings = parsed_config.query_set_settings
+    index_settings = parsed_config.index_settings
+    index_method_settings = parsed_config.index_method_settings
+    scan_method_settings = parsed_config.scan_method_settings
 
     # --------------------#
     # RUN EXPERIMENTS     #
@@ -395,22 +461,20 @@ if __name__ == "__main__":
                     ]
                     # fmt: on
 
-                    max_pos_per_env = 1
+                    pos_per_env = 1
                     if "num_segments" in index_setting_copy:
                         args += ["-s", str(series_len // index_setting_copy.pop("num_segments"))]
                     if "pos_per_env" in index_setting_copy:
                         max_pos_per_env = series_len - l_min + 1
-                        args += [
-                            "-p",
-                            str(int(max_pos_per_env * index_setting_copy.pop("pos_per_env"))),
-                        ]
+                        pos_per_env = int(max_pos_per_env * index_setting_copy.pop("pos_per_env"))
+                        args += ["-p", str(pos_per_env)]
                     if "leaf_capacity" in index_setting_copy:
                         num_entries = num_series
                         if index_method == "isax":
                             l_range = l_max - l_min + 1
                             num_entries = l_range * ((series_len - l_max + 1) + (l_range - 1) / 2) * num_series
                         elif index_method == "isax_envelope":
-                            num_entries = ((series_len - l_min + max_pos_per_env) // max_pos_per_env) * num_series
+                            num_entries = ((series_len - l_min + pos_per_env) // pos_per_env) * num_series
                         leaf_capacity = int(index_setting_copy.pop("leaf_capacity") * num_entries)
                         leaf_capacity = max(1, leaf_capacity)
                         args += ["-C", str(leaf_capacity)]

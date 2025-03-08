@@ -957,6 +957,7 @@ def experiment_univariate_parametrization(
     targets_dict: dict[ERD, list[str]],
     logs_dirs: list[str],
     y_label: str,
+    use_adapt_to_dataset: bool = False,
     y_scale: str = "log",
     merge_dataset: bool = True,
     hatches=None,
@@ -966,8 +967,15 @@ def experiment_univariate_parametrization(
         ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
         ERD.QUERY_SETS_COLS: [str(QSC.L_MIN), str(QSC.L_MAX)],
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
-        ERD.INDEXES_COLS: [str(ISC.POS_PER_ENV), str(ISC.FIRST_LAYER_NUM_BITS), str(ISC.LEAF_CAPACITY)],
+        ERD.INDEXES_COLS: [
+            str(ISC.POS_PER_ENV),
+            str(ISC.FIRST_LAYER_NUM_BITS),
+            str(ISC.LEAF_CAPACITY),
+        ],
     }
+    if use_adapt_to_dataset:
+        groups_dict[ERD.INDEXES_COLS].append(str(ISC.ADAPT_TO_DATASET))
+
     columns = {**groups_dict, **targets_dict}
     results_list = [ExperimentResults.load(logs_dir=logs_dir, cols=columns) for logs_dir in logs_dirs]
 
@@ -983,11 +991,16 @@ def experiment_univariate_parametrization(
         dataset_order = DATASET_ORDER
 
     def get_x_label(key: tuple):
-        dataset, l_min, l_max, _, pos_per_env, first_layer_bits, leaf_capacity = key
+        if use_adapt_to_dataset:
+            _dataset, l_min, l_max, method, pos_per_env, first_layer_bits, leaf_capacity, adapt = key
+        else:
+            _dataset, l_min, l_max, method, pos_per_env, first_layer_bits, leaf_capacity = key
         ppe_str = f"\nPPE={int(pos_per_env)}" if pos_per_env is not None and pos_per_env > 0 else ""
-        bits_str = f"\nBits={int(first_layer_bits)}" if first_layer_bits is not None and first_layer_bits > 0 else ""
+        # bits_str = f"\nBits={int(first_layer_bits)}" if first_layer_bits is not None and first_layer_bits > 0 else ""
+        bits_str = ""
         leaf_str = f"\nLC={int(leaf_capacity)}" if leaf_capacity is not None and leaf_capacity > 0 else ""
-        return f"l_min={l_min}\nl_max={l_max}{ppe_str}{bits_str}{leaf_str}"
+        adapt_str = "\nAdapt" if use_adapt_to_dataset and "isax" in method and adapt == 1 else ""
+        return f"l_min={l_min}\nl_max={l_max}{ppe_str}{bits_str}{leaf_str}{adapt_str}"
 
     datasets = {group[0] for group in mean_values}
     for dataset in datasets:
@@ -1016,24 +1029,28 @@ def experiment_univariate_parametrization(
 
 # %%
 
-logs_dirs = "EXPERIMENT_LOGS/LOGS_univariate_parametrization_1"
+logs_dirs = [f"EXPERIMENT_LOGS/LOGS_univariate_parametrization_{i}" for i in [1, 2]]
+# logs_dirs = ["EXPERIMENT_LOGS/LOGS_univariate_parametrization_2"]
+# logs_dirs = ["LOGS"]
 experiment_univariate_parametrization(
     # {ERD.RUNS_COLS: [str(QC.TOTAL_TIME_S), str(QC.AMORTIZED_PREP_TIME_S)]},
     {ERD.RUNS_COLS: [str(QC.TOTAL_TIME_S)]},
-    [logs_dirs],
+    logs_dirs,
     TOTAL_TIME_Y_LABEL,
     # hatches=["", PREP_TIME_HATCH],
     # hatch_labels=TIME_LABELS,
     merge_dataset=True,
+    # use_adapt_to_dataset=True,
 )
 
-for stat in [SCP.STD]:
-    experiment_univariate_parametrization(
-        {ERD.INDEX_STATS_COLS: [get_stats_col(ISTC.LEAF_HEIGHT_STATS, stat)]},
-        [logs_dirs],
-        f"Leaf height {str(stat)}",
-        merge_dataset=True,
-        y_scale="linear",
-    )
+# for stat in [SCP.STD, SCP.MEAN]:
+#     experiment_univariate_parametrization(
+#         {ERD.INDEX_STATS_COLS: [get_stats_col(ISTC.LEAF_HEIGHT_STATS, stat)]},
+#         logs_dirs,
+#         f"Leaf height {str(stat)}",
+#         merge_dataset=True,
+#         # use_adapt_to_dataset=True,
+#         y_scale="linear",
+#     )
 
 # %%
