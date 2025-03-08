@@ -6,6 +6,7 @@ xcode/*
 DATA/*
 LOGS/*
 TESTING
+EXPERIMENT_LOGS
 
 # Development
 .vscode
@@ -22,3 +23,7 @@ Doxyfile
 docs/*
 html
 latex
+
+# Docker
+.dockerignore
+Dockerfile

@@ -4,6 +4,7 @@ build/*
 xcode/*
 
 # Helper files
+mulisse_pack
 DATA/*
 LOGS/*
 LOGS_*

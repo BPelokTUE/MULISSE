@@ -34,7 +34,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
 
     instance->m_command_type = command_type;
     instance->m_dataset_props = dataset_props;
-    if (dataset_props.num_series == 0) {
+    if (dataset_props.num_series == 0 && !dataset_props.file.empty()) {
         size_t dataset_size = get_dataset_size(instance->get_dataset_path());
         instance->m_dataset_props.num_series =
             dataset_size / (dataset_props.series_len * dataset_props.num_channels * sizeof(float));

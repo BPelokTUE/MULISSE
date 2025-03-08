@@ -1,0 +1,5 @@
+{
+    "DEFAULT_RUN_CONFIG": "/mulisse/scripts/run_configs/default_config.json",
+    "CSV_PATH": "/mulisse/mulisse_pack",
+    "REPO_PATH": "/mulisse"
+}
