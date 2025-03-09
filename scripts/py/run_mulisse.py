@@ -301,6 +301,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--no_cleanup", "--dirty", action="store_true", help="Do not remove generated data files")
     parser.add_argument("-p", "--print_settings", action="store_true", help="Print settings")
     parser.add_argument("-b", "--progress_bar", action="store_true", help="Show progress bar")
+    parser.add_argument("-t", "--timeout", type=int, help="Timeout for each command in seconds. Default is no timeout.")
     input_args = parser.parse_args()
 
     if input_args.progress_bar:
@@ -348,13 +349,21 @@ if __name__ == "__main__":
 
     COMMAND_LOG_PATH = os.path.join(LOGS_DIR, "command_log.txt")
 
-    def run_command_with_logging(args: list[str]):
+    from typing import Optional
+
+    def run_command_with_logging(args: list[str], timeout: Optional[int] = input_args.timeout) -> bool:
         with open(COMMAND_LOG_PATH, "a+") as f:
             f.write(f"Running command:\n{' '.join(args)}\n")
-            result = subprocess.run(args, stdout=f, stderr=subprocess.STDOUT, cwd=BUILD_PATH)
-            if result.returncode != 0:
-                f.write(f"Command failed with return code {result.returncode}\n")
+            try:
+                result = subprocess.run(args, stdout=f, stderr=subprocess.STDOUT, cwd=BUILD_PATH, timeout=timeout)
+                if result.returncode != 0:
+                    f.write(f"Command failed with return code {result.returncode}\n")
+                    return False
+            except subprocess.TimeoutExpired:
+                f.write(f"Command timed out after {timeout} seconds\n")
+                return False
             f.write("\n")
+            return True
 
     for length_setting in SettingIterator(length_settings).iterate(desc="Length settings"):
         series_len = length_setting["series_len"]
@@ -382,7 +391,8 @@ if __name__ == "__main__":
                 args += ["-c", str(num_channels)]
                 args += ["-s", str(dataset_setting["step_stdev"])]
 
-            run_command_with_logging([EXECUTABLE_PATH, *args])
+            if not run_command_with_logging([EXECUTABLE_PATH, *args]):
+                continue
             ffts_required = any(
                 method.get("precalculate_ffts", False)
                 for method in itertools.chain(
@@ -390,10 +400,11 @@ if __name__ == "__main__":
                     SettingIterator(scan_method_settings),
                 )
             )
+            ffts_calculated = False
             ffts_file = os.path.join(dataset_setting["location"], f"ffts-{dataset_counter - 1}.bin")
             if ffts_required:
                 # fmt: off
-                run_command_with_logging([
+                ffts_calculated = run_command_with_logging([
                     EXECUTABLE_PATH, "calc_ffts", "-d", data_file, "-F", ffts_file, "-m", str(series_len), "-c",
                     str(num_channels), 
                 ])
@@ -427,9 +438,9 @@ if __name__ == "__main__":
                     str(noise_stdev), "-S", str(seed)
                 ]
                 # fmt: on
-                run_command_with_logging([EXECUTABLE_PATH, *args])
+                queries_created = run_command_with_logging([EXECUTABLE_PATH, *args])
 
-                if calculate_query_stats:
+                if queries_created and calculate_query_stats:
                     # fmt: off
                     args = [
                         "calc_q_stats", "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
@@ -438,15 +449,15 @@ if __name__ == "__main__":
                     # fmt: on
                     run_command_with_logging([EXECUTABLE_PATH, *args])
 
-                for scan_method_setting in SettingIterator(scan_method_settings).iterate(
-                    desc="Scan method settings", leave=False
-                ):
-                    # fmt: off
-                    args = get_method_args(scan_method_setting) + [
-                        "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file
-                    ]
-                    # fmt: on
-                    run_command_with_logging([EXECUTABLE_PATH, *args])
+                if queries_created:
+                    for scan_method_setting in SettingIterator(scan_method_settings).iterate(
+                        desc="Scan method settings", leave=False
+                    ):
+                        if scan_method_setting.get("precalculate_ffts", False) and not ffts_calculated:
+                            continue
+                        args = get_method_args(scan_method_setting)
+                        args += ["-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file]
+                        run_command_with_logging([EXECUTABLE_PATH, *args])
 
                 for index_setting in SettingIterator(index_settings).iterate(desc="Index settings", leave=False):
                     index_method = index_setting["index_type"]
@@ -486,24 +497,24 @@ if __name__ == "__main__":
                     for key, value in index_setting_copy.items():
                         args += [f"--{key}", str(value)]
 
-                    run_command_with_logging([EXECUTABLE_PATH, *args])
+                    if run_command_with_logging([EXECUTABLE_PATH, *args]):
+                        if calculate_index_stats:
+                            args = ["calc_i_stats", "-i", index_file, "-c", str(num_channels), "-t", index_method]
+                            run_command_with_logging([EXECUTABLE_PATH, *args])
 
-                    if calculate_index_stats:
-                        args = ["calc_i_stats", "-i", index_file, "-c", str(num_channels), "-t", index_method]
-                        run_command_with_logging([EXECUTABLE_PATH, *args])
-
-                    relevant_search_settings = index_method_settings.copy()
-                    for i in range(len(relevant_search_settings)):
-                        relevant_search_settings[i]["method_type"] = [index_method]
-                    for index_method_setting in SettingIterator(relevant_search_settings).iterate(
-                        desc="Indexing method settings", leave=False
-                    ):
-                        # fmt: off
-                        args = get_method_args(index_method_setting) + [
-                            "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file, "-i", index_file
-                        ]
-                        # fmt: on
-                        run_command_with_logging([EXECUTABLE_PATH, *args])
+                        if queries_created:
+                            relevant_search_settings = index_method_settings.copy()
+                            for i in range(len(relevant_search_settings)):
+                                relevant_search_settings[i]["method_type"] = [index_method]
+                            for index_method_setting in SettingIterator(relevant_search_settings).iterate(
+                                desc="Indexing method settings", leave=False
+                            ):
+                                # fmt: off
+                                args = get_method_args(index_method_setting) + [
+                                    "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file, "-i", index_file
+                                ]
+                                # fmt: on
+                                run_command_with_logging([EXECUTABLE_PATH, *args])
 
                     file_cleanup(index_file)
                 file_cleanup(query_file)

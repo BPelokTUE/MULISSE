@@ -14,8 +14,10 @@ INCLUDE_SLURM_FILES=false
 IGNORE_TESTS=true
 CLEAN_BUILD=false
 reading_config_files=false
-experiment_name=""
+
 config_files=()
+experiment_name=""
+timeout=0
 
 while [[ "$#" -gt 0 ]]; do
     if [[ $1 == -* ]]; then
@@ -31,10 +33,14 @@ while [[ "$#" -gt 0 ]]; do
         experiment_name=$2
         shift
         ;;
+    -t | --timeout)
+        timeout=$2
+        shift
+        ;;
     --no_scp_repo)
         NO_SCP_REPO=true
         ;;
-    -t | --tests)
+    --tests)
         IGNORE_TESTS=false
         ;;
     --clean_build)
@@ -48,7 +54,7 @@ while [[ "$#" -gt 0 ]]; do
             echo "  -i, --input_configs  Paths to the configuration files"
             echo "  -n, --name           Name of the experiment"
             echo "  --no_scp_repo        Skip copying the repository to the remote"
-            echo "  -t, --tests          Build tests as well"
+            echo "  --tests              Build tests as well"
             echo "  --clean_build        Perform a clean build on the remote"
             exit 1
         fi
