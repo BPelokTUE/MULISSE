@@ -962,14 +962,16 @@ def experiment_univariate_parametrization(
     merge_dataset: bool = True,
     hatches=None,
     hatch_labels=None,
+    datasets_to_show=None,
+    l_ranges_to_show=None,
 ):
     groups_dict = {
         ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
         ERD.QUERY_SETS_COLS: [str(QSC.L_MIN), str(QSC.L_MAX)],
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
         ERD.INDEXES_COLS: [
-            str(ISC.POS_PER_ENV),
             str(ISC.FIRST_LAYER_NUM_BITS),
+            str(ISC.POS_PER_ENV),
             str(ISC.LEAF_CAPACITY),
         ],
     }
@@ -992,19 +994,24 @@ def experiment_univariate_parametrization(
 
     def get_x_label(key: tuple):
         if use_adapt_to_dataset:
-            _dataset, l_min, l_max, method, pos_per_env, first_layer_bits, leaf_capacity, adapt = key
+            _dataset, _l_min, _l_max, method, first_layer_bits, pos_per_env, leaf_capacity, adapt = key
         else:
-            _dataset, l_min, l_max, method, pos_per_env, first_layer_bits, leaf_capacity = key
-        ppe_str = f"\nPPE={int(pos_per_env)}" if pos_per_env is not None and pos_per_env > 0 else ""
-        # bits_str = f"\nBits={int(first_layer_bits)}" if first_layer_bits is not None and first_layer_bits > 0 else ""
-        bits_str = ""
-        leaf_str = f"\nLC={int(leaf_capacity)}" if leaf_capacity is not None and leaf_capacity > 0 else ""
-        adapt_str = "\nAdapt" if use_adapt_to_dataset and "isax" in method and adapt == 1 else ""
-        return f"l_min={l_min}\nl_max={l_max}{ppe_str}{bits_str}{leaf_str}{adapt_str}"
+            _dataset, _l_min, _l_max, method, first_layer_bits, pos_per_env, leaf_capacity = key
+        bits_str = f"Bits={int(first_layer_bits)}" if first_layer_bits is not None and first_layer_bits > 0 else ""
+        ppe_str = f"PPE={int(pos_per_env)}" if pos_per_env is not None and pos_per_env > 0 else ""
+        leaf_str = f"LC={int(leaf_capacity)}" if leaf_capacity is not None and leaf_capacity > 0 else ""
+        adapt_str = "Adapt" if use_adapt_to_dataset and "isax" in method and adapt == 1 else ""
+        return "\n".join([s for s in [bits_str, ppe_str, leaf_str, adapt_str] if s])
 
     datasets = {group[0] for group in mean_values}
+    if datasets_to_show is not None:
+        datasets = {dataset for dataset in datasets if dataset in datasets_to_show}
+
     for dataset in datasets:
         l_ranges = {(key[1], key[2]) for key in mean_values if key[0] == dataset}
+        if l_ranges_to_show is not None:
+            l_ranges = {l_range for l_range in l_ranges if l_range in l_ranges_to_show}
+
         for l_range in l_ranges:
             mean_values_ds = {
                 group: values for group, values in mean_values.items() if group[0] == dataset and group[1:3] == l_range
@@ -1029,28 +1036,57 @@ def experiment_univariate_parametrization(
 
 # %%
 
-logs_dirs = [f"EXPERIMENT_LOGS/LOGS_univariate_parametrization_{i}" for i in [1, 2]]
-# logs_dirs = ["EXPERIMENT_LOGS/LOGS_univariate_parametrization_2"]
-# logs_dirs = ["LOGS"]
+# logs_dirs = [f"EXPERIMENT_LOGS/LOGS_univariate_parametrization_{i}" for i in [1, 2]]
+# logs_dirs = ["EXPERIMENT_LOGS/LOGS_univariate_parametrization_ppe"]
+logs_dirs = ["EXPERIMENT_LOGS/LOGS_adapting_index_2"]
+
+merge_datasets = True
+use_adapt_to_dataset = True
+show_indexing_time = False
+datasets_to_show = None
+l_ranges_to_show = None
+
+hatches = None
+hatch_labels = None
+targets_dict = {ERD.RUNS_COLS: [str(QC.TOTAL_TIME_S)]}
+if show_indexing_time:
+    hatches = ["", PREP_TIME_HATCH]
+    hatch_labels = TIME_LABELS
+    targets_dict = {ERD.RUNS_COLS: [str(QC.TOTAL_TIME_S), str(QC.AMORTIZED_PREP_TIME_S)]}
+
 experiment_univariate_parametrization(
-    # {ERD.RUNS_COLS: [str(QC.TOTAL_TIME_S), str(QC.AMORTIZED_PREP_TIME_S)]},
-    {ERD.RUNS_COLS: [str(QC.TOTAL_TIME_S)]},
+    targets_dict,
     logs_dirs,
     TOTAL_TIME_Y_LABEL,
-    # hatches=["", PREP_TIME_HATCH],
-    # hatch_labels=TIME_LABELS,
-    merge_dataset=True,
-    # use_adapt_to_dataset=True,
+    hatches=hatches,
+    hatch_labels=hatch_labels,
+    merge_dataset=merge_datasets,
+    use_adapt_to_dataset=use_adapt_to_dataset,
+    l_ranges_to_show=l_ranges_to_show,
+    datasets_to_show=datasets_to_show,
 )
 
-# for stat in [SCP.STD, SCP.MEAN]:
-#     experiment_univariate_parametrization(
-#         {ERD.INDEX_STATS_COLS: [get_stats_col(ISTC.LEAF_HEIGHT_STATS, stat)]},
-#         logs_dirs,
-#         f"Leaf height {str(stat)}",
-#         merge_dataset=True,
-#         # use_adapt_to_dataset=True,
-#         y_scale="linear",
-#     )
+experiment_univariate_parametrization(
+    {ERD.RUNS_COLS: [str(QC.PRUNING_RATIO)]},
+    logs_dirs,
+    PRUNING_RATIO_Y_LABEL,
+    y_scale="linear",
+    merge_dataset=merge_datasets,
+    use_adapt_to_dataset=use_adapt_to_dataset,
+    l_ranges_to_show=l_ranges_to_show,
+    datasets_to_show=datasets_to_show,
+)
+
+for stat in [SCP.STD, SCP.MEAN]:
+    experiment_univariate_parametrization(
+        {ERD.INDEX_STATS_COLS: [get_stats_col(ISTC.LEAF_HEIGHT_STATS, stat)]},
+        logs_dirs,
+        f"Leaf height {str(stat)}",
+        merge_dataset=merge_datasets,
+        use_adapt_to_dataset=use_adapt_to_dataset,
+        y_scale="linear",
+        l_ranges_to_show=l_ranges_to_show,
+        datasets_to_show=datasets_to_show,
+    )
 
 # %%

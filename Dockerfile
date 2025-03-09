@@ -2,9 +2,6 @@ FROM gcc:latest
 
 WORKDIR /mulisse
 
-# Copy data files (modify this to copy the actual data files)
-COPY ./mulisse_pack ./mulisse_pack
-
 # Copy only the setup script and requirements file first
 COPY ./scripts/sh/setup.sh ./scripts/sh/setup.sh
 COPY ./scripts/py/requirements.txt ./scripts/py/requirements.txt
@@ -28,7 +25,9 @@ RUN chmod +x ./scripts/sh/build.sh && \
 # Copy the rest of the files
 COPY . .
 
-# Overwrite local_settings.json with docker_settings.json
+# Overwrite `local_settings.json` with `docker_settings.json`
+# NOTE: the dataset files have to be mounted to the path specified in `docker_settings.json`, using:
+#       `docker run -v /local_path/to/dataset:/container_path/to/dataset ...`
 RUN mv ./scripts/docker_settings.json ./scripts/local_settings.json
 
 # Define the entrypoint and default command
