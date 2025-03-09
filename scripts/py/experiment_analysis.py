@@ -658,8 +658,12 @@ def experiment_num_channels_and_dataset(
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
     }
     columns = {**groups_dict, ERD.RUNS_COLS: target_cols}
-    few_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_few_channels_config", cols=columns)
-    many_channels_results = ExperimentResults.load(logs_dir="EXPERIMENT_LOGS/LOGS_many_channels_config", cols=columns)
+    few_channels_results = ExperimentResults.load(
+        logs_dir="EXPERIMENT_LOGS/num_channels/LOGS_few_channels_config", cols=columns
+    )
+    many_channels_results = ExperimentResults.load(
+        logs_dir="EXPERIMENT_LOGS/num_channels/LOGS_many_channels_config", cols=columns
+    )
 
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
     groups = dict_to_tuples(groups_dict)
@@ -714,7 +718,7 @@ def experiment_envelope_parametrization(
     y_label: str,
     y_scale: str = "log",
     target_labels: list[str] = None,
-    logs_dir="EXPERIMENT_LOGS/LOGS_envelope_size_parametrization",
+    logs_dir="EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size_param",
 ):
     if isinstance(target_cols, str):
         target_cols = [target_cols]
@@ -760,7 +764,7 @@ def experiment_envelope_parametrization(
 
 for i in range(1, 4):
     print(f"Experiment {i}:")
-    exp_logs_dir = "EXPERIMENT_LOGS/LOGS_envelope_size_parametrization" + (f"_{i}" if i > 1 else "")
+    exp_logs_dir = "EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size_parametrization" + (f"_{i}" if i > 1 else "")
     print("Total time:")
     experiment_envelope_parametrization(
         TIME_TARGETS, TOTAL_TIME_Y_LABEL, target_labels=TIME_LABELS, logs_dir=exp_logs_dir
@@ -791,8 +795,7 @@ def experiment_relative_contrast(
     query_noise_levels=list(NOISE_LABELS.keys()),
     y_scale: str = "linear",
     target_labels: list[str] = None,
-    logs_dir="EXPERIMENT_LOGS/LOGS_relative_contrast_config",
-    # logs_dir="EXPERIMENT_LOGS/small/LOGS_rc",
+    logs_dir="EXPERIMENT_LOGS/relative_contrast/LOGS_relative_contrast_config",
     remove_top=0.00,
     datasets_to_show=["weather", "synthetic"],
 ):
@@ -923,8 +926,8 @@ def experiment_compare_methods(
 
 
 # %%
-pure_isax_logs = ["EXPERIMENT_LOGS/LOGS_pure_isax"]
-pure_envelope_logs = ["EXPERIMENT_LOGS/LOGS_pure_envelope"]
+pure_isax_logs = ["EXPERIMENT_LOGS/pure/LOGS_pure_isax"]
+pure_envelope_logs = ["EXPERIMENT_LOGS/pure/LOGS_pure_envelope"]
 
 for logs_dirs in [pure_isax_logs, pure_envelope_logs]:
     # experiment_compare_methods(
@@ -1036,9 +1039,9 @@ def experiment_univariate_parametrization(
 
 # %%
 
-# logs_dirs = [f"EXPERIMENT_LOGS/LOGS_univariate_parametrization_{i}" for i in [1, 2]]
-# logs_dirs = ["EXPERIMENT_LOGS/LOGS_univariate_parametrization_ppe"]
-logs_dirs = ["EXPERIMENT_LOGS/LOGS_adapting_index_2"]
+# logs_dirs = [f"EXPERIMENT_LOGS/univariate/LOGS_univariate_parametrization_{i}" for i in [1, 2]]
+# logs_dirs = ["EXPERIMENT_LOGS/univariate/LOGS_univariate_parametrization_ppe"]
+logs_dirs = ["EXPERIMENT_LOGS/adapting/LOGS_adapting_index_2"]
 
 merge_datasets = True
 use_adapt_to_dataset = True
