@@ -138,6 +138,8 @@ class iSaxFinalizedNode : public iSaxNode {
 template <typename FTag>
     requires ValidSaxTraitsTag<FTag>
 struct iSaxInternalNodeArgs {
+    virtual ~iSaxInternalNodeArgs() = default;
+
     SaxSplitIndex split_ind;
     uptr<iSaxFinalizedNode<FTag>> left;
     uptr<iSaxFinalizedNode<FTag>> right;
@@ -156,6 +158,9 @@ struct iSaxInternalNodeArgs {
         ar(split_ind, left, right);
     }
 };
+
+// Required for Cereal (de)serialization
+CEREAL_REGISTER_TYPE(iSaxInternalNodeArgs<PaaTag>)
 
 struct iSaxEnvelopeInternalNodeArgs : iSaxInternalNodeArgs<EnvelopeTag> {
     SaxSymbolT max_symbol_left;
@@ -177,6 +182,10 @@ struct iSaxEnvelopeInternalNodeArgs : iSaxInternalNodeArgs<EnvelopeTag> {
         ar(cereal::base_class<iSaxInternalNodeArgs<EnvelopeTag>>(this), max_symbol_left, max_symbol_right);
     }
 };
+
+// Required for Cereal (de)serialization
+CEREAL_REGISTER_TYPE(iSaxEnvelopeInternalNodeArgs)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxInternalNodeArgs<EnvelopeTag>, iSaxEnvelopeInternalNodeArgs)
 
 /**
  * @brief Finalized internal node

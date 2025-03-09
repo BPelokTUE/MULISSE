@@ -39,8 +39,9 @@ void iSaxWord::unsplit(SaxSegIndT seg_ind) {
 }
 
 void iSaxWord::set_new_bit(SaxSegIndT seg_ind, uint8_t bit) {
-    SaxSymbolT mask = bit << (m_alphabet_num_bits - m_num_bits[seg_ind]);
-    m_symbols[seg_ind] = (m_symbols[seg_ind] & ~mask) | mask;
+    SaxSymbolT mask = 1 << (m_alphabet_num_bits - m_num_bits[seg_ind]);
+    SaxSymbolT shifted_bit = bit << (m_alphabet_num_bits - m_num_bits[seg_ind]);
+    m_symbols[seg_ind] = (m_symbols[seg_ind] & ~mask) | shifted_bit;
 }
 
 void iSaxWord::append_to_symbol(SaxSegIndT index, uint8_t bit) {

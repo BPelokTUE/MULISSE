@@ -520,3 +520,6 @@ if __name__ == "__main__":
                 file_cleanup(query_file)
             file_cleanup(data_file)
             file_cleanup(ffts_file)
+
+    # Run check
+    run_command_with_logging(["../scripts/py/check_results.py", "-l", "../LOGS"])

@@ -1039,9 +1039,10 @@ def experiment_univariate_parametrization(
 
 # %%
 
-# logs_dirs = [f"EXPERIMENT_LOGS/univariate/LOGS_univariate_parametrization_{i}" for i in [1, 2]]
-# logs_dirs = ["EXPERIMENT_LOGS/univariate/LOGS_univariate_parametrization_ppe"]
-logs_dirs = ["EXPERIMENT_LOGS/adapting/LOGS_adapting_index_2"]
+# logs_dirs = [f"EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_{i}" for i in [1, 2]]
+logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ppe"]
+# logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ie_lc"]
+# logs_dirs = ["EXPERIMENT_LOGS/adapting/LOGS_adapting_index_2"]
 
 merge_datasets = True
 use_adapt_to_dataset = True

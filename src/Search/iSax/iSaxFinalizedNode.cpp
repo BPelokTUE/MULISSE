@@ -55,7 +55,6 @@ template <>
 pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedInternal<EnvelopeTag>::get_children_max_symbols(
     SaxNumBitsT split_num_bits, SaxNumBitsT symbol_num_bits) const {
     SaxNumBitsT shift = symbol_num_bits - split_num_bits - 1;
-    assert(shift >= 0);
     auto envelope_args = static_cast<iSaxEnvelopeInternalNodeArgs *>(m_args.get());
     return {envelope_args->max_symbol_left >> shift, envelope_args->max_symbol_right >> shift};
 }

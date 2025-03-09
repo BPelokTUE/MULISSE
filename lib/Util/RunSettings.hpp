@@ -110,7 +110,7 @@ class RunSettings {
      * @brief Get the currently used iSAX interval breakpoints
      * @return The vector of breakpoints, excluding `-INF` and `INF` at the ends
      */
-    const vec<float>& get_breakpoints();
+    virtual const vec<float>& get_breakpoints();
 
     /** @brief Update the iSAX interval breakpoints */
     void update_breakpoints();
