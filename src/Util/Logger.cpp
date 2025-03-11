@@ -422,14 +422,13 @@ void IndexStats::update_leaf_stats(float fill, float height) {
 }
 
 void IndexStats::update_seg_stats(float lower, float upper, size_t count) {
-    if (lower == -INF) {
-        ++num_inf_lower;
-        return;
-    }
-    if (upper == INF) {
-        ++num_inf_upper;
-        return;
-    }
+    if (count == 0) return;
+
+    bool lower_inf = lower == -INF, upper_inf = upper == INF;
+    num_inf_lower += lower_inf;
+    num_inf_upper += upper_inf;
+    if (lower_inf || upper_inf) return;
+
     seg_lower_stats.update(lower, count);
     seg_upper_stats.update(upper, count);
     seg_range_stats.update(upper - lower, count);

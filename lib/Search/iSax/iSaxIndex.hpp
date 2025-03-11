@@ -240,8 +240,8 @@ class iSaxIndex : public IIndex<T> {
                     if (val == -INF || val == INF) continue;
                     sum += val;
                     sum_sq += val * val;
+                    ++count;
                 }
-                count += isax_input.size();
             }
         }
         auto [mu, sigma] = calculate_mu_and_sigma(sum, sum_sq, count);
