@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
     vec<uint> exact_lengths = {};
     MtsNumChannelsT num_channels, used_channels = 0;
     vec<bool> channel_mask;
-    bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false, no_adapt_index = false;
+    bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false, adapt_index = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-B,--breakpoint_strategy", breakpoint_strategy_str, "Breakpoint strategy")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS));
-    index_subcommand->add_flag("--no_adapt", no_adapt_index, "Do not adapt the index properties to the dataset");
+    index_subcommand->add_flag("--adapt", adapt_index, "Adapt the index properties to the dataset");
     index_subcommand->add_option("-l,--l_min", l_min, "Minimum length of subsequences")
         ->required()
         ->check(positive_int);
@@ -331,7 +331,7 @@ int main(int argc, char **argv) {
                 .series_len = series_len,
                 .num_channels = num_channels,
                 .normalized = !unnormalized,
-                .adapt = !no_adapt_index,
+                .adapt = adapt_index,
                 .index_params = std::unique_ptr<IIndexParams>(index_params),
             };
             return create_index(index_options);

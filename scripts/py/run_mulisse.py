@@ -489,10 +489,8 @@ if __name__ == "__main__":
                         leaf_capacity = int(index_setting_copy.pop("leaf_capacity") * num_entries)
                         leaf_capacity = max(1, leaf_capacity)
                         args += ["-C", str(leaf_capacity)]
-                    if "adapt" in index_setting_copy:
-                        adapt = index_setting_copy.pop("adapt")
-                        if not adapt:
-                            args += ["--no_adapt"]
+                    if index_setting_copy.pop("adapt", False):
+                        args += ["--adapt"]
 
                     for key, value in index_setting_copy.items():
                         args += [f"--{key}", str(value)]
