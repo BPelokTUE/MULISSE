@@ -764,7 +764,7 @@ def experiment_envelope_parametrization(
 
 for i in range(1, 4):
     print(f"Experiment {i}:")
-    exp_logs_dir = "EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size_parametrization" + (f"_{i}" if i > 1 else "")
+    exp_logs_dir = "EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size" + (f"_{i}" if i > 1 else "")
     print("Total time:")
     experiment_envelope_parametrization(
         TIME_TARGETS, TOTAL_TIME_Y_LABEL, target_labels=TIME_LABELS, logs_dir=exp_logs_dir
@@ -1039,7 +1039,7 @@ def experiment_univariate_parametrization(
 
 # %%
 
-# logs_dirs = [f"EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_{i}" for i in [1, 2]]
+# logs_dirs = [f"EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_{i}" for i in [2]]
 logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ppe"]
 # logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ie_lc"]
 # logs_dirs = ["EXPERIMENT_LOGS/adapting/LOGS_adapting_index_2"]
@@ -1081,16 +1081,18 @@ experiment_univariate_parametrization(
     datasets_to_show=datasets_to_show,
 )
 
-for stat in [SCP.STD, SCP.MEAN]:
-    experiment_univariate_parametrization(
-        {ERD.INDEX_STATS_COLS: [get_stats_col(ISTC.LEAF_HEIGHT_STATS, stat)]},
-        logs_dirs,
-        f"Leaf height {str(stat)}",
-        merge_dataset=merge_datasets,
-        use_adapt_to_dataset=use_adapt_to_dataset,
-        y_scale="linear",
-        l_ranges_to_show=l_ranges_to_show,
-        datasets_to_show=datasets_to_show,
-    )
+for istc_col in [ISTC.LEAF_HEIGHT_STATS, ISTC.SEG_RANGE_STATS]:
+    y_label_prefix = str(istc_col).replace("_", " ").capitalize()
+    for stat in [SCP.STD, SCP.MEAN, SCP.MAX, SCP.MIN]:
+        experiment_univariate_parametrization(
+            {ERD.INDEX_STATS_COLS: [get_stats_col(istc_col, stat)]},
+            logs_dirs,
+            f"{y_label_prefix} {str(stat)}",
+            merge_dataset=merge_datasets,
+            use_adapt_to_dataset=use_adapt_to_dataset,
+            y_scale="linear",
+            l_ranges_to_show=l_ranges_to_show,
+            datasets_to_show=datasets_to_show,
+        )
 
 # %%
