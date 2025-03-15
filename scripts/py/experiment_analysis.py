@@ -113,35 +113,49 @@ class ExperimentResults(BaseModel):
         logs_dir: str,
         extra_cols: dict[ERD, list[str]],
     ):
-        indexes_header = pd.read_csv(os.path.join(logs_dir, CSV_FILES[ERD.INDEXES_COLS]), nrows=0)
+        extra_cols[ERD.DATASETS_COLS] += [str(DSC.NUM_SERIES), str(DSC.SERIES_LENGTH)]
+        extra_cols[ERD.INDEXES_COLS] += [str(ISC.POS_PER_ENV)]
+        extra_cols[ERD.METHODS_COLS] += [str(SSC.SEARCH_METHOD)]
+        extra_cols[ERD.RUNS_COLS] += [str(QC.ID)]
+
         runs_header = pd.read_csv(os.path.join(logs_dir, CSV_FILES[ERD.RUNS_COLS]), nrows=0)
-        if str(ISC.NUM_ENTRIES) in indexes_header.columns and str(QC.NUM_ENTRIES_EXAMINED) in runs_header.columns:
-            extra_cols[ERD.INDEXES_COLS] += [str(ISC.NUM_ENTRIES)]
-            extra_cols[ERD.RUNS_COLS] += [str(QC.NUM_ENTRIES_EXAMINED), str(QC.ID)]
+        if str(QC.NUM_ENTRIES_EXAMINED) in runs_header.columns:
+            extra_cols[ERD.RUNS_COLS] += [str(QC.NUM_ENTRIES_EXAMINED), str(QC.QUERY_LENGTH)]
         else:  # Handle case for backward compatibility
-            extra_cols[ERD.DATASETS_COLS] += [str(DSC.NUM_SERIES), str(DSC.SERIES_LENGTH)]
-            extra_cols[ERD.INDEXES_COLS] += [str(ISC.L_MIN), str(ISC.L_MAX), str(ISC.POS_PER_ENV)]
-            extra_cols[ERD.METHODS_COLS] += [str(SSC.SEARCH_METHOD)]
-            extra_cols[ERD.RUNS_COLS] += [str(QC.NUM_TS_EXAMINED), str(QC.ID)]
+            extra_cols[ERD.INDEXES_COLS] += [str(ISC.L_MIN), str(ISC.L_MAX)]
+            extra_cols[ERD.RUNS_COLS] += [str(QC.NUM_TS_EXAMINED)]
 
     def add_pruning_ratio_column(self):
         merged_df = self.get_merged_df()
+        dsc_num_series = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.NUM_SERIES))
+        dsc_series_length = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.SERIES_LENGTH))
+        ssc_search_method = get_merged_col_name(ERD.METHODS_COLS, str(SSC.SEARCH_METHOD))
+        isc_pos_per_env = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.POS_PER_ENV))
 
-        if str(ISC.NUM_ENTRIES) in self.indexes_df.columns and str(QC.NUM_ENTRIES_EXAMINED) in self.runs_df.columns:
-            isc_num_entries = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.NUM_ENTRIES))
+        if str(QC.NUM_ENTRIES_EXAMINED) in self.runs_df.columns:
+            qc_query_length = get_merged_col_name(ERD.RUNS_COLS, str(QC.QUERY_LENGTH))
+            merged_df["num_relevant_entries"] = np.where(
+                merged_df[ssc_search_method].str.contains("envelope"),
+                (merged_df[dsc_series_length] - merged_df[qc_query_length] + merged_df[isc_pos_per_env])
+                // merged_df[isc_pos_per_env],
+                np.where(
+                    merged_df[ssc_search_method].str.contains("isax"),
+                    merged_df[dsc_series_length] - merged_df[qc_query_length] + 1,
+                    1,
+                ),
+            )
+            merged_df["num_relevant_entries"] *= merged_df[dsc_num_series]
             qc_num_entries_examined = get_merged_col_name(ERD.RUNS_COLS, str(QC.NUM_ENTRIES_EXAMINED))
             qc_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.ID))
 
-            merged_df[str(QC.PRUNING_RATIO)] = 1.0 - merged_df[qc_num_entries_examined] / merged_df[isc_num_entries]
+            merged_df[str(QC.PRUNING_RATIO)] = (
+                1.0 - merged_df[qc_num_entries_examined] / merged_df["num_relevant_entries"]
+            )
         else:  # Handle case for backward compatibility
-            dsc_num_series = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.NUM_SERIES))
-            dsc_series_length = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.SERIES_LENGTH))
             isc_l_min = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MIN))
             isc_l_max = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MAX))
-            isc_pos_per_env = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.POS_PER_ENV))
             qc_num_ts_examined = get_merged_col_name(ERD.RUNS_COLS, str(QC.NUM_TS_EXAMINED))
             qc_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.ID))
-            ssc_search_method = get_merged_col_name(ERD.METHODS_COLS, str(SSC.SEARCH_METHOD))
 
             # MULISSE counts one examined series per envelope, iSAX counts one per subsequence
             merged_df["num_start"] = merged_df[dsc_series_length] - merged_df[isc_l_min] + merged_df[isc_pos_per_env]
@@ -192,6 +206,22 @@ class ExperimentResults(BaseModel):
 
         self.runs_df = self.runs_df.merge(merged_df, left_on=str(QC.SETTINGS_ID), right_on=qc_settings_id, how="left")
 
+    def add_leaf_fill_columns(self, leaf_fill_columns: list[str]):
+        merged_df = self.get_merged_df()
+        isc_leaf_capacity = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.LEAF_CAPACITY))
+
+        for stat in SCP:
+            leaf_fill_col = get_stats_col(ISTC.LEAF_FILL_STATS, stat)
+            if leaf_fill_col in leaf_fill_columns:
+                leaf_size_col = get_stats_col(ISTC.LEAF_SIZE_STATS, stat)
+                istc_leaf_size_col = get_merged_col_name(ERD.INDEX_STATS_COLS, leaf_size_col)
+                merged_df[leaf_fill_col] = merged_df[istc_leaf_size_col] / merged_df[isc_leaf_capacity]
+
+        isc_index_name = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
+        columns = leaf_fill_columns + [isc_index_name]
+        merged_df = merged_df[columns]
+        self.index_stats_df = self.index_stats_df.merge(merged_df, left_on=str(ISC.INDEX_FILE), right_on=isc_index_name)
+
     @classmethod
     def load_csv_if_exists(cls, path: str, cols: list[str]) -> pd.DataFrame:
         if os.path.exists(path):
@@ -224,6 +254,17 @@ class ExperimentResults(BaseModel):
             cls.add_extra_cols_for_amortized_prep_time(extra_cols)
             act_cols[ERD.RUNS_COLS].remove(str(QC.AMORTIZED_PREP_TIME_S))
 
+        # Handle leaf fill stats columns
+        leaf_fill_cols = []
+        for stat in SCP:
+            leaf_fill_col = get_stats_col(ISTC.LEAF_FILL_STATS, stat)
+            if leaf_fill_col in cols[ERD.INDEX_STATS_COLS]:
+                leaf_fill_cols.append(leaf_fill_col)
+                extra_cols[ERD.INDEX_STATS_COLS].append(get_stats_col(ISTC.LEAF_SIZE_STATS, stat))
+                act_cols[ERD.INDEX_STATS_COLS].remove(leaf_fill_col)
+        if len(leaf_fill_cols) > 0:
+            extra_cols[ERD.INDEXES_COLS].append(str(ISC.LEAF_CAPACITY))
+
         extra_cols = {erd: list(set(extra_cols[erd]) - set(act_cols[erd])) for erd in ERD}
         cols_to_load = {erd: act_cols[erd] + extra_cols[erd] for erd in ERD}
         csv_paths = {erd: os.path.join(logs_dir, CSV_FILES[erd]) for erd in ERD}
@@ -254,6 +295,11 @@ class ExperimentResults(BaseModel):
         if str(QC.AMORTIZED_PREP_TIME_S) in cols[ERD.RUNS_COLS]:
             act_cols[ERD.RUNS_COLS].append(str(QC.AMORTIZED_PREP_TIME_S))
             results.add_amortized_prep_time_column()
+
+        # Add leaf fill columns
+        if len(leaf_fill_cols) > 0:
+            act_cols[ERD.INDEX_STATS_COLS] += leaf_fill_cols
+            results.add_leaf_fill_columns(leaf_fill_cols)
 
         # Drop extra columns
         results.datasets_df = results.datasets_df.drop(columns=extra_cols[ERD.DATASETS_COLS])
@@ -1039,16 +1085,16 @@ def experiment_univariate_parametrization(
 
 # %%
 
-# logs_dirs = [f"EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_{i}" for i in [2]]
-logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ppe"]
+logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_2"]
+# logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ppe"]
 # logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ie_lc"]
 # logs_dirs = ["EXPERIMENT_LOGS/adapting/LOGS_adapting_index_2"]
 
 merge_datasets = True
 use_adapt_to_dataset = True
 show_indexing_time = False
-datasets_to_show = None
-l_ranges_to_show = None
+datasets_to_show = ["weather", "stocks"]
+l_ranges_to_show = [(768, 1024)]
 
 hatches = None
 hatch_labels = None
@@ -1070,20 +1116,21 @@ experiment_univariate_parametrization(
     datasets_to_show=datasets_to_show,
 )
 
-experiment_univariate_parametrization(
-    {ERD.RUNS_COLS: [str(QC.PRUNING_RATIO)]},
-    logs_dirs,
-    PRUNING_RATIO_Y_LABEL,
-    y_scale="linear",
-    merge_dataset=merge_datasets,
-    use_adapt_to_dataset=use_adapt_to_dataset,
-    l_ranges_to_show=l_ranges_to_show,
-    datasets_to_show=datasets_to_show,
-)
+for col in [QC.PRUNING_RATIO, QC.NUM_ENTRIES_EXAMINED]:
+    experiment_univariate_parametrization(
+        {ERD.RUNS_COLS: [str(col)]},
+        logs_dirs,
+        str(col).replace("_", " ").capitalize(),
+        y_scale="linear" if col == QC.PRUNING_RATIO else "log",
+        merge_dataset=merge_datasets,
+        use_adapt_to_dataset=use_adapt_to_dataset,
+        l_ranges_to_show=l_ranges_to_show,
+        datasets_to_show=datasets_to_show,
+    )
 
-for istc_col in [ISTC.LEAF_HEIGHT_STATS, ISTC.SEG_RANGE_STATS]:
+for istc_col in [ISTC.LEAF_HEIGHT_STATS, ISTC.LEAF_FILL_STATS, ISTC.SEG_LOWER_STATS]:
     y_label_prefix = str(istc_col).replace("_", " ").capitalize()
-    for stat in [SCP.STD, SCP.MEAN, SCP.MAX, SCP.MIN]:
+    for stat in [SCP.MEAN, SCP.STD]:
         experiment_univariate_parametrization(
             {ERD.INDEX_STATS_COLS: [get_stats_col(istc_col, stat)]},
             logs_dirs,

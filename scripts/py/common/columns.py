@@ -141,6 +141,7 @@ class StatsColumnPrefix(Enum):
 class IndexStatsColumn(Enum):
     INDEX_FILE = auto()
     LEAF_SIZE_STATS = auto()
+    LEAF_FILL_STATS = auto()
     LEAF_HEIGHT_STATS = auto()
     SEG_RANGE_STATS = auto()
     SEG_LOWER_STATS = auto()

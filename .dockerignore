@@ -1,12 +1,15 @@
 # Build files
 build/*
 xcode/*
+scripts/cpp/build/*
+scripts/slurm
 
 # Helper files
 DATA/*
 LOGS/*
 TESTING
 EXPERIMENT_LOGS
+mulisse_pack
 
 # Development
 .vscode

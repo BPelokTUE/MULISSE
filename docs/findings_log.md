@@ -27,6 +27,14 @@
 - Lower leaf capacity (as a percentage of entries in the index) leads to better results:
     - This makes iSAX envelope indexes more imbalanced, but faster to search with nonetheless
     - On the other hand, pure iSAX indexes do not get more imbalanced, or at least not to the same degree
-    - To attempt to fix this, the breakpoints were adjusted to the actual distribution of the lower PAA values, however this made the index even more imbalanced. Further investigation is needed, 
-- Higher starting # bits leads to flatter indexes, as the # possible first layer iSAX words grows exponentially with the # starting bits. As a consequence, large starting bit count (e.g. 4) leads to an index that performs worse than simply using envelopes without discretization or a tree in all cases. However, using a smaller # starting bits CAN lead to a better performing index
+    - To attempt to fix this, the breakpoints were adjusted to the actual distribution of the lower PAA values, however this made the index even more imbalanced. On closer inspection the standard deviations of the lower envelope values is huge (500-1000).
+- Higher starting # bits leads to flatter indexes, as the # possible first layer iSAX words grows exponentially with the # starting bits. As a consequence, large starting bit count (e.g. 4) leads to an index that performs worse than simply using envelopes without discretization or a tree in all cases.
 - Pure iSAX actually performs on par (or at least not much worse) than the other two indexes, however, since parallelized insertion / bulk loading is not implemented (yet) testing is slow, because index creation can take multiple hours.
+- Optimal envelope size is still hard to determine. Flatter indexes seem to prefer lower envelope size, deeper indexes on the other hand perform better with larger envelopes.
+
+### Suggestions / Future work
+
+- Parallelize iSAX insertion (following the parallelized iSAX 2.0 bulk loading algorithm) and the runner (`run_mulisse.py`) for faster testing
+- Implement everything required for raw time series search, and check if the performance differences are still there
+    - If not, one hypothesis is (based on high standard deviation of lower envelope values) is summarizing many subsequence segments in one envelope segment, can lead to highly varied envelope values due to normalization. This might be mitigated by grouping subsequence by length in addition to starting positions, which should reduce the variety of values that the data points within each segment take. TODO: rephrase this.
+- If implementing length-based grouping does not make the indexes balanced, then switching to UB-trees (akin to Coconut) instead of prefix trees might help, although it is possible that it will only hide the issue (envelopes being too varied), but the issue will still continue to hurt performance.

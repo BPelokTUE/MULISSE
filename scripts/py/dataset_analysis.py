@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from .common.ulisse_envelopes import ulisse_envelope_normalized
+from common.ulisse_envelopes import ulisse_envelope_normalized
 
 LOGS_DIR = "../../LOGS"
 DATA_DIR = "../../DATA"
@@ -146,3 +146,5 @@ for dataset, envelope_dict in selected_envelopes.items():
         if SHOW_SERIES:
             plt.plot(selected_series[dataset][c])
         plt.show()
+
+# %%
