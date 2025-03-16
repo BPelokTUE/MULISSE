@@ -110,6 +110,22 @@ class IFinalizedIndex : public ISearchMethod {
         SERIALIZATION_MACRO(ar_type, ifs, deserialize, InputArchive); \
     }
 
+// Forward declarations
+
+template <typename T>
+    requires DerivedFromEntryData<T>
+class IIndex;
+
+template <typename IndexType>
+concept ImplementsIIndex = requires {
+    typename IndexType::EntryType;
+    requires std::derived_from<IndexType, IIndex<typename IndexType::EntryType>>;
+};
+
+template <typename IndexType>
+    requires ImplementsIIndex<IndexType>
+class IEntryInserter;
+
 /**
  * @brief Interface for indexes
  * @tparam The type of entry to insert into the index
@@ -117,21 +133,23 @@ class IFinalizedIndex : public ISearchMethod {
 template <typename T>
     requires DerivedFromEntryData<T>
 class IIndex {
+   public:
+    using EntryType = T;
     using FTag = typename IndexTraits<T>::FinalizedTag;
 
-   public:
     virtual ~IIndex() = default;
 
     /**
      * @brief Construct the index from a dataset
      * @param dataset_path Path to the dataset
      * @param generator Generator to produce the entries from the dataset
+     * @param inserter_type The type of inserter to use
      * @param num_channels Number of channels in the dataset
      * @param series_len Length of the series
      * @param adapt Whether to adapt the index properties to the dataset
      */
-    void construct(const str &dataset_path, IEntryGenerator<T> *generator, MtsNumChannelsT num_channels,
-                   uint series_len, bool adapt) {
+    void construct(const str &dataset_path, uptr<IEntryGenerator<T>> generator, EntryInserterType inserter_type,
+                   MtsNumChannelsT num_channels, uint series_len, bool adapt) {
         auto &logger = IndexLogger::get_instance();
 
         uint N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(float),
@@ -170,7 +188,7 @@ class IIndex {
 
         logger.increment_count_col(ISC::NUM_ENTRIES, dataset_entries.size());
         logger.start_timer(ISC::INSERTION_TIME_S);
-        for (auto &entry : dataset_entries) insert(std::move(entry));
+        insert_entries(dataset_entries, inserter_type);
         logger.stop_timer(ISC::INSERTION_TIME_S);
     }
 
@@ -189,12 +207,41 @@ class IIndex {
      */
     virtual uptr<IFinalizedIndex<FTag>> finalize() = 0;
 
-   private:
+    /**
+     * @brief Insert entries into the index
+     * @param entries The entries to insert
+     * @param inserter_type The type of inserter to use
+     */
+    virtual void insert_entries(const vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) = 0;
+
     /**
      * @brief Insert an entry into the index
      * @param entry The entry to insert
      */
     virtual void insert(const IndexEntry<T> &entry) = 0;
+};
+
+/**
+ * @brief Interface for entry inserter
+ * @tparam IndexType The type of index to insert entries into
+ */
+template <typename IndexType>
+    requires ImplementsIIndex<IndexType>
+class IEntryInserter {
+    using EntryType = typename IndexType::EntryType;
+
+   public:
+    virtual ~IEntryInserter() = default;
+
+    /**
+     * @brief Insert entries into the index
+     * @param entries The entries to insert
+     * @param inserter_type The type of inserter to use
+     */
+    virtual void insert_entries(const vec<IndexEntry<EntryType>> &entries) = 0;
+
+   private:
+    sptr<IndexType> m_index;
 };
 
 #endif  // INDEX_HPP

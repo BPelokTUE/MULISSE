@@ -20,6 +20,9 @@ using umap = std::unordered_map<K, V>;
 template <typename T>
 using uptr = std::unique_ptr<T>;
 
+template <typename T>
+using sptr = std::shared_ptr<T>;
+
 using str = std::string;
 
 using uint = uint32_t;

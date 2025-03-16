@@ -2,13 +2,21 @@
 #define ENVELOPE_INDEX_HPP
 
 #include "Search/Index.hpp"
+#include "Search/TopDownInserter.hpp"
+#include "Search/Options/IndexOptions.hpp"
 #include "Util/typedefs.hpp"
 
-class FlatEnvelopeIndex : public IIndex<Envelope>, public IFinalizedIndex<EnvelopeTag> {
+class FlatEnvelopeIndex : public IIndex<Envelope>,
+                          public IFinalizedIndex<EnvelopeTag>,
+                          public std::enable_shared_from_this<FlatEnvelopeIndex> {
    public:
     FlatEnvelopeIndex(uint segment_len, uint pos_per_env);
 
     FlatEnvelopeIndex() = default;
+
+    void insert(const IndexEntry<Envelope> &entry) override;
+
+    void insert_entries(const vec<IndexEntry<Envelope>> &entries, EntryInserterType inserter_type) override;
 
     uptr<IFinalizedIndex<EnvelopeTag>> finalize() override;
 
@@ -18,8 +26,6 @@ class FlatEnvelopeIndex : public IIndex<Envelope>, public IFinalizedIndex<Envelo
     const vec<IndexEntry<Envelope>> &get_entries() const;
 
    private:
-    void insert(const IndexEntry<Envelope> &entry) override;
-
     vec<IndexEntry<Envelope>> m_entries;
     uint m_segment_len, m_pos_per_env;
 

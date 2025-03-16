@@ -6,6 +6,7 @@
 #include "Search/Index.hpp"
 #include "Search/Envelope/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxIndex.hpp"
+#include "Search/TopDownInserter.hpp"
 #include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
@@ -33,21 +34,21 @@ uptr<IiSaxSplitStrategy<T>> get_split_strategy(const iSaxIndexParams *params, Sa
 
 template <typename T>
     requires DerivedFromEntryData<T>
-uptr<IIndex<T>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params, SaxSegIndT num_seg_per_channel,
+sptr<IIndex<T>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params, SaxSegIndT num_seg_per_channel,
                                uptr<IiSaxSplitStrategy<T>> split_strategy);
 
 template <>
-uptr<IIndex<Paa>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params,
+sptr<IIndex<Paa>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params,
                                  SaxSegIndT num_seg_per_channel, uptr<IiSaxSplitStrategy<Paa>> split_strategy) {
     auto series_isax_prop = std::make_unique<SeriesISaxProperties>(params->segment_len, opts.series_len,
                                                                    opts.num_channels, num_seg_per_channel);
     auto *index = new iSaxPaaIndex(std::move(series_isax_prop), params->first_layer_num_bits, params->leaf_capacity,
                                    std::move(split_strategy));
-    return uptr<IIndex<Paa>>(index);
+    return sptr<IIndex<Paa>>(index);
 }
 
 template <>
-uptr<IIndex<Envelope>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params,
+sptr<IIndex<Envelope>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params,
                                       SaxSegIndT num_seg_per_channel,
                                       uptr<IiSaxSplitStrategy<Envelope>> split_strategy) {
     auto *env_params = dynamic_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
@@ -56,12 +57,12 @@ uptr<IIndex<Envelope>> get_isax_index(const IndexOptions &opts, const iSaxIndexP
 
     auto *index = new iSaxEnvelopeIndex(std::move(series_isax_prop), env_params->first_layer_num_bits,
                                         env_params->leaf_capacity, std::move(split_strategy));
-    return uptr<IIndex<Envelope>>(index);
+    return sptr<IIndex<Envelope>>(index);
 }
 
 template <typename T>
     requires DerivedFromEntryData<T>
-uptr<IIndex<T>> get_isax_index(const IndexOptions &opts) {
+sptr<IIndex<T>> get_isax_index(const IndexOptions &opts) {
     auto *params = dynamic_cast<iSaxIndexParams *>(opts.index_params.get());
     SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
 
@@ -76,12 +77,14 @@ uptr<IIndex<T>> get_isax_index(const IndexOptions &opts) {
     return get_isax_index<T>(opts, params, num_seg_per_channel, std::move(split_strategy));
 }
 
-uptr<IIndex<Envelope>> get_envelope_index(const IndexOptions &opts) {
+sptr<IIndex<Envelope>> get_envelope_index(const IndexOptions &opts) {
     auto *params = dynamic_cast<EnvelopeIndexParams *>(opts.index_params.get());
     SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
     auto *index = new FlatEnvelopeIndex(params->segment_len, params->pos_per_env);
-    return uptr<IIndex<Envelope>>(index);
+    return sptr<IIndex<Envelope>>(index);
 }
+
+// Generator getters
 
 uptr<IEntryGenerator<Paa>> get_paa_generator(const IndexOptions &opts) {
     auto *params = dynamic_cast<iSaxIndexParams *>(opts.index_params.get());
@@ -106,10 +109,11 @@ uptr<IEntryGenerator<Envelope>> get_envelope_generator(const IndexOptions &opts)
 
 template <typename T>
     requires DerivedFromEntryData<T>
-void construct_index(uptr<IIndex<T>> index, uptr<IEntryGenerator<T>> generator, const IndexOptions &opts,
+void construct_index(sptr<IIndex<T>> index, uptr<IEntryGenerator<T>> generator, const IndexOptions &opts,
                      RunSettings &RS, IndexLogger &logger) {
     logger.start_timer(ISC::INDEXING_TIME_S);
-    index->construct(RS.get_dataset_path(), generator.get(), opts.num_channels, opts.series_len, opts.adapt);
+    index->construct(RS.get_dataset_path(), std::move(generator), opts.inserter_type, opts.num_channels,
+                     opts.series_len, opts.adapt);
     std::ofstream index_stream(RS.get_index_path(), std::ios::binary);
     index->finalize()->save(index_stream, opts.index_format);
     logger.stop_timer(ISC::INDEXING_TIME_S);

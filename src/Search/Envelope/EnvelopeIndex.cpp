@@ -5,6 +5,18 @@
 FlatEnvelopeIndex::FlatEnvelopeIndex(uint segment_len, uint pos_per_env)
     : m_segment_len(segment_len), m_pos_per_env(pos_per_env) {}
 
+void FlatEnvelopeIndex::insert_entries(const vec<IndexEntry<Envelope>> &entries, EntryInserterType inserter_type) {
+    uptr<IEntryInserter<FlatEnvelopeIndex>> inserter;
+    switch (inserter_type) {
+        case EntryInserterType::TOP_DOWN:
+            inserter = std::make_unique<TopDownInserter<FlatEnvelopeIndex>>(this->shared_from_this());
+            break;
+        default:
+            throw std::invalid_argument("Invalid inserter type");
+    }
+    inserter->insert_entries(entries);
+}
+
 void FlatEnvelopeIndex::insert(const IndexEntry<Envelope> &entry) { m_entries.push_back(entry); }
 
 uptr<IFinalizedIndex<EnvelopeTag>> FlatEnvelopeIndex::finalize() {

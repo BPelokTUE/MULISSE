@@ -35,7 +35,7 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
 
 #ifdef ENABLE_TEST_CODE
     // Pass empty deleter function, because fakeit manages the lifetime of the mock
-    RunSettings::set_instance(std::shared_ptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
+    RunSettings::set_instance(sptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
 #endif
 
     std::unique_ptr<iSaxEnvelopeIndex> index;
@@ -261,7 +261,7 @@ TEST_CASE("iSaxIndex insert MTS envelope works") {
 
 #ifdef ENABLE_TEST_CODE
     // Pass empty deleter function, because fakeit manages the lifetime of the mock
-    RunSettings::set_instance(std::shared_ptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
+    RunSettings::set_instance(sptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
 #endif
 
     std::unique_ptr<iSaxEnvelopeIndex> index;

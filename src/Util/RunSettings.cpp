@@ -10,7 +10,7 @@
 namespace fs = std::filesystem;
 
 // Initialize static members
-std::shared_ptr<RunSettings> RunSettings::instance = std::make_shared<RunSettings>();
+sptr<RunSettings> RunSettings::instance = std::make_shared<RunSettings>();
 bool RunSettings::initialized = false;
 RunSettings::RunSettings() {}
 
@@ -98,7 +98,7 @@ RunSettings &RunSettings::get_instance() {
 }
 
 #ifdef ENABLE_TEST_CODE
-void RunSettings::set_instance(std::shared_ptr<RunSettings> instance) {
+void RunSettings::set_instance(sptr<RunSettings> instance) {
     RunSettings::instance = instance;
     initialized = true;
 }

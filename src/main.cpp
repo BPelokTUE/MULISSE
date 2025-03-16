@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
         split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
-        distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED);
+        distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(TOP_DOWN);
     vec<str> csv_paths;
     float step_sd = 1.0, noise = 0.1;
     SaxNumBitsT first_layer_num_bits = 1;
@@ -189,6 +189,9 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-b,--first_layer_bits", first_layer_num_bits, "Number of bits for first layer")
         ->check(positive_int)
         ->capture_default_str();
+    index_subcommand->add_option("-I,--inserter_type", inserter_type_str, "Entry inserter type")
+        ->capture_default_str()
+        ->check(CLI::IsMember(ACCEPTED_ENTRY_INSERTER_TYPE_STRS));
 
     // Options for calculating index statistics
     i_stats_subcommand->add_option("-i,--index", index_path, "Index file path relative to `DATA`")->required();
@@ -337,6 +340,7 @@ int main(int argc, char **argv) {
                 .num_channels = num_channels,
                 .normalized = !unnormalized,
                 .adapt = adapt_index,
+                .inserter_type = STR_TO_ENTRY_INSERTER_TYPE.at(inserter_type_str),
                 .index_params = std::unique_ptr<IIndexParams>(index_params),
             };
             return create_index(index_options);

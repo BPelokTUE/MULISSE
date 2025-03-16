@@ -7,6 +7,7 @@
 #include "Util/constants.hpp"
 #include "Util/utilities.hpp"
 #include "Search/Index.hpp"
+#include "Search/TopDownInserter.hpp"
 #include "Search/iSax/iSaxSplittableNode.hpp"
 #include "Search/iSax/iSaxSplitStrategy.hpp"
 #include "Search/iSax/iSaxFinalizedIndex.hpp"
@@ -25,7 +26,7 @@ struct SaxSymbolsHash {
  */
 template <typename T>
     requires DerivedFromEntryData<T>
-class iSaxIndex : public IIndex<T> {
+class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxIndex<T>> {
     using FTag = typename IndexTraits<T>::FinalizedTag;
     using SymbolType = typename SaxTraits<FTag>::SymbolType;
 
@@ -81,6 +82,7 @@ class iSaxIndex : public IIndex<T> {
 
         auto node_it = m_first_layer.find(symbols);
         if (node_it == m_first_layer.end()) {
+            // TODO: extract into function
             m_first_layer.emplace(symbols, std::make_unique<iSaxSplittableLeaf<T>>(vec<SubsequenceInfo>{subs_info},
                                                                                    vec<vec<T>>{mts_summary}));
 
@@ -88,6 +90,7 @@ class iSaxIndex : public IIndex<T> {
             logger.increment_count_col(ISC::NUM_NODES);
             logger.increment_count_col(ISC::NUM_LEAVES);
         } else {
+            // TODO: extract into function
             auto node = node_it->second.get();
             iSaxSplittableInternal<T> *parent = nullptr;
             uint8_t new_bit = 0;
@@ -110,6 +113,18 @@ class iSaxIndex : public IIndex<T> {
                 split_leaf(isax_words, node_ref);
             }
         }
+    }
+
+    void insert_entries(const vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) override {
+        uptr<IEntryInserter<iSaxIndex<T>>> inserter;
+        switch (inserter_type) {
+            case EntryInserterType::TOP_DOWN:
+                inserter = std::make_unique<TopDownInserter<iSaxIndex<T>>>(this->shared_from_this());
+                break;
+            default:
+                throw std::invalid_argument("Invalid inserter type");
+        }
+        inserter->insert_entries(entries);
     }
 
     uptr<IFinalizedIndex<FTag>> finalize() override {
@@ -165,6 +180,7 @@ class iSaxIndex : public IIndex<T> {
         // If cannot split further, return
         if (split_seg_bits == m_alphabet_num_bits) return;
 
+        // TODO: critical section for logger stuff
         auto &logger = IndexLogger::get_instance();
         logger.increment_count_col(ISC::NUM_NODES, 2);
         logger.increment_count_col(ISC::NUM_LEAVES);

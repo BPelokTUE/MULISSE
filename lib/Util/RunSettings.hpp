@@ -56,7 +56,7 @@ class RunSettings {
     static RunSettings& get_instance();
 
 #ifdef ENABLE_TEST_CODE
-    static void set_instance(std::shared_ptr<RunSettings> instance);
+    static void set_instance(sptr<RunSettings> instance);
 #endif
 
     // ---------------------------------------------------- //
@@ -175,7 +175,7 @@ class RunSettings {
     bool m_ffts_supported;
 
     // Static
-    static std::shared_ptr<RunSettings> instance;
+    static sptr<RunSettings> instance;
     static bool initialized;
 
     // Constants

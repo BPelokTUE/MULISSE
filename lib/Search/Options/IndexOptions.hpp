@@ -1,11 +1,16 @@
 #ifndef INDEX_OPTIONS_HPP
 #define INDEX_OPTIONS_HPP
 
-#include "Summarization/iSaxBreakpointStrategy.hpp"
 #include "Search/Options/SearchMethodType.hpp"
 #include "Search/iSax/iSaxSplitStrategy.hpp"
+#include "Summarization/iSaxBreakpointStrategy.hpp"
 #include "Util/utilities.hpp"
 #include "Util/typedefs.hpp"
+
+/** @brief Enum for IEntryInserter implementations */
+enum EntryInserterType { TOP_DOWN };
+
+DEFINE_ENUM_CONSTS_NO_EXTRA(EntryInserterType, ENTRY_INSERTER_TYPE, false);
 
 /** @brief Interface for index parameters */
 struct IIndexParams {
@@ -130,6 +135,8 @@ struct IndexOptions {
     bool normalized;
     /** @brief Whether to adapt the index properties to the dataset entries */
     bool adapt;
+    /** @brief Type of inserter to use */
+    EntryInserterType inserter_type;
     /** @brief Unique pointer to the index parameters */
     std::unique_ptr<IIndexParams> index_params;
 };
