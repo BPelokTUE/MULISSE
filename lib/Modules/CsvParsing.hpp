@@ -9,10 +9,12 @@
  *
  * @param csv_path The list of csv file paths in the order of channels
  * @param num_series The maximum number of series to generate
- * @param low_sd_length Discard time series where the standard deviation is too low in any subsequence of this length.
- *        Pass 0 to disable.
+ * @param l_min Discard time series where the standard deviation is too low in any subsequence of length between `l_min`
+ * and `l_max
+ * @param l_max Discard time series where the standard deviation is too low in any subsequence of length between `l_min`
+ * and `l_max
  * @param seed The seed for the random number generator
  * @param col_sep The column separator in the CSV files
  */
-int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint low_sd_length, int seed = 0,
+int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, int seed = 0,
                             char col_sep = ',');

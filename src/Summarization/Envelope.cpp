@@ -70,7 +70,7 @@ vec<Envelope> ulisse_envelope_normalized(const vec<float>& ts, const UlisseEnvel
     uint num_env = (ts.size() - l_min + pos_per_env) / pos_per_env;
     vec<Envelope> envelopes(num_env, {vec<float>(segments_per_env, INF), vec<float>(segments_per_env, -INF)});
 
-    vec<float> sum_accs(ts.size() + 1, 0.0), sq_sum_accs(ts.size() + 1, 0.0);
+    vec<double> sum_accs(ts.size() + 1, 0.0), sq_sum_accs(ts.size() + 1, 0.0);
 
     for (int last_ind = 0; last_ind < ts.size(); ++last_ind) {
         sum_accs[last_ind + 1] = sum_accs[last_ind] + ts[last_ind];

@@ -14,7 +14,8 @@
 #include "Util/RunSettings.hpp"
 #include "Util/Logger.hpp"
 
-int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint low_sd_len, int seed, char col_sep) {
+int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, int seed,
+                            char col_sep) {
     for (str csv_path : csv_paths) {
         if (!std::filesystem::exists(csv_path)) {
             std::cerr << "Error: Dataset " << csv_path << " does not exist\n";
@@ -58,34 +59,41 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint low
         if (!discard) {
             std::istringstream iss(line);
             str value;
+            double sum = 0, sum_sq = 0;
             uint ind = 0;
-            float sum = 0, sum_sq = 0;
 
             while (std::getline(iss, value, col_sep)) {
                 try {
                     mts[channel][ind] = std::stof(value);
                 } catch (const std::exception &e) {
                     discard = true;
-                    break;
+                    goto next_channel;
                 }
                 sum += mts[channel][ind];
                 sum_sq += mts[channel][ind] * mts[channel][ind];
 
                 ++ind;
-                if (ind >= low_sd_len) {
-                    float sigma = calculate_mu_and_sigma(sum, sum_sq, ind).second;
+                int start_min = std::max(0, static_cast<int>(ind) - static_cast<int>(l_max));
+                int start_max = static_cast<int>(ind) - static_cast<int>(l_min);
+                double sum_tmp = sum, sum_sq_tmp = sum_sq;
+                for (int start = start_min; start <= start_max; ++start) {
+                    double sigma = calculate_mu_and_sigma(sum_tmp, sum_sq_tmp, ind - start).second;
                     if (sigma < MIN_SUBS_SIGMA) {
                         discard = true;
-                        break;
+                        goto next_channel;
                     }
-                    sum -= mts[channel][ind - low_sd_len];
-                    sum_sq -= mts[channel][ind - low_sd_len] * mts[channel][ind - low_sd_len];
+                    sum_tmp -= mts[channel][start];
+                    sum_sq_tmp -= mts[channel][start] * mts[channel][start];
+                }
+                if (ind >= l_max) {
+                    sum -= mts[channel][start_min];
+                    sum_sq -= mts[channel][start_min] * mts[channel][start_min];
                 }
                 if (ind == series_len) break;
             }
             if (ind < series_len) discard = true;
         }
-
+    next_channel:
         if (++channel == num_channels) {
             if (!discard) all_mts.push_back(mts);
             channel = 0;
@@ -93,7 +101,7 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint low
             discard = false;
             ++ts_ind;
         }
-        if (csv_streams[channel].eof() || (ts_ind > 2 * num_series && all_mts.size() >= num_series)) break;
+        if (csv_streams[channel].eof()) break;
     }
 
     if (all_mts.empty()) {
@@ -113,8 +121,7 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint low
         }
     }
 
-    DatasetLogger::write_entry(
-        std::make_unique<CsvDatasetLogAttributes>(csv_paths, mts_indexes.size(), low_sd_len, seed));
+    DatasetLogger::write_entry(std::make_unique<CsvDatasetLogAttributes>(csv_paths, mts_indexes.size(), l_min, seed));
 
     return 0;
 }

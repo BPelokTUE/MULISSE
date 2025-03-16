@@ -1085,8 +1085,8 @@ def experiment_univariate_parametrization(
 
 # %%
 
-logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_2"]
-# logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ppe"]
+# logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_2"]
+logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ppe"]
 # logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ie_lc"]
 # logs_dirs = ["EXPERIMENT_LOGS/adapting/LOGS_adapting_index_2"]
 

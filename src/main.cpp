@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     vec<str> csv_paths;
     float step_sd = 1.0, noise = 0.1;
     SaxNumBitsT first_layer_num_bits = 1;
-    uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env, knn_k = 1, low_sd_len;
+    uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env, knn_k = 1;
     DistanceT r_range_r = 1.0;
     int seed;
     size_t leaf_capacity;
@@ -93,9 +93,14 @@ int main(int argc, char **argv) {
     csv_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
     csv_subcommand->add_option("-n,--num_series", num_series, "Max number of series")->required()->check(positive_int);
     csv_subcommand
-        ->add_option(
-            "-l,--low_sd_len", low_sd_len,
-            "Discard time series with any low standard deviation subsequence of this length. Pass 0 to disable.")
+        ->add_option("-l,--l_min", l_min,
+                     "Minimum length of subsequences that will be queried for. Used for discarding series with "
+                     "stagnant subsequences that would make normalization unstable")
+        ->required();
+    csv_subcommand
+        ->add_option("-L,--l_max", l_max,
+                     "Maximum length of subsequences that will be queried for. Used for discarding stagnant "
+                     "subsequences that would make normalization unstable")
         ->required();
     csv_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
     csv_subcommand->add_option("-S,--seed", seed, "Random seed")->capture_default_str();
@@ -280,7 +285,7 @@ int main(int argc, char **argv) {
             return create_random_walks(step_sd, zero_start, seed);
         }
         case PARSE_CSV: {
-            return create_dataset_from_csv(csv_paths, num_series, low_sd_len, seed);
+            return create_dataset_from_csv(csv_paths, num_series, l_min, l_max, seed);
         }
         case CREATE_QS: {
             return create_queries({noise, num_queries, exact_lengths, l_min, l_max, used_channels, channel_mask, seed});

@@ -381,7 +381,7 @@ if __name__ == "__main__":
 
             args = [command, "-d", data_file, "-n", str(num_series), "-m", str(series_len), "-S", str(seed)]
             if command == "parse_csv":
-                args += ["-l", str(l_min)]
+                args += ["-l", str(l_min), "-L", str(l_max)]
                 csv_location = os.path.join(local_settings["CSV_PATH"], dataset_setting["location"])
                 if os.path.isdir(csv_location):
                     args += ["-i", *[os.path.join(csv_location, f) for f in os.listdir(csv_location)]]
