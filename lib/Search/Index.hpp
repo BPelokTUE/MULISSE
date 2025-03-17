@@ -159,14 +159,9 @@ class IIndex {
         vec<IndexEntry<T>> dataset_entries;
 
         logger.start_timer(ISC::SUMMARIZATION_TIME_S);
-#ifndef DISABLE_PARALLELISM
-#pragma omp parallel
-#endif
-        {
+        OMP_PRAGMA("omp parallel") {
             std::ifstream data_stream(dataset_path, std::ios::binary);
-#ifndef DISABLE_PARALLELISM
-#pragma omp for
-#endif
+            OMP_PRAGMA("omp for")
             for (size_t i = 0; i < num_series; ++i) {
                 vec<vec<float>> mts(num_channels, vec<float>(series_len));
                 data_stream.seekg(i * series_size);
@@ -174,10 +169,7 @@ class IIndex {
                     data_stream.read(reinterpret_cast<char *>(mts[c].data()), channel_size);
                 }
                 auto mts_entries = generator->get_entries(mts, i);
-#ifndef DISABLE_PARALLELISM
-#pragma omp critical
-#endif
-                {
+                OMP_PRAGMA("omp critical") {
                     dataset_entries.insert(dataset_entries.end(), mts_entries.begin(), mts_entries.end());
                 }
             }
@@ -239,9 +231,6 @@ class IEntryInserter {
      * @param inserter_type The type of inserter to use
      */
     virtual void insert_entries(const vec<IndexEntry<EntryType>> &entries) = 0;
-
-   private:
-    sptr<IndexType> m_index;
 };
 
 #endif  // INDEX_HPP

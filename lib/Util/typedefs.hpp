@@ -17,6 +17,9 @@ using vec = std::vector<T>;
 template <typename K, typename V>
 using umap = std::unordered_map<K, V>;
 
+template <typename K, typename V, typename H>
+using umap_hash = std::unordered_map<K, V, H>;
+
 template <typename T>
 using uptr = std::unique_ptr<T>;
 

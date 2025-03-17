@@ -2,6 +2,7 @@
 #define ISAX_INDEX_HPP
 
 #include <unordered_map>
+#include <type_traits>
 
 #include "Util/typedefs.hpp"
 #include "Util/constants.hpp"
@@ -20,6 +21,8 @@ struct SaxSymbolsHash {
     std::size_t operator()(const vec<vec<SaxSymbolT>> &symbols) const;
 };
 
+// Forward declarations
+
 /**
  * @brief iSAX index
  * @tparam T Type data stored in the index
@@ -29,6 +32,10 @@ template <typename T>
 class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxIndex<T>> {
     using FTag = typename IndexTraits<T>::FinalizedTag;
     using SymbolType = typename SaxTraits<FTag>::SymbolType;
+
+    template <typename U>
+        requires DerivedFromEntryData<U>
+    friend class iSaxParallelInserter;
 
    public:
     /**
@@ -62,70 +69,25 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
     ~iSaxIndex() = default;
 
     void insert(const IndexEntry<T> &entry) override {
-        const vec<T> &mts_summary = entry.mts_summary;
-        SubsequenceInfo subs_info = entry.subsequence_info;
-
         MtsNumChannelsT num_channels = m_series_isax_prop->num_channels;
         SaxSegIndT num_seg_per_channel = m_series_isax_prop->num_seg_per_channel;
 
-        assert(mts_summary.size() == num_channels);
-        assert(mts_summary[0].size() == num_seg_per_channel);
+        assert(entry.mts_summary.size() == num_channels);
+        assert(entry.mts_summary[0].size() == num_seg_per_channel);
 
         vec<iSaxWord> isax_words(num_channels);
         vec<vec<SaxSymbolT>> symbols(num_channels, vec<SaxSymbolT>(num_seg_per_channel));
-        for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-            auto isax_input = mts_summary[c].get_isax_input();
-            isax_words[c] = iSaxWord(isax_input, {vec<SaxNumBitsT>(isax_input.size(), m_first_layer_num_bits),
-                                                  m_alphabet_num_bits, *m_breakpoints});
-            for (SaxSegIndT s = 0; s < num_seg_per_channel; ++s) symbols[c][s] = isax_words[c][s];
-        }
+        calculate_symbols_and_isax(entry, symbols, isax_words);
 
         auto node_it = m_first_layer.find(symbols);
         if (node_it == m_first_layer.end()) {
-            // TODO: extract into function
-            m_first_layer.emplace(symbols, std::make_unique<iSaxSplittableLeaf<T>>(vec<SubsequenceInfo>{subs_info},
-                                                                                   vec<vec<T>>{mts_summary}));
-
-            auto &logger = IndexLogger::get_instance();
-            logger.increment_count_col(ISC::NUM_NODES);
-            logger.increment_count_col(ISC::NUM_LEAVES);
+            insert_new_first_layer_node(symbols, entry);
         } else {
-            // TODO: extract into function
-            auto node = node_it->second.get();
-            iSaxSplittableInternal<T> *parent = nullptr;
-            uint8_t new_bit = 0;
-            // Traverse tree until a leaf is reached
-            while (!(node->is_leaf())) {
-                parent = static_cast<iSaxSplittableInternal<T> *>(node);
-                auto [segment_ind, channel_ind] = node->get_split_ind();
-                new_bit = isax_words[channel_ind].apply_split(segment_ind);
-                node = const_cast<iSaxSplittableNode<T> *>(new_bit ? node->get_children().second
-                                                                   : node->get_children().first);
-            }
-            // Reached a leaf => insert
-            auto *leaf = static_cast<iSaxSplittableLeaf<T> *>(node);
-            leaf->m_subsequence_infos.push_back(subs_info);
-            leaf->m_summaries.push_back(mts_summary);
-
-            // Split if needed
-            if (leaf->m_subsequence_infos.size() > m_leaf_capacity) {
-                auto &node_ref = parent ? (new_bit ? parent->m_right : parent->m_left) : node_it->second;
-                split_leaf(isax_words, node_ref);
-            }
+            insert_into_first_layer_node(isax_words, node_it, entry);
         }
     }
 
-    void insert_entries(const vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) override {
-        uptr<IEntryInserter<iSaxIndex<T>>> inserter;
-        switch (inserter_type) {
-            case EntryInserterType::TOP_DOWN:
-                inserter = std::make_unique<TopDownInserter<iSaxIndex<T>>>(this->shared_from_this());
-                break;
-            default:
-                throw std::invalid_argument("Invalid inserter type");
-        }
-        inserter->insert_entries(entries);
-    }
+    void insert_entries(const vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) override;
 
     uptr<IFinalizedIndex<FTag>> finalize() override {
         size_t size_first_layer = m_first_layer.size();
@@ -155,13 +117,13 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
                                                           m_alphabet_num_bits, *m_breakpoints);
     }
 
-    const iSaxSplittableNode<T> *get_first_layer_node(const vec<iSaxWord> &isax_mins) const {
+    const iSaxSplittableNode<T> *get_first_layer_node(const vec<iSaxWord> &isax_words) const {
         MtsNumChannelsT num_channels = m_series_isax_prop->num_channels;
         SaxSegIndT num_seg_per_channel = m_series_isax_prop->num_seg_per_channel;
 
         vec<vec<SaxSymbolT>> symbols(num_channels, vec<SaxSymbolT>(num_seg_per_channel));
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-            for (SaxSegIndT s = 0; s < num_seg_per_channel; ++s) symbols[c][s] = isax_mins[c][s];
+            for (SaxSegIndT s = 0; s < num_seg_per_channel; ++s) symbols[c][s] = isax_words[c][s];
         }
         auto node_it = m_first_layer.find(symbols);
         return node_it == m_first_layer.end() ? nullptr : node_it->second.get();
@@ -171,7 +133,61 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
     virtual std::pair<uptr<iSaxFinalizedNode<FTag>>, vec<vec<SymbolType>>> finalize_first_layer_node(
         vec<vec<SaxSymbolT>> key_symbols, uptr<iSaxSplittableNode<T>> &node, iSaxWordSettings &isax_word_settings) = 0;
 
+    umap_hash<vec<vec<SaxSymbolT>>, uptr<iSaxSplittableNode<T>>, SaxSymbolsHash> m_first_layer;
+    SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
+    uptr<SeriesISaxProperties> m_series_isax_prop;
+    size_t m_leaf_capacity;
+    const vec<float> *m_breakpoints;
+    uptr<IiSaxSplitStrategy<T>> m_split_strategy;
+
+    using m_first_layer_type = decltype(m_first_layer);
+
    private:
+    void calculate_symbols_and_isax(const IndexEntry<T> &entry, vec<vec<SaxSymbolT>> &symbols,
+                                    vec<iSaxWord> &isax_words) {
+        for (MtsNumChannelsT c = 0; c < m_series_isax_prop->num_channels; ++c) {
+            auto isax_input = entry.mts_summary[c].get_isax_input();
+            isax_words[c] = iSaxWord(isax_input, {vec<SaxNumBitsT>(isax_input.size(), m_first_layer_num_bits),
+                                                  m_alphabet_num_bits, *m_breakpoints});
+            for (SaxSegIndT s = 0; s < m_series_isax_prop->num_seg_per_channel; ++s) symbols[c][s] = isax_words[c][s];
+        }
+    }
+
+    void insert_new_first_layer_node(const vec<vec<SaxSymbolT>> &symbols, const IndexEntry<T> &entry) {
+        m_first_layer.emplace(symbols,
+                              std::make_unique<iSaxSplittableLeaf<T>>(vec<SubsequenceInfo>{entry.subsequence_info},
+                                                                      vec<vec<T>>{entry.mts_summary}));
+        auto &logger = IndexLogger::get_instance();
+        logger.increment_count_col(ISC::NUM_NODES);
+        logger.increment_count_col(ISC::NUM_LEAVES);
+    }
+
+    void insert_into_first_layer_node(vec<iSaxWord> &isax_words, m_first_layer_type::iterator &node_it,
+                                      const IndexEntry<T> &entry) {
+        auto node = node_it->second.get();
+
+        iSaxSplittableInternal<T> *parent = nullptr;
+        uint8_t new_bit = 0;
+        // Traverse tree until a leaf is reached
+        while (!(node->is_leaf())) {
+            parent = static_cast<iSaxSplittableInternal<T> *>(node);
+            auto [segment_ind, channel_ind] = node->get_split_ind();
+            new_bit = isax_words[channel_ind].apply_split(segment_ind);
+            auto [left_child, right_child] = node->get_children();
+            node = const_cast<iSaxSplittableNode<T> *>(new_bit ? right_child : left_child);
+        }
+        // Reached a leaf => insert
+        auto *leaf = static_cast<iSaxSplittableLeaf<T> *>(node);
+        leaf->m_subsequence_infos.push_back(entry.subsequence_info);
+        leaf->m_summaries.push_back(entry.mts_summary);
+
+        // Split if needed
+        if (leaf->m_subsequence_infos.size() > m_leaf_capacity) {
+            auto &node_ref = parent ? (new_bit ? parent->m_right : parent->m_left) : node_it->second;
+            split_leaf(isax_words, node_ref);
+        }
+    }
+
     void split_leaf(vec<iSaxWord> &isax_words, uptr<iSaxSplittableNode<T>> &node_ref) {
         auto *leaf = static_cast<iSaxSplittableLeaf<T> *>(node_ref.get());
         // Split the leaf
@@ -265,15 +281,65 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
         isax_props.breakpoint_strategy->adapt_to_dataset(mu, sigma);
         RS.update_breakpoints();
     }
-
-   protected:
-    std::unordered_map<vec<vec<SaxSymbolT>>, uptr<iSaxSplittableNode<T>>, SaxSymbolsHash> m_first_layer;
-    SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
-    uptr<SeriesISaxProperties> m_series_isax_prop;
-    size_t m_leaf_capacity;
-    const vec<float> *m_breakpoints;
-    uptr<IiSaxSplitStrategy<T>> m_split_strategy;
 };
+
+// iSaxParallelInserter
+
+template <typename T>
+    requires DerivedFromEntryData<T>
+class iSaxParallelInserter : public IEntryInserter<iSaxIndex<T>> {
+   public:
+    iSaxParallelInserter(sptr<iSaxIndex<T>> index) : m_index(index) {}
+
+    void insert_entries(const vec<IndexEntry<T>> &entries) override {
+        umap_hash<vec<vec<SaxSymbolT>>, vec<uint>, SaxSymbolsHash> symbols_to_entry_inds;
+        umap_hash<vec<vec<SaxSymbolT>>, vec<iSaxWord>, SaxSymbolsHash> symbols_to_isax_words;
+
+        MtsNumChannelsT num_channels = m_index->m_series_isax_prop->num_channels;
+        SaxSegIndT num_seg_per_channel = m_index->m_series_isax_prop->num_seg_per_channel;
+
+        OMP_PRAGMA("omp parallel for") for (uint i = 0; i < entries.size(); ++i) {
+            vec<iSaxWord> isax_words(num_channels);
+            vec<vec<SaxSymbolT>> symbols(num_channels, vec<SaxSymbolT>(num_seg_per_channel));
+            m_index->calculate_symbols_and_isax(entries[i], symbols, isax_words);
+
+            OMP_PRAGMA("omp critical") {
+                symbols_to_entry_inds[symbols].push_back(i);
+                bool inserted = symbols_to_isax_words.try_emplace(symbols, std::move(isax_words)).second;
+                if (inserted) m_index->insert_new_first_layer_node(symbols, entries[i]);
+            }
+        }
+
+        OMP_PRAGMA("omp parallel for")
+        for (const auto [symbols, entry_inds] : symbols_to_entry_inds) {
+            auto &isax_words = symbols_to_isax_words.at(symbols);
+            auto node_it = m_index->m_first_layer.find(symbols);
+            for (uint ind : entry_inds) {
+                m_index->insert_into_first_layer_node(isax_words, node_it, entries[ind]);
+            }
+        }
+    }
+
+   private:
+    sptr<iSaxIndex<T>> m_index;
+};
+
+template <typename T>
+    requires DerivedFromEntryData<T>
+void iSaxIndex<T>::insert_entries(const vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) {
+    uptr<IEntryInserter<iSaxIndex<T>>> inserter;
+    switch (inserter_type) {
+        case TOP_DOWN:
+            inserter = std::make_unique<TopDownInserter<iSaxIndex<T>>>(this->shared_from_this());
+            break;
+        case ISAX_PARALLEL:
+            inserter = std::make_unique<iSaxParallelInserter<T>>(this->shared_from_this());
+            break;
+        default:
+            throw std::invalid_argument("Invalid inserter type");
+    }
+    inserter->insert_entries(entries);
+}
 
 // iSaxPaaIndex
 class iSaxPaaIndex : public iSaxIndex<Paa> {

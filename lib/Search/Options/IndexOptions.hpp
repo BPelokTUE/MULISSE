@@ -8,7 +8,7 @@
 #include "Util/typedefs.hpp"
 
 /** @brief Enum for IEntryInserter implementations */
-enum EntryInserterType { TOP_DOWN };
+enum EntryInserterType { TOP_DOWN, ISAX_PARALLEL };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(EntryInserterType, ENTRY_INSERTER_TYPE, false);
 

@@ -8,7 +8,7 @@ FlatEnvelopeIndex::FlatEnvelopeIndex(uint segment_len, uint pos_per_env)
 void FlatEnvelopeIndex::insert_entries(const vec<IndexEntry<Envelope>> &entries, EntryInserterType inserter_type) {
     uptr<IEntryInserter<FlatEnvelopeIndex>> inserter;
     switch (inserter_type) {
-        case EntryInserterType::TOP_DOWN:
+        case TOP_DOWN:
             inserter = std::make_unique<TopDownInserter<FlatEnvelopeIndex>>(this->shared_from_this());
             break;
         default:
