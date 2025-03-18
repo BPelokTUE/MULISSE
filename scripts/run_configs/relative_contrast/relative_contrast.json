@@ -19,6 +19,7 @@
     "early_abandon": [],
     "precalculate_ffts": [],
     "adapt_index": [],
+    "index_inserters": [],
     "search_types": [],
     "search_ks": [],
     "search_rs": [],

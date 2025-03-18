@@ -1,0 +1,44 @@
+{
+    "csv_data_dirs": [],
+    "dataset_sizes": {
+        "isax": [500],
+        "isax_envelope": [5000]
+    },
+    "series_lengths": {
+        "isax": [512],
+        "isax_envelope": [1024]
+    },
+    "syn_num_channels": [1],
+    "syn_step_stdevs": [1.0],
+    "query_set_sizes": [50],
+    "l_range_ratios": [[0.25, 1.0], [0.75, 1.0]],
+    "used_channel_ratios": [1.0],
+    "query_noise_stdevs": [0.1],
+    "search_methods": {
+        "isax": ["isax"],
+        "isax_envelope": ["isax_envelope"]
+    },
+    "isax_split_strategies": ["em"],
+    "isax_breakpoint_strategies": ["equiprobable"],
+    "isax_leaf_cap_ratios": [0.001],
+    "isax_start_bit_numbers": {
+        "isax": [1],
+        "isax_envelope": [1, 4]
+    },
+    "num_segments": [16],
+    "envelope_size_ratios": [1.0],
+    "distance_measures": ["ed"],
+    "early_abandon": [true],
+    "precalculate_ffts": [],
+    "adapt_index": [false],
+    "index_inserters": ["top_down", "isax_parallel"],
+    "search_types": ["knn"],
+    "search_ks": [1],
+    "search_rs": [],
+    "search_approx": [false],
+    "search_raw": [false],
+    "dataset_seeds": [10],
+    "query_set_seeds": [100],
+    "calculate_index_stats": true,
+    "separate_csv_datasets": false
+}

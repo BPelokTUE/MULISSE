@@ -10,9 +10,9 @@ from typing import Any, Iterator
 from pydantic import BaseModel
 
 
-def require_keys(d: dict, keys: list[str]):
-    for key in keys:
-        if key not in d:
+def check_config_keys(config: dict, required: list[str]):
+    for key in required:
+        if key not in config:
             raise KeyError(f"Key {key} not found in dictionary.")
 
 
@@ -64,14 +64,12 @@ def combine_parsed_configs(parsed_configs: list[ParsedConfig]) -> ParsedConfig:
 def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
     config = json.load(open(input_config))
     # fmt: off
-    require_keys(
+    check_config_keys(
         config,
-        [
+        required = [
             "csv_data_dirs", "dataset_sizes", "series_lengths", "syn_num_channels", "query_set_sizes",
             "syn_step_stdevs", "l_range_ratios", "used_channel_ratios", "query_noise_stdevs", "search_methods",
-            "isax_split_strategies", "isax_breakpoint_strategies", "isax_leaf_cap_ratios", "isax_start_bit_numbers",
-            "num_segments", "envelope_size_ratios", "distance_measures", "early_abandon", "precalculate_ffts",
-            "adapt_index", "search_types", "search_ks", "search_rs", "search_approx", "search_raw"
+            "distance_measures", "search_types", "search_approx", "search_raw"
         ],
     )
     # fmt: on
@@ -130,33 +128,36 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
                 index_settings.append(
                     {
                         "index_type": "isax",
-                        "split_strategy": config["isax_split_strategies"],
-                        "breakpoint_strategy": config["isax_breakpoint_strategies"],
-                        "leaf_capacity": config["isax_leaf_cap_ratios"],
-                        "first_layer_bits": config["isax_start_bit_numbers"],
-                        "num_segments": config["num_segments"],
-                        "adapt": config["adapt_index"],
+                        "split_strategy": config.get("isax_split_strategies", []),
+                        "breakpoint_strategy": config.get("isax_breakpoint_strategies", []),
+                        "leaf_capacity": config.get("isax_leaf_cap_ratios", []),
+                        "first_layer_bits": config.get("isax_start_bit_numbers", []),
+                        "num_segments": config.get("num_segments", []),
+                        "adapt": config.get("adapt_index", []),
+                        "inserter_type": config.get("index_inserters", []),
                     }
                 )
             if "isax_envelope" in config["search_methods"]:
                 index_settings.append(
                     {
                         "index_type": "isax_envelope",
-                        "split_strategy": config["isax_split_strategies"],
-                        "breakpoint_strategy": config["isax_breakpoint_strategies"],
-                        "leaf_capacity": config["isax_leaf_cap_ratios"],
-                        "first_layer_bits": config["isax_start_bit_numbers"],
-                        "num_segments": config["num_segments"],
-                        "pos_per_env": config["envelope_size_ratios"],
-                        "adapt": config["adapt_index"],
+                        "split_strategy": config.get("isax_split_strategies", []),
+                        "breakpoint_strategy": config.get("isax_breakpoint_strategies", []),
+                        "leaf_capacity": config.get("isax_leaf_cap_ratios", []),
+                        "first_layer_bits": config.get("isax_start_bit_numbers", []),
+                        "num_segments": config.get("num_segments", []),
+                        "pos_per_env": config.get("envelope_size_ratios", []),
+                        "adapt": config.get("adapt_index", []),
+                        "inserter_type": config.get("index_inserters", []),
                     }
                 )
             if "envelope" in config["search_methods"]:
                 index_settings.append(
                     {
                         "index_type": "envelope",
-                        "num_segments": config["num_segments"],
-                        "pos_per_env": config["envelope_size_ratios"],
+                        "num_segments": config.get("num_segments", []),
+                        "pos_per_env": config.get("envelope_size_ratios", []),
+                        "inserter_type": config.get("index_inserters", []),
                     }
                 )
             return index_settings
@@ -164,9 +165,9 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
         def get_method_settings(index_settings: Settings) -> tuple[Settings, Settings]:
             method_settings_base = []
             if "knn" in config["search_types"]:
-                method_settings_base.append({"search_type": "knn", "k": config["search_ks"]})
+                method_settings_base.append({"search_type": "knn", "k": config.get("search_ks", [])})
             if "r_range" in config["search_types"]:
-                method_settings_base.append({"search_type": "r_range", "r": config["search_rs"]})
+                method_settings_base.append({"search_type": "r_range", "r": config.get("search_rs", [])})
 
             for i, settings in enumerate(method_settings_base):
                 method_settings_base[i] = dict(
@@ -189,9 +190,9 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
             index_method_settings = []
             scan_method_settings = []
             distance_measures_settings = {
-                "ed": {"distance": "ed", "early_abandon": config["early_abandon"]},
-                "euclidean": {"distance": "ed", "early_abandon": config["early_abandon"]},
-                "mass": {"distance": "mass", "precalculate_ffts": config["precalculate_ffts"]},
+                "ed": {"distance": "ed", "early_abandon": config.get("early_abandon", [])},
+                "euclidean": {"distance": "ed", "early_abandon": config.get("early_abandon", [])},
+                "mass": {"distance": "mass", "precalculate_ffts": config.get("precalculate_ffts", [])},
             }
             for distance_measure, settings in distance_measures_settings.items():
                 if any(d in config["distance_measures"] for d in [distance_measure]):
@@ -294,7 +295,7 @@ if __name__ == "__main__":
             f"Local settings file {local_settings_path} not found. Make sure the script is run from the root of the repository."
         )
     local_settings = json.load(open(local_settings_path))
-    require_keys(local_settings, ["DEFAULT_RUN_CONFIG", "CSV_PATH", "REPO_PATH"])
+    check_config_keys(local_settings, ["DEFAULT_RUN_CONFIG", "CSV_PATH", "REPO_PATH"])
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input_config", default=local_settings["DEFAULT_RUN_CONFIG"])

@@ -19,6 +19,7 @@
     "early_abandon": [false, true],
     "precalculate_ffts": [false, true],
     "adapt_index": [true, false],
+    "index_inserters": ["top_down"],
     "search_types": ["knn"],
     "search_ks": [1],
     "search_rs": [1.0],

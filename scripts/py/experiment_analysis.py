@@ -1085,16 +1085,17 @@ def experiment_univariate_parametrization(
 
 # %%
 
-# logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_2"]
+# logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_2_old"]
+logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_2"]
 # logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ppe"]
 # logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ie_lc"]
-logs_dirs = ["EXPERIMENT_LOGS/adapting/LOGS_adapting_index_2"]
+# logs_dirs = ["EXPERIMENT_LOGS/adapting/LOGS_adapting_index_2"]
 
 merge_datasets = True
 use_adapt_to_dataset = True
 show_indexing_time = False
-datasets_to_show = ["weather", "stocks"]
-l_ranges_to_show = [(768, 1024)]
+datasets_to_show = ["weather"]
+l_ranges_to_show = [(256, 1024)]
 
 hatches = None
 hatch_labels = None
@@ -1103,6 +1104,8 @@ if show_indexing_time:
     hatches = ["", PREP_TIME_HATCH]
     hatch_labels = TIME_LABELS
     targets_dict = {ERD.RUNS_COLS: [str(QC.TOTAL_TIME_S), str(QC.AMORTIZED_PREP_TIME_S)]}
+
+# %%
 
 experiment_univariate_parametrization(
     targets_dict,
@@ -1116,6 +1119,8 @@ experiment_univariate_parametrization(
     datasets_to_show=datasets_to_show,
 )
 
+# %%
+
 for col in [QC.PRUNING_RATIO, QC.NUM_ENTRIES_EXAMINED]:
     experiment_univariate_parametrization(
         {ERD.RUNS_COLS: [str(col)]},
@@ -1127,6 +1132,8 @@ for col in [QC.PRUNING_RATIO, QC.NUM_ENTRIES_EXAMINED]:
         l_ranges_to_show=l_ranges_to_show,
         datasets_to_show=datasets_to_show,
     )
+
+# %%
 
 for istc_col in [ISTC.LEAF_HEIGHT_STATS, ISTC.LEAF_FILL_STATS, ISTC.SEG_LOWER_STATS]:
     y_label_prefix = str(istc_col).replace("_", " ").capitalize()
