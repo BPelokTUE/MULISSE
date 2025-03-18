@@ -159,9 +159,9 @@ class IIndex {
         vec<IndexEntry<T>> dataset_entries;
 
         logger.start_timer(ISC::SUMMARIZATION_TIME_S);
-        OMP_PRAGMA("omp parallel") {
+        OMP_PRAGMA(omp parallel) {
             std::ifstream data_stream(dataset_path, std::ios::binary);
-            OMP_PRAGMA("omp for")
+            OMP_PRAGMA(omp for)
             for (size_t i = 0; i < num_series; ++i) {
                 vec<vec<float>> mts(num_channels, vec<float>(series_len));
                 data_stream.seekg(i * series_size);
@@ -169,7 +169,7 @@ class IIndex {
                     data_stream.read(reinterpret_cast<char *>(mts[c].data()), channel_size);
                 }
                 auto mts_entries = generator->get_entries(mts, i);
-                OMP_PRAGMA("omp critical") {
+                OMP_PRAGMA(omp critical) {
                     dataset_entries.insert(dataset_entries.end(), mts_entries.begin(), mts_entries.end());
                 }
             }

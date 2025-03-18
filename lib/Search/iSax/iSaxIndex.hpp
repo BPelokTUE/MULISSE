@@ -298,24 +298,32 @@ class iSaxParallelInserter : public IEntryInserter<iSaxIndex<T>> {
         MtsNumChannelsT num_channels = m_index->m_series_isax_prop->num_channels;
         SaxSegIndT num_seg_per_channel = m_index->m_series_isax_prop->num_seg_per_channel;
 
-        OMP_PRAGMA("omp parallel for") for (uint i = 0; i < entries.size(); ++i) {
+        OMP_PRAGMA(omp parallel for)
+        for (uint i = 0; i < entries.size(); ++i) {
             vec<iSaxWord> isax_words(num_channels);
             vec<vec<SaxSymbolT>> symbols(num_channels, vec<SaxSymbolT>(num_seg_per_channel));
             m_index->calculate_symbols_and_isax(entries[i], symbols, isax_words);
 
-            OMP_PRAGMA("omp critical") {
-                symbols_to_entry_inds[symbols].push_back(i);
+            OMP_PRAGMA(omp critical) {
                 bool inserted = symbols_to_isax_words.try_emplace(symbols, std::move(isax_words)).second;
-                if (inserted) m_index->insert_new_first_layer_node(symbols, entries[i]);
+                if (inserted) {
+                    m_index->insert_new_first_layer_node(symbols, entries[i]);
+                } else {
+                    symbols_to_entry_inds[symbols].push_back(i);
+                }
             }
         }
 
-        OMP_PRAGMA("omp parallel for")
-        for (const auto [symbols, entry_inds] : symbols_to_entry_inds) {
-            auto &isax_words = symbols_to_isax_words.at(symbols);
-            auto node_it = m_index->m_first_layer.find(symbols);
-            for (uint ind : entry_inds) {
-                m_index->insert_into_first_layer_node(isax_words, node_it, entries[ind]);
+        OMP_PRAGMA(omp parallel for)
+        for (size_t bucket = 0; bucket < symbols_to_entry_inds.bucket_count(); ++bucket) {
+            for (auto it = symbols_to_entry_inds.begin(bucket); it != symbols_to_entry_inds.end(bucket); ++it) {
+                const auto &symbols = it->first;
+                auto isax_words = symbols_to_isax_words.at(symbols);
+                auto node_it = m_index->m_first_layer.find(symbols);
+                for (uint ind : it->second) {
+                    auto isax_words_copy = isax_words;
+                    m_index->insert_into_first_layer_node(isax_words_copy, node_it, entries[ind]);
+                }
             }
         }
     }
