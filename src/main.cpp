@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
 
     // Add arguments
     str dataset_path, query_path, index_path, ffts_path,
-        search_method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(ISAX_ENVELOPE),
+        logs_path = "../LOGS", search_method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(ISAX_ENVELOPE),
         split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
@@ -87,6 +87,7 @@ int main(int argc, char **argv) {
     rw_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
     rw_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
     rw_subcommand->add_option("-S,--seed", seed, "Random seed")->capture_default_str();
+    rw_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Options for parsing csv
     csv_subcommand->add_option("-i,--input", csv_paths, "Input CSV file paths, in the order of channels")->required();
@@ -104,6 +105,7 @@ int main(int argc, char **argv) {
         ->required();
     csv_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
     csv_subcommand->add_option("-S,--seed", seed, "Random seed")->capture_default_str();
+    csv_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Options for creating queries
     qs_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required();
@@ -138,6 +140,7 @@ int main(int argc, char **argv) {
                      "Mask for which channels to use in the queries. Overrides "
                      "used_channels if provided.")
         ->capture_default_str();
+    qs_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Options for calculating query statistics
     q_stats_subcommand->add_option("-d,--dataset", dataset_path, "Dataset path relative to `DATA`")->required();
@@ -147,6 +150,7 @@ int main(int argc, char **argv) {
         ->required()
         ->check(positive_int);
     q_stats_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
+    q_stats_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Options for indexing
     index_subcommand->add_option("-i,--index", index_path, "Output index path relative to `DATA`")->required();
@@ -192,6 +196,7 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-I,--inserter_type", inserter_type_str, "Entry inserter type")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ENTRY_INSERTER_TYPE_STRS));
+    index_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Options for calculating index statistics
     i_stats_subcommand->add_option("-i,--index", index_path, "Index file path relative to `DATA`")->required();
@@ -204,6 +209,7 @@ int main(int argc, char **argv) {
     i_stats_subcommand->add_option("-t,--index_type", search_method_type_str, "Index type")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_SEARCH_METHOD_TYPE_STRS));
+    i_stats_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Options for calculating FFTs
     ffts_subcommand->add_option("-d,--dataset", dataset_path, "Dataset path relative to `DATA`")->required();
@@ -213,6 +219,7 @@ int main(int argc, char **argv) {
         ->required()
         ->check(positive_int);
     ffts_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
+    ffts_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Options for searching
     search_subcommand->add_option("-i,--index", index_path, "Index file path relative to `DATA`")
@@ -249,6 +256,7 @@ int main(int argc, char **argv) {
     search_subcommand->add_option("-r,--range", r_range_r, "Range for range search")
         ->capture_default_str()
         ->check(positive_float);
+    search_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Parse arguments and initialize run settings
     CLI11_PARSE(app, argc, argv);
@@ -276,7 +284,7 @@ int main(int argc, char **argv) {
     // Initialize run settings
     try {
         RunSettings::initialize(command_type, {dataset_path, num_channels, series_len, num_series},
-                                {query_path, l_min, l_max}, pos_per_env, index_path, ffts_path, method_type);
+                                {query_path, l_min, l_max}, pos_per_env, index_path, ffts_path, method_type, logs_path);
     } catch (const std::exception &e) {
         std::cerr << "Error configuring run: " << e.what() << '\n';
         return 1;

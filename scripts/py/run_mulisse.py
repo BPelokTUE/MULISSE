@@ -4,9 +4,12 @@ import argparse
 import itertools
 import json
 import os
+import shutil
 import subprocess
-from typing import Any, Iterator
+from concurrent.futures import ProcessPoolExecutor
+from typing import Any, Iterator, Optional
 
+import pandas as pd
 from pydantic import BaseModel
 
 
@@ -284,18 +287,95 @@ class SettingIterator:
         return self.__iter__()
 
 
+# --------------------#
+#        Setup        #
+# --------------------#
+
+local_settings_path = os.path.join("scripts", "local_settings.json")
+if not os.path.exists(local_settings_path):
+    raise FileNotFoundError(
+        f"Local settings file {local_settings_path} not found. Make sure the script is run from the root of the repository."
+    )
+local_settings = json.load(open(local_settings_path))
+check_config_keys(local_settings, ["DEFAULT_RUN_CONFIG", "CSV_PATH", "REPO_PATH"])
+
+DATA_DIR = os.path.join(local_settings["REPO_PATH"], "DATA")
+LOGS_DIR = os.path.join(local_settings["REPO_PATH"], "LOGS")
+BUILD_PATH = os.path.join(local_settings["REPO_PATH"], "build")
+EXECUTABLE_PATH = os.path.join(BUILD_PATH, "mulisse")
+
+dataset_counter = 0
+query_counter = 0
+index_counter = 0
+
+COMMAND_LOG_NAME = "command_log.txt"
+COMMAND_LOG_PATH = os.path.join(LOGS_DIR, COMMAND_LOG_NAME)
+
+
+def run_command_with_logging(
+    args: list[str], timeout: Optional[int] = None, command_log_path: str = COMMAND_LOG_PATH
+) -> bool:
+    with open(command_log_path, "a+") as f:
+        f.write(f"Running command:\n{' '.join(args)}\n")
+        try:
+            result = subprocess.run(args, stdout=f, stderr=subprocess.STDOUT, cwd=BUILD_PATH, timeout=timeout)
+            if result.returncode != 0:
+                f.write(f"Command failed with return code {result.returncode}\n")
+                return False
+        except subprocess.TimeoutExpired:
+            f.write(f"Command timed out after {timeout} seconds\n")
+            return False
+        f.write("\n")
+        return True
+
+
+SEARCH_SETTINGS_CSV = "search_settings.csv"
+RUNS_CSV = "runs.csv"
+
+
+def add_logs_to_logs_dir(logs_to_add: str):
+    # Merge command logs
+    with open(COMMAND_LOG_PATH, "a+") as f_base:
+        with open(os.path.join(logs_to_add, COMMAND_LOG_NAME), "r") as f_new:
+            f_base.write(f_new.read())
+
+    # Merge search settings
+    search_settings_id_base = 0
+    search_settings_path = os.path.join(LOGS_DIR, SEARCH_SETTINGS_CSV)
+    search_settings_exists = os.path.exists(search_settings_path)
+    with open(search_settings_path, "a+") as f_base:
+        new_search_settings = pd.read_csv(os.path.join(logs_to_add, SEARCH_SETTINGS_CSV))
+        if search_settings_exists:
+            search_settings_id_base = (
+                pd.read_csv(os.path.join(LOGS_DIR, SEARCH_SETTINGS_CSV), usecols=["id"])["id"].max() + 1
+            )
+            new_search_settings["id"] += search_settings_id_base
+            new_search_settings.to_csv(f_base, index=False, header=False, mode="a")
+        else:
+            new_search_settings.to_csv(f_base, index=False, header=True)
+
+    # Merge runs
+    runs_id_base = 0
+    runs_path = os.path.join(LOGS_DIR, RUNS_CSV)
+    runs_exists = os.path.exists(runs_path)
+    with open(runs_path, "a+") as f_base:
+        new_runs = pd.read_csv(os.path.join(logs_to_add, RUNS_CSV))
+        new_runs["settings_id"] += search_settings_id_base
+        if runs_exists:
+            runs_id_base = pd.read_csv(os.path.join(LOGS_DIR, RUNS_CSV), usecols=["id"])["id"].max() + 1
+            new_runs["id"] += runs_id_base
+            new_runs.to_csv(f_base, index=False, header=False, mode="a")
+        else:
+            new_runs.to_csv(f_base, index=False, header=True)
+
+    # Delete added logs dir
+    shutil.rmtree(logs_to_add)
+
+
 if __name__ == "__main__":
     # --------------------#
     # ARGUMENT PARSING    #
     # --------------------#
-
-    local_settings_path = os.path.join("scripts", "local_settings.json")
-    if not os.path.exists(local_settings_path):
-        raise FileNotFoundError(
-            f"Local settings file {local_settings_path} not found. Make sure the script is run from the root of the repository."
-        )
-    local_settings = json.load(open(local_settings_path))
-    check_config_keys(local_settings, ["DEFAULT_RUN_CONFIG", "CSV_PATH", "REPO_PATH"])
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input_config", default=local_settings["DEFAULT_RUN_CONFIG"])
@@ -308,6 +388,10 @@ if __name__ == "__main__":
     if input_args.progress_bar:
         from tqdm import tqdm
 
+    if not os.path.exists(DATA_DIR):
+        os.makedirs(DATA_DIR)
+    if not os.path.exists(LOGS_DIR):
+        os.makedirs(LOGS_DIR)
     if not os.path.exists(input_args.input_config):
         raise FileNotFoundError(f"Config file {input_args.input_config} not found.")
 
@@ -335,190 +419,202 @@ if __name__ == "__main__":
     # RUN EXPERIMENTS     #
     # --------------------#
 
-    DATA_DIR = os.path.join(local_settings["REPO_PATH"], "DATA")
-    LOGS_DIR = os.path.join(local_settings["REPO_PATH"], "LOGS")
-    if not os.path.exists(DATA_DIR):
-        os.makedirs(DATA_DIR)
-    if not os.path.exists(LOGS_DIR):
-        os.makedirs(LOGS_DIR)
-    BUILD_PATH = os.path.join(local_settings["REPO_PATH"], "build")
-    EXECUTABLE_PATH = os.path.join(BUILD_PATH, "mulisse")
+    with ProcessPoolExecutor() as executor:
+        for length_setting in SettingIterator(length_settings).iterate(desc="Length settings"):
+            series_len = length_setting["series_len"]
+            l_min = int(series_len * length_setting["l_range"][0])
+            l_max = int(series_len * length_setting["l_range"][1])
 
-    dataset_counter = 0
-    query_counter = 0
-    index_counter = 0
+            for dataset_setting in SettingIterator(dataset_settings).iterate(desc="Dataset settings", leave=False):
+                command = dataset_setting["command"]
+                num_series = dataset_setting["size"]
+                num_channels = dataset_setting["num_channels"]
+                seed = dataset_setting["dataset_seeds"]
 
-    COMMAND_LOG_PATH = os.path.join(LOGS_DIR, "command_log.txt")
+                data_file = os.path.join(dataset_setting["location"], f"data-{dataset_counter}.bin")
+                dataset_counter += 1
 
-    from typing import Optional
-
-    def run_command_with_logging(args: list[str], timeout: Optional[int] = input_args.timeout) -> bool:
-        with open(COMMAND_LOG_PATH, "a+") as f:
-            f.write(f"Running command:\n{' '.join(args)}\n")
-            try:
-                result = subprocess.run(args, stdout=f, stderr=subprocess.STDOUT, cwd=BUILD_PATH, timeout=timeout)
-                if result.returncode != 0:
-                    f.write(f"Command failed with return code {result.returncode}\n")
-                    return False
-            except subprocess.TimeoutExpired:
-                f.write(f"Command timed out after {timeout} seconds\n")
-                return False
-            f.write("\n")
-            return True
-
-    for length_setting in SettingIterator(length_settings).iterate(desc="Length settings"):
-        series_len = length_setting["series_len"]
-        l_min = int(series_len * length_setting["l_range"][0])
-        l_max = int(series_len * length_setting["l_range"][1])
-
-        for dataset_setting in SettingIterator(dataset_settings).iterate(desc="Dataset settings", leave=False):
-            command = dataset_setting["command"]
-            num_series = dataset_setting["size"]
-            num_channels = dataset_setting["num_channels"]
-            seed = dataset_setting["dataset_seeds"]
-
-            data_file = os.path.join(dataset_setting["location"], f"data-{dataset_counter}.bin")
-            dataset_counter += 1
-
-            args = [command, "-d", data_file, "-n", str(num_series), "-m", str(series_len), "-S", str(seed)]
-            if command == "parse_csv":
-                args += ["-l", str(l_min), "-L", str(l_max)]
-                csv_location = os.path.join(local_settings["CSV_PATH"], dataset_setting["location"])
-                if os.path.isdir(csv_location):
-                    args += ["-i", *[os.path.join(csv_location, f) for f in os.listdir(csv_location)]]
-                else:
-                    args += ["-i", csv_location]
-            if command == "create_ds":
-                args += ["-c", str(num_channels)]
-                args += ["-s", str(dataset_setting["step_stdev"])]
-
-            if not run_command_with_logging([EXECUTABLE_PATH, *args]):
-                continue
-            ffts_required = any(
-                method.get("precalculate_ffts", False)
-                for method in itertools.chain(
-                    SettingIterator(index_method_settings),
-                    SettingIterator(scan_method_settings),
-                )
-            )
-            ffts_calculated = False
-            ffts_file = os.path.join(dataset_setting["location"], f"ffts-{dataset_counter - 1}.bin")
-            if ffts_required:
-                # fmt: off
-                ffts_calculated = run_command_with_logging([
-                    EXECUTABLE_PATH, "calc_ffts", "-d", data_file, "-F", ffts_file, "-m", str(series_len), "-c",
-                    str(num_channels), 
-                ])
-                # fmt: on
-
-            def get_method_args(setting):
-                args = ["search"]
-                for key, value in setting.items():
-                    if key in ["raw", "approx", "early_abandon"]:
-                        if value:
-                            args.append(f"--{key}")
-                    elif key == "precalculate_ffts":
-                        if value:
-                            args += ["-F", ffts_file]
+                args = [command, "-d", data_file, "-n", str(num_series), "-m", str(series_len), "-S", str(seed)]
+                if command == "parse_csv":
+                    args += ["-l", str(l_min), "-L", str(l_max)]
+                    csv_location = os.path.join(local_settings["CSV_PATH"], dataset_setting["location"])
+                    if os.path.isdir(csv_location):
+                        args += ["-i", *[os.path.join(csv_location, f) for f in os.listdir(csv_location)]]
                     else:
-                        args += [f"--{key}", str(value)]
-                return args
+                        args += ["-i", csv_location]
+                if command == "create_ds":
+                    args += ["-c", str(num_channels)]
+                    args += ["-s", str(dataset_setting["step_stdev"])]
 
-            for query_setting in SettingIterator(query_set_settings).iterate(desc="Query settings", leave=False):
-                num_queries = query_setting["size"]
-                used_channels = int(num_channels * query_setting["used_channel_ratio"])
-                noise_stdev = query_setting["noise_stdev"]
-                seed = query_setting["query_set_seeds"]
-
-                query_file = os.path.join(dataset_setting["location"], f"queries-{query_counter}.txt")
-                query_counter += 1
-                # fmt: off
-                args = [
-                    "create_qs", "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
-                    "-Q", str(num_queries), "-l", str(l_min), "-L", str(l_max), "-u", str(used_channels), "--noise",
-                    str(noise_stdev), "-S", str(seed)
-                ]
-                # fmt: on
-                queries_created = run_command_with_logging([EXECUTABLE_PATH, *args])
-
-                if queries_created and calculate_query_stats:
+                if not run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout):
+                    continue
+                ffts_required = any(
+                    method.get("precalculate_ffts", False)
+                    for method in itertools.chain(
+                        SettingIterator(index_method_settings),
+                        SettingIterator(scan_method_settings),
+                    )
+                )
+                ffts_calculated = False
+                ffts_file = os.path.join(dataset_setting["location"], f"ffts-{dataset_counter - 1}.bin")
+                if ffts_required:
                     # fmt: off
-                    args = [
-                        "calc_q_stats", "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
-                        "--noise", str(noise_stdev)
-                    ]
-                    # fmt: on
-                    run_command_with_logging([EXECUTABLE_PATH, *args])
-
-                if queries_created:
-                    for scan_method_setting in SettingIterator(scan_method_settings).iterate(
-                        desc="Scan method settings", leave=False
-                    ):
-                        if scan_method_setting.get("precalculate_ffts", False) and not ffts_calculated:
-                            continue
-                        args = get_method_args(scan_method_setting)
-                        args += ["-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file]
-                        run_command_with_logging([EXECUTABLE_PATH, *args])
-
-                for index_setting in SettingIterator(index_settings).iterate(desc="Index settings", leave=False):
-                    index_method = index_setting["index_type"]
-                    index_file = os.path.join(dataset_setting["location"], f"index-{index_method}-{index_counter}.bin")
-                    index_counter += 1
-                    index_setting_copy = index_setting.copy()
-
-                    # fmt: off
-                    args = [
-                        "index", "-i", index_file, "-l", str(l_min), "-L", str(l_max), "-t", 
-                        index_setting_copy.pop("index_type"), "-m", str(series_len), "-c", str(num_channels), "-d", data_file 
-                    ]
+                    ffts_calculated = run_command_with_logging([
+                        EXECUTABLE_PATH, "calc_ffts", "-d", data_file, "-F", ffts_file, "-m", str(series_len), "-c",
+                        str(num_channels), 
+                    ], timeout=input_args.timeout)
                     # fmt: on
 
-                    pos_per_env = 1
-                    if "num_segments" in index_setting_copy:
-                        args += ["-s", str(series_len // index_setting_copy.pop("num_segments"))]
-                    if "pos_per_env" in index_setting_copy:
-                        max_pos_per_env = series_len - l_min + 1
-                        pos_per_env = int(max_pos_per_env * index_setting_copy.pop("pos_per_env"))
-                        args += ["-p", str(pos_per_env)]
-                    if "leaf_capacity" in index_setting_copy:
-                        num_entries = num_series
-                        if index_method == "isax":
-                            l_range = l_max - l_min + 1
-                            num_entries = l_range * ((series_len - l_max + 1) + (l_range - 1) / 2) * num_series
-                        elif index_method == "isax_envelope":
-                            num_entries = ((series_len - l_min + pos_per_env) // pos_per_env) * num_series
-                        leaf_capacity = int(index_setting_copy.pop("leaf_capacity") * num_entries)
-                        leaf_capacity = max(1, leaf_capacity)
-                        args += ["-C", str(leaf_capacity)]
-                    if index_setting_copy.pop("adapt", False):
-                        args += ["--adapt"]
+                def get_method_args(setting):
+                    args = ["search"]
+                    for key, value in setting.items():
+                        if key in ["raw", "approx", "early_abandon"]:
+                            if value:
+                                args.append(f"--{key}")
+                        elif key == "precalculate_ffts":
+                            if value:
+                                args += ["-F", ffts_file]
+                        else:
+                            args += [f"--{key}", str(value)]
+                    return args
 
-                    for key, value in index_setting_copy.items():
-                        args += [f"--{key}", str(value)]
+                for query_setting in SettingIterator(query_set_settings).iterate(desc="Query settings", leave=False):
+                    num_queries = query_setting["size"]
+                    used_channels = int(num_channels * query_setting["used_channel_ratio"])
+                    noise_stdev = query_setting["noise_stdev"]
+                    seed = query_setting["query_set_seeds"]
 
-                    if run_command_with_logging([EXECUTABLE_PATH, *args]):
-                        if calculate_index_stats:
-                            args = ["calc_i_stats", "-i", index_file, "-c", str(num_channels), "-t", index_method]
-                            run_command_with_logging([EXECUTABLE_PATH, *args])
+                    query_file = os.path.join(dataset_setting["location"], f"queries-{query_counter}.txt")
+                    query_counter += 1
+                    # fmt: off
+                    args = [
+                        "create_qs", "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
+                        "-Q", str(num_queries), "-l", str(l_min), "-L", str(l_max), "-u", str(used_channels), "--noise",
+                        str(noise_stdev), "-S", str(seed)
+                    ]
+                    # fmt: on
+                    queries_created = run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
 
-                        if queries_created:
-                            relevant_search_settings = index_method_settings.copy()
-                            for i in range(len(relevant_search_settings)):
-                                relevant_search_settings[i]["method_type"] = [index_method]
-                            for index_method_setting in SettingIterator(relevant_search_settings).iterate(
-                                desc="Indexing method settings", leave=False
-                            ):
-                                # fmt: off
-                                args = get_method_args(index_method_setting) + [
-                                    "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file, "-i", index_file
-                                ]
-                                # fmt: on
-                                run_command_with_logging([EXECUTABLE_PATH, *args])
+                    if queries_created and calculate_query_stats:
+                        # fmt: off
+                        args = [
+                            "calc_q_stats", "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
+                            "--noise", str(noise_stdev)
+                        ]
+                        # fmt: on
+                        run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
 
-                    file_cleanup(index_file)
-                file_cleanup(query_file)
-            file_cleanup(data_file)
-            file_cleanup(ffts_file)
+                    if queries_created:
+                        futures = []
+                        logs_dirs = []
+                        for m_ind, scan_method_setting in enumerate(
+                            SettingIterator(scan_method_settings).iterate(desc="Scan method settings", leave=False)
+                        ):
+                            if scan_method_setting.get("precalculate_ffts", False) and not ffts_calculated:
+                                continue
+                            args = get_method_args(scan_method_setting)
+                            args += ["-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file]
+                            # Save results into separate log file
+                            logs_dirs.append(f"{LOGS_DIR}_{m_ind}")
+                            args += ["--logs", logs_dirs[-1]]
+                            os.makedirs(logs_dirs[-1], exist_ok=True)
+
+                            futures.append(
+                                executor.submit(
+                                    run_command_with_logging,
+                                    [EXECUTABLE_PATH, *args],
+                                    timeout=input_args.timeout,
+                                    command_log_path=os.path.join(logs_dirs[-1], COMMAND_LOG_NAME),
+                                )
+                            )
+
+                        # Wait for all futures to complete
+                        for logs_dir, future in zip(logs_dirs, futures):
+                            future.result()
+                            add_logs_to_logs_dir(logs_dir)
+
+                    for index_setting in SettingIterator(index_settings).iterate(desc="Index settings", leave=False):
+                        index_method = index_setting["index_type"]
+                        index_file = os.path.join(
+                            dataset_setting["location"], f"index-{index_method}-{index_counter}.bin"
+                        )
+                        index_counter += 1
+                        index_setting_copy = index_setting.copy()
+
+                        # fmt: off
+                        args = [
+                            "index", "-i", index_file, "-l", str(l_min), "-L", str(l_max), "-t", 
+                            index_setting_copy.pop("index_type"), "-m", str(series_len), "-c", str(num_channels), "-d", data_file 
+                        ]
+                        # fmt: on
+
+                        pos_per_env = 1
+                        if "num_segments" in index_setting_copy:
+                            args += ["-s", str(series_len // index_setting_copy.pop("num_segments"))]
+                        if "pos_per_env" in index_setting_copy:
+                            max_pos_per_env = series_len - l_min + 1
+                            pos_per_env = int(max_pos_per_env * index_setting_copy.pop("pos_per_env"))
+                            args += ["-p", str(pos_per_env)]
+                        if "leaf_capacity" in index_setting_copy:
+                            num_entries = num_series
+                            if index_method == "isax":
+                                l_range = l_max - l_min + 1
+                                num_entries = l_range * ((series_len - l_max + 1) + (l_range - 1) / 2) * num_series
+                            elif index_method == "isax_envelope":
+                                num_entries = ((series_len - l_min + pos_per_env) // pos_per_env) * num_series
+                            leaf_capacity = int(index_setting_copy.pop("leaf_capacity") * num_entries)
+                            leaf_capacity = max(1, leaf_capacity)
+                            args += ["-C", str(leaf_capacity)]
+                        if index_setting_copy.pop("adapt", False):
+                            args += ["--adapt"]
+
+                        for key, value in index_setting_copy.items():
+                            args += [f"--{key}", str(value)]
+
+                        if run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout):
+                            if calculate_index_stats:
+                                args = ["calc_i_stats", "-i", index_file, "-c", str(num_channels), "-t", index_method]
+                                run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
+
+                            if queries_created:
+                                relevant_search_settings = index_method_settings.copy()
+                                for i in range(len(relevant_search_settings)):
+                                    relevant_search_settings[i]["method_type"] = [index_method]
+
+                                futures = []
+                                logs_dirs = []
+                                for m_ind, index_method_setting in enumerate(
+                                    SettingIterator(relevant_search_settings).iterate(
+                                        desc="Indexing method settings", leave=False
+                                    )
+                                ):
+                                    # fmt: off
+                                    args = get_method_args(index_method_setting) + [
+                                        "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file, "-i", index_file
+                                    ]
+                                    # fmt: on
+                                    logs_dirs.append(f"{LOGS_DIR}_{m_ind}")
+                                    args += ["--logs", logs_dirs[-1]]
+                                    os.makedirs(logs_dirs[-1], exist_ok=True)
+
+                                    futures.append(
+                                        executor.submit(
+                                            run_command_with_logging,
+                                            [EXECUTABLE_PATH, *args],
+                                            timeout=input_args.timeout,
+                                            command_log_path=os.path.join(logs_dirs[-1], COMMAND_LOG_NAME),
+                                        )
+                                    )
+
+                            # Wait for all futures to complete
+                            for logs_dir, future in zip(logs_dirs, futures):
+                                future.result()
+                                add_logs_to_logs_dir(logs_dir)
+
+                        file_cleanup(index_file)
+                    file_cleanup(query_file)
+                file_cleanup(data_file)
+                file_cleanup(ffts_file)
 
     # Run check
-    run_command_with_logging(["../scripts/py/check_results.py", "-l", "../LOGS"])
+    run_command_with_logging(["../scripts/py/check_results.py", "-l", LOGS_DIR])

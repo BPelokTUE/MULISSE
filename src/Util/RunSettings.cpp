@@ -21,15 +21,16 @@ void check_path_exists(str path, str name) {
 }
 
 void RunSettings::initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
-                             uint pos_per_env, const str index_path, const str ffts_path,
-                             SearchMethodType method_type) {
+                             uint pos_per_env, const str &index_path, const str &ffts_path,
+                             SearchMethodType method_type, const str &logs_dir) {
     if (initialized) return;
     initialized = true;
 
     // Create directories if they do not exist
     if (!fs::exists(instance->DATA_DIR)) fs::create_directories(instance->DATA_DIR);
+    instance->logs_dir = logs_dir;
 #ifndef DISABLE_LOGGING
-    if (!fs::exists(instance->LOGS_DIR)) fs::create_directories(instance->LOGS_DIR);
+    if (!fs::exists(instance->logs_dir)) fs::create_directories(instance->logs_dir);
 #endif
 
     instance->m_command_type = command_type;
@@ -226,7 +227,7 @@ str RunSettings::get_index_path() const { return m_index_file.empty() ? "" : fs:
 
 str RunSettings::get_ffts_path() const { return m_ffts_file.empty() ? "" : fs::path(DATA_DIR) / m_ffts_file; }
 
-str RunSettings::get_logs_path() const { return LOGS_DIR; }
+str RunSettings::get_logs_path() const { return logs_dir; }
 
 // Load index
 

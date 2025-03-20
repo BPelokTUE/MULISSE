@@ -150,7 +150,8 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
     initialized = true;
 
     auto &RS = RunSettings::get_instance();
-    instance.m_index_settings_path = RunSettings::get_instance().get_logs_path() + instance.INDEX_SETTINGS_FILE;
+    instance.m_index_settings_path =
+        fs::path(RunSettings::get_instance().get_logs_path()) / instance.INDEX_SETTINGS_FILE;
     instance.file_setup(instance.m_index_settings_path, INDEX_SETTINGS_COL_STRS);
 
     uint segment_len = 0, pos_per_env = 0;
@@ -246,7 +247,7 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
 
     auto &RS = RunSettings::get_instance();
 
-    str search_settings_path = RS.get_logs_path() + instance.SEARCH_SETTINGS_FILE;
+    str search_settings_path = fs::path(RS.get_logs_path()) / instance.SEARCH_SETTINGS_FILE;
 
     // Write settings file
     instance.file_setup(search_settings_path, SEARCH_SETTINGS_COL_STRS);

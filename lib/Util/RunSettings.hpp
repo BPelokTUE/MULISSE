@@ -51,8 +51,8 @@ class RunSettings {
     RunSettings();
 
     static void initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
-                           uint pos_per_env, const str index_path, const str ffts_path, SearchMethodType method_type);
-
+                           uint pos_per_env, const str& index_path, const str& ffts_path, SearchMethodType method_type,
+                           const str& logs_dir);
     static RunSettings& get_instance();
 
 #ifdef ENABLE_TEST_CODE
@@ -178,8 +178,9 @@ class RunSettings {
     static sptr<RunSettings> instance;
     static bool initialized;
 
-    // Constants
-    const str DATA_DIR = "../DATA/", LOGS_DIR = "../LOGS/";
+    // output directories
+    const str DATA_DIR = "../DATA/";
+    str logs_dir;
 
     // Friend classes
     friend class DatasetLogger;
