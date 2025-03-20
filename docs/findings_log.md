@@ -38,3 +38,7 @@
 - Implement everything required for raw time series search, and check if the performance differences are still there
     - If not, one hypothesis is (based on high standard deviation of lower envelope values) is summarizing many subsequence segments in one envelope segment, can lead to highly varied envelope values due to normalization. This might be mitigated by grouping subsequence by length in addition to starting positions, which should reduce the variety of values that the data points within each segment take. TODO: rephrase this.
 - If implementing length-based grouping does not make the indexes balanced, then switching to UB-trees (akin to Coconut) instead of prefix trees might help, although it is possible that it will only hide the issue (envelopes being too varied), but the issue will still continue to hurt performance.
+
+### TODOs:
+- Run original ULISSE vs MASS on HPC, try reproducing the original results
+- Run comparison on s

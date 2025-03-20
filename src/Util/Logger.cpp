@@ -204,6 +204,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         {ISC::MIN_NUM_BITS_ON_TIE, min_num_bits_on_tie_str},
         {ISC::NUM_BITS_LIMIT, format_num_param(num_bits_limit)},
         {ISC::ADAPT_TO_DATASET, to_string(index_options.adapt)},
+        {ISC::INSERTER_TYPE, ENTRY_INSERTER_TYPE_TO_STR.at(index_options.inserter_type)},
     };
     for (const auto &col : INDEX_COUNT_COLUMNS) instance.m_count_cols[col] = 0;
     for (const auto &col : INDEX_TIME_COLUMNS) instance.m_time_cols_duration[col] = 0;

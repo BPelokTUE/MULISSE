@@ -17,6 +17,7 @@ reading_config_files=false
 
 config_files=()
 experiment_name=""
+dirty=false
 timeout=0
 
 while [[ "$#" -gt 0 ]]; do
@@ -32,6 +33,9 @@ while [[ "$#" -gt 0 ]]; do
     -n | --name)
         experiment_name=$2
         shift
+        ;;
+    -d | --dirty)
+        dirty=true
         ;;
     -t | --timeout)
         timeout=$2
@@ -53,6 +57,7 @@ while [[ "$#" -gt 0 ]]; do
             echo "Usage: $0 -i config1.json [config2.json ...] -n name [--no_scp_repo] [-t | --tests] [--clean_build]"
             echo "  -i, --input_configs  Paths to the configuration files"
             echo "  -n, --name           Name of the experiment"
+            echo "  -d, --dirty          Run the experiment without cleaning the previous run"
             echo "  --no_scp_repo        Skip copying the repository to the remote"
             echo "  --tests              Build tests as well"
             echo "  --clean_build        Perform a clean build on the remote"
@@ -91,10 +96,12 @@ remote_cmd="cd '${remote_path}' && \
 ssh "$remote_url" "$remote_cmd"
 
 # Step 3
-remote_cmd="cd '${remote_path}' && \
-    rm -rf DATA && \
-    rm -rf LOGS"
-ssh "$remote_url" "$remote_cmd"
+if ! $dirty; then
+    remote_cmd="cd '${remote_path}' && \
+        rm -rf DATA && \
+        rm -rf LOGS"
+    ssh "$remote_url" "$remote_cmd"
+fi
 
 # Step 4
 remote_cmd="cd '${remote_path}' && \

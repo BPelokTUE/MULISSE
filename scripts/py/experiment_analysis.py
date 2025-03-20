@@ -411,6 +411,21 @@ class MeanReducer(Reducer):
         return np.mean(value)
 
 
+class StdReducer(Reducer):
+    def __call__(self, value: float):
+        return np.std(value)
+
+
+class MinReducer(Reducer):
+    def __call__(self, value: float):
+        return np.min(value)
+
+
+class MaxReducer(Reducer):
+    def __call__(self, value: float):
+        return np.max(value)
+
+
 # %%[markdown]
 """
 ### Reduction executor function
@@ -1013,6 +1028,7 @@ def experiment_univariate_parametrization(
     hatch_labels=None,
     datasets_to_show=None,
     l_ranges_to_show=None,
+    reducer=MeanReducer(),
 ):
     groups_dict = {
         ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
@@ -1030,7 +1046,7 @@ def experiment_univariate_parametrization(
     columns = {**groups_dict, **targets_dict}
     results_list = [ExperimentResults.load(logs_dir=logs_dir, cols=columns) for logs_dir in logs_dirs]
 
-    targets = [(csv, target, MeanReducer()) for csv, target in dict_to_tuples(targets_dict)]
+    targets = [(csv, target, reducer) for csv, target in dict_to_tuples(targets_dict)]
     groups = dict_to_tuples(groups_dict)
     mean_values = execute_reduction(results_list, targets, groups)
     method_name_ind = get_col_index(str(SSC.METHOD_NAME), groups)
@@ -1107,17 +1123,26 @@ if show_indexing_time:
 
 # %%
 
-experiment_univariate_parametrization(
-    targets_dict,
-    logs_dirs,
-    TOTAL_TIME_Y_LABEL,
-    hatches=hatches,
-    hatch_labels=hatch_labels,
-    merge_dataset=merge_datasets,
-    use_adapt_to_dataset=use_adapt_to_dataset,
-    l_ranges_to_show=l_ranges_to_show,
-    datasets_to_show=datasets_to_show,
-)
+reducers = {
+    "Mean": MeanReducer(),
+    "Std": StdReducer(),
+    "Min": MinReducer(),
+    "Max": MaxReducer(),
+}
+
+for key, reducer in reducers.items():
+    experiment_univariate_parametrization(
+        targets_dict,
+        logs_dirs,
+        f"{key} {TOTAL_TIME_Y_LABEL}",
+        hatches=hatches,
+        hatch_labels=hatch_labels,
+        merge_dataset=merge_datasets,
+        use_adapt_to_dataset=use_adapt_to_dataset,
+        l_ranges_to_show=l_ranges_to_show,
+        datasets_to_show=datasets_to_show,
+        reducer=reducer,
+    )
 
 # %%
 
