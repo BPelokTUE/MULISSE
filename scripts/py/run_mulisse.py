@@ -20,15 +20,16 @@ def check_config_keys(config: dict, required: list[str]):
 
 
 Settings = list[dict[str, Any]]
+SettingProfiles = dict[str, Settings]
 
 
 class ParsedConfig(BaseModel):
-    length_settings: Settings
-    dataset_settings: Settings
-    query_set_settings: Settings
-    index_settings: Settings
-    index_method_settings: Settings
-    scan_method_settings: Settings
+    length_settings: Settings | SettingProfiles
+    dataset_settings: Settings | SettingProfiles
+    query_set_settings: Settings | SettingProfiles
+    index_settings: Settings | SettingProfiles
+    index_method_settings: Settings | SettingProfiles
+    scan_method_settings: Settings | SettingProfiles
 
     def __str__(self) -> str:
         string = ""
@@ -47,20 +48,32 @@ class ParsedConfig(BaseModel):
         return string
 
 
-def combine_parsed_configs(parsed_configs: list[ParsedConfig]) -> ParsedConfig:
-    def combine_settings(settings_list: list[Settings]) -> Settings:
-        combined_settings: Settings = []
-        for settings in settings_list:
-            combined_settings.extend(settings)
-        return combined_settings
+def combine_parsed_configs(parsed_configs: dict[str, ParsedConfig]) -> ParsedConfig:
+    def combine_settings(setting_profiles) -> Settings | SettingProfiles:
+        first_profile = next(iter(setting_profiles))
+        first_settings = setting_profiles[first_profile]
+
+        if any(len(settings) != len(first_settings) for settings in setting_profiles.values()):
+            return setting_profiles
+
+        for i in range(len(first_settings)):
+            for key, value in first_settings[i].items():
+                for profile, settings in setting_profiles.items():
+                    if key not in settings[i] or settings[i][key] != value:
+                        return setting_profiles
+        return first_settings
 
     return ParsedConfig(
-        length_settings=combine_settings([config.length_settings for config in parsed_configs]),
-        dataset_settings=combine_settings([config.dataset_settings for config in parsed_configs]),
-        query_set_settings=combine_settings([config.query_set_settings for config in parsed_configs]),
-        index_settings=combine_settings([config.index_settings for config in parsed_configs]),
-        index_method_settings=combine_settings([config.index_method_settings for config in parsed_configs]),
-        scan_method_settings=combine_settings([config.scan_method_settings for config in parsed_configs]),
+        length_settings=combine_settings({key: config.length_settings for key, config in parsed_configs.items()}),
+        dataset_settings=combine_settings({key: config.dataset_settings for key, config in parsed_configs.items()}),
+        query_set_settings=combine_settings({key: config.query_set_settings for key, config in parsed_configs.items()}),
+        index_settings=combine_settings({key: config.index_settings for key, config in parsed_configs.items()}),
+        index_method_settings=combine_settings(
+            {key: config.index_method_settings for key, config in parsed_configs.items()}
+        ),
+        scan_method_settings=combine_settings(
+            {key: config.scan_method_settings for key, config in parsed_configs.items()}
+        ),
     )
 
 
@@ -228,7 +241,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
     if len(profiles) == 0:
         return (parse_flat_config(config), calculate_query_stats, calculate_index_stats)
 
-    parsed_configs: list[ParsedConfig] = []
+    parsed_configs: dict[str, ParsedConfig] = {}
     for profile in profiles:
         profile_config = {}
         for key, val in config.items():
@@ -236,7 +249,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
             if isinstance(val, dict):
                 profile_config[key] = val.get(profile, [])
 
-        parsed_configs.append(parse_flat_config(profile_config))
+        parsed_configs[profile] = parse_flat_config(profile_config)
 
     return (combine_parsed_configs(parsed_configs), calculate_query_stats, calculate_index_stats)
 
@@ -262,23 +275,34 @@ class SettingIterator:
     ```
     """
 
-    def __init__(self, settings: Settings):
-        self.settings = settings
-        for setting in self.settings:
-            for key, value in setting.items():
-                if not isinstance(value, list):
-                    setting[key] = [value]
+    def __init__(self, settings: Settings | SettingProfiles, profile: str = ""):
+        self.setting_profiles: SettingProfiles
+        if isinstance(settings, dict):
+            if len(profile) == 0:
+                self.setting_profiles = settings
+            else:
+                self.setting_profiles = {profile: settings[profile]}
+        else:  # if isinstance(settings, list)
+            self.setting_profiles = {profile: settings}
+        self.profiles = list(self.setting_profiles.keys())
+
+        for profile, settings in self.setting_profiles.items():
+            for setting in settings:
+                for key, value in setting.items():
+                    if not isinstance(value, list):
+                        setting[key] = [value]
 
         self.all_combinations = []
-        for setting in self.settings:
-            keys, values = zip(*setting.items())
-            for combination in itertools.product(*values):
-                self.all_combinations.append(dict(zip(keys, combination)))
+        for profile, settings in self.setting_profiles.items():
+            for setting in settings:
+                keys, values = zip(*setting.items())
+                for combination in itertools.product(*values):
+                    self.all_combinations.append((profile, dict(zip(keys, combination))))
 
     def __len__(self) -> int:
         return len(self.all_combinations)
 
-    def __iter__(self) -> Iterator[dict[str, Any]]:
+    def __iter__(self) -> Iterator[tuple[str, dict[str, Any]]]:
         return iter(self.all_combinations)
 
     def iterate(self, desc: str = "", leave=True):
@@ -420,12 +444,14 @@ if __name__ == "__main__":
     # --------------------#
 
     with ProcessPoolExecutor() as executor:
-        for length_setting in SettingIterator(length_settings).iterate(desc="Length settings"):
+        for l_profile, length_setting in SettingIterator(length_settings).iterate(desc="Length settings"):
             series_len = length_setting["series_len"]
             l_min = int(series_len * length_setting["l_range"][0])
             l_max = int(series_len * length_setting["l_range"][1])
 
-            for dataset_setting in SettingIterator(dataset_settings).iterate(desc="Dataset settings", leave=False):
+            for d_profile, dataset_setting in SettingIterator(dataset_settings, l_profile).iterate(
+                desc="Dataset settings", leave=False
+            ):
                 command = dataset_setting["command"]
                 num_series = dataset_setting["size"]
                 num_channels = dataset_setting["num_channels"]
@@ -450,9 +476,9 @@ if __name__ == "__main__":
                     continue
                 ffts_required = any(
                     method.get("precalculate_ffts", False)
-                    for method in itertools.chain(
-                        SettingIterator(index_method_settings),
-                        SettingIterator(scan_method_settings),
+                    for _profile, method in itertools.chain(
+                        SettingIterator(index_method_settings, d_profile),
+                        SettingIterator(scan_method_settings, d_profile),
                     )
                 )
                 ffts_calculated = False
@@ -478,7 +504,9 @@ if __name__ == "__main__":
                             args += [f"--{key}", str(value)]
                     return args
 
-                for query_setting in SettingIterator(query_set_settings).iterate(desc="Query settings", leave=False):
+                for q_profile, query_setting in SettingIterator(query_set_settings, d_profile).iterate(
+                    desc="Query settings", leave=False
+                ):
                     num_queries = query_setting["size"]
                     used_channels = int(num_channels * query_setting["used_channel_ratio"])
                     noise_stdev = query_setting["noise_stdev"]
@@ -507,8 +535,10 @@ if __name__ == "__main__":
                     if queries_created:
                         futures = []
                         logs_dirs = []
-                        for m_ind, scan_method_setting in enumerate(
-                            SettingIterator(scan_method_settings).iterate(desc="Scan method settings", leave=False)
+                        for m_ind, (sm_profile, scan_method_setting) in enumerate(
+                            SettingIterator(scan_method_settings, q_profile).iterate(
+                                desc="Scan method settings", leave=False
+                            )
                         ):
                             if scan_method_setting.get("precalculate_ffts", False) and not ffts_calculated:
                                 continue
@@ -533,7 +563,9 @@ if __name__ == "__main__":
                             future.result()
                             add_logs_to_logs_dir(logs_dir)
 
-                    for index_setting in SettingIterator(index_settings).iterate(desc="Index settings", leave=False):
+                    for i_profile, index_setting in SettingIterator(index_settings, q_profile).iterate(
+                        desc="Index settings", leave=False
+                    ):
                         index_method = index_setting["index_type"]
                         index_file = os.path.join(
                             dataset_setting["location"], f"index-{index_method}-{index_counter}.bin"
@@ -577,20 +609,19 @@ if __name__ == "__main__":
                                 run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
 
                             if queries_created:
-                                relevant_search_settings = index_method_settings.copy()
-                                for i in range(len(relevant_search_settings)):
-                                    relevant_search_settings[i]["method_type"] = [index_method]
-
                                 futures = []
                                 logs_dirs = []
-                                for m_ind, index_method_setting in enumerate(
-                                    SettingIterator(relevant_search_settings).iterate(
+                                for m_ind, (im_profile, index_method_setting) in enumerate(
+                                    SettingIterator(index_method_settings, i_profile).iterate(
                                         desc="Indexing method settings", leave=False
                                     )
                                 ):
                                     # fmt: off
-                                    args = get_method_args(index_method_setting) + [
-                                        "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file, "-i", index_file
+                                    args = get_method_args({
+                                        **index_method_setting, "method_type": index_method
+                                    }) + [
+                                        "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q",
+                                        query_file, "-i", index_file
                                     ]
                                     # fmt: on
                                     logs_dirs.append(f"{LOGS_DIR}_{m_ind}")
