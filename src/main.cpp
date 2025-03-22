@@ -70,10 +70,10 @@ int main(int argc, char **argv) {
     vec<str> csv_paths;
     float step_sd = 1.0, noise = 0.1;
     SaxNumBitsT first_layer_num_bits = 1;
-    uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env, knn_k = 1;
+    uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env = 0, knn_k = 1;
     DistanceT r_range_r = 1.0;
     int seed;
-    size_t leaf_capacity;
+    size_t leaf_capacity = 0;
     vec<uint> exact_lengths = {};
     MtsNumChannelsT num_channels, used_channels = 0;
     vec<bool> channel_mask;
@@ -276,9 +276,14 @@ int main(int argc, char **argv) {
         std::cerr << "Channel mask must have the same length as the number of channels\n";
         return 1;
     }
-    if (command_type == INDEX && (method_type == ISAX || method_type == ISAX_ENVELOPE) && leaf_capacity == 0) {
-        std::cerr << "--leaf_capacity is required\n";
-        return 1;
+    if (command_type == INDEX) {
+        if ((method_type == ISAX || method_type == ISAX_ENVELOPE) && leaf_capacity == 0) {
+            std::cerr << "--leaf_capacity is required\n";
+            return 1;
+        } else if ((method_type == ENVELOPE || method_type == ISAX_ENVELOPE) && pos_per_env == 0) {
+            std::cerr << "--pos_per_env is required\n";
+            return 1;
+        }
     }
 
     // Initialize run settings
