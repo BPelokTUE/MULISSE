@@ -24,8 +24,8 @@ enum class DatasetSettingsColumn {
     NUM_SERIES,     // Number of time series in the dataset
     SD,             // The standard deviation of the Gaussian noise used for generating the random walk dataset
     SOURCE_CSVS,    // Source CSV files used for generating the CSV dataset
-    LOW_SD_LEN,     // Length of the subsequence with low standard deviation that causes the time series to be
-                    // discarded
+    L_MIN,          // Minimum length of subsequences that will be searched for (required for normalization)
+    L_MAX,          // Maximum length of subsequences that will be searched for (required for normalization)
     SEED,           // The random seed to generate the dataset
 };
 
@@ -264,13 +264,12 @@ struct RandomWalkLogAttributes : IDatasetLogAttributes {
 };
 
 struct CsvDatasetLogAttributes : IDatasetLogAttributes {
-    CsvDatasetLogAttributes(const vec<str> &source_csvs, uint series_generated, uint low_sd_len, int seed);
+    CsvDatasetLogAttributes(const vec<str> &source_csvs, uint series_generated, uint l_min, uint l_max, int seed);
 
     DatasetType get_type() override;
 
     vec<str> source_csvs;
-    uint series_generated;
-    uint low_sd_len;
+    uint series_generated, l_min, l_max;
     int seed;
 };
 

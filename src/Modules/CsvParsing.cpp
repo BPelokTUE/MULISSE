@@ -121,7 +121,8 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
         }
     }
 
-    DatasetLogger::write_entry(std::make_unique<CsvDatasetLogAttributes>(csv_paths, mts_indexes.size(), l_min, seed));
+    DatasetLogger::write_entry(
+        std::make_unique<CsvDatasetLogAttributes>(csv_paths, mts_indexes.size(), l_min, l_max, seed));
 
     return 0;
 }

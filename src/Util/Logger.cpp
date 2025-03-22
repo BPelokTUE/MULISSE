@@ -50,9 +50,9 @@ RandomWalkLogAttributes::RandomWalkLogAttributes(float noise, int seed) : noise(
 
 DatasetType RandomWalkLogAttributes::get_type() { return RANDOM_WALK; }
 
-CsvDatasetLogAttributes::CsvDatasetLogAttributes(const vec<str> &source_csvs, uint series_generated, uint low_sd_len,
-                                                 int seed)
-    : source_csvs(source_csvs), series_generated(series_generated), low_sd_len(low_sd_len), seed(seed) {}
+CsvDatasetLogAttributes::CsvDatasetLogAttributes(const vec<str> &source_csvs, uint series_generated, uint l_min,
+                                                 uint l_max, int seed)
+    : source_csvs(source_csvs), series_generated(series_generated), l_min(l_min), l_max(l_max), seed(seed) {}
 
 DatasetType CsvDatasetLogAttributes::get_type() { return CSV; }
 
@@ -69,7 +69,7 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
     uint id = instance.determine_index(dataset_settings_path);
     auto [dataset_file, num_channels, series_len, num_series] = RunSettings::get_instance().get_dataset_props();
 
-    str sd_str = "", source_csv_str = "", low_sd_len_str = "", seed_str = "";
+    str sd_str = "", source_csv_str = "", l_min_str = "", l_max_str = "", seed_str = "";
     switch (attributes->get_type()) {
         case RANDOM_WALK: {
             auto *rw_attributes = static_cast<RandomWalkLogAttributes *>(attributes.get());
@@ -86,7 +86,8 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
                 source_csv_str += source_csvs[i];
                 if (i < source_csvs.size() - 1) source_csv_str += instance.ITEM_SEP;
             }
-            low_sd_len_str = to_string(csv_attributes->low_sd_len);
+            l_min_str = to_string(csv_attributes->l_min);
+            l_max_str = to_string(csv_attributes->l_max);
             seed_str = to_string(csv_attributes->seed);
             break;
         }
@@ -101,7 +102,8 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
                            {DSC::NUM_SERIES, to_string(num_series)},
                            {DSC::SD, sd_str},
                            {DSC::SOURCE_CSVS, source_csv_str},
-                           {DSC::LOW_SD_LEN, low_sd_len_str},
+                           {DSC::L_MIN, l_min_str},
+                           {DSC::L_MAX, l_max_str},
                            {DSC::SEED, seed_str},
                        },
                        DATASET_SETTINGS_COL_ENUMS);
@@ -355,7 +357,7 @@ void QueryLogger::log_results(const vec<SearchResult> &results) {
         auto [ts_index, ts_position, ts_length] = result.subs_info;
         instance.m_collection_cols[QC::RESULT_SET_TS_INDICES].push_back(to_string(ts_index));
         instance.m_collection_cols[QC::RESULT_SET_TS_POSITIONS].push_back(to_string(ts_position));
-        instance.m_collection_cols[QC::RESULT_SET_DISTANCES].push_back(to_string(result.distance));
+        instance.m_collection_cols[QC::RESULT_SET_DISTANCES].push_back(to_string(std::sqrt(result.distance)));
     }
 }
 

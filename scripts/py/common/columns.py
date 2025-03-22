@@ -9,7 +9,8 @@ class DatasetSettingsColumn(Enum):
     NUM_SERIES = auto()
     SD = auto()
     SOURCE_CSVS = auto()
-    LOW_SD_LEN = auto()
+    L_MIN = auto()
+    L_MAX = auto()
 
     def __str__(self):
         return self.name.lower()
