@@ -348,7 +348,7 @@ class IndexLogger : public Logger {
 
    private:
     umap<ISC, str> m_columns;
-    umap<ISC, uint> m_count_cols;
+    umap<ISC, std::atomic<uint>> m_count_cols;
     umap<ISC, TimePoint> m_time_cols_start;
     umap<ISC, double> m_time_cols_duration;
     str m_index_settings_path;

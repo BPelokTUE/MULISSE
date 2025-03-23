@@ -152,9 +152,8 @@ class IIndex {
                    MtsNumChannelsT num_channels, uint series_len, bool adapt) {
         auto &logger = IndexLogger::get_instance();
 
-        uint N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(float),
-             series_size = channel_size * num_channels;
-        uint num_series = N / series_size;
+        size_t N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(float),
+               series_size = channel_size * num_channels, num_series = N / series_size;
 
         vec<IndexEntry<T>> dataset_entries;
 

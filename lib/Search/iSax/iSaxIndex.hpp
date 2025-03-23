@@ -100,17 +100,24 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
             *m_breakpoints,
         };
 
-        size_t i = 0;
-        for (auto it = m_first_layer.begin(); it != m_first_layer.end(); ++it) {
-            const auto &key_symbols = it->first;
-            auto &node = it->second;
+        vec<size_t> cumulative_bucket_sizes(m_first_layer.bucket_count(), 0);
+        for (size_t bucket = 1; bucket < m_first_layer.bucket_count(); ++bucket)
+            cumulative_bucket_sizes[bucket] =
+                cumulative_bucket_sizes[bucket - 1] + m_first_layer.bucket_size(bucket - 1);
 
-            auto [finalized_node, isax_symbols] = finalize_first_layer_node(key_symbols, node, isax_word_settings);
-            first_layer_symbols[i] = isax_symbols;
-            finalized_nodes[i] = std::move(finalized_node);
-            ++i;
+        OMP_PRAGMA(omp parallel for)
+        for (size_t bucket = 0; bucket < m_first_layer.bucket_count(); ++bucket) {
+            size_t ind = cumulative_bucket_sizes[bucket];
+            for (auto it = m_first_layer.begin(bucket); it != m_first_layer.end(bucket); ++it) {
+                const auto &key_symbols = it->first;
+                auto &node = it->second;
 
-            node.reset();
+                auto [finalized_node, isax_symbols] = finalize_first_layer_node(key_symbols, node, isax_word_settings);
+                first_layer_symbols[ind] = isax_symbols;
+                finalized_nodes[ind] = std::move(finalized_node);
+                ++ind;
+                node.reset();
+            }
         }
         return std::make_unique<iSaxFinalizedIndex<FTag>>(std::move(m_series_isax_prop), std::move(first_layer_symbols),
                                                           std::move(finalized_nodes), m_first_layer_num_bits,
@@ -196,7 +203,6 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
         // If cannot split further, return
         if (split_seg_bits == m_alphabet_num_bits) return;
 
-        // TODO: critical section for logger stuff
         auto &logger = IndexLogger::get_instance();
         logger.increment_count_col(ISC::NUM_NODES, 2);
         logger.increment_count_col(ISC::NUM_LEAVES);
@@ -314,6 +320,10 @@ class iSaxParallelInserter : public IEntryInserter<iSaxIndex<T>> {
             }
         }
 
+        std::cout << "c1" << std::endl;
+
+        std::cout << symbols_to_entry_inds.size() << ' ' << symbols_to_entry_inds.bucket_count() << std::endl;
+
         OMP_PRAGMA(omp parallel for)
         for (size_t bucket = 0; bucket < symbols_to_entry_inds.bucket_count(); ++bucket) {
             for (auto it = symbols_to_entry_inds.begin(bucket); it != symbols_to_entry_inds.end(bucket); ++it) {
@@ -321,6 +331,7 @@ class iSaxParallelInserter : public IEntryInserter<iSaxIndex<T>> {
                 auto isax_words = symbols_to_isax_words.at(symbols);
                 auto node_it = m_index->m_first_layer.find(symbols);
                 for (uint ind : it->second) {
+                    std::cout << "thread: " << omp_get_thread_num() << " " << ind << std::endl;
                     auto isax_words_copy = isax_words;
                     m_index->insert_into_first_layer_node(isax_words_copy, node_it, entries[ind]);
                 }
