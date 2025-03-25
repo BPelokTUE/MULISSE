@@ -20,14 +20,16 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, SubsequenceInf
                                           const vec<vec<float>> &query, const vec<vec<float>> &mts) {
     bool updated = false;
     int num_start_pos, mts_len, query_len;
+    vec<uint> present_channels;
 
     if (m_normalized) {
-        vec<DistanceT> sums(query.size()), sq_sums(query.size());
+        vec<float> sums(query.size()), sq_sums(query.size());
         for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
             if (!(query[c].empty())) {
                 query_len = query[c].size();
                 mts_len = mts[c].size();
                 num_start_pos = mts[c].size() - query_len + 1;
+                present_channels.push_back(c);
 
                 for (size_t i = 0; i < query_len; ++i) {
                     sums[c] += mts[c][i];
@@ -37,14 +39,12 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, SubsequenceInf
         }
 
         for (int start_pos = 0; start_pos < num_start_pos; ++start_pos) {
-            DistanceT dist_squared = 0;
-            for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
-                if (query[c].empty()) continue;
-
+            float dist_squared = 0;
+            for (MtsNumChannelsT c : present_channels) {
                 auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], query_len);
 
                 for (uint i = 0; i < query_len; ++i) {
-                    DistanceT diff = (mts[c][start_pos + i] - mu) / sigma - query[c][i];
+                    float diff = (mts[c][start_pos + i] - mu) / sigma - query[c][i];
                     dist_squared += diff * diff;
                     if (m_use_early_abandoning && dist_squared >= result_set->get_distance_lb()) {
                         goto start_pos_it_end;
@@ -57,9 +57,7 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, SubsequenceInf
         start_pos_it_end:;
             int end_pos = start_pos + query_len;
             if (end_pos < mts_len) {
-                for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
-                    if (query[c].empty()) continue;
-
+                for (MtsNumChannelsT c : present_channels) {
                     sums[c] += mts[c][end_pos] - mts[c][start_pos];
                     sq_sums[c] += mts[c][end_pos] * mts[c][end_pos] - mts[c][start_pos] * mts[c][start_pos];
                 }

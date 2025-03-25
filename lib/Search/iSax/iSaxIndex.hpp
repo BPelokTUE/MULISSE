@@ -331,7 +331,6 @@ class iSaxParallelInserter : public IEntryInserter<iSaxIndex<T>> {
                 auto isax_words = symbols_to_isax_words.at(symbols);
                 auto node_it = m_index->m_first_layer.find(symbols);
                 for (uint ind : it->second) {
-                    std::cout << "thread: " << omp_get_thread_num() << " " << ind << std::endl;
                     auto isax_words_copy = isax_words;
                     m_index->insert_into_first_layer_node(isax_words_copy, node_it, entries[ind]);
                 }

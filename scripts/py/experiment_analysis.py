@@ -402,27 +402,35 @@ class Reducer(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    def __call__(self, value: float):
+    def __call__(self, value: np.ndarray) -> float:
         raise NotImplementedError
 
 
 class MeanReducer(Reducer):
-    def __call__(self, value: float):
+    def __call__(self, value: np.ndarray) -> float:
         return np.mean(value)
 
 
+class RobustMeanReducer(Reducer):
+    discard_quantile: float = 0.05
+
+    def __call__(self, value: np.ndarray) -> float:
+        quantiles = np.quantile(value, [self.discard_quantile, 1 - self.discard_quantile])
+        return np.mean(value[(value >= quantiles[0]) & (value <= quantiles[1])])
+
+
 class StdReducer(Reducer):
-    def __call__(self, value: float):
+    def __call__(self, value: np.ndarray) -> float:
         return np.std(value)
 
 
 class MinReducer(Reducer):
-    def __call__(self, value: float):
+    def __call__(self, value: np.ndarray) -> float:
         return np.min(value)
 
 
 class MaxReducer(Reducer):
-    def __call__(self, value: float):
+    def __call__(self, value: np.ndarray) -> float:
         return np.max(value)
 
 
@@ -479,14 +487,60 @@ def execute_reduction(
 
 # %%
 
+METHOD_COLORS = {
+    "sequential_scan-ed": PALETTE["Greens"][1],
+    "base_ed-ed": PALETTE["Greens"][2],
+    "sequential_scan-ed-early": PALETTE["Greens"][4],
+    "sequential_scan-mass": PALETTE["Oranges"][0],
+    "base_mass-mass": PALETTE["Oranges"][1],
+    "sequential_scan-mass-ffts": PALETTE["Oranges"][2],
+    "isax_envelope-ed-early": PALETTE["Blues"][4],
+    "isax_envelope-mass": PALETTE["Blues"][2],
+    "isax_envelope-mass-ffts": PALETTE["Blues"][1],
+    "isax-ed-early": PALETTE["Reds"][4],
+    "isax-mass": PALETTE["Reds"][2],
+    "isax-mass-ffts": PALETTE["Reds"][1],
+    "envelope-ed-early": PALETTE["Purples"][4],
+    "envelope-mass": PALETTE["Purples"][2],
+    "envelope-mass-ffts": PALETTE["Purples"][1],
+    "ulisse-ed-early-ulisse_index": PALETTE["Greys"][3],
+}
+METHOD_LABELS = {
+    "sequential_scan-ed": "BF",
+    "sequential_scan-ed-early": "EAb",
+    "sequential_scan-mass": "MASS, no pre.",
+    "sequential_scan-mass-ffts": "MASS",
+    "isax_envelope-ed": "MULISSE (ED)",
+    "isax_envelope-ed-early": "MULISSE (ED, EAb)",
+    "isax_envelope-mass": "MULISSE (MASS, no pre.)",
+    "isax_envelope-mass-ffts": "MULISSE (MASS)",
+    "isax-ed-early": "iSAX (ED, EAb)",
+    "isax-mass": "iSAX (MASS, no pre.)",
+    "isax-mass-ffts": "iSAX (MASS)",
+    "envelope-ed-early": "Env. (ED, EAb)",
+    "envelope-mass": "Env. (MASS, no pre.)",
+    "envelope-mass-ffts": "Envelope (MASS)",
+    "base_ed-ed": "EAb (C)",
+    "base_mass-mass": "MASS (C)",
+    "ulisse-ed-early-ulisse_index": "ULISSE",
+}
+DATASET_ORDER = [
+    "weather",
+    "stocks",
+    "random_walk",
+    "synthetic",
+]
+
+# %%
+
 
 def plot_bars(
     reduction_result: ReductionResult,
     color_group_ind: int,
-    color_map: dict,
-    label_map: dict,
-    x_labels: dict[tuple, str],
-    y_label: str,
+    color_map: dict = METHOD_COLORS,
+    label_map: dict = METHOD_LABELS,
+    x_labels: dict[tuple, str] = {},
+    y_label: str = "",
     y_lim: tuple[float, float] = None,
     scale: str = "linear",
     bar_width_inches: float = 0.4,
@@ -562,7 +616,7 @@ def plot_bars(
                     seen_hatches.add(v_ind)
 
         x_ticks.append(x_start + len(bars) * bar_width / 2)
-        x_tick_labels.append(x_labels[bar_group_key])
+        x_tick_labels.append(x_labels.get(bar_group_key, ""))
         x_start += (len(bars) + 1) * bar_width
 
     for h_ind in seen_hatches:
@@ -599,57 +653,22 @@ Misc. helpers
 """
 
 # %%
-METHOD_COLORS = {
-    "sequential_scan-ed": PALETTE["Greens"][1],
-    "sequential_scan-ed-early": PALETTE["Greens"][4],
-    "sequential_scan-mass": PALETTE["Oranges"][0],
-    "sequential_scan-mass-ffts": PALETTE["Oranges"][2],
-    "isax_envelope-ed-early": PALETTE["Blues"][4],
-    "isax_envelope-mass": PALETTE["Blues"][2],
-    "isax_envelope-mass-ffts": PALETTE["Blues"][1],
-    "isax-ed-early": PALETTE["Reds"][4],
-    "isax-mass": PALETTE["Reds"][2],
-    "isax-mass-ffts": PALETTE["Reds"][1],
-    "envelope-ed-early": PALETTE["Purples"][4],
-    "envelope-mass": PALETTE["Purples"][2],
-    "envelope-mass-ffts": PALETTE["Purples"][1],
-}
-METHOD_LABELS = {
-    "sequential_scan-ed": "BF",
-    "sequential_scan-ed-early": "EAb",
-    "sequential_scan-mass": "MASS, no pre.",
-    "sequential_scan-mass-ffts": "MASS",
-    "isax_envelope-ed": "MULISSE (ED)",
-    "isax_envelope-ed-early": "MULISSE (ED, EAb)",
-    "isax_envelope-mass": "MULISSE (MASS, no pre.)",
-    "isax_envelope-mass-ffts": "MULISSE (MASS)",
-    "isax-ed-early": "iSAX (ED, EAb)",
-    "isax-mass": "iSAX (MASS, no pre.)",
-    "isax-mass-ffts": "iSAX (MASS)",
-    "envelope-ed-early": "Env. (ED, EAb)",
-    "envelope-mass": "Env. (MASS, no pre.)",
-    "envelope-mass-ffts": "Envelope (MASS)",
-}
-DATASET_ORDER = [
-    "weather",
-    "stocks",
-    "random_walk",
-    "synthetic",
-]
 
 
-def remove_index_name(method_name: str, index_prefix: str = "index") -> str:
-    return method_name.rsplit(f"-{index_prefix}", 1)[0]
-
-
-def remove_index_name_from_reduction_result(
-    reduction_result: ReductionResult, method_name_ind: int, index_prefix: str = "index"
-) -> ReductionResult:
+def simplify_method_name(reduction_result: ReductionResult, method_name_ind: int) -> ReductionResult:
     result = {}
     for group, target_values in reduction_result.items():
         method_name = group[method_name_ind]
         group_list = list(group)
-        group_list[method_name_ind] = remove_index_name(method_name, index_prefix)
+
+        method_max_len = 0
+        method_name = group_list[method_name_ind]
+        simple_method_name = ""
+        for method in METHOD_LABELS:
+            if method in method_name and len(method) > method_max_len:
+                method_max_len = len(method)
+                simple_method_name = method
+        group_list[method_name_ind] = simple_method_name
         result[tuple(group_list)] = target_values
     return result
 
@@ -729,7 +748,7 @@ def experiment_num_channels_and_dataset(
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
     groups = dict_to_tuples(groups_dict)
     mean_values = execute_reduction([few_channels_results, many_channels_results], targets, groups)
-    mean_values = remove_index_name_from_reduction_result(mean_values, 2)
+    mean_values = simplify_method_name(mean_values, 2)
 
     methods_to_show = [
         "sequential_scan-ed",
@@ -753,9 +772,7 @@ def experiment_num_channels_and_dataset(
     plot_bars(
         mean_values_to_show,
         2,
-        METHOD_COLORS,
-        METHOD_LABELS,
-        x_labels,
+        x_labels=x_labels,
         y_label=y_label,
         scale=y_scale,
         hatches=["", PREP_TIME_HATCH] if target_labels is not None else None,
@@ -794,7 +811,7 @@ def experiment_envelope_parametrization(
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
     groups = dict_to_tuples(group_dict)
     mean_values = execute_reduction([parametrization_results], targets, groups)
-    mean_values = remove_index_name_from_reduction_result(mean_values, 3)
+    mean_values = simplify_method_name(mean_values, 3)
     mean_values = {(*group[:4], group[4].rsplit("/")[0]): values for group, values in mean_values.items()}
 
     def get_x_label(key: tuple):
@@ -810,9 +827,7 @@ def experiment_envelope_parametrization(
         plot_bars(
             mean_values_ds,
             3,
-            METHOD_COLORS,
-            METHOD_LABELS,
-            x_labels,
+            x_labels=x_labels,
             y_label=y_label,
             scale=y_scale,
             title=dataset,
@@ -951,7 +966,7 @@ def experiment_compare_methods(
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
     groups = dict_to_tuples(group_dict)
     mean_values = execute_reduction(results_list, targets, groups)
-    mean_values = remove_index_name_from_reduction_result(mean_values, 3)
+    mean_values = simplify_method_name(mean_values, 3)
 
     def get_label(key: list[str]) -> str:
         dataset, _, pos_per_env, first_layer_num_bits = key
@@ -973,9 +988,7 @@ def experiment_compare_methods(
         plot_bars(
             mean_values_l_range,
             1,
-            METHOD_COLORS,
-            METHOD_LABELS,
-            x_labels,
+            x_labels=x_labels,
             y_label=y_label,
             y_lim=y_lim,
             scale=y_scale,
@@ -1050,7 +1063,7 @@ def experiment_univariate_parametrization(
     groups = dict_to_tuples(groups_dict)
     mean_values = execute_reduction(results_list, targets, groups)
     method_name_ind = get_col_index(str(SSC.METHOD_NAME), groups)
-    mean_values = remove_index_name_from_reduction_result(mean_values, method_name_ind)
+    mean_values = simplify_method_name(mean_values, method_name_ind)
 
     dataset_order = [key[0] for key in mean_values]
     if merge_dataset:
@@ -1087,9 +1100,7 @@ def experiment_univariate_parametrization(
             plot_bars(
                 mean_values_ds,
                 method_name_ind,
-                METHOD_COLORS,
-                METHOD_LABELS,
-                x_labels,
+                x_labels=x_labels,
                 y_label=y_label,
                 scale=y_scale,
                 bar_width_inches=0.4,
@@ -1173,5 +1184,38 @@ for istc_col in [ISTC.LEAF_HEIGHT_STATS, ISTC.LEAF_FILL_STATS, ISTC.SEG_LOWER_ST
             l_ranges_to_show=l_ranges_to_show,
             datasets_to_show=datasets_to_show,
         )
+
+# %%
+
+
+def experiment_ulisse_comparison(
+    logs_dir="EXPERIMENT_LOGS/LINARDI/100K/LOGS_combined", target_col=QC.TOTAL_TIME_S, reducer: Reducer = MeanReducer()
+):
+    groups_dict = {ERD.METHODS_COLS: [str(SSC.METHOD_NAME)]}
+    targets_dict = {ERD.RUNS_COLS: [str(target_col)]}
+    columns = {**groups_dict, **targets_dict}
+
+    results = ExperimentResults.load(logs_dir=logs_dir, cols=columns)
+
+    targets = [(ERD.RUNS_COLS, target_col, reducer) for target_col in targets_dict[ERD.RUNS_COLS]]
+    groups = dict_to_tuples(groups_dict)
+    reduced_values = execute_reduction([results], targets, groups)
+    print(reduced_values)
+    reduced_values = simplify_method_name(reduced_values, 0)
+    method_labels_keys = list(METHOD_LABELS.keys())
+    reduced_values = sort_dict(reduced_values, lambda x: method_labels_keys.index(x[0][0]))
+
+    plot_bars(
+        reduced_values,
+        0,
+        y_label=TOTAL_TIME_Y_LABEL,
+        scale="linear",
+        title="ULISSE vs. MASS",
+    )
+
+
+# %%
+
+experiment_ulisse_comparison()
 
 # %%
