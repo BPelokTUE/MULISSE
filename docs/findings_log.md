@@ -35,10 +35,38 @@
 ### Suggestions / Future work
 
 - Parallelize iSAX insertion (following the parallelized iSAX 2.0 bulk loading algorithm) and the runner (`run_mulisse.py`) for faster testing
-- Implement everything required for raw time series search, and check if the performance differences are still there
-    - If not, one hypothesis is (based on high standard deviation of lower envelope values) is summarizing many subsequence segments in one envelope segment, can lead to highly varied envelope values due to normalization. This might be mitigated by grouping subsequence by length in addition to starting positions, which should reduce the variety of values that the data points within each segment take. TODO: rephrase this.
+    - **Done**, although the parallelized iSAX insertion displays strange behavior from time to time
+- ~~Implement everything required for raw time series search, and check if the performance differences are still there~~
 - If implementing length-based grouping does not make the indexes balanced, then switching to UB-trees (akin to Coconut) instead of prefix trees might help, although it is possible that it will only hide the issue (envelopes being too varied), but the issue will still continue to hurt performance.
 
-### TODOs:
-- Run original ULISSE vs MASS on HPC, try reproducing the original results
-- Run comparison on s
+## 26-03-2025
+- Reproduced ULISSE vs MASS results for $n=5*10^6$ synthetic dataset
+    - While the ULISSE is around one order of magnitude faster than MASS, this does not include index creation time
+    - Additionally, the pruning ratio of ULISSE is highly variable, while the early abandoning power is consistently above $95\%$
+        - **Suggestion**: measure early abandoning power as it seems quite important
+- Ran original ULISSE, C implementations of ED with EA, MASS and MULISSE implementation for all of them, on a synthetic univariate dataset with $n=10^5$:
+    - MULISSE implementations are considerably slower:
+        - Experiments with potential fixes are on the way:
+            - Add cache clearing between queries to own MASS in the same as done in C implementation
+            - Use `float` instead of `double` for ED
+            - Attempt to use top-down inserter for MULISSE, in case the parallel inserter is causing structural issues
+        - Double check early abandoning implementation in ULISSE, maybe it contains additional tricks
+    - The pruning ratio is low for both ULISSE and MULISSE, even though experiments were run on a synthetic dataset
+        - MULISSE pruning ratio is lower, further investigation is required
+        - Even ULISSE pruning ratio is only $17\%$ on average, much lower than what we have seen before on synthetic data.
+            - The one major difference between this and previous experiments on synthetic data, is that **the range of query length is much greater:** $|Q|\in[256,4096]$ with $m=4096$
+                - One hypothesis for the low pruning ratio then is that the large number (and varied size) of subsequences leads to loose envelopes $\Rightarrow$ **Suggestion**: let me implement length-based grouping (in addition to starting position based grouping). At this point I think we have seen plenty of evidence that shorter query ranges lead to better pruning, and with this implementation, this hypothesis could be denied or confirmed and potentially solved.
+
+### Work Items
+0. Double check
+    - Why MASS and ED w EA are the same time
+        - Bug in parsing corrected
+    - Double-check ULISSE EA 
+        - The two algorithms are the same
+    - Measure ULISSE vs ED w EA on query with 0 pruning power
+        - Compared the average runtime between methods on the queries where ULISSE got pruning ratio 0. ULISSE is still the best performing method, and in fact the difference increases.
+1. Add support for measuring abandoning power and run experiments with it
+    - For non-MULISSE-lib implementations as well
+2. Fix (or at least minimize) discrepancy between ULISSE, MASS, ED and their MULISSE library counterparts
+    - ULISSE uses some "interesting" split strategies. See if these make a difference.
+3. Add support for length-based grouping 

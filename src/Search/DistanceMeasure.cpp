@@ -18,38 +18,48 @@ bool EuclideanDistance::uses_early_abandoning() const { return m_use_early_aband
 
 bool EuclideanDistance::update_result_set(IResultSet *result_set, SubsequenceInfo subs_info,
                                           const vec<vec<float>> &query, const vec<vec<float>> &mts) {
+    auto &logger = QueryLogger::get_instance();
+
     bool updated = false;
     int num_start_pos, mts_len, query_len;
     vec<uint> present_channels;
 
+    for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
+        if (!(query[c].empty())) {
+            query_len = query[c].size();
+            mts_len = mts[c].size();
+            num_start_pos = mts[c].size() - query_len + 1;
+            present_channels.push_back(c);
+        }
+    }
+
     if (m_normalized) {
         vec<float> sums(query.size()), sq_sums(query.size());
-        for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
-            if (!(query[c].empty())) {
-                query_len = query[c].size();
-                mts_len = mts[c].size();
-                num_start_pos = mts[c].size() - query_len + 1;
-                present_channels.push_back(c);
-
-                for (size_t i = 0; i < query_len; ++i) {
-                    sums[c] += mts[c][i];
-                    sq_sums[c] += mts[c][i] * mts[c][i];
-                }
+        for (MtsNumChannelsT c : present_channels) {
+            for (size_t i = 0; i < query_len; ++i) {
+                sums[c] += mts[c][i];
+                sq_sums[c] += mts[c][i] * mts[c][i];
             }
         }
 
         for (int start_pos = 0; start_pos < num_start_pos; ++start_pos) {
             float dist_squared = 0;
+            uint64_t points_examined = 0, point_in_entry = 0;
+
             for (MtsNumChannelsT c : present_channels) {
                 auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], query_len);
 
-                for (uint i = 0; i < query_len; ++i) {
-                    float diff = (mts[c][start_pos + i] - mu) / sigma - query[c][i];
+                for (uint query_ind = 0; query_ind < query_len; ++query_ind) {
+                    float diff = (mts[c][start_pos + query_ind] - mu) / sigma - query[c][query_ind];
                     dist_squared += diff * diff;
                     if (m_use_early_abandoning && dist_squared >= result_set->get_distance_lb()) {
+                        points_examined += query_ind + 1;
+                        point_in_entry += query_len;
                         goto start_pos_it_end;
                     }
                 }
+                points_examined += query_len;
+                point_in_entry += query_len;
             }
             result_set->insert(
                 {{subs_info.series_ind, subs_info.start_pos + start_pos, subs_info.length - start_pos}, dist_squared});
@@ -62,6 +72,8 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, SubsequenceInf
                     sq_sums[c] += mts[c][end_pos] * mts[c][end_pos] - mts[c][start_pos] * mts[c][start_pos];
                 }
             }
+            logger.increment_num_points_examined(points_examined);
+            logger.increment_num_points_in_examined_entries(point_in_entry);
         }
     } else {
         throw std::runtime_error("Non-normalized Euclidean distance not implemented yet");

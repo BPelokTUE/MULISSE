@@ -322,10 +322,16 @@ void QueryLogger::reset_entry() {
     for (const auto &col : QUERY_COLLECTION_COLUMNS) instance.m_collection_cols[col] = vec<str>();
 }
 
-void QueryLogger::increment_count_col(QC col) {
+void QueryLogger::increment_count_col(QC col, uint amount) {
     assert(vec_contains(QUERY_COUNT_COLUMNS, col));
-    ++instance.m_count_cols[col];
+    instance.m_count_cols[col] += amount;
 }
+
+void QueryLogger::increment_num_points_in_examined_entries(uint64_t amount) {
+    num_points_in_examined_entries += amount;
+}
+
+void QueryLogger::increment_num_points_examined(uint64_t amount) { num_points_examined += amount; }
 
 void QueryLogger::start_timer(QC col) {
     assert(vec_contains(QUERY_TIME_COLUMNS, col));
@@ -382,6 +388,10 @@ void QueryLogger::write_entry() {
     for (const auto &col : QUERY_COUNT_COLUMNS) columns[col] = to_string(m_count_cols[col]);
     for (const auto &col : QUERY_TIME_COLUMNS) columns[col] = to_string(m_time_cols_duration[col]);
     for (const auto &col : QUERY_COLLECTION_COLUMNS) columns[col] = get_collection_str(col);
+
+    bool abandoning_used = num_points_examined < num_points_in_examined_entries;
+    columns[QC::ABANDONING_RATE] = to_string(
+        abandoning_used ? 1.0 - static_cast<double>(num_points_examined) / num_points_in_examined_entries : 0.0);
 
     write_row(run_log_path, columns, QUERY_COL_ENUMS);
 }

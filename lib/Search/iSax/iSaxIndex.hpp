@@ -188,8 +188,9 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
         leaf->m_subsequence_infos.push_back(entry.subsequence_info);
         leaf->m_summaries.push_back(entry.mts_summary);
 
-        // Split if needed
-        if (leaf->m_subsequence_infos.size() > m_leaf_capacity) {
+        // Split if needed (if the leaf size already surpassed the capacity before inserting the new entry, then a split
+        // was attempted before and was unsuccessful => don't call split function again)
+        if (leaf->m_subsequence_infos.size() == m_leaf_capacity + 1) {
             auto &node_ref = parent ? (new_bit ? parent->m_right : parent->m_left) : node_it->second;
             split_leaf(isax_words, node_ref);
         }
@@ -319,10 +320,6 @@ class iSaxParallelInserter : public IEntryInserter<iSaxIndex<T>> {
                 }
             }
         }
-
-        std::cout << "c1" << std::endl;
-
-        std::cout << symbols_to_entry_inds.size() << ' ' << symbols_to_entry_inds.bucket_count() << std::endl;
 
         OMP_PRAGMA(omp parallel for)
         for (size_t bucket = 0; bucket < symbols_to_entry_inds.bucket_count(); ++bucket) {

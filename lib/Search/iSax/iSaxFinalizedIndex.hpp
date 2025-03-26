@@ -217,9 +217,8 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
                     logger.start_timer(QC::TS_EXAMINATION_TIME_S);
                     distance_measure->update_result_set(result_set, subs_info, query, subsequence);
                     logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
-
-                    logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED);
                 }
+                logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED, subsequence_infos.size());
                 logger.increment_count_col(QC::NUM_LEAVES_VISITED);
             }
             logger.increment_count_col(QC::NUM_NODES_VISITED);

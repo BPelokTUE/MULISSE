@@ -121,6 +121,7 @@ enum class QueryColumn {
     NUM_LEAVES_VISITED,       // Number of leaves visited during the search
     NUM_NODES_VISITED,        // Number of nodes visited during the search
     NUM_ENTRIES_EXAMINED,     // Number of index entries examined during the search
+    ABANDONING_RATE,          // The rate of early abandoning during the search
     TOTAL_TIME_S,             // Total time taken by the search in seconds
     FIRST_LAYER_TIME_S,       // Time taken to process the first layer in the search in seconds
     TREE_TRAVERSAL_TIME_S,    // Time taken to traverse the tree in seconds
@@ -380,8 +381,21 @@ class QueryLogger : public Logger {
     /**
      * @brief Increment the value of the given column
      * @param col The column to increment, expected to be a value from QUERY_COUNT_COLUMNS
+     * @param amount The amount to increment by
      * */
-    void increment_count_col(QC col);
+    void increment_count_col(QC col, uint amount = 1);
+
+    /**
+     * @brief Increment the number of points in the entries examined
+     * @param amount The amount to increment by
+     * */
+    void increment_num_points_in_examined_entries(uint64_t amount);
+
+    /**
+     * @brief Increment the number of points examined
+     * @param amount The amount to increment by
+     */
+    void increment_num_points_examined(uint64_t amount);
 
     /**
      * @brief Start the timer for the given column
@@ -426,6 +440,8 @@ class QueryLogger : public Logger {
     umap<QC, TimePoint> m_time_cols_start;
     umap<QC, double> m_time_cols_duration;
     umap<QC, vec<str>> m_collection_cols;
+
+    __uint128_t num_points_in_examined_entries = 0, num_points_examined = 0;
 
     // Static
     static QueryLogger instance;

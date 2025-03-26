@@ -653,6 +653,11 @@ Misc. helpers
 """
 
 # %%
+TIME_TARGETS = [str(QC.TOTAL_TIME_S), str(QC.AMORTIZED_PREP_TIME_S)]
+TIME_LABELS = ["Search time", "Prep. time"]
+PREP_TIME_HATCH = "/////"
+TOTAL_TIME_Y_LABEL = "Total time (S)"
+PRUNING_RATIO_Y_LABEL = "Pruning ratio"
 
 
 def simplify_method_name(reduction_result: ReductionResult, method_name_ind: int) -> ReductionResult:
@@ -668,6 +673,8 @@ def simplify_method_name(reduction_result: ReductionResult, method_name_ind: int
             if method in method_name and len(method) > method_max_len:
                 method_max_len = len(method)
                 simple_method_name = method
+
+        print(simple_method_name)
         group_list[method_name_ind] = simple_method_name
         result[tuple(group_list)] = target_values
     return result
@@ -719,12 +726,6 @@ groups = [
 
 
 # %%
-
-TIME_TARGETS = [str(QC.TOTAL_TIME_S), str(QC.AMORTIZED_PREP_TIME_S)]
-TIME_LABELS = ["Search time", "Prep. time"]
-PREP_TIME_HATCH = "/////"
-TOTAL_TIME_Y_LABEL = "Total time (S)"
-PRUNING_RATIO_Y_LABEL = "Pruning ratio"
 
 
 def experiment_num_channels_and_dataset(
@@ -1189,18 +1190,31 @@ for istc_col in [ISTC.LEAF_HEIGHT_STATS, ISTC.LEAF_FILL_STATS, ISTC.SEG_LOWER_ST
 
 
 def experiment_ulisse_comparison(
-    logs_dir="EXPERIMENT_LOGS/LINARDI/100K/LOGS_combined", target_col=QC.TOTAL_TIME_S, reducer: Reducer = MeanReducer()
+    logs_dir: str = "EXPERIMENT_LOGS/LINARDI/5K/LOGS_combined",
+    target_col: QC = QC.TOTAL_TIME_S,
+    reducer: Reducer = MeanReducer(),
+    max_ulisse_pruning_ratio: float = 1.0,
 ):
-    groups_dict = {ERD.METHODS_COLS: [str(SSC.METHOD_NAME)]}
+    groups_dict = {ERD.METHODS_COLS: [str(SSC.METHOD_NAME)], ERD.RUNS_COLS: [str(QC.PRUNING_RATIO), str(QC.QUERY_ID)]}
     targets_dict = {ERD.RUNS_COLS: [str(target_col)]}
-    columns = {**groups_dict, **targets_dict}
+    columns = groups_dict.copy()
+    columns[ERD.RUNS_COLS] += targets_dict[ERD.RUNS_COLS]
 
     results = ExperimentResults.load(logs_dir=logs_dir, cols=columns)
+
+    if max_ulisse_pruning_ratio < 1.0:
+        ulisse_settings_id = results.methods_df[results.methods_df[str(SSC.METHOD_NAME)].str.startswith("ulisse")]
+        ulisse_settings_id = ulisse_settings_id[str(SSC.ID)].values[0]
+        queries_to_keep = results.runs_df[
+            (results.runs_df[str(QC.SETTINGS_ID)] == ulisse_settings_id)
+            & (results.runs_df[str(QC.PRUNING_RATIO)] <= max_ulisse_pruning_ratio)
+        ][str(QC.QUERY_ID)].values
+        results.runs_df = results.runs_df[results.runs_df[str(QC.QUERY_ID)].isin(queries_to_keep)]
+    groups_dict.pop(ERD.RUNS_COLS)
 
     targets = [(ERD.RUNS_COLS, target_col, reducer) for target_col in targets_dict[ERD.RUNS_COLS]]
     groups = dict_to_tuples(groups_dict)
     reduced_values = execute_reduction([results], targets, groups)
-    print(reduced_values)
     reduced_values = simplify_method_name(reduced_values, 0)
     method_labels_keys = list(METHOD_LABELS.keys())
     reduced_values = sort_dict(reduced_values, lambda x: method_labels_keys.index(x[0][0]))
@@ -1216,6 +1230,7 @@ def experiment_ulisse_comparison(
 
 # %%
 
-experiment_ulisse_comparison()
+# experiment_ulisse_comparison(max_ulisse_pruning_ratio=0.0)
+experiment_ulisse_comparison(max_ulisse_pruning_ratio=1.0, target_col=QC.TOTAL_TIME_S)
 
 # %%
