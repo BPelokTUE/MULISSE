@@ -29,10 +29,13 @@ struct IndexTraits<Envelope> {
     using FinalizedTag = EnvelopeTag;
 };
 
-/** @brief Interface for finalized indexes */
+/**
+ * @brief Interface for finalized indexes
+ * @tparam T Traits of the entries in the index
+ * */
 template <typename T>
-    requires ValidSaxTraitsTag<T>
-class IFinalizedIndex : public ISearchMethod {
+    requires ValidEntryTraitsTag<T>
+class IFinalizedIndex {
    public:
     virtual ~IFinalizedIndex() = default;
 

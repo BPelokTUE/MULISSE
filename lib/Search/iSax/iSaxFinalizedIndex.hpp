@@ -66,7 +66,7 @@ CEREAL_REGISTER_TYPE(SeriesISaxEnvelopeProperties)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(SeriesISaxProperties, SeriesISaxEnvelopeProperties)
 
 template <typename FTag>
-    requires ValidSaxTraitsTag<FTag>
+    requires ValidEntryTraitsTag<FTag>
 struct PQueueISaxEntry {
     using iSaxType = typename SaxTraits<FTag>::iSaxType;
 
@@ -78,7 +78,7 @@ struct PQueueISaxEntry {
 };
 
 template <typename FTag>
-    requires ValidSaxTraitsTag<FTag>
+    requires ValidEntryTraitsTag<FTag>
 class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
     using iSaxType = typename SaxTraits<FTag>::iSaxType;
     using SymbolType = typename SaxTraits<FTag>::SymbolType;
@@ -125,11 +125,48 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
                                                                     vec<iSaxType> isax_words, MtsNumChannelsT c,
                                                                     SaxSegIndT s) const;
 
-    vec<SearchResult> search(const vec<vec<Real>>& query, const SearchOptions& opts,
-                             std::ifstream& dataset_ifs) const override {
-        uint series_len = m_series_isax_prop->series_len;
-        uint segment_len = m_series_isax_prop->segment_len;
-        MtsNumChannelsT num_channels = m_series_isax_prop->num_channels;
+    const vec<vec<vec<SymbolType>>>& get_first_layer_symbols() const { return m_first_layer_symbols; }
+
+    SaxNumBitsT get_first_layer_num_bits() const { return m_first_layer_num_bits; }
+
+    const SeriesISaxProperties* get_series_isax_prop() const { return m_series_isax_prop.get(); }
+
+    const iSaxFinalizedNode<FTag>* get_first_layer_node(size_t ind) const { return m_first_layer_nodes[ind].get(); }
+
+   private:
+    vec<vec<vec<SymbolType>>> m_first_layer_symbols;
+    vec<uptr<iSaxFinalizedNode<FTag>>> m_first_layer_nodes;
+    SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
+    vec<Real> m_breakpoints;
+    uptr<SeriesISaxProperties> m_series_isax_prop;
+
+    std::pair<int, int> get_limit_breakpoint_indexes(SymbolType symbol, uint num_shift) const;
+
+    MAKE_SERIALIZABLE((m_series_isax_prop, m_first_layer_symbols, m_first_layer_nodes, m_first_layer_num_bits,
+                       m_alphabet_num_bits, m_breakpoints));
+};
+
+template <typename FTag, SearchType S, DistanceType D>
+    requires ValidEntryTraitsTag<FTag>
+class iSaxIndexSearch : public ISearchMethod<S, D> {
+    using iSaxType = typename SaxTraits<FTag>::iSaxType;
+    using SymbolType = typename SaxTraits<FTag>::SymbolType;
+
+   public:
+    /**
+     * @brief Construct a new iSaxIndexSearch object
+     * @param index The iSAX index to use for searching
+     */
+    iSaxIndexSearch(uptr<iSaxFinalizedIndex<FTag>> index) : m_index(std::move(index)) {}
+
+    vec<SearchResult> search(const vec<vec<Real>>& query, const SearchOptions& opts, ResultSet<S>& result_set,
+                             const DistanceMeasure<S, D>& distance_measure, std::ifstream& dataset_ifs) const override {
+        auto* series_isax_prop = m_index->get_series_isax_prop();
+        uint series_len = series_isax_prop->series_len;
+        uint segment_len = series_isax_prop->segment_len;
+        MtsNumChannelsT num_channels = series_isax_prop->num_channels;
+        SaxNumBitsT first_layer_num_bits = m_index->get_first_layer_num_bits();
+        auto& first_layer_symbols = m_index->get_first_layer_symbols();
 
         assert(query.size() == num_channels);
 
@@ -144,23 +181,21 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
             query_len = std::max(query_len, query[c].size());
         }
 
-        IDistanceMeasure* distance_measure = opts.distance_measure.get();
-        IResultSet* result_set = opts.result_set.get();
-
         // Go over first layer, calculate MINDIST and iSAX words, push to priority queue
         logger.start_timer(QC::FIRST_LAYER_TIME_S);
-        for (size_t i = 0; i < m_first_layer_symbols.size(); ++i) {
+        for (size_t i = 0; i < first_layer_symbols.size(); ++i) {
             Real min_dist_squared = 0;
             vec<iSaxType> isax_words(num_channels);
 
             for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
                 for (SaxSegIndT s = 0; s < query_paa[c].size(); ++s) {
-                    auto [lower, upper] = get_segment_limits(m_first_layer_num_bits, m_first_layer_symbols[i][c][s]);
-                    min_dist_squared += distance_measure->min_dist_squared(query_paa[c][s], lower, upper);
+                    auto [lower, upper] =
+                        m_index->get_segment_limits(first_layer_num_bits, first_layer_symbols[i][c][s]);
+                    min_dist_squared += distance_measure.min_dist_squared(query_paa[c][s], lower, upper);
                 }
-                isax_words[c] = iSaxType(m_first_layer_symbols[i][c], m_first_layer_num_bits);
+                isax_words[c] = iSaxType(first_layer_symbols[i][c], first_layer_num_bits);
             }
-            pq.push({min_dist_squared * segment_len, isax_words, m_first_layer_nodes[i].get()});
+            pq.push({min_dist_squared * segment_len, isax_words, m_index->get_first_layer_node(i)});
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
 
@@ -170,7 +205,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
             pq.pop();
             size_t pq_size = pq.size();
 
-            if (min_dist_squared >= result_set->get_distance_lb()) break;
+            if (min_dist_squared >= result_set.get_distance_lb()) break;
 
             if (!(node->is_leaf())) {
                 auto [s, c] = node->get_split_ind();
@@ -181,20 +216,20 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
                     pq.push({min_dist_squared, isax_words, right});
                 } else {
                     uint num_bits = isax_words[c].get_num_bits()[s];
-                    auto limits = get_segment_limits(num_bits, isax_words[c].symbol_no_shift(s));
-                    Real prev_dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
+                    auto limits = m_index->get_segment_limits(num_bits, isax_words[c].symbol_no_shift(s));
+                    Real prev_dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second);
                     ++num_bits;
 
-                    auto [left_isax_words, right_isax_words] = get_children_isax_words(node, isax_words, c, s);
+                    auto [left_isax_words, right_isax_words] = m_index->get_children_isax_words(node, isax_words, c, s);
 
                     // Left child
-                    limits = get_segment_limits(num_bits, left_isax_words[c].symbol_no_shift(s));
-                    Real dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
+                    limits = m_index->get_segment_limits(num_bits, left_isax_words[c].symbol_no_shift(s));
+                    Real dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second);
                     pq.push({min_dist_squared + segment_len * (dist - prev_dist), left_isax_words, left});
 
                     // Right child
-                    limits = get_segment_limits(num_bits, right_isax_words[c].symbol_no_shift(s));
-                    dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
+                    limits = m_index->get_segment_limits(num_bits, right_isax_words[c].symbol_no_shift(s));
+                    dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second);
                     pq.push({min_dist_squared + segment_len * (dist - prev_dist), right_isax_words, right});
                 }
             } else {
@@ -215,7 +250,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
                     logger.stop_timer(QC::IO_TIME_S);
 
                     logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-                    distance_measure->update_result_set(result_set, subs_info, query, subsequence);
+                    distance_measure.update_result_set(result_set, subs_info, query, subsequence);
                     logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
                 }
                 logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED, subsequence_infos.size());
@@ -225,28 +260,20 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
         }
         logger.stop_timer(QC::TREE_TRAVERSAL_TIME_S);
 
-        return result_set->get_results();
+        return result_set.get_results();
     }
 
-    const vec<vec<vec<SymbolType>>>& get_first_layer_symbols() const { return m_first_layer_symbols; }
-
-    SaxNumBitsT get_first_layer_num_bits() const { return m_first_layer_num_bits; }
-
-    const iSaxFinalizedNode<FTag>* get_first_layer_node(size_t ind) const { return m_first_layer_nodes[ind].get(); }
-
    private:
-    vec<vec<vec<SymbolType>>> m_first_layer_symbols;
-    vec<uptr<iSaxFinalizedNode<FTag>>> m_first_layer_nodes;
-    SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
-    vec<Real> m_breakpoints;
-    uptr<SeriesISaxProperties> m_series_isax_prop;
+    uptr<iSaxFinalizedIndex<FTag>> m_index;
 
-    std::pair<int, int> get_limit_breakpoint_indexes(SymbolType symbol, uint num_shift) const;
-
-    bool skip_entry(uint query_len, uint series_len, const SubsequenceInfo& subs_info) const;
-
-    MAKE_SERIALIZABLE((m_series_isax_prop, m_first_layer_symbols, m_first_layer_nodes, m_first_layer_num_bits,
-                       m_alphabet_num_bits, m_breakpoints));
+    bool skip_entry(uint query_len, uint series_len, const SubsequenceInfo& subs_info) const {
+        if constexpr (std::is_same_v<FTag, PaaTag>) {
+            return subs_info.length != query_len;
+        } else if constexpr (std::is_same_v<FTag, EnvelopeTag>) {
+            return series_len - subs_info.start_pos < query_len;
+        }
+        return false;
+    }
 };
 
 #endif  // ISAX_FINALIZED_INDEX_HPP

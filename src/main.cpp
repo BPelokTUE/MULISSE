@@ -11,6 +11,8 @@
 #include "Modules/IndexStats.hpp"
 #include "Modules/CalcFfts.hpp"
 #include "Modules/Searching.hpp"
+#include "Search/DistanceMeasure.hpp"
+#include "Search/ResultSet.hpp"
 #include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
@@ -366,39 +368,44 @@ int main(int argc, char **argv) {
         }
         case SEARCH: {
             SearchType search_type = STR_TO_SEARCH_TYPE.at(search_type_str);
-            IDistanceMeasure *distance_measure;
-            switch (STR_TO_DISTANCE_TYPE.at(distance_measure_str)) {
+            DistanceType distance_type = STR_TO_DISTANCE_TYPE.at(distance_measure_str);
+
+            SearchOptions search_options = {
+                .search_method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str),
+                .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
+                .search_type = search_type,
+                .distance_type = distance_type,
+                .knn_k = knn_k,
+                .r_range_r = r_range_r,
+                .exact = !approximate,
+                .normalized = !unnormalized,
+            };
+
+            switch (distance_type) {
                 case ED:
-                    distance_measure = new EuclideanDistance(!unnormalized, early_abandon);
-                    break;
+                    if (search_type == KNN) {
+                        ResultSet<KNN> knn_result_set(knn_k);
+                        DistanceMeasure<KNN, ED> distance_measure(!unnormalized, early_abandon);
+                        return search<KNN, ED>(search_options, knn_result_set, distance_measure);
+                    } else {  // search_type == R_RANGE
+                        ResultSet<R_RANGE> result_set(r_range_r);
+                        DistanceMeasure<R_RANGE, ED> distance_measure(!unnormalized, early_abandon);
+                        return search<R_RANGE, ED>(search_options, result_set, distance_measure);
+                    }
                 case MASS:
-                    distance_measure = new EuclideanDistanceWMass(!unnormalized);
-                    break;
+                    if (STR_TO_SEARCH_TYPE.at(search_type_str) == KNN) {
+                        ResultSet<KNN> knn_result_set(knn_k);
+                        DistanceMeasure<KNN, MASS> distance_measure(!unnormalized);
+                        return search<KNN, MASS>(search_options, knn_result_set, distance_measure);
+                    } else {  // search_type == R_RANGE
+                        ResultSet<R_RANGE> result_set(r_range_r);
+                        DistanceMeasure<R_RANGE, MASS> distance_measure(!unnormalized);
+                        return search<R_RANGE, MASS>(search_options, result_set, distance_measure);
+                    }
                 default:
                     std::cerr << "Distance measure \"" << distance_measure_str << "\" is not implemented\n";
                     return 1;
             }
-            IResultSet *result_set;
-            switch (search_type) {
-                case KNN:
-                    result_set = new KnnResultSet(knn_k);
-                    break;
-                case R_RANGE:
-                    result_set = new RRangeResultSet(r_range_r);
-                    break;
-                default:
-                    std::cerr << "Search type \"" << search_type_str << "\" is not implemented\n";
-                    return 1;
-            }
-            SearchOptions search_options = {
-                .search_method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str),
-                .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
-                .exact = !approximate,
-                .normalized = !unnormalized,
-                .result_set = uptr<IResultSet>(result_set),
-                .distance_measure = uptr<IDistanceMeasure>(distance_measure),
-            };
-            return search(search_options);
         }
     }
 

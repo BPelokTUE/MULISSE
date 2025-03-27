@@ -264,46 +264,31 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
         num_queries /= RS.m_dataset_props.num_channels;
     }
     // Determine query params (r or k)
-    Real r_range_r = 0;
-    uint knn_k = 0;
-    SearchType search_type = search_options.result_set->get_type();
-    switch (search_type) {
-        case SearchType::R_RANGE:
-            r_range_r = static_cast<RRangeResultSet *>(search_options.result_set.get())->get_r();
-            break;
-        case SearchType::KNN:
-            knn_k = static_cast<KnnResultSet *>(search_options.result_set.get())->get_k();
-            break;
-        default:
-            break;
-    }
+    Real r_range_r = search_options.search_type == SearchType::R_RANGE ? search_options.r_range_r : 0;
+    uint knn_k = search_options.search_type == SearchType::KNN ? search_options.knn_k : 0;
 
     str early_abandon_str = "";
-    DistanceType distance_type = search_options.distance_measure->get_type();
-    if (distance_type == DistanceType::ED) {
-        auto *ed = static_cast<EuclideanDistance *>(search_options.distance_measure.get());
-        early_abandon_str = to_string(ed->uses_early_abandoning());
-    }
+    if (search_options.distance_type == DistanceType::ED)
+        early_abandon_str = to_string(search_options.use_early_abandoning);
 
-    instance.write_row(
-        search_settings_path,
-        {
-            {SSC::ID, instance.m_search_settings_id_str},
-            {SSC::INDEX_FILE, RS.m_index_file},
-            {SSC::DATASET_FILE, RS.m_dataset_props.file},
-            {SSC::FFTS_FILE, RS.m_ffts_file},
-            {SSC::QUERY_FILE, RS.m_query_properties.file},
-            {SSC::NUM_QUERIES, to_string(num_queries)},
-            {SSC::QUERY_TYPE, SEARCH_TYPE_TO_STR.at(search_type)},
-            {SSC::R_RANGE_R, format_num_param(r_range_r)},
-            {SSC::KNN_K, format_num_param(knn_k)},
-            {SSC::EXACT, to_string(search_options.exact)},
-            {SSC::NORMALIZED, to_string(search_options.normalized)},
-            {SSC::SEARCH_METHOD, SEARCH_METHOD_TYPE_TO_STR.at(search_options.search_method_type)},
-            {SSC::DISTANCE_MEASURE, DISTANCE_TYPE_TO_STR.at(search_options.distance_measure->get_type())},
-            {SSC::EARLY_ABANDONING, early_abandon_str},
-        },
-        SEARCH_SETTINGS_COL_ENUMS);
+    instance.write_row(search_settings_path,
+                       {
+                           {SSC::ID, instance.m_search_settings_id_str},
+                           {SSC::INDEX_FILE, RS.m_index_file},
+                           {SSC::DATASET_FILE, RS.m_dataset_props.file},
+                           {SSC::FFTS_FILE, RS.m_ffts_file},
+                           {SSC::QUERY_FILE, RS.m_query_properties.file},
+                           {SSC::NUM_QUERIES, to_string(num_queries)},
+                           {SSC::QUERY_TYPE, SEARCH_TYPE_TO_STR.at(search_options.search_type)},
+                           {SSC::R_RANGE_R, format_num_param(r_range_r)},
+                           {SSC::KNN_K, format_num_param(knn_k)},
+                           {SSC::EXACT, to_string(search_options.exact)},
+                           {SSC::NORMALIZED, to_string(search_options.normalized)},
+                           {SSC::SEARCH_METHOD, SEARCH_METHOD_TYPE_TO_STR.at(search_options.search_method_type)},
+                           {SSC::DISTANCE_MEASURE, DISTANCE_TYPE_TO_STR.at(search_options.distance_type)},
+                           {SSC::EARLY_ABANDONING, early_abandon_str},
+                       },
+                       SEARCH_SETTINGS_COL_ENUMS);
 
     // Setup for run logging
     instance.reset_entry();

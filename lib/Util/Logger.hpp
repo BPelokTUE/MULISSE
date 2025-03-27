@@ -5,6 +5,8 @@
 
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
+#include "Search/Options/DistanceType.hpp"
+#include "Search/Options/SearchType.hpp"
 #include "Search/Options/QuerySetOptions.hpp"
 #include "Search/Options/SearchOptions.hpp"
 #include "Search/Options/IndexOptions.hpp"

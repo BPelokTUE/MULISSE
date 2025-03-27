@@ -101,7 +101,7 @@ struct SaxTraits<struct EnvelopeTag> {
 };
 
 template <typename FTag>
-concept ValidSaxTraitsTag = std::is_same_v<FTag, PaaTag> || std::is_same_v<FTag, EnvelopeTag>;
+concept ValidEntryTraitsTag = std::is_same_v<FTag, PaaTag> || std::is_same_v<FTag, EnvelopeTag>;
 
 /**
  * @brief Base class for nodes in a iSaxFinalizedIndex
@@ -111,7 +111,7 @@ concept ValidSaxTraitsTag = std::is_same_v<FTag, PaaTag> || std::is_same_v<FTag,
  * @tparam FTag The SAX traits to use
  */
 template <typename FTag>
-    requires ValidSaxTraitsTag<FTag>
+    requires ValidEntryTraitsTag<FTag>
 class iSaxFinalizedNode : public iSaxNode {
    public:
     virtual ~iSaxFinalizedNode() = default;
@@ -136,7 +136,7 @@ class iSaxFinalizedNode : public iSaxNode {
 };
 
 template <typename FTag>
-    requires ValidSaxTraitsTag<FTag>
+    requires ValidEntryTraitsTag<FTag>
 struct iSaxInternalNodeArgs {
     virtual ~iSaxInternalNodeArgs() = default;
 
@@ -192,7 +192,7 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxInternalNodeArgs<EnvelopeTag>, iSaxEnve
  * @tparam FTag The SAX traits to use
  * */
 template <typename FTag>
-    requires ValidSaxTraitsTag<FTag>
+    requires ValidEntryTraitsTag<FTag>
 class iSaxFinalizedInternal : public iSaxFinalizedNode<FTag> {
    public:
     iSaxFinalizedInternal() = default;
@@ -239,7 +239,7 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<EnvelopeTag>, iSaxFinaliz
  * @tparam T The SAX traits to use
  */
 template <typename T>
-    requires ValidSaxTraitsTag<T>
+    requires ValidEntryTraitsTag<T>
 class iSaxFinalizedLeaf : public iSaxFinalizedNode<T> {
    public:
     iSaxFinalizedLeaf() = default;

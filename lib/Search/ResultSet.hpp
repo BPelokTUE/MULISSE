@@ -3,121 +3,81 @@
 
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
+#include "Search/Options/SearchType.hpp"
 
-/** @brief Types of similarity search */
-enum SearchType { KNN, R_RANGE };
+template <SearchType S>
+struct ResultSetParam;
 
-DEFINE_ENUM_CONSTS_NO_EXTRA(SearchType, SEARCH_TYPE, false);
-
-/** @brief Search result */
-struct SearchResult {
-    /** @brief Position within the dataset and length of the result */
-    SubsequenceInfo subs_info;
-    /** @brief Distance of the result to the query */
-    Real distance;
-
-    /**
-     * @brief Less than operator
-     *
-     * @param other The other SearchResult to compare to
-     * @return `true` if the distance of this result is less than the distance of the other result
-     */
-    bool operator<(const SearchResult &other) const {
-        return distance < other.distance || (distance == other.distance && subs_info < other.subs_info);
-    }
+template <>
+struct ResultSetParam<KNN> {
+    using ParamType = uint;
 };
 
-/** @brief Interface for result sets */
-class IResultSet {
+template <>
+struct ResultSetParam<R_RANGE> {
+    using ParamType = Real;
+};
+
+/**
+ * @brief Template class for managing search results
+ * @tparam S The type of search (KNN or R_RANGE)
+ * */
+template <SearchType S>
+class ResultSet {
    public:
-    virtual ~IResultSet() = default;
+    using ParamType = typename ResultSetParam<S>::ParamType;
+
+    /**
+     * @brief Construct a new ResultSet object
+     * @param param The parameter of the result set (either k for kNN or r for r-range)
+     */
+    ResultSet(ParamType param) : param(param) {};
 
     /**
      * @brief Get the type of the result set
-     *
      * @return The type of the result set
      */
-    virtual SearchType get_type() const = 0;
+    SearchType get_type() const { return S; }
 
     /**
      * @brief Insert a search result into the result set
-     *
      * @param result The search result to insert
      */
-    virtual void insert(SearchResult result) = 0;
-
-    /**
-     * @brief Get the results in the result set
-     *
-     * @return The results in the result set
-     */
-    virtual vec<SearchResult> get_results() const = 0;
+    void insert(SearchResult result) {
+        if constexpr (S == KNN) {
+            auto it = std::lower_bound(m_results.begin(), m_results.end(), result);
+            m_results.insert(it, result);
+            if (m_results.size() > param) m_results.pop_back();
+        } else {  // R_RANGE
+            if (result.distance <= param) m_results.push_back(result);
+        }
+    }
 
     /**
      * @brief Get the lower bound distance of the result set
-     *
      * @return The lower bound distance of the result set; No result with a greater distance should be considered
      */
-    virtual Real get_distance_lb() const = 0;
+    inline Real get_distance_lb() const {
+        if constexpr (S == KNN) {
+            return m_results.size() < param ? INF : m_results[param - 1].distance;
+        } else {  // R_RANGE
+            return param;
+        }
+    }
+
+    /**
+     * @brief Get the results in the result set
+     * @return The results in the result set
+     */
+    const vec<SearchResult> &get_results() const { return m_results; }
 
     /** @brief Clear the result set */
-    virtual void clear() = 0;
-};
+    void clear() { m_results.clear(); }
 
-/** @brief R-range result set */
-class RRangeResultSet : public IResultSet {
-   public:
-    /**
-     * @brief Construct a new RRangeResultSet object
-     *
-     * @param r The range to find neighbors within
-     */
-    RRangeResultSet(Real r);
-
-    SearchType get_type() const override;
-
-    void insert(SearchResult result) override;
-
-    vec<SearchResult> get_results() const override;
-
-    Real get_distance_lb() const override;
-
-    void clear() override;
-
-    /** @brief Get R */
-    Real get_r() const;
+    const ParamType param;
 
    private:
     vec<SearchResult> m_results;
-    Real m_r;
-};
-
-/** @brief K-Nearest-Neighbor (kNN) result set */
-class KnnResultSet : public IResultSet {
-   public:
-    /**
-     * @brief Construct a new KnnResultSet object
-     *
-     * @param k The number of neighbors to retrieve
-     */
-    KnnResultSet(uint k);
-
-    SearchType get_type() const override;
-
-    void insert(SearchResult result) override;
-
-    vec<SearchResult> get_results() const override;
-
-    Real get_distance_lb() const override;
-
-    void clear() override;
-
-    /** @brief Get K */
-    uint get_k() const;
-
-   private:
-    vec<SearchResult> m_results;
-    uint m_k;
 };
 
 #endif  // RESULT_SET_HPP
