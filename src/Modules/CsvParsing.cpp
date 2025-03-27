@@ -47,8 +47,8 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
     }
 
     str line;
-    vec<vec<float>> mts(num_channels, vec<float>(series_len));
-    vec<vec<vec<float>>> all_mts;
+    vec<vec<Real>> mts(num_channels, vec<Real>(series_len));
+    vec<vec<vec<Real>>> all_mts;
     MtsNumChannelsT channel = 0;
     bool discard = false;
     uint length = series_len, ts_ind = 0;
@@ -59,7 +59,7 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
         if (!discard) {
             std::istringstream iss(line);
             str value;
-            double sum = 0, sum_sq = 0;
+            Real sum = 0, sum_sq = 0;
             uint ind = 0;
 
             while (std::getline(iss, value, col_sep)) {
@@ -75,9 +75,9 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
                 ++ind;
                 int start_min = std::max(0, static_cast<int>(ind) - static_cast<int>(l_max));
                 int start_max = static_cast<int>(ind) - static_cast<int>(l_min);
-                double sum_tmp = sum, sum_sq_tmp = sum_sq;
+                Real sum_tmp = sum, sum_sq_tmp = sum_sq;
                 for (int start = start_min; start <= start_max; ++start) {
-                    double sigma = calculate_mu_and_sigma(sum_tmp, sum_sq_tmp, ind - start).second;
+                    Real sigma = calculate_mu_and_sigma(sum_tmp, sum_sq_tmp, ind - start).second;
                     if (sigma < MIN_SUBS_SIGMA) {
                         discard = true;
                         goto next_channel;
@@ -117,7 +117,7 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
 
     for (uint mts_ind : mts_indexes) {
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-            dataset_ofs.write(reinterpret_cast<const char *>(all_mts[mts_ind][c].data()), sizeof(float) * series_len);
+            dataset_ofs.write(reinterpret_cast<const char *>(all_mts[mts_ind][c].data()), sizeof(Real) * series_len);
         }
     }
 

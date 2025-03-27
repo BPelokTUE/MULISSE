@@ -29,14 +29,14 @@ class IiSaxBreakpointStrategy {
      * @param alphabet_size The size of the alphabet; assumed to be a power of two
      * @return Vector of breakpoints
      */
-    virtual vec<float> get_breakpoints(SaxSymbolT alphabet_size) const = 0;
+    virtual vec<Real> get_breakpoints(SaxSymbolT alphabet_size) const = 0;
 
     /**
      * @brief Adapt the breakpoints based on dataset statistics
      * @param mu Mean of the dataset entries
      * @param sigma Standard deviation of the dataset entries
      */
-    virtual void adapt_to_dataset(float mu, float sigma) {}
+    virtual void adapt_to_dataset(Real mu, Real sigma) {}
 };
 
 /**
@@ -52,14 +52,14 @@ class EquiprobableBreakpointStrategy : public IiSaxBreakpointStrategy {
      * @param mean Mean of the normal distribution
      * @param standard_deviation Standard deviation of the normal distribution
      */
-    EquiprobableBreakpointStrategy(float mean = 0.0, float standard_deviation = 1.0);
+    EquiprobableBreakpointStrategy(Real mean = 0.0, Real standard_deviation = 1.0);
 
-    vec<float> get_breakpoints(SaxSymbolT alphabet_size) const override;
+    vec<Real> get_breakpoints(SaxSymbolT alphabet_size) const override;
 
-    void adapt_to_dataset(float mu, float sigma) override;
+    void adapt_to_dataset(Real mu, Real sigma) override;
 
    private:
-    boost::math::normal_distribution<float> m_distribution;
+    boost::math::normal_distribution<Real> m_distribution;
 };
 
 #endif  // BREAKPOINT_STRATEGY_HPP

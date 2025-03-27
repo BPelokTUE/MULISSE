@@ -46,7 +46,7 @@ void Logger::file_setup(const str &file_path, const vec<str> &header) {
 }
 
 // DatasetLogger
-RandomWalkLogAttributes::RandomWalkLogAttributes(float noise, int seed) : noise(noise), seed(seed) {}
+RandomWalkLogAttributes::RandomWalkLogAttributes(Real noise, int seed) : noise(noise), seed(seed) {}
 
 DatasetType RandomWalkLogAttributes::get_type() { return RANDOM_WALK; }
 
@@ -264,7 +264,7 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
         num_queries /= RS.m_dataset_props.num_channels;
     }
     // Determine query params (r or k)
-    DistanceT r_range_r = 0;
+    Real r_range_r = 0;
     uint knn_k = 0;
     SearchType search_type = search_options.result_set->get_type();
     switch (search_type) {
@@ -344,7 +344,7 @@ void QueryLogger::stop_timer(QC col) {
     instance.m_time_cols_duration[col] += std::chrono::duration<double>(end - instance.m_time_cols_start[col]).count();
 }
 
-void QueryLogger::log_query(const vec<vec<float>> &query) {
+void QueryLogger::log_query(const vec<vec<Real>> &query) {
     size_t query_len = 0;
     vec<str> included;
 
@@ -391,7 +391,7 @@ void QueryLogger::write_entry() {
 
     bool abandoning_used = num_points_examined < num_points_in_examined_entries;
     columns[QC::ABANDONING_RATE] = to_string(
-        abandoning_used ? 1.0 - static_cast<double>(num_points_examined) / num_points_in_examined_entries : 0.0);
+        abandoning_used ? 1.0 - static_cast<Real>(num_points_examined) / num_points_in_examined_entries : 0.0);
 
     write_row(run_log_path, columns, QUERY_COL_ENUMS);
 }
@@ -403,14 +403,14 @@ AttributeStats::AttributeStats() {
     max = sum = sum_sq = 0;
 }
 
-void AttributeStats::update(float value) {
+void AttributeStats::update(Real value) {
     min = std::min(min, value);
     max = std::max(max, value);
     sum += value;
     sum_sq += value * value;
 }
 
-void AttributeStats::update(float value, size_t count) {
+void AttributeStats::update(Real value, size_t count) {
     min = std::min(min, value);
     max = std::max(max, value);
     sum += value * count;
@@ -429,13 +429,13 @@ void QueryStats::calculate() {
     rc_using_mean = dist_stats.mean / dist_stats.min;
 }
 
-void IndexStats::update_leaf_stats(float fill, float height) {
+void IndexStats::update_leaf_stats(Real fill, Real height) {
     leaf_size_stats.update(fill);
     leaf_height_stats.update(height);
     ++leaf_count;
 }
 
-void IndexStats::update_seg_stats(float lower, float upper, size_t count) {
+void IndexStats::update_seg_stats(Real lower, Real upper, size_t count) {
     if (count == 0) return;
 
     bool lower_inf = lower == -INF, upper_inf = upper == INF;
@@ -468,7 +468,7 @@ void IndexStats::calculate() {
 
 using QSTC = QueryStatsColumn;
 
-void QueryStatsLogger::write_entry(uint query_id, const vec<vec<float>> &query, QueryStats stats, bool normalized) {
+void QueryStatsLogger::write_entry(uint query_id, const vec<vec<Real>> &query, QueryStats stats, bool normalized) {
 #ifndef DISABLE_LOGGING
     QueryStatsLogger instance;
     auto &RS = RunSettings::get_instance();

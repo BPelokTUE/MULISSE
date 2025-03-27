@@ -9,9 +9,9 @@
 
 # Default value for including scripts/slurm
 
-local_path=$(cat scripts/local_settings.json | jq '.["REPO_PATH"]' | tr -d '"')
-remote_url=$(cat scripts/local_settings.json | jq '.["REMOTE_URL"]' | tr -d '"')
-remote_path=$(cat scripts/local_settings.json | jq '.["REMOTE_PATH"]' | tr -d '"')
+local_path=$(cat local_settings.json | jq '.["REPO_PATH"]' | tr -d '"')
+remote_url=$(cat local_settings.json | jq '.["REMOTE_URL"]' | tr -d '"')
+remote_path=$(cat local_settings.json | jq '.["REMOTE_PATH"]' | tr -d '"')
 
 include=(lib src extern tests CMakeLists.txt scripts/py scripts/sh)
 run_configs=$(ls scripts/run_configs | grep -v "local")

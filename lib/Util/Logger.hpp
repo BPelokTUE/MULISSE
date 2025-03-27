@@ -256,11 +256,11 @@ struct IDatasetLogAttributes {
 };
 
 struct RandomWalkLogAttributes : IDatasetLogAttributes {
-    RandomWalkLogAttributes(float noise, int seed);
+    RandomWalkLogAttributes(Real noise, int seed);
 
     DatasetType get_type() override;
 
-    float noise;
+    Real noise;
     int seed;
 };
 
@@ -413,7 +413,7 @@ class QueryLogger : public Logger {
      * @brief Log information about the query into the current run entry
      * @param query The query to log
      */
-    void log_query(const vec<vec<float>> &query);
+    void log_query(const vec<vec<Real>> &query);
 
     /**
      * @brief Log information about the results of the search into the current run entry
@@ -451,13 +451,13 @@ class QueryLogger : public Logger {
 // Statistics
 
 struct AttributeStats {
-    float min, max, mean, st_dev, sum, sum_sq;
+    Real min, max, mean, st_dev, sum, sum_sq;
 
     AttributeStats();
 
-    void update(float value);
+    void update(Real value);
 
-    void update(float value, size_t count);
+    void update(Real value, size_t count);
 
     void calculate(uint count);
 };
@@ -465,7 +465,7 @@ struct AttributeStats {
 struct QueryStats {
     AttributeStats dist_stats;
     size_t subs_count = 0;
-    float rc_using_max, rc_using_mean;
+    Real rc_using_max, rc_using_mean;
 
     QueryStats() = default;
 
@@ -484,9 +484,9 @@ struct IndexStats {
 
     IndexStats() = default;
 
-    void update_leaf_stats(float fill, float height);
+    void update_leaf_stats(Real fill, Real height);
 
-    void update_seg_stats(float lower, float upper, size_t count = 1);
+    void update_seg_stats(Real lower, Real upper, size_t count = 1);
 
     void calculate();
 };
@@ -501,7 +501,7 @@ class QueryStatsLogger : public Logger {
      * @param query_stats The statistics of the query
      * @param normalized Whether the query and subsequences are normalized
      * */
-    static void write_entry(uint query_id, const vec<vec<float>> &query, QueryStats stats, bool normalized);
+    static void write_entry(uint query_id, const vec<vec<Real>> &query, QueryStats stats, bool normalized);
 
    private:
     QueryStatsLogger() = default;

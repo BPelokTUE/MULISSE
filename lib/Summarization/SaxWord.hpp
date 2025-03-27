@@ -17,7 +17,7 @@ class SaxWord {
      * @param num_bits The number of bits to use for the symbols.
      * @param breakpoints The breakpoints to use for the symbols.
      */
-    SaxWord(const vec<float>& paa, SaxNumBitsT num_bits, const vec<float>& breakpoints);
+    SaxWord(const vec<Real>& paa, SaxNumBitsT num_bits, const vec<Real>& breakpoints);
 
     /**
      * @brief Default constructor

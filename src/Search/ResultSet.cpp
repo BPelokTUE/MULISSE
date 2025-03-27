@@ -5,7 +5,7 @@
 
 // RRangeResultSet
 
-RRangeResultSet::RRangeResultSet(DistanceT r) : m_r(r) {};
+RRangeResultSet::RRangeResultSet(Real r) : m_r(r) {};
 
 SearchType RRangeResultSet::get_type() const { return R_RANGE; };
 
@@ -15,11 +15,11 @@ void RRangeResultSet::insert(SearchResult result) {
 
 vec<SearchResult> RRangeResultSet::get_results() const { return m_results; };
 
-DistanceT RRangeResultSet::get_distance_lb() const { return m_r; };
+Real RRangeResultSet::get_distance_lb() const { return m_r; };
 
 void RRangeResultSet::clear() { m_results.clear(); }
 
-DistanceT RRangeResultSet::get_r() const { return m_r; };
+Real RRangeResultSet::get_r() const { return m_r; };
 
 // KnnResultSet
 
@@ -35,7 +35,7 @@ void KnnResultSet::insert(SearchResult result) {
 
 vec<SearchResult> KnnResultSet::get_results() const { return m_results; };
 
-DistanceT KnnResultSet::get_distance_lb() const { return m_results.size() < m_k ? INF : m_results[m_k - 1].distance; };
+Real KnnResultSet::get_distance_lb() const { return m_results.size() < m_k ? INF : m_results[m_k - 1].distance; };
 
 void KnnResultSet::clear() { m_results.clear(); }
 

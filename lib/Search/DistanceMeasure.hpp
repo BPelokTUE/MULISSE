@@ -24,7 +24,7 @@ class IDistanceMeasure {
      * @param upper Upper bound of the segment
      * @return Distance squared
      */
-    virtual DistanceT min_dist_squared(const float paa, float lower, float upper) const = 0;
+    virtual Real min_dist_squared(const Real paa, Real lower, Real upper) const = 0;
 
     /**
      * @brief Update the result set with the subsequences from the time series
@@ -35,8 +35,8 @@ class IDistanceMeasure {
      * @param mts Time series to update the result set with
      * @return true if the result set was updated, false otherwise
      */
-    virtual bool update_result_set(IResultSet *result_set, SubsequenceInfo subs_info, const vec<vec<float>> &query,
-                                   const vec<vec<float>> &mts) = 0;
+    virtual bool update_result_set(IResultSet *result_set, SubsequenceInfo subs_info, const vec<vec<Real>> &query,
+                                   const vec<vec<Real>> &mts) = 0;
 
     /** @brief Get the type of the distance measure */
     virtual DistanceType get_type() const = 0;
@@ -46,10 +46,10 @@ class EuclideanDistance : public IDistanceMeasure {
    public:
     EuclideanDistance(bool m_normalized, bool use_early_abandoning = true);
 
-    DistanceT min_dist_squared(const float paa, float lower, float upper) const override;
+    Real min_dist_squared(const Real paa, Real lower, Real upper) const override;
 
-    bool update_result_set(IResultSet *result_set, SubsequenceInfo subs_info, const vec<vec<float>> &query,
-                           const vec<vec<float>> &mts) override;
+    bool update_result_set(IResultSet *result_set, SubsequenceInfo subs_info, const vec<vec<Real>> &query,
+                           const vec<vec<Real>> &mts) override;
 
     DistanceType get_type() const override;
 
@@ -66,14 +66,14 @@ class EuclideanDistanceWMass : public EuclideanDistance {
    public:
     EuclideanDistanceWMass(bool normalized);
 
-    bool update_result_set(IResultSet *result_set, SubsequenceInfo subs_info, const vec<vec<float>> &query,
-                           const vec<vec<float>> &mts) override;
+    bool update_result_set(IResultSet *result_set, SubsequenceInfo subs_info, const vec<vec<Real>> &query,
+                           const vec<vec<Real>> &mts) override;
 
     DistanceType get_type() const override;
 
    private:
-    vec<DistanceT> calculate_dot_products(const vec<DistanceT> &query_channel, const vec<DistanceT> &mts_channel,
-                                          SubsequenceInfo subs_info, MtsNumChannelsT channel_ind) const;
+    vec<Real> calculate_dot_products(const vec<Real> &query_channel, const vec<Real> &mts_channel,
+                                     SubsequenceInfo subs_info, MtsNumChannelsT channel_ind) const;
 };
 
 #endif  // DISTANCE_MEASURE_HPP

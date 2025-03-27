@@ -3,6 +3,8 @@
 
 #include <fftw3.h>
 
+#include "Util/typedefs.hpp"
+
 /** @brief A RAII wrapper for a fixed-size FFTW complex array */
 class FftArray {
    public:
@@ -18,16 +20,16 @@ class FftArray {
     // Move constructor
     FftArray(FftArray&& other) noexcept;
 
-    fftw_complex* data() noexcept;
-    const fftw_complex* data() const noexcept;
+    fftwr_complex* data() noexcept;
+    const fftwr_complex* data() const noexcept;
 
-    fftw_complex& operator[](size_t i);
-    const fftw_complex& operator[](size_t i) const;
+    fftwr_complex& operator[](size_t i);
+    const fftwr_complex& operator[](size_t i) const;
 
     const size_t size() const noexcept;
 
    private:
-    fftw_complex* m_data;
+    fftwr_complex* m_data;
     size_t m_size;
 };
 

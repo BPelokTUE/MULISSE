@@ -28,7 +28,7 @@ COPY . .
 # Overwrite `local_settings.json` with `docker_settings.json`
 # NOTE: the dataset files have to be mounted to the path specified in `docker_settings.json`, using:
 #       `docker run -v /local_path/to/dataset:/container_path/to/dataset ...`
-RUN mv ./scripts/docker_settings.json ./scripts/local_settings.json
+RUN mv ./docker_settings.json ./local_settings.json
 
 # Define the entrypoint and default command
 ENTRYPOINT ["/mulisse/scripts/sh/entrypoint.sh"]

@@ -14,7 +14,7 @@ struct SearchResult {
     /** @brief Position within the dataset and length of the result */
     SubsequenceInfo subs_info;
     /** @brief Distance of the result to the query */
-    DistanceT distance;
+    Real distance;
 
     /**
      * @brief Less than operator
@@ -58,7 +58,7 @@ class IResultSet {
      *
      * @return The lower bound distance of the result set; No result with a greater distance should be considered
      */
-    virtual DistanceT get_distance_lb() const = 0;
+    virtual Real get_distance_lb() const = 0;
 
     /** @brief Clear the result set */
     virtual void clear() = 0;
@@ -72,7 +72,7 @@ class RRangeResultSet : public IResultSet {
      *
      * @param r The range to find neighbors within
      */
-    RRangeResultSet(DistanceT r);
+    RRangeResultSet(Real r);
 
     SearchType get_type() const override;
 
@@ -80,16 +80,16 @@ class RRangeResultSet : public IResultSet {
 
     vec<SearchResult> get_results() const override;
 
-    DistanceT get_distance_lb() const override;
+    Real get_distance_lb() const override;
 
     void clear() override;
 
     /** @brief Get R */
-    DistanceT get_r() const;
+    Real get_r() const;
 
    private:
     vec<SearchResult> m_results;
-    DistanceT m_r;
+    Real m_r;
 };
 
 /** @brief K-Nearest-Neighbor (kNN) result set */
@@ -108,7 +108,7 @@ class KnnResultSet : public IResultSet {
 
     vec<SearchResult> get_results() const override;
 
-    DistanceT get_distance_lb() const override;
+    Real get_distance_lb() const override;
 
     void clear() override;
 

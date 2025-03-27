@@ -55,7 +55,7 @@ Options:
 
 Creates a dataset from a list of `.csv` files, where each file corresponds to one channel. If time series are too long they are truncated to the passed length. Time series are discarded if any of the following applies:
 - Any of the channels is too short
-- Any of the channels contains cells which cannot be converted to `float`
+- Any of the channels contains cells which cannot be converted to `Real`
 - Any of the channels contains at least one subsequence of length `low_sd_len` where the standard deviation is lower than `MIN_SUBS_SIGMA=1e-3`
 
 ```

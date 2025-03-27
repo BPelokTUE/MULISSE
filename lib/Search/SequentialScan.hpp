@@ -10,7 +10,7 @@ class SequentialScan : public ISearchMethod {
    public:
     SequentialScan() = default;
 
-    vec<SearchResult> search(const vec<vec<float>> &query, const SearchOptions &opts,
+    vec<SearchResult> search(const vec<vec<Real>> &query, const SearchOptions &opts,
                              std::ifstream &dataset_ifs) const override;
 };
 

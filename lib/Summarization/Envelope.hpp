@@ -11,11 +11,11 @@
  */
 struct Envelope : EntryData {
     /** @brief Lower bounds of the envelope */
-    vec<float> lower;
+    vec<Real> lower;
     /** @brief Upper bounds of the envelope */
-    vec<float> upper;
+    vec<Real> upper;
 
-    Envelope(vec<float> lower, vec<float> upper);
+    Envelope(vec<Real> lower, vec<Real> upper);
 
     Envelope() = default;
 
@@ -23,7 +23,7 @@ struct Envelope : EntryData {
 
     void resize(size_t new_size) override;
 
-    vec<float> get_isax_input() const override;
+    vec<Real> get_isax_input() const override;
 
     template <class Archive>
     void serialize(Archive &ar) {
@@ -62,7 +62,7 @@ struct UlisseEnvelopeParams {
  * @param env_params The parameters for the envelope computation
  * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively
  */
-vec<Envelope> ulisse_envelope_raw(const vec<float> &ts, const UlisseEnvelopeParams &env_params);
+vec<Envelope> ulisse_envelope_raw(const vec<Real> &ts, const UlisseEnvelopeParams &env_params);
 
 /**
  * @brief Compute the ULISSE envelopes of subsequences of a time series WITH normalization
@@ -74,7 +74,7 @@ vec<Envelope> ulisse_envelope_raw(const vec<float> &ts, const UlisseEnvelopePara
  * @param env_params The parameters for the envelope computation
  * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively
  */
-vec<Envelope> ulisse_envelope_normalized(const vec<float> &ts, const UlisseEnvelopeParams &env_params);
+vec<Envelope> ulisse_envelope_normalized(const vec<Real> &ts, const UlisseEnvelopeParams &env_params);
 
 /** @brief Envelope generator for iSAX (ULISSE) envelopes */
 class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
@@ -87,13 +87,13 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
      */
     EnvelopeEntryGenerator(MtsNumChannelsT num_channels, bool normalized, const UlisseEnvelopeParams &uli_params);
 
-    vec<IndexEntry<Envelope>> get_entries(const vec<vec<float>> &mts, uint series_ind) override;
+    vec<IndexEntry<Envelope>> get_entries(const vec<vec<Real>> &mts, uint series_ind) override;
 
    private:
     MtsNumChannelsT m_num_channels;
     bool m_normalized;
     UlisseEnvelopeParams m_uli_params;
-    vec<Envelope> (*m_envelope_func)(const vec<float> &, const UlisseEnvelopeParams &);
+    vec<Envelope> (*m_envelope_func)(const vec<Real> &, const UlisseEnvelopeParams &);
 };
 
 #endif  // ENVELOPE_HPP

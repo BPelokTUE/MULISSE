@@ -152,7 +152,7 @@ class IIndex {
                    MtsNumChannelsT num_channels, uint series_len, bool adapt) {
         auto &logger = IndexLogger::get_instance();
 
-        size_t N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(float),
+        size_t N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(Real),
                series_size = channel_size * num_channels, num_series = N / series_size;
 
         vec<IndexEntry<T>> dataset_entries;
@@ -162,7 +162,7 @@ class IIndex {
             std::ifstream data_stream(dataset_path, std::ios::binary);
             OMP_PRAGMA(omp for)
             for (size_t i = 0; i < num_series; ++i) {
-                vec<vec<float>> mts(num_channels, vec<float>(series_len));
+                vec<vec<Real>> mts(num_channels, vec<Real>(series_len));
                 data_stream.seekg(i * series_size);
                 for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
                     data_stream.read(reinterpret_cast<char *>(mts[c].data()), channel_size);

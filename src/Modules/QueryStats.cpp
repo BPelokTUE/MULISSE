@@ -8,11 +8,11 @@
 #include "Util/Logger.hpp"
 #include "Util/RunSettings.hpp"
 
-void update_query_stats(QueryStats &stats, const vec<vec<float>> &query, const vec<vec<float>> &mts, bool normalized) {
+void update_query_stats(QueryStats &stats, const vec<vec<Real>> &query, const vec<vec<Real>> &mts, bool normalized) {
     int num_start_pos = 0, mts_len, query_len;
 
     if (normalized) {
-        vec<DistanceT> sums(query.size()), sq_sums(query.size());
+        vec<Real> sums(query.size()), sq_sums(query.size());
         for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
             if (!(query[c].empty())) {
                 query_len = query[c].size();
@@ -27,17 +27,17 @@ void update_query_stats(QueryStats &stats, const vec<vec<float>> &query, const v
         }
 
         for (int start_pos = 0; start_pos < num_start_pos; ++start_pos) {
-            DistanceT dist_squared = 0;
+            Real dist_squared = 0;
             for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
                 if (query[c].empty()) continue;
 
                 auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], query_len);
                 for (uint i = 0; i < query_len; ++i) {
-                    DistanceT diff = (mts[c][start_pos + i] - mu) / sigma - query[c][i];
+                    Real diff = (mts[c][start_pos + i] - mu) / sigma - query[c][i];
                     dist_squared += diff * diff;
                 }
             }
-            float dist = std::sqrt(dist_squared);
+            Real dist = std::sqrt(dist_squared);
             stats.dist_stats.update(dist);
             stats.subs_count++;
 
@@ -62,14 +62,14 @@ int calculate_query_stats(bool normalized) {
 
     std::ifstream dataset_ifs(RS.get_dataset_path(), std::ios::binary);
     std::ifstream query_ifs(RS.get_query_path());
-    vec<vec<float>> query(num_channels);
+    vec<vec<Real>> query(num_channels);
 
     size_t query_count = 0;
     for (MtsNumChannelsT c = 0; !query_ifs.eof(); c = (c + 1) % num_channels) {
         str line;
         std::getline(query_ifs, line);
         std::istringstream iss(line);
-        float value, sum = 0, sq_sum = 0;
+        Real value, sum = 0, sq_sum = 0;
 
         query[c].clear();
         while (iss >> value) {
@@ -86,13 +86,13 @@ int calculate_query_stats(bool normalized) {
             dataset_ifs.seekg(0);
             QueryStats stats;
             for (uint i = 0; i < num_series; ++i) {
-                vec<vec<float>> mts(num_channels);
+                vec<vec<Real>> mts(num_channels);
                 for (uint c = 0; c < num_channels; ++c) {
                     if (!query[c].empty()) {
                         mts[c].resize(series_len);
-                        dataset_ifs.read(reinterpret_cast<char *>(mts[c].data()), series_len * sizeof(float));
+                        dataset_ifs.read(reinterpret_cast<char *>(mts[c].data()), series_len * sizeof(Real));
                     } else {
-                        dataset_ifs.seekg(series_len * sizeof(float), std::ios::cur);
+                        dataset_ifs.seekg(series_len * sizeof(Real), std::ios::cur);
                     }
                 }
                 update_query_stats(stats, query, mts, normalized);

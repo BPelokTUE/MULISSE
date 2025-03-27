@@ -71,18 +71,18 @@ class EntropyMaximizingStrategy : public IiSaxSplitStrategy<T> {
     SaxSplitIndex get_split_ind(const iSaxSplittableLeaf<T> *leaf, const vec<iSaxWord> &isax_mins) override {
         auto &RS = RunSettings::get_instance();
 
-        const vec<float> &breakpoints = RS.get_breakpoints();
+        const vec<Real> &breakpoints = RS.get_breakpoints();
         uint br_ind;
 
         SaxSplitIndex split_ind{0, 0};
-        float max_score = -INF;
+        Real max_score = -INF;
         SaxNumBitsT min_num_bits = RS.get_isax_props().breakpoint_num_bits;
 
         const vec<vec<T>> &summaries = leaf->get_summaries();
         for (MtsNumChannelsT c = 0; c < RS.get_dataset_props().num_channels; ++c) {
             vec<SaxNumBitsT> num_bits = isax_mins[c].get_num_bits();
             for (SaxSegIndT s = 0; s < RS.get_isax_props().num_segments; ++s) {
-                float sum = 0, sum_sq = 0, score = 0;
+                Real sum = 0, sum_sq = 0, score = 0;
                 uint count = 0;
 
                 uint alphabet_ratio = (breakpoints.size() + 1) / (1 << (num_bits[s] + 1));
@@ -91,24 +91,24 @@ class EntropyMaximizingStrategy : public IiSaxSplitStrategy<T> {
 
                 br_ind = alphabet_ratio - 1;
 
-                vec<float> isax_input_values(summaries.size());
+                vec<Real> isax_input_values(summaries.size());
                 for (uint i = 0; i < summaries.size(); ++i) isax_input_values[i] = summaries[i][c].get_isax_input()[s];
                 std::sort(isax_input_values.begin(), isax_input_values.end());
 
-                for (float isax_input_val : isax_input_values) {
+                for (Real isax_input_val : isax_input_values) {
                     if (br_ind >= breakpoints.size() || isax_input_val < breakpoints[br_ind]) {
                         ++count;
                         sum += isax_input_val;
                         sum_sq += isax_input_val * isax_input_val;
                     } else {
-                        float prob = (float)count / summaries.size();
+                        Real prob = (Real)count / summaries.size();
                         if (prob > 0) score -= prob * log2(prob);
 
                         count = 0;
                         br_ind += alphabet_ratio;
                     }
                 }
-                float prob = (float)count / summaries.size();
+                Real prob = (Real)count / summaries.size();
                 if (prob > 0) score -= prob * log2(prob);
 
                 score *= calculate_mu_and_sigma(sum, sum_sq, summaries.size()).second;

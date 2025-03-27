@@ -4,7 +4,7 @@
 #include "Summarization/SaxWord.hpp"
 #include "Util/typedefs.hpp"
 
-SaxWord::SaxWord(const vec<float> &paa, SaxNumBitsT num_bits, const vec<float> &breakpoints) {
+SaxWord::SaxWord(const vec<Real> &paa, SaxNumBitsT num_bits, const vec<Real> &breakpoints) {
     assert(num_bits > 0);
     assert(breakpoints.size() == (1 << num_bits) - 1);
     assert(std::is_sorted(breakpoints.begin(), breakpoints.end()));

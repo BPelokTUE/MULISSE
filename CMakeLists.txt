@@ -40,8 +40,13 @@ find_package(Boost 1.74 REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 # Add FFTW3
-include_directories(/usr/local/fftw3/include)
-link_directories(/usr/local/fftw3/lib)
+set(LOCAL_SETTINGS_FILE "${CMAKE_SOURCE_DIR}/local_settings.json")
+file(READ ${LOCAL_SETTINGS_FILE} LOCAL_SETTINGS)
+string(REGEX MATCH "\"FFTW_PATH\"[ \t]*:[ \t]*\"([^\"]*)\"" _ ${LOCAL_SETTINGS})
+set(FFTW_PATH "${CMAKE_MATCH_1}")
+
+include_directories(${FFTW_PATH}include)
+link_directories(${FFTW_PATH}lib)
 
 # Add OpenMP
 # Apple settings from: https://stackoverflow.com/a/60198415/27492177
@@ -90,8 +95,12 @@ function(set_up_target target)
         target_compile_definitions(${target} PRIVATE DISABLE_PARALLELISM)
     endif()
 
-    # Link FFTW3 and math library
-    target_link_libraries(${target} fftw3 m)
+    if (USE_DOUBLE)
+        target_compile_definitions(${target} PRIVATE USE_DOUBLE)
+        target_link_libraries(${target} fftw3l m)
+    else()
+        target_link_libraries(${target} fftw3f m)
+    endif()
 
     # Link OpenMP
     if (OpenMP_CXX_FOUND)

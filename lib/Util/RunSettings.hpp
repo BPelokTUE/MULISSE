@@ -37,7 +37,7 @@ struct iSaxProperties {
     SaxSegIndT num_segments;
     uint segment_len;
     uptr<IiSaxBreakpointStrategy> breakpoint_strategy;
-    vec<float> breakpoints;
+    vec<Real> breakpoints;
     SaxNumBitsT breakpoint_num_bits;
 };
 
@@ -91,7 +91,7 @@ class RunSettings {
      * @param channel_ind Index of the channel in the query
      * @param num_components Number of FFT components to load
      */
-    void calculate_query_ffts(const vec<DistanceT>& q_channel, MtsNumChannelsT channel_ind, uint num_components);
+    void calculate_query_ffts(const vec<Real>& q_channel, MtsNumChannelsT channel_ind, uint num_components);
 
     /**
      * @brief Get the FFTs of the last query they were calculated for
@@ -110,7 +110,7 @@ class RunSettings {
      * @brief Get the currently used iSAX interval breakpoints
      * @return The vector of breakpoints, excluding `-INF` and `INF` at the ends
      */
-    virtual const vec<float>& get_breakpoints();
+    virtual const vec<Real>& get_breakpoints();
 
     /** @brief Update the iSAX interval breakpoints */
     void update_breakpoints();

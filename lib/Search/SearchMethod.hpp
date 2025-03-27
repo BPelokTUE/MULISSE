@@ -17,7 +17,7 @@ class ISearchMethod {
      * @param dataset_ifs Input file stream for the dataset
      * @return The start positions of the subsequences in the result set
      */
-    virtual vec<SearchResult> search(const vec<vec<float>> &query, const SearchOptions &opts,
+    virtual vec<SearchResult> search(const vec<vec<Real>> &query, const SearchOptions &opts,
                                      std::ifstream &dataset_ifs) const = 0;
 };
 

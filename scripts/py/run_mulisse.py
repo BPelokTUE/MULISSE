@@ -315,7 +315,7 @@ class SettingIterator:
 #        Setup        #
 # --------------------#
 
-local_settings_path = os.path.join("scripts", "local_settings.json")
+local_settings_path = "local_settings.json"
 if not os.path.exists(local_settings_path):
     raise FileNotFoundError(
         f"Local settings file {local_settings_path} not found. Make sure the script is run from the root of the repository."

@@ -14,6 +14,6 @@
  * @param seed The seed for the random number generator
  * @return 0 on success, 1 if the dataset file already exists, 2 if the file could not be created.
  */
-int create_random_walks(float step_sigma, bool zero_start, int seed);
+int create_random_walks(Real step_sigma, bool zero_start, int seed);
 
 #endif  // RANDOMWALK_HPP

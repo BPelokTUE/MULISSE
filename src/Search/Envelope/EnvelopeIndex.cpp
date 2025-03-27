@@ -26,13 +26,13 @@ uptr<IFinalizedIndex<EnvelopeTag>> FlatEnvelopeIndex::finalize() {
 }
 
 struct PQueueEnvelopeEntry {
-    DistanceT min_dist_squared;
+    Real min_dist_squared;
     SubsequenceInfo subs_info;
 
     bool operator<(const PQueueEnvelopeEntry &other) const { return min_dist_squared > other.min_dist_squared; }
 };
 
-vec<SearchResult> FlatEnvelopeIndex::search(const vec<vec<float>> &query, const SearchOptions &opts,
+vec<SearchResult> FlatEnvelopeIndex::search(const vec<vec<Real>> &query, const SearchOptions &opts,
                                             std::ifstream &dataset_ifs) const {
     auto &RS = RunSettings::get_instance();
     auto &logger = QueryLogger::get_instance();
@@ -42,7 +42,7 @@ vec<SearchResult> FlatEnvelopeIndex::search(const vec<vec<float>> &query, const 
     IDistanceMeasure *distance_measure = opts.distance_measure.get();
     IResultSet *result_set = opts.result_set.get();
 
-    vec<vec<float>> query_paa(num_channels);
+    vec<vec<Real>> query_paa(num_channels);
     size_t query_len = 0;
     for (size_t c = 0; c < num_channels; ++c) {
         query_paa[c] = paa(query[c], m_segment_len);
@@ -55,7 +55,7 @@ vec<SearchResult> FlatEnvelopeIndex::search(const vec<vec<float>> &query, const 
     for (auto entry : m_entries) {
         if (entry.subsequence_info.length < query_len) continue;
 
-        DistanceT min_dist_squared = 0;
+        Real min_dist_squared = 0;
         for (MtsNumChannelsT c = 0; c < num_channels; ++c)
             for (uint s = 0; s < query_paa[c].size(); ++s)
                 min_dist_squared += distance_measure->min_dist_squared(query_paa[c][s], entry.mts_summary[c].lower[s],
@@ -72,14 +72,14 @@ vec<SearchResult> FlatEnvelopeIndex::search(const vec<vec<float>> &query, const 
 
         if (min_dist_squared >= opts.result_set->get_distance_lb()) break;
 
-        vec<vec<float>> subsequence(num_channels);
+        vec<vec<Real>> subsequence(num_channels);
         logger.start_timer(QC::IO_TIME_S);
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             if (query[c].empty()) continue;
 
             subsequence[c].resize(subs_info.length);
             dataset_ifs.seekg(subs_info.get_file_pos(series_len, num_channels, c));
-            dataset_ifs.read(reinterpret_cast<char *>(subsequence[c].data()), subs_info.length * sizeof(float));
+            dataset_ifs.read(reinterpret_cast<char *>(subsequence[c].data()), subs_info.length * sizeof(Real));
         }
         logger.stop_timer(QC::IO_TIME_S);
 

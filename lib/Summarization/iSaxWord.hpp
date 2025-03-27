@@ -13,7 +13,7 @@ struct iSaxWordSettings {
     /** @brief The maximum number of bits in the alphabet */
     SaxNumBitsT alphabet_num_bits;
     /** @brief The vector of breakpoints for the symbol intervals */
-    vec<float> breakpoints;
+    vec<Real> breakpoints;
 };
 
 /** @brief indexable Symbolic Aggregate approXimation (iSAX) word */
@@ -26,7 +26,7 @@ class iSaxWord : public SaxWord {
      * @param settings iSAX word settings containing the number of bits per symbol, the number
      *        of bits for the alphabet and the breakpoints
      */
-    iSaxWord(const vec<float> &paa, const iSaxWordSettings &settings);
+    iSaxWord(const vec<Real> &paa, const iSaxWordSettings &settings);
 
     iSaxWord() = default;
 

@@ -22,7 +22,7 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
     fakeit::Mock<RunSettings> run_settings_mock;
     fakeit::Mock<IiSaxSplitStrategy<Envelope>> split_strategy_mock;
 
-    vec<float> breakpoints = {-2.0, 0.0, 2.0};
+    vec<Real> breakpoints = {-2.0, 0.0, 2.0};
     SaxNumBitsT breakpoint_num_bits = 2;
     iSaxProperties isax_props = {33, 3, nullptr, breakpoints, breakpoint_num_bits};
 
@@ -249,7 +249,7 @@ TEST_CASE("iSaxIndex insert MTS envelope works") {
     fakeit::Mock<RunSettings> run_settings_mock;
     fakeit::Mock<IiSaxSplitStrategy<Envelope>> split_strategy_mock;
 
-    vec<float> breakpoints = {-2.0, 0.0, 2.0};
+    vec<Real> breakpoints = {-2.0, 0.0, 2.0};
     SaxNumBitsT breakpoint_num_bits = 2;
     iSaxProperties isax_props = {33, 3, nullptr, breakpoints, breakpoint_num_bits};
     auto series_isax_prop = std::make_unique<SeriesISaxEnvelopeProperties>(isax_props.segment_len, 100, 3, 2, 11);

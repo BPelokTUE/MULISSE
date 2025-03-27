@@ -5,7 +5,7 @@
 
 struct QuerySetOptions {
     /** @brief Noise to add to the queries */
-    float noise;
+    Real noise;
     /** @brief Number of queries to generate per length in `lengths` */
     uint num_queries;
     /** @brief Exact lengths of the queries. For each length `num_queries` queries will be generated. Overriden by

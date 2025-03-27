@@ -40,7 +40,7 @@ void IndexAnalyzer<FlatEnvelopeIndex, EnvelopeTag>::analyze() {
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             auto &summary = entry.mts_summary[c];
             for (SaxSegIndT s = 0; s < summary.lower.size(); ++s) {
-                float lower = summary.lower[s], upper = summary.upper[s];
+                Real lower = summary.lower[s], upper = summary.upper[s];
                 stats.update_seg_stats(lower, upper);
             }
         }

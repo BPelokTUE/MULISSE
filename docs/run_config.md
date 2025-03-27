@@ -23,7 +23,7 @@ This document describes the values used in configuration files for [`run_mulisse
 - **Description**: List of numbers of channels for synthetic data. No experiments are run on synthetic dataset if `syn_num_channels=[]`.
 
 #### `syn_step_stdevs`
-- **Type**: `list[float]`
+- **Type**: `list[Real]`
 - **Description**: List of standard deviations to use for the steps in the synthetic (random walk) datasets. No experiments are run on synthetic dataset if `syn_step_stdevs=[]`.
 
 #### `query_set_sizes`
@@ -31,15 +31,15 @@ This document describes the values used in configuration files for [`run_mulisse
 - **Description**: List of query set sizes.
 
 #### `l_range_ratios`
-- **Type**: `list[list[float]]`
+- **Type**: `list[list[Real]]`
 - **Description**: Ratios of `l_min` and `l_max` compared to `series_length`.
 
 #### `used_channel_ratios`
-- **Type**: `list[float]`
+- **Type**: `list[Real]`
 - **Description**: Ratio of number of used channels compared to number of channels. `0.0` means completely random selection of channels, `1.0` means all channels.
 
 #### `query_noise_stdevs`
-- **Type**: `list[float]`
+- **Type**: `list[Real]`
 - **Description**: List of standard deviations of the Gaussian noise to apply for creating the queries.
 
 #### `index_types`
@@ -67,7 +67,7 @@ This document describes the values used in configuration files for [`run_mulisse
 - **Description**: Ratios of segment length compared to `series_length`.
 
 #### `envelope_size_ratios`
-- **Type**: `list[float]`
+- **Type**: `list[Real]`
 - **Description**: Ratios of envelope size compared to `series_length - l_min + 1`.
 
 #### `scan_methods`
@@ -95,7 +95,7 @@ This document describes the values used in configuration files for [`run_mulisse
 - **Description**: List of `k` values for kNN search.
 
 #### `search_rs`
-- **Type**: `list[float]`
+- **Type**: `list[Real]`
 - **Description**: List of `r` values for r-range search.
 
 #### `search_approx`

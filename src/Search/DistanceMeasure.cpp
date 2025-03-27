@@ -17,7 +17,7 @@ EuclideanDistance::EuclideanDistance(bool normalized, bool use_early_abandoning)
 bool EuclideanDistance::uses_early_abandoning() const { return m_use_early_abandoning; }
 
 bool EuclideanDistance::update_result_set(IResultSet *result_set, SubsequenceInfo subs_info,
-                                          const vec<vec<float>> &query, const vec<vec<float>> &mts) {
+                                          const vec<vec<Real>> &query, const vec<vec<Real>> &mts) {
     auto &logger = QueryLogger::get_instance();
 
     bool updated = false;
@@ -34,7 +34,7 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, SubsequenceInf
     }
 
     if (m_normalized) {
-        vec<float> sums(query.size()), sq_sums(query.size());
+        vec<Real> sums(query.size()), sq_sums(query.size());
         for (MtsNumChannelsT c : present_channels) {
             for (size_t i = 0; i < query_len; ++i) {
                 sums[c] += mts[c][i];
@@ -43,14 +43,14 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, SubsequenceInf
         }
 
         for (int start_pos = 0; start_pos < num_start_pos; ++start_pos) {
-            float dist_squared = 0;
+            Real dist_squared = 0;
             uint64_t points_examined = 0, point_in_entry = 0;
 
             for (MtsNumChannelsT c : present_channels) {
                 auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], query_len);
 
                 for (uint query_ind = 0; query_ind < query_len; ++query_ind) {
-                    float diff = (mts[c][start_pos + query_ind] - mu) / sigma - query[c][query_ind];
+                    Real diff = (mts[c][start_pos + query_ind] - mu) / sigma - query[c][query_ind];
                     dist_squared += diff * diff;
                     if (m_use_early_abandoning && dist_squared >= result_set->get_distance_lb()) {
                         points_examined += query_ind + 1;
@@ -82,8 +82,8 @@ bool EuclideanDistance::update_result_set(IResultSet *result_set, SubsequenceInf
     return updated;
 };
 
-DistanceT EuclideanDistance::min_dist_squared(const float paa, float lower, float upper) const {
-    DistanceT diff = upper < paa ? paa - upper : (lower > paa ? lower - paa : 0);
+Real EuclideanDistance::min_dist_squared(const Real paa, Real lower, Real upper) const {
+    Real diff = upper < paa ? paa - upper : (lower > paa ? lower - paa : 0);
     return diff * diff;
 }
 
@@ -93,14 +93,12 @@ DistanceType EuclideanDistance::get_type() const { return ED; }
 
 EuclideanDistanceWMass::EuclideanDistanceWMass(bool normalized) : EuclideanDistance(normalized) {}
 
-vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<DistanceT> &q_channel,
-                                                              const vec<DistanceT> &mts_channel,
-                                                              SubsequenceInfo subs_info,
-                                                              MtsNumChannelsT channel_ind) const {
+vec<Real> EuclideanDistanceWMass::calculate_dot_products(const vec<Real> &q_channel, const vec<Real> &mts_channel,
+                                                         SubsequenceInfo subs_info, MtsNumChannelsT channel_ind) const {
     uint mts_len = mts_channel.size(), query_len = q_channel.size();
 
     FftArray query_fft(2 * mts_len), mts_fft(2 * mts_len), dot_prods_fft(2 * mts_len), dot_products(2 * mts_len);
-    fftw_plan plan;
+    fftwr_plan plan;
 
     auto &run_settings = RunSettings::get_instance();
 
@@ -120,15 +118,15 @@ vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<Distance
     } else {
         FftArray mts_complex(2 * mts_len);
         for (uint i = 0; i < mts_len; ++i) mts_complex[i][0] = mts_channel[i];
-        plan = fftw_plan_dft_1d(2 * mts_len, mts_complex.data(), mts_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
-        fftw_execute(plan);
-        fftw_destroy_plan(plan);
+        plan = fftwr_plan_dft_1d(2 * mts_len, mts_complex.data(), mts_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
+        fftwr_execute(plan);
+        fftwr_destroy_plan(plan);
 
         FftArray q_complex(2 * mts_len);
         for (uint i = 0; i < query_len; ++i) q_complex[i][0] = q_channel[query_len - 1 - i];
-        plan = fftw_plan_dft_1d(2 * mts_len, q_complex.data(), query_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
-        fftw_execute(plan);
-        fftw_destroy_plan(plan);
+        plan = fftwr_plan_dft_1d(2 * mts_len, q_complex.data(), query_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
+        fftwr_execute(plan);
+        fftwr_destroy_plan(plan);
     }
 
     for (uint i = 0; i < 2 * mts_len; ++i) {
@@ -136,19 +134,18 @@ vec<DistanceT> EuclideanDistanceWMass::calculate_dot_products(const vec<Distance
         dot_prods_fft[i][1] = query_fft[i][0] * mts_fft[i][1] + query_fft[i][1] * mts_fft[i][0];
     }
 
-    plan = fftw_plan_dft_1d(2 * mts_len, dot_prods_fft.data(), dot_products.data(), FFTW_BACKWARD, FFTW_ESTIMATE);
-    fftw_execute(plan);
-    fftw_destroy_plan(plan);
+    plan = fftwr_plan_dft_1d(2 * mts_len, dot_prods_fft.data(), dot_products.data(), FFTW_BACKWARD, FFTW_ESTIMATE);
+    fftwr_execute(plan);
+    fftwr_destroy_plan(plan);
 
-    vec<DistanceT> dot_products_real(mts_len);
+    vec<Real> dot_products_real(mts_len);
     for (uint i = 0; i < mts_len; ++i) dot_products_real[i] = dot_products[i][0] / (2 * mts_len);
 
     return dot_products_real;
 }
 
-// TODO: figure out where double is actually needed
 bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, SubsequenceInfo subs_info,
-                                               const vec<vec<float>> &query, const vec<vec<float>> &mts) {
+                                               const vec<vec<Real>> &query, const vec<vec<Real>> &mts) {
     bool updated = false;
 
     uint mts_len = 0, query_len = 0;
@@ -160,44 +157,45 @@ bool EuclideanDistanceWMass::update_result_set(IResultSet *result_set, Subsequen
         }
     }
 
-    vec<DistanceT> squared_dists(mts_len - query_len + 1, 0);
+    vec<Real> squared_dists(mts_len - query_len + 1, 0);
     for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
         if (query[c].empty()) continue;
 
-        vec<DistanceT> q_channel(query_len), mts_channel(mts_len);
+        vec<Real> q_channel(query_len), mts_channel(mts_len);
         for (uint i = 0; i < query_len; ++i) q_channel[i] = query[c][i];
 
-        vec<DistanceT> mts_sums(mts_len + 1, 0), mts_sum_sqs(mts_len + 1, 0);
+        vec<Real> mts_sums(mts_len + 1, 0), mts_sum_sqs(mts_len + 1, 0);
         for (uint i = 1; i <= mts_len; ++i) {
             mts_channel[i - 1] = mts[c][i - 1];
             mts_sums[i] = mts_sums[i - 1] + mts_channel[i - 1];
             mts_sum_sqs[i] = mts_sum_sqs[i - 1] + mts_channel[i - 1] * mts_channel[i - 1];
         }
-        DistanceT query_sum = 0, query_sum_sq = 0;
+        Real query_sum = 0, query_sum_sq = 0;
         for (uint i = 0; i < query_len; ++i) {
             query_sum += q_channel[i];
             query_sum_sq += q_channel[i] * q_channel[i];
         }
         auto [query_mu, query_sigma] = calculate_mu_and_sigma(query_sum, query_sum_sq, query_len);
 
-        vec<DistanceT> dot_products = calculate_dot_products(q_channel, mts_channel, subs_info, c);
+        vec<Real> dot_products = calculate_dot_products(q_channel, mts_channel, subs_info, c);
 
         if (m_normalized) {
             for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
-                DistanceT dot = dot_products[query_len - 1 + start_pos],
-                          subs_sum = mts_sums[query_len + start_pos] - mts_sums[start_pos],
-                          subs_sum_sq = mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos];
+                Real dot = dot_products[query_len - 1 + start_pos],
+                     subs_sum = mts_sums[query_len + start_pos] - mts_sums[start_pos],
+                     subs_sum_sq = mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos];
                 auto [subs_mu, subs_sigma] = calculate_mu_and_sigma(subs_sum, subs_sum_sq, query_len);
 
                 // TODO: Assuming that the query is already normalized ==> query_mu = 0, query_sigma = 1
-                DistanceT corr = (dot - query_len * query_mu * subs_mu) / (query_len * query_sigma * subs_sigma);
-                squared_dists[start_pos] += std::max(0.0, 2 * query_len * (1 - corr));
+                Real corr = (dot - query_len * query_mu * subs_mu) / (query_len * query_sigma * subs_sigma);
+                squared_dists[start_pos] += std::max(static_cast<Real>(0.0), 2 * query_len * (1 - corr));
             }
         } else {
             for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
-                DistanceT dot = dot_products[query_len - 1 + start_pos];
+                Real dot = dot_products[query_len - 1 + start_pos];
                 squared_dists[start_pos] +=
-                    std::max(0.0, query_sum_sq + (mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos]) + dot);
+                    std::max(static_cast<Real>(0.0),
+                             query_sum_sq + (mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos]) + dot);
             }
         }
     }

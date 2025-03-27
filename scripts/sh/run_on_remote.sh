@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This script bundles together other scripts to run experiments on a remote machine.
-# The remote is configured in `scripts/local_settings.json`
+# The remote is configured in `local_settings.json`
 #
 # The script involves the following:
 # 1. Copy the necessary files onto the remote with `scp`
@@ -86,8 +86,8 @@ if ! $NO_SCP_REPO; then
 fi
 
 # Step 2
-remote_url=$(cat scripts/local_settings.json | jq '.["REMOTE_URL"]' | tr -d '"')
-remote_path=$(cat scripts/local_settings.json | jq '.["REMOTE_PATH"]' | tr -d '"')
+remote_url=$(cat local_settings.json | jq '.["REMOTE_URL"]' | tr -d '"')
+remote_path=$(cat local_settings.json | jq '.["REMOTE_PATH"]' | tr -d '"')
 
 remote_cmd="cd '${remote_path}' && \
     unzip -o MULISSE.zip && \

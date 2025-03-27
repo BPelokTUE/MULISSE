@@ -15,7 +15,7 @@
  * @param segment_len The length of each segment Assumed to be greater than 0
  * @return The PAA of the time series
  */
-vec<float> paa(const vec<float> &ts, uint segment_len);
+vec<Real> paa(const vec<Real> &ts, uint segment_len);
 
 /**
  * @brief Parameters for the iSAX PAA computation
@@ -33,9 +33,9 @@ struct iSaxPaaParams {
 };
 
 struct Paa : EntryData {
-    vec<float> paa_values;
+    vec<Real> paa_values;
 
-    Paa(const vec<float> &paa_values);
+    Paa(const vec<Real> &paa_values);
 
     Paa() = default;
 
@@ -43,7 +43,7 @@ struct Paa : EntryData {
 
     void resize(size_t new_size) override;
 
-    vec<float> get_isax_input() const override;
+    vec<Real> get_isax_input() const override;
 
     template <class Archive>
     void serialize(Archive &ar) {
@@ -61,7 +61,7 @@ class PaaEntryGenerator : public IEntryGenerator<Paa> {
      */
     PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params);
 
-    vec<IndexEntry<Paa>> get_entries(const vec<vec<float>> &mts, uint series_ind) override;
+    vec<IndexEntry<Paa>> get_entries(const vec<vec<Real>> &mts, uint series_ind) override;
 
    private:
     MtsNumChannelsT m_num_channels;
@@ -74,7 +74,7 @@ class PaaEntryGenerator : public IEntryGenerator<Paa> {
      * @param paa_params The parameters for the PAA computation
      * @return The PAA entries and their starting positions
      */
-    vec<std::tuple<Paa, uint, uint>> get_paa_entries_normalized(const vec<float> &ts, const iSaxPaaParams &paa_params);
+    vec<std::tuple<Paa, uint, uint>> get_paa_entries_normalized(const vec<Real> &ts, const iSaxPaaParams &paa_params);
 };
 
 #endif  // PAA_HPP

@@ -24,7 +24,7 @@ struct EntryData {
      * @brief Get the input for the iSAX index
      * @return The input for the iSAX index
      * */
-    virtual vec<float> get_isax_input() const = 0;
+    virtual vec<Real> get_isax_input() const = 0;
 };
 
 template <typename T>
@@ -60,7 +60,7 @@ class IEntryGenerator {
      * @param series_ind Index of the time series within the dataset
      * @return Entries
      */
-    virtual vec<IndexEntry<T>> get_entries(const vec<vec<float>> &mts, uint series_ind) = 0;
+    virtual vec<IndexEntry<T>> get_entries(const vec<vec<Real>> &mts, uint series_ind) = 0;
 };
 
 #endif  // INDEX_ENTRY_HPP

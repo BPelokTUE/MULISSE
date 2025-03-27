@@ -45,10 +45,10 @@ int main(int argc, char **argv) {
         },
         "POSITIVE_INTEGER", "Positive Integer");
 
-    auto positive_float = CLI::Validator(
+    auto positive_real = CLI::Validator(
         [](str &input) {
             try {
-                float value = std::stof(input);
+                double value = std::stod(input);
                 if (value > 0.0) {
                     return "";
                 } else {
@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
                 return "Could not convert";
             }
         },
-        "POSITIVE_FLOAT", "Positive Float");
+        "POSITIVE_REAL", "Positive Real");
 
     // Add arguments
     str dataset_path, query_path, index_path, ffts_path,
@@ -68,10 +68,10 @@ int main(int argc, char **argv) {
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
         distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(TOP_DOWN);
     vec<str> csv_paths;
-    float step_sd = 1.0, noise = 0.1;
+    Real step_sd = 1.0, noise = 0.1;
     SaxNumBitsT first_layer_num_bits = 1;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env = 0, knn_k = 1;
-    DistanceT r_range_r = 1.0;
+    Real r_range_r = 1.0;
     int seed;
     size_t leaf_capacity = 0;
     vec<uint> exact_lengths = {};
@@ -255,7 +255,7 @@ int main(int argc, char **argv) {
         ->check(positive_int);
     search_subcommand->add_option("-r,--range", r_range_r, "Range for range search")
         ->capture_default_str()
-        ->check(positive_float);
+        ->check(positive_real);
     search_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Parse arguments and initialize run settings

@@ -52,9 +52,9 @@ int create_queries(QuerySetOptions opts) {
 
     // Extract time series from dataset
     std::default_random_engine rng(opts.seed);
-    std::normal_distribution<float> noise_normal_dist(0.0, opts.noise);
+    std::normal_distribution<Real> noise_normal_dist(0.0, opts.noise);
 
-    uint num_series = get_dataset_size(dataset_path) / (num_channels * series_len * sizeof(float));
+    uint num_series = get_dataset_size(dataset_path) / (num_channels * series_len * sizeof(Real));
     std::uniform_int_distribution<uint> series_uniform_dist(0, num_series - 1), channel_uniform_dist(1, num_channels),
         length_uniform_dist(opts.l_min, opts.l_max);
 
@@ -98,13 +98,13 @@ int create_queries(QuerySetOptions opts) {
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             if (channels[c]) {
                 data_file.seekg(series_start.get_file_pos(series_len, num_channels, c));
-                float sum = 0, sum_sq = 0, value;
+                Real sum = 0, sum_sq = 0, value;
                 for (uint j = 0; j < series_len; ++j) {
                     data_file.read(reinterpret_cast<char *>(&value), sizeof(value));
                     sum += value;
                     sum_sq += value * value;
                 }
-                float sigma = calculate_mu_and_sigma(sum, sum_sq, series_len).second;
+                Real sigma = calculate_mu_and_sigma(sum, sum_sq, series_len).second;
 
                 data_file.seekg(subs_info.get_file_pos(series_len, num_channels, c));
                 for (uint j = 0; j < length; ++j) {

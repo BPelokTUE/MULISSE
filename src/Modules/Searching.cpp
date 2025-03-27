@@ -51,14 +51,14 @@ int search(const SearchOptions &opts) {
     auto &logger = QueryLogger::get_instance();
 
     MtsNumChannelsT num_channels = RunSettings::get_instance().get_dataset_props().num_channels;
-    vec<vec<float>> query(num_channels);
+    vec<vec<Real>> query(num_channels);
 
     size_t query_count = 0;
     for (MtsNumChannelsT c = 0; !query_ifs.eof(); c = (c + 1) % num_channels) {
         str line;
         std::getline(query_ifs, line);
         std::istringstream iss(line);
-        float value, sum = 0, sq_sum = 0;
+        Real value, sum = 0, sq_sum = 0;
 
         query[c].clear();
         while (iss >> value) {
@@ -79,8 +79,8 @@ int search(const SearchOptions &opts) {
             dataset_ifs.seekg(0);
             opts.result_set->clear();
             if (opts.distance_measure->get_type() == MASS) {
-                fftw_forget_wisdom();
-                fftw_cleanup();
+                fftwr_forget_wisdom();
+                fftwr_cleanup();
                 if (RS.ffts_supported()) RS.reset_query_ffts();
             }
 

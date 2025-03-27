@@ -30,25 +30,25 @@ int main(int argc, char **argv) {
         auto &min_symbols = index.get_first_layer_min_symbols();
         auto &max_symbols = index.get_first_layer_max_symbols();
         SaxNumBitsT num_bits = index.get_first_layer_num_bits();
-        float po2 = 1 << num_bits;
+        Real po2 = 1 << num_bits;
 
         MtsNumChannelsT num_channels = min_symbols[0].size();
         SaxSegIndT num_segments = min_symbols[0][0].size();
-        vec<float> ranges;
+        vec<Real> ranges;
 
         for (uint i = 0; i < min_symbols.size(); ++i) {
             for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
                 for (SaxSegIndT s = 0; s < num_segments; ++s) {
-                    float diff = max_symbols[i][c][s] - min_symbols[i][c][s] + 1;
+                    Real diff = max_symbols[i][c][s] - min_symbols[i][c][s] + 1;
                     ranges.push_back(diff / po2);
                 }
             }
         }
 
         // Print diff statistics: mean, median, min, max
-        float mean = 0, min = ranges[0], max = ranges[0], median = 0;
+        Real mean = 0, min = ranges[0], max = ranges[0], median = 0;
         uint median_cnt = 0;
-        umap<float, uint> counts;
+        umap<Real, uint> counts;
 
         for (auto &range : ranges) {
             mean += range;

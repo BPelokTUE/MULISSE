@@ -144,7 +144,7 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
     uptr<SeriesISaxProperties> m_series_isax_prop;
     size_t m_leaf_capacity;
-    const vec<float> *m_breakpoints;
+    const vec<Real> *m_breakpoints;
     uptr<IiSaxSplitStrategy<T>> m_split_strategy;
 
     using m_first_layer_type = decltype(m_first_layer);
@@ -271,7 +271,7 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
         auto &RS = RunSettings::get_instance();
         auto &isax_props = RS.get_isax_props();
 
-        float sum = 0, sum_sq = 0, count = 0;
+        Real sum = 0, sum_sq = 0, count = 0;
         for (const auto &entry : dataset_entries) {
             for (const auto &summary : entry.mts_summary) {
                 auto isax_input = summary.get_isax_input();

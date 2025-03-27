@@ -38,7 +38,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     if (dataset_props.num_series == 0 && !dataset_props.file.empty()) {
         size_t dataset_size = get_dataset_size(instance->get_dataset_path());
         instance->m_dataset_props.num_series =
-            dataset_size / (dataset_props.series_len * dataset_props.num_channels * sizeof(float));
+            dataset_size / (dataset_props.series_len * dataset_props.num_channels * sizeof(Real));
     }
 
     instance->m_query_properties = query_props;
@@ -119,25 +119,25 @@ void RunSettings::calculate_ffts() const {
         throw std::runtime_error("Could not open FFTs file for writing");
     }
 
-    fftw_plan plan;
+    fftwr_plan plan;
     uint num_chunks = m_dataset_props.num_series * m_dataset_props.num_channels;
     for (uint i = 0; i < num_chunks; ++i) {
-        vec<float> channel(m_dataset_props.series_len);
-        ifs.read(reinterpret_cast<char *>(channel.data()), m_dataset_props.series_len * sizeof(float));
+        vec<Real> channel(m_dataset_props.series_len);
+        ifs.read(reinterpret_cast<char *>(channel.data()), m_dataset_props.series_len * sizeof(Real));
 
         uint fft_len = 2 * m_dataset_props.series_len;
         FftArray channel_complex(fft_len), channel_ffts(fft_len);
         for (uint j = 0; j < m_dataset_props.series_len; ++j) channel_complex[j][0] = channel[j];
 
-        plan = fftw_plan_dft_1d(fft_len, channel_complex.data(), channel_ffts.data(), FFTW_FORWARD, FFTW_ESTIMATE);
+        plan = fftwr_plan_dft_1d(fft_len, channel_complex.data(), channel_ffts.data(), FFTW_FORWARD, FFTW_ESTIMATE);
 
-        fftw_execute(plan);
-        fftw_destroy_plan(plan);
+        fftwr_execute(plan);
+        fftwr_destroy_plan(plan);
 
         for (uint j = 0; j < fft_len; ++j) {
             auto &fft = channel_ffts[j];
-            ofs.write(reinterpret_cast<const char *>(&fft[0]), sizeof(double));
-            ofs.write(reinterpret_cast<const char *>(&fft[1]), sizeof(double));
+            ofs.write(reinterpret_cast<const char *>(&fft[0]), sizeof(Real));
+            ofs.write(reinterpret_cast<const char *>(&fft[1]), sizeof(Real));
         }
     }
 }
@@ -145,24 +145,22 @@ void RunSettings::calculate_ffts() const {
 FftArray RunSettings::get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channel_ind, uint num_component) {
     if (!ffts_supported()) throw std::runtime_error("FFTs are not supported");
 
-    // (*2) for using double instead of float
     // (*2) for real and imaginary parts
     // (*2) for extra components at the end
-    uint file_size_ratio = 8;
+    uint file_size_ratio = 4;
     size_t data_file_pos =
         subs_info.get_file_pos(m_dataset_props.series_len, m_dataset_props.num_channels, channel_ind);
     m_ffts_ifs.seekg(file_size_ratio * data_file_pos);
 
     FftArray ffts(2 * num_component);
-    m_ffts_ifs.read(reinterpret_cast<char *>(ffts.data()), 4 * num_component * sizeof(double));
+    m_ffts_ifs.read(reinterpret_cast<char *>(ffts.data()), file_size_ratio * num_component * sizeof(Real));
 
     return ffts;
 }
 
 bool RunSettings::ffts_supported() const { return m_ffts_supported; }
 
-void RunSettings::calculate_query_ffts(const vec<DistanceT> &q_channel, MtsNumChannelsT channel_ind,
-                                       uint num_components) {
+void RunSettings::calculate_query_ffts(const vec<Real> &q_channel, MtsNumChannelsT channel_ind, uint num_components) {
     if (!ffts_supported()) return;
 
     assert(channel_ind < m_dataset_props.num_channels);
@@ -172,11 +170,11 @@ void RunSettings::calculate_query_ffts(const vec<DistanceT> &q_channel, MtsNumCh
     for (uint i = 0; i < query_len; ++i) q_complex[i][0] = q_channel[query_len - 1 - i];
 
     m_query_ffts[channel_ind] = std::make_unique<FftArray>(fft_len);
-    fftw_plan plan =
-        fftw_plan_dft_1d(fft_len, q_complex.data(), m_query_ffts[channel_ind]->data(), FFTW_FORWARD, FFTW_ESTIMATE);
+    fftwr_plan plan =
+        fftwr_plan_dft_1d(fft_len, q_complex.data(), m_query_ffts[channel_ind]->data(), FFTW_FORWARD, FFTW_ESTIMATE);
 
-    fftw_execute(plan);
-    fftw_destroy_plan(plan);
+    fftwr_execute(plan);
+    fftwr_destroy_plan(plan);
 }
 
 const FftArray *RunSettings::get_query_ffts(MtsNumChannelsT channel_ind) const {
@@ -195,7 +193,7 @@ void RunSettings::reset_query_ffts() {
 
 // iSAX
 
-const vec<float> &RunSettings::get_breakpoints() { return m_isax_props.breakpoints; }
+const vec<Real> &RunSettings::get_breakpoints() { return m_isax_props.breakpoints; }
 
 void RunSettings::update_breakpoints() {
     auto &breakpoint_strategy = m_isax_props.breakpoint_strategy;

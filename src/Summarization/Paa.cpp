@@ -2,11 +2,11 @@
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 
-vec<float> paa(const vec<float> &ts, uint segment_len) {
+vec<Real> paa(const vec<Real> &ts, uint segment_len) {
     uint num_segments = ts.size() / segment_len;
-    vec<float> paa(num_segments);
+    vec<Real> paa(num_segments);
 
-    float sum;
+    Real sum;
     uint ind = 0, i, j;
     for (i = 0; i < num_segments; ++i) {
         sum = 0;
@@ -18,19 +18,19 @@ vec<float> paa(const vec<float> &ts, uint segment_len) {
     return paa;
 }
 
-Paa::Paa(const vec<float> &paa_values) : paa_values(paa_values) {}
+Paa::Paa(const vec<Real> &paa_values) : paa_values(paa_values) {}
 
 size_t Paa::size() const { return paa_values.size(); }
 
 void Paa::resize(size_t new_size) { paa_values.resize(new_size); }
 
-vec<float> Paa::get_isax_input() const { return paa_values; }
+vec<Real> Paa::get_isax_input() const { return paa_values; }
 
-vec<std::tuple<Paa, uint, uint>> PaaEntryGenerator::get_paa_entries_normalized(const vec<float> &ts,
+vec<std::tuple<Paa, uint, uint>> PaaEntryGenerator::get_paa_entries_normalized(const vec<Real> &ts,
                                                                                const iSaxPaaParams &paa_params) {
     vec<std::tuple<Paa, uint, uint>> entries;
 
-    float sum = 0, sum_sq = 0;
+    Real sum = 0, sum_sq = 0;
     for (int last_ind = 0; last_ind < ts.size(); ++last_ind) {
         sum += ts[last_ind];
         sum_sq += ts[last_ind] * ts[last_ind];
@@ -42,15 +42,15 @@ vec<std::tuple<Paa, uint, uint>> PaaEntryGenerator::get_paa_entries_normalized(c
             sum -= ts[min_start_ind - 1];
             sum_sq -= ts[min_start_ind - 1] * ts[min_start_ind - 1];
         }
-        float tmp_sum = sum, tmp_sum_sq = sum_sq;
+        Real tmp_sum = sum, tmp_sum_sq = sum_sq;
 
         for (int start_ind = min_start_ind; start_ind <= max_start_ind; ++start_ind) {
             int subs_len = last_ind - start_ind + 1;
             auto [mu, sigma] = calculate_mu_and_sigma(tmp_sum, tmp_sum_sq, subs_len);
 
-            vec<float> subsequence(subs_len);
+            vec<Real> subsequence(subs_len);
             for (int i = 0; i < subs_len; ++i) subsequence[i] = (ts[start_ind + i] - mu) / sigma;
-            vec<float> paa_values = paa(subsequence, paa_params.segment_len);
+            vec<Real> paa_values = paa(subsequence, paa_params.segment_len);
             paa_values.resize(ts.size() / paa_params.segment_len, 0.0);
 
             entries.push_back(
@@ -66,7 +66,7 @@ vec<std::tuple<Paa, uint, uint>> PaaEntryGenerator::get_paa_entries_normalized(c
 PaaEntryGenerator::PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params)
     : m_num_channels(num_channels), m_paa_params(paa_params) {}
 
-vec<IndexEntry<Paa>> PaaEntryGenerator::get_entries(const vec<vec<float>> &mts, uint series_ind) {
+vec<IndexEntry<Paa>> PaaEntryGenerator::get_entries(const vec<vec<Real>> &mts, uint series_ind) {
     uint series_len = mts[0].size();
     vec<IndexEntry<Paa>> entries;
 

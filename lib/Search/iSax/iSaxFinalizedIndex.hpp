@@ -70,7 +70,7 @@ template <typename FTag>
 struct PQueueISaxEntry {
     using iSaxType = typename SaxTraits<FTag>::iSaxType;
 
-    DistanceT min_dist_squared;
+    Real min_dist_squared;
     vec<iSaxType> isax_words;
     const iSaxFinalizedNode<FTag>* node;
 
@@ -99,7 +99,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
      */
     iSaxFinalizedIndex(uptr<SeriesISaxProperties> series_isax_prop, vec<vec<vec<SymbolType>>> first_layer_symbols,
                        vec<uptr<iSaxFinalizedNode<FTag>>> first_layer_nodes, SaxNumBitsT first_layer_num_bits,
-                       SaxNumBitsT alphabet_num_bits, vec<float> breakpoints)
+                       SaxNumBitsT alphabet_num_bits, vec<Real> breakpoints)
         : m_series_isax_prop(std::move(series_isax_prop)),
           m_first_layer_symbols(std::move(first_layer_symbols)),
           m_first_layer_nodes(std::move(first_layer_nodes)),
@@ -112,7 +112,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
 
     ~iSaxFinalizedIndex() = default;
 
-    std::pair<float, float> get_segment_limits(SaxNumBitsT num_bits, SymbolType symbol) const {
+    std::pair<Real, Real> get_segment_limits(SaxNumBitsT num_bits, SymbolType symbol) const {
         uint num_shift = m_alphabet_num_bits - num_bits;
         auto [lower_ind, upper_ind] = get_limit_breakpoint_indexes(symbol, num_shift);
         return {
@@ -125,7 +125,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
                                                                     vec<iSaxType> isax_words, MtsNumChannelsT c,
                                                                     SaxSegIndT s) const;
 
-    vec<SearchResult> search(const vec<vec<float>>& query, const SearchOptions& opts,
+    vec<SearchResult> search(const vec<vec<Real>>& query, const SearchOptions& opts,
                              std::ifstream& dataset_ifs) const override {
         uint series_len = m_series_isax_prop->series_len;
         uint segment_len = m_series_isax_prop->segment_len;
@@ -137,7 +137,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
 
         std::priority_queue<PQueueISaxEntry<FTag>> pq;
 
-        vec<vec<float>> query_paa(num_channels);
+        vec<vec<Real>> query_paa(num_channels);
         size_t query_len = 0;
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             query_paa[c] = paa(query[c], segment_len);
@@ -150,7 +150,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
         // Go over first layer, calculate MINDIST and iSAX words, push to priority queue
         logger.start_timer(QC::FIRST_LAYER_TIME_S);
         for (size_t i = 0; i < m_first_layer_symbols.size(); ++i) {
-            DistanceT min_dist_squared = 0;
+            Real min_dist_squared = 0;
             vec<iSaxType> isax_words(num_channels);
 
             for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
@@ -182,14 +182,14 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
                 } else {
                     uint num_bits = isax_words[c].get_num_bits()[s];
                     auto limits = get_segment_limits(num_bits, isax_words[c].symbol_no_shift(s));
-                    float prev_dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
+                    Real prev_dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
                     ++num_bits;
 
                     auto [left_isax_words, right_isax_words] = get_children_isax_words(node, isax_words, c, s);
 
                     // Left child
                     limits = get_segment_limits(num_bits, left_isax_words[c].symbol_no_shift(s));
-                    float dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
+                    Real dist = distance_measure->min_dist_squared(query_paa[c][s], limits.first, limits.second);
                     pq.push({min_dist_squared + segment_len * (dist - prev_dist), left_isax_words, left});
 
                     // Right child
@@ -203,14 +203,14 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
                     if (skip_entry(query_len, series_len, subs_info)) continue;
 
                     size_t data_to_read = subs_info.length;
-                    vec<vec<float>> subsequence(num_channels);
+                    vec<vec<Real>> subsequence(num_channels);
                     logger.start_timer(QC::IO_TIME_S);
                     for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
                         if (query[c].empty()) continue;
 
                         subsequence[c].resize(data_to_read);
                         dataset_ifs.seekg(subs_info.get_file_pos(series_len, num_channels, c));
-                        dataset_ifs.read(reinterpret_cast<char*>(subsequence[c].data()), data_to_read * sizeof(float));
+                        dataset_ifs.read(reinterpret_cast<char*>(subsequence[c].data()), data_to_read * sizeof(Real));
                     }
                     logger.stop_timer(QC::IO_TIME_S);
 
@@ -238,7 +238,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
     vec<vec<vec<SymbolType>>> m_first_layer_symbols;
     vec<uptr<iSaxFinalizedNode<FTag>>> m_first_layer_nodes;
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
-    vec<float> m_breakpoints;
+    vec<Real> m_breakpoints;
     uptr<SeriesISaxProperties> m_series_isax_prop;
 
     std::pair<int, int> get_limit_breakpoint_indexes(SymbolType symbol, uint num_shift) const;

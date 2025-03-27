@@ -4,7 +4,7 @@
 #include "Summarization/Envelope.hpp"
 
 TEST_CASE("ULISSE raw happy-flow works") {
-    const vec<float> ts = {1, 3.5, 1, 4, 2, 8, 10, -3.5, 2.5, 12, -9};
+    const vec<Real> ts = {1, 3.5, 1, 4, 2, 8, 10, -3.5, 2.5, 12, -9};
     uint ms_per_env = 4;
     uint segment_len = 2;
     uint l_min = 3;
@@ -34,7 +34,7 @@ TEST_CASE("ULISSE raw happy-flow works") {
 }
 
 TEST_CASE("ULISSE normalized happy-flow works") {
-    const vec<float> ts = {1, 3.5, 1, 4, 2, 8, 10, -3.5, 2.5, 12, -9};
+    const vec<Real> ts = {1, 3.5, 1, 4, 2, 8, 10, -3.5, 2.5, 12, -9};
     uint ms_per_env = 4;
     uint segment_len = 2;
     uint l_min = 3;
