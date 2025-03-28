@@ -64,14 +64,15 @@ int main(int argc, char **argv) {
 
     // Add arguments
     str dataset_path, query_path, index_path, ffts_path,
-        logs_path = "../LOGS", search_method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(ISAX_ENVELOPE),
+        breakpoints_path = "", logs_path = "../LOGS",
+        search_method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(ISAX_ENVELOPE),
         split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
         distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(TOP_DOWN);
     vec<str> csv_paths;
     Real step_sd = 1.0, noise = 0.1;
-    SaxNumBitsT first_layer_num_bits = 1;
+    SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env = 0, knn_k = 1;
     Real r_range_r = 1.0;
     int seed;
@@ -79,7 +80,8 @@ int main(int argc, char **argv) {
     vec<uint> exact_lengths = {};
     MtsNumChannelsT num_channels, used_channels = 0;
     vec<bool> channel_mask;
-    bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false, adapt_index = false;
+    bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false, adapt_index = false,
+         prefer_first_in_em = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -174,9 +176,13 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-S,--split_strategy", split_strategy_str, "Split strategy")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ISAX_SPLIT_STRATEGY_STRS));
+    index_subcommand->add_flag("--prefer_first_in_em", prefer_first_in_em,
+                               "Prefer the first segment over the one with the minimum number of bits, in case of ties "
+                               "in the split when using EntropyMaximizing strategy");
     index_subcommand->add_option("-B,--breakpoint_strategy", breakpoint_strategy_str, "Breakpoint strategy")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS));
+    index_subcommand->add_option("--breakpoints", breakpoints_path, "Path to breakpoints file")->capture_default_str();
     index_subcommand->add_flag("--adapt", adapt_index, "Adapt the index properties to the dataset");
     index_subcommand->add_option("-l,--l_min", l_min, "Minimum length of subsequences")
         ->required()
@@ -193,6 +199,9 @@ int main(int argc, char **argv) {
         ->check(positive_int);
     index_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
     index_subcommand->add_option("-b,--first_layer_bits", first_layer_num_bits, "Number of bits for first layer")
+        ->check(positive_int)
+        ->capture_default_str();
+    index_subcommand->add_option("--num_bits_limit", num_bits_limit, "Maximum number of bits per segment")
         ->check(positive_int)
         ->capture_default_str();
     index_subcommand->add_option("-I,--inserter_type", inserter_type_str, "Entry inserter type")
@@ -279,9 +288,40 @@ int main(int argc, char **argv) {
         return 1;
     }
     if (command_type == INDEX) {
-        if ((method_type == ISAX || method_type == ISAX_ENVELOPE) && leaf_capacity == 0) {
-            std::cerr << "--leaf_capacity is required\n";
-            return 1;
+        if (method_type == ISAX || method_type == ISAX_ENVELOPE) {
+            // Leaf capacity required
+            if (leaf_capacity == 0) {
+                std::cerr << "--leaf_capacity is required\n";
+                return 1;
+            }
+            // Number of bits limit cannot be too high
+            if (num_bits_limit > MAX_NUM_BITS_LIMIT) {
+                std::cerr << "Maximum number of bits per segment must be less than or equal to " << MAX_NUM_BITS_LIMIT
+                          << '\n';
+                return 1;
+            }
+            // When using fixed breakpoints strategy, the breakpoints file must exist and must contain sufficient
+            // breakpoints
+            iSaxBreakpointStrategyType breakpoint_strategy_type =
+                STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str);
+
+            if (breakpoint_strategy_type == FIXED) {
+                std::ifstream breakpoints_ifs(breakpoints_path);
+                if (!breakpoints_ifs) {
+                    std::cerr << "Error: Could not open breakpoints file " << breakpoints_path << '\n';
+                    return 1;
+                }
+                SaxSegIndT alphabet_size = 1;
+                Real breakpoint;
+                while (breakpoints_ifs >> breakpoint) ++alphabet_size;
+
+                if (alphabet_size < (1 << num_bits_limit)) {
+                    std::cerr << "The file " << breakpoints_path << " contains " << alphabet_size - 1
+                              << " breakpoints, but " << (1 << num_bits_limit) - 1
+                              << " are required. Provide a different file or lower the number of bits limit.\n";
+                    return 1;
+                }
+            }
         } else if ((method_type == ENVELOPE || method_type == ISAX_ENVELOPE) && pos_per_env == 0) {
             std::cerr << "--pos_per_env is required\n";
             return 1;
@@ -322,8 +362,9 @@ int main(int argc, char **argv) {
                         leaf_capacity,
                         STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str),
                         STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str),
-                        DEFAULT_NUM_BIT_LIMIT,
-                        true,  // min_num_bits_on_tie,
+                        num_bits_limit,
+                        !prefer_first_in_em,
+                        breakpoints_path,
                     };
                     break;
                 case ISAX:
@@ -333,8 +374,9 @@ int main(int argc, char **argv) {
                         leaf_capacity,
                         STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str),
                         STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str),
-                        DEFAULT_NUM_BIT_LIMIT,
-                        true,  // min_num_bits_on_tie,
+                        num_bits_limit,
+                        !prefer_first_in_em,
+                        breakpoints_path,
                     };
                     break;
                 case ENVELOPE:

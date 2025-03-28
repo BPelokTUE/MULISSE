@@ -7,7 +7,7 @@
 #include "Util/utilities.hpp"
 
 /** @brief Enum type for IiSaxBreakpointStrategy */
-enum iSaxBreakpointStrategyType { EQUIPROBABLE };
+enum iSaxBreakpointStrategyType { EQUIPROBABLE, FIXED };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(iSaxBreakpointStrategyType, ISAX_BREAKPOINT_STRATEGY, false);
 
@@ -60,6 +60,25 @@ class EquiprobableBreakpointStrategy : public IiSaxBreakpointStrategy {
 
    private:
     boost::math::normal_distribution<Real> m_distribution;
+};
+
+/**
+ * @brief Fixed breakpoints strategy
+ *
+ * Use fixed breakpoints loaded from an external file.
+ */
+class FixedBreakpointStrategy : public IiSaxBreakpointStrategy {
+   public:
+    /**
+     * @brief Constructor
+     * @param file Path to plain text file containing the breakpoints
+     */
+    FixedBreakpointStrategy(const str& file);
+
+    vec<Real> get_breakpoints(SaxSymbolT alphabet_size) const override;
+
+   private:
+    vec<Real> m_breakpoints;
 };
 
 #endif  // BREAKPOINT_STRATEGY_HPP

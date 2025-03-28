@@ -64,6 +64,8 @@ struct iSaxIndexParams : virtual PaaIndexParams {
     /** @brief Only used for EntropyMaximizingStrategy: whether to select the segment with the min number of bits in
      * case of a tie */
     bool min_num_bits_on_tie;
+    /** @brief Only used for FixedBreakpointStrategy: path to the plain text file to load the fixed breakpoints from */
+    str breakpoints_file;
 
     /**
      * @brief Constructor
@@ -75,17 +77,20 @@ struct iSaxIndexParams : virtual PaaIndexParams {
      * @param num_bits_limit Maximum number of bits per segment
      * @param min_num_bits_on_tie Only used for EntropyMaximizingStrategy: whether to select the segment with the min
      *        number of bits in case of a tie
+     * @param breakpoints_file Only used for FixedBreakpointStrategy: path to the plain text file to load the fixed
+     * breakpoints
      */
     iSaxIndexParams(uint segment_len, SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
                     iSaxBreakpointStrategyType breakpoint_strategy_type, iSaxSplitStrategyType split_strategy_type,
-                    SaxNumBitsT num_bits_limit, bool min_num_bits_on_tie)
+                    SaxNumBitsT num_bits_limit, bool min_num_bits_on_tie, const str &breakpoints_file)
         : PaaIndexParams(segment_len),
           first_layer_num_bits(first_layer_num_bits),
           leaf_capacity(leaf_capacity),
           breakpoint_strategy_type(breakpoint_strategy_type),
           split_strategy_type(split_strategy_type),
           num_bits_limit(num_bits_limit),
-          min_num_bits_on_tie(min_num_bits_on_tie) {}
+          min_num_bits_on_tie(min_num_bits_on_tie),
+          breakpoints_file(breakpoints_file) {}
 };
 
 /** @brief Parameters for an iSAX envelope (ULISSE) index */
@@ -103,13 +108,15 @@ struct iSaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual iSaxIndexP
      * @param num_bits_limit Maximum number of bits per segment
      * @param min_num_bits_on_tie Only used for EntropyMaximizingStrategy: whether to select the segment with the min
      *        number of bits in case of a tie
+     * @param breakpoints_file Only used for FixedBreakpointStrategy: path to the plain text file to load the fixed
+     * breakpoints
      */
     iSaxEnvelopeIndexParams(uint pos_per_env, uint segment_len, SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
                             iSaxBreakpointStrategyType breakpoint_strategy_type,
                             iSaxSplitStrategyType split_strategy_type, SaxNumBitsT num_bits_limit,
-                            bool min_num_bits_on_tie)
+                            bool min_num_bits_on_tie, const str &breakpoints_file)
         : iSaxIndexParams(segment_len, first_layer_num_bits, leaf_capacity, breakpoint_strategy_type,
-                          split_strategy_type, num_bits_limit, min_num_bits_on_tie),
+                          split_strategy_type, num_bits_limit, min_num_bits_on_tie, breakpoints_file),
           EnvelopeIndexParams(pos_per_env, segment_len),
           PaaIndexParams(segment_len) {}
 };

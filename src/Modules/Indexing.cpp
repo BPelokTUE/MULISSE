@@ -16,6 +16,8 @@ uptr<IiSaxBreakpointStrategy> get_breakpoint_strategy(const iSaxIndexParams *par
     switch (params->breakpoint_strategy_type) {
         case EQUIPROBABLE:
             return std::make_unique<EquiprobableBreakpointStrategy>();
+        case FIXED:
+            return std::make_unique<FixedBreakpointStrategy>(params->breakpoints_file);
     }
     return nullptr;
 }
@@ -73,10 +75,10 @@ sptr<IIndex<T>> get_isax_index(const IndexOptions &opts) {
     auto breakpoint_strategy = get_breakpoint_strategy(params);
     auto split_strategy = get_split_strategy<T>(params, num_seg_per_channel, opts.num_channels);
 
-    SaxNumBitsT breakpoint_num_bits = DEFAULT_NUM_BIT_LIMIT;
-    auto breakpoints = breakpoint_strategy->get_breakpoints(1 << breakpoint_num_bits);
-    RunSettings::get_instance().set_isax_properties(
-        {num_seg_per_channel, params->segment_len, std::move(breakpoint_strategy), breakpoints, breakpoint_num_bits});
+    auto breakpoints = breakpoint_strategy->get_breakpoints(1 << params->num_bits_limit);
+    RunSettings::get_instance().set_isax_properties({num_seg_per_channel, params->segment_len,
+                                                     std::move(breakpoint_strategy), breakpoints,
+                                                     params->num_bits_limit});
 
     return get_isax_index<T>(opts, params, num_seg_per_channel, std::move(split_strategy));
 }

@@ -6,9 +6,8 @@
 
 #include "Util/typedefs.hpp"
 
-const uint8_t DEFAULT_NUM_BIT_LIMIT = 15;
-
-static_assert(DEFAULT_NUM_BIT_LIMIT <= sizeof(SaxSymbolT) * 8, "DEFAULT_NUM_BIT_LIMIT exceeds the size of SaxSymbolT");
+const uint8_t MAX_NUM_BITS_LIMIT = sizeof(SaxSymbolT) * 8 - 1;
+static_assert(MAX_NUM_BITS_LIMIT <= sizeof(SaxSymbolT) * 8, "MAX_NUM_BITS_LIMIT exceeds the size of SaxSymbolT");
 
 const Real INF = std::numeric_limits<Real>::max();
 const Real EPS_F = 1e-8;
