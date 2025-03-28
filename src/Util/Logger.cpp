@@ -143,7 +143,6 @@ void QuerySetLogger::write_entry(QuerySetOptions &opts) {
 // IndexLogger
 IndexLogger IndexLogger::instance = IndexLogger();
 bool IndexLogger::initialized = false;
-IndexLogger &IndexLogger::get_instance() { return instance; }
 
 using ISC = IndexSettingsColumn;
 
@@ -213,22 +212,6 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
     for (const auto &col : INDEX_TIME_COLUMNS) instance.m_time_cols_duration[col] = 0;
 }
 
-void IndexLogger::increment_count_col(ISC col, uint amount) {
-    assert(vec_contains(INDEX_COUNT_COLUMNS, col));
-    instance.m_count_cols[col] += amount;
-}
-
-void IndexLogger::start_timer(ISC col) {
-    assert(vec_contains(INDEX_TIME_COLUMNS, col));
-    m_time_cols_start[col] = std::chrono::high_resolution_clock::now();
-}
-
-void IndexLogger::stop_timer(ISC col) {
-    assert(vec_contains(INDEX_TIME_COLUMNS, col));
-    auto end = std::chrono::high_resolution_clock::now();
-    m_time_cols_duration[col] += std::chrono::duration<double>(end - m_time_cols_start[col]).count();
-}
-
 void IndexLogger::write_entry() {
     for (const auto &col : INDEX_COUNT_COLUMNS) instance.m_columns[col] = to_string(instance.m_count_cols[col]);
     for (const auto &col : INDEX_TIME_COLUMNS) instance.m_columns[col] = to_string(instance.m_time_cols_duration[col]);
@@ -238,7 +221,6 @@ void IndexLogger::write_entry() {
 // QueryLogger
 QueryLogger QueryLogger::instance = QueryLogger();
 bool QueryLogger::initialized = false;
-QueryLogger &QueryLogger::get_instance() { return instance; }
 
 using QC = QueryColumn;
 using SSC = SearchSettingsColumn;
@@ -305,28 +287,6 @@ void QueryLogger::reset_entry() {
         instance.m_time_cols_duration[col] = 0;
     }
     for (const auto &col : QUERY_COLLECTION_COLUMNS) instance.m_collection_cols[col] = vec<str>();
-}
-
-void QueryLogger::increment_count_col(QC col, uint amount) {
-    assert(vec_contains(QUERY_COUNT_COLUMNS, col));
-    instance.m_count_cols[col] += amount;
-}
-
-void QueryLogger::increment_num_points_in_examined_entries(uint64_t amount) {
-    num_points_in_examined_entries += amount;
-}
-
-void QueryLogger::increment_num_points_examined(uint64_t amount) { num_points_examined += amount; }
-
-void QueryLogger::start_timer(QC col) {
-    assert(vec_contains(QUERY_TIME_COLUMNS, col));
-    instance.m_time_cols_start[col] = std::chrono::high_resolution_clock::now();
-}
-
-void QueryLogger::stop_timer(QC col) {
-    assert(vec_contains(QUERY_TIME_COLUMNS, col));
-    auto end = std::chrono::high_resolution_clock::now();
-    instance.m_time_cols_duration[col] += std::chrono::duration<double>(end - instance.m_time_cols_start[col]).count();
 }
 
 void QueryLogger::log_query(const vec<vec<Real>> &query) {

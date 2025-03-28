@@ -228,19 +228,19 @@ class DistanceMeasure<S, MASS> {
         FftArray query_fft(2 * mts_len), mts_fft(2 * mts_len), dot_prods_fft(2 * mts_len), dot_products(2 * mts_len);
         fftwr_plan plan;
 
-        auto &run_settings = RunSettings::get_instance();
+        auto &RS = RunSettings::get_instance();
 
-        if (run_settings.ffts_supported()) {
+        if (RS.ffts_supported()) {
             auto &logger = QueryLogger::get_instance();
 
             logger.start_timer(QC::IO_TIME_S);
-            mts_fft = run_settings.get_ffts(subs_info, channel_ind, mts_len);
+            mts_fft = RS.get_ffts(subs_info, channel_ind, mts_len);
             logger.stop_timer(QC::IO_TIME_S);
 
-            auto *query_fft_ptr = run_settings.get_query_ffts(channel_ind);
+            auto *query_fft_ptr = RS.get_query_ffts(channel_ind);
             if (!query_fft_ptr) {
-                run_settings.calculate_query_ffts(q_channel, channel_ind, mts_len);
-                query_fft_ptr = run_settings.get_query_ffts(channel_ind);
+                RS.calculate_query_ffts(q_channel, channel_ind, mts_len);
+                query_fft_ptr = RS.get_query_ffts(channel_ind);
             }
             query_fft = *query_fft_ptr;
         } else {

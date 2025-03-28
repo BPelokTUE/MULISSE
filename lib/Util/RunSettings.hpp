@@ -53,7 +53,11 @@ class RunSettings {
     static void initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
                            uint pos_per_env, const str& index_path, const str& ffts_path, SearchMethodType method_type,
                            const str& logs_dir);
-    static RunSettings& get_instance();
+
+    static inline RunSettings& get_instance() {
+        assert(initialized);
+        return *instance.get();
+    }
 
 #ifdef ENABLE_TEST_CODE
     static void set_instance(sptr<RunSettings> instance);

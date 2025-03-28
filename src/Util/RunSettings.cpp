@@ -93,11 +93,6 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     }
 }
 
-RunSettings &RunSettings::get_instance() {
-    assert(initialized);
-    return *instance.get();
-}
-
 #ifdef ENABLE_TEST_CODE
 void RunSettings::set_instance(sptr<RunSettings> instance) {
     RunSettings::instance = instance;

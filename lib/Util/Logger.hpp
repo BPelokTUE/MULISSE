@@ -323,7 +323,7 @@ class IndexLogger : public Logger {
    public:
     IndexLogger() = default;
 
-    static IndexLogger &get_instance();
+    inline static IndexLogger &get_instance() { return instance; };
 
     static void initialize(const IndexOptions &index_options);
 
@@ -335,19 +335,29 @@ class IndexLogger : public Logger {
      * @param col The column to increment, expected to be a value from INDEX_COUNT_COLUMNS
      * @param amount The amount to increment by
      */
-    void increment_count_col(ISC col, uint amount = 1);
+    inline void increment_count_col(ISC col, uint amount = 1) {
+        assert(vec_contains(INDEX_COUNT_COLUMNS, col));
+        instance.m_count_cols[col] += amount;
+    }
 
     /**
      * @brief Start the timer for the given column
      * @param col The column to start the timer for, expected to be a value from INDEX_TIME_COLUMNS
      */
-    void start_timer(ISC col);
+    inline void start_timer(ISC col) {
+        assert(vec_contains(INDEX_TIME_COLUMNS, col));
+        m_time_cols_start[col] = std::chrono::high_resolution_clock::now();
+    }
 
     /**
      * @brief Stop the timer for the given column and save the duration
      * @param col The column to stop the timer for, expected to be a value from INDEX_TIME_COLUMNS
      */
-    void stop_timer(ISC col);
+    inline void stop_timer(ISC col) {
+        assert(vec_contains(INDEX_TIME_COLUMNS, col));
+        auto end = std::chrono::high_resolution_clock::now();
+        m_time_cols_duration[col] += std::chrono::duration<double>(end - m_time_cols_start[col]).count();
+    }
 
    private:
     umap<ISC, str> m_columns;
@@ -366,7 +376,7 @@ class QueryLogger : public Logger {
    public:
     static void initialize(const SearchOptions &search_options);
 
-    static QueryLogger &get_instance();
+    inline static QueryLogger &get_instance() { return instance; }
 
     /**
      * @brief Set the given column to the specified value
@@ -375,7 +385,7 @@ class QueryLogger : public Logger {
      * @param value The value
      * */
     template <typename T>
-    void set_number_col(QC col, T value) {
+    inline void set_number_col(QC col, T value) {
         assert(vec_contains(QUERY_NUMBER_COLUMNS, col));
         instance.m_settable_cols[col] = std::to_string(value);
     }
@@ -385,31 +395,42 @@ class QueryLogger : public Logger {
      * @param col The column to increment, expected to be a value from QUERY_COUNT_COLUMNS
      * @param amount The amount to increment by
      * */
-    void increment_count_col(QC col, uint amount = 1);
+    inline void increment_count_col(QC col, uint amount = 1) {
+        assert(vec_contains(QUERY_COUNT_COLUMNS, col));
+        instance.m_count_cols[col] += amount;
+    }
 
     /**
      * @brief Increment the number of points in the entries examined
      * @param amount The amount to increment by
      * */
-    void increment_num_points_in_examined_entries(uint64_t amount);
+    inline void increment_num_points_in_examined_entries(uint64_t amount) { num_points_in_examined_entries += amount; }
 
     /**
      * @brief Increment the number of points examined
      * @param amount The amount to increment by
      */
-    void increment_num_points_examined(uint64_t amount);
+    inline void increment_num_points_examined(uint64_t amount) { num_points_examined += amount; }
 
     /**
      * @brief Start the timer for the given column
      * @param col The column to start the timer for, expected to be a value from QUERY_TIME_COLUMNS
      */
-    void start_timer(QC col);
+    inline void start_timer(QC col) {
+        assert(vec_contains(QUERY_TIME_COLUMNS, col));
+        instance.m_time_cols_start[col] = std::chrono::high_resolution_clock::now();
+    }
 
     /**
      * @brief Stop the timer for the given column and save the duration
      * @param col The column to stop the timer for, expected to be a value from QUERY_TIME_COLUMNS
      */
-    void stop_timer(QC col);
+    inline void stop_timer(QC col) {
+        assert(vec_contains(QUERY_TIME_COLUMNS, col));
+        auto end = std::chrono::high_resolution_clock::now();
+        instance.m_time_cols_duration[col] +=
+            std::chrono::duration<double>(end - instance.m_time_cols_start[col]).count();
+    }
 
     /**
      * @brief Log information about the query into the current run entry
