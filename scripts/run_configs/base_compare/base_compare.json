@@ -12,8 +12,9 @@
         "index": ["isax_envelope"],
         "scan": ["scan"]
     },
-    "isax_split_strategies": ["em", "uctm", "ctm"],
+    "isax_split_strategies": ["uctm"],
     "isax_breakpoint_strategies": ["equiprobable"],
+    "isax_breakpoints_file": ["../BREAKPOINTS/ulisse_breakpoints.txt"],
     "isax_leaf_cap_ratios": [0.0128],
     "isax_start_bit_numbers": [1],
     "num_segments": [32],

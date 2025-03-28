@@ -151,6 +151,8 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
                         "num_segments": config.get("num_segments", []),
                         "adapt": config.get("adapt_index", []),
                         "inserter_type": config.get("index_inserters", []),
+                        "isax_breakpoints_file": config.get("isax_breakpoints_file", [""]),
+                        "isax_prefer_first_in_em": config.get("isax_prefer_first_in_em", [False]),
                     }
                 )
             if "isax_envelope" in config["search_methods"]:
@@ -162,9 +164,11 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
                         "leaf_capacity": config.get("isax_leaf_cap_ratios", []),
                         "first_layer_bits": config.get("isax_start_bit_numbers", []),
                         "num_segments": config.get("num_segments", []),
-                        "pos_per_env": config.get("envelope_size_ratios", []),
                         "adapt": config.get("adapt_index", []),
                         "inserter_type": config.get("index_inserters", []),
+                        "isax_breakpoints_file": config.get("isax_breakpoints_file", [""]),
+                        "isax_prefer_first_in_em": config.get("isax_prefer_first_in_em", [False]),
+                        "pos_per_env": config.get("envelope_size_ratios", []),
                     }
                 )
             if "envelope" in config["search_methods"]:
@@ -599,6 +603,12 @@ if __name__ == "__main__":
                             args += ["-C", str(leaf_capacity)]
                         if index_setting_copy.pop("adapt", False):
                             args += ["--adapt"]
+                        if "isax_breakpoints_file" in index_setting_copy:
+                            breakpoints_file = index_setting_copy.pop("isax_breakpoints_file", "")
+                            if len(breakpoints_file) > 0:
+                                args += ["--breakpoints", breakpoints_file]
+                        if index_setting_copy.pop("isax_prefer_first_in_em", False):
+                            args += ["--prefer_first_in_em"]
 
                         for key, value in index_setting_copy.items():
                             args += [f"--{key}", str(value)]
