@@ -1,6 +1,6 @@
 {
     "csv_data_dirs": [],
-    "dataset_sizes": [5000],
+    "dataset_sizes": [1000],
     "series_lengths": [4096],
     "syn_num_channels": [1],
     "syn_step_stdevs": [1.0],
@@ -12,7 +12,7 @@
         "index": ["isax_envelope"],
         "scan": ["scan"]
     },
-    "isax_split_strategies": ["em"],
+    "isax_split_strategies": ["em", "uctm", "ctm"],
     "isax_breakpoint_strategies": ["equiprobable"],
     "isax_leaf_cap_ratios": [0.0128],
     "isax_start_bit_numbers": [1],
@@ -25,10 +25,12 @@
     "early_abandon": [true],
     "precalculate_ffts": [false],
     "adapt_index": [false],
-    "index_inserters": ["isax_parallel", "top_down"],
+    "index_inserters": ["isax_parallel"],
     "search_types": ["knn"],
     "search_ks": [1],
     "search_rs": [1.0],
     "search_approx": [false],
-    "search_raw": [false]
+    "search_raw": [false],
+    "dataset_seeds": [10],
+    "query_set_seeds": [100]
 }

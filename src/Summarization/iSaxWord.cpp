@@ -66,9 +66,9 @@ void iSaxWord::select_max_symbols(const iSaxWord &other) {
 }
 
 std::optional<Real> iSaxWord::get_mid_breakpoint(SaxSegIndT segment_ind, const vec<Real> &breakpoints) const {
-    uint alphabet_ratio = (breakpoints.size() + 1) / (1 << (m_num_bits[segment_ind] + 1));
+    uint alphabet_ratio = (breakpoints.size() + 1) / (1 << m_num_bits[segment_ind]);
     // If this segment already has the maximum allowed cardinality ==> cannot be split further
-    if (alphabet_ratio == 0) return std::nullopt;
+    if (alphabet_ratio <= 1) return std::nullopt;
 
     auto symbol = operator[](segment_ind);
     // `symbol * 2 + 1` goes to the upper interval in the next resolution

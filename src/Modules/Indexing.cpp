@@ -28,6 +28,10 @@ uptr<IiSaxSplitStrategy<T>> get_split_strategy(const iSaxIndexParams *params, Sa
             return std::make_unique<DoubleRoundRobinStrategy<T>>(num_seg_per_channel, num_channels);
         case ENTROPY_MAXIMIZING:
             return std::make_unique<EntropyMaximizingStrategy<T>>(params->min_num_bits_on_tie);
+        case ULISSE_CLOSEST_TO_MEAN:
+            return std::make_unique<UlisseClosestToMeanStrategy<T>>();
+        case CLOSES_TO_MEAN:
+            return std::make_unique<ClosestToMeanStrategy<T>>();
     }
     return nullptr;
 }

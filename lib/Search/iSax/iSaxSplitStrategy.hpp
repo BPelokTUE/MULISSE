@@ -1,6 +1,8 @@
 #ifndef ISAX_SPLIT_STRATEGY_HPP
 #define ISAX_SPLIT_STRATEGY_HPP
 
+#include <cstdlib>
+
 #include "Search/iSax/iSaxSplittableNode.hpp"
 #include "Summarization/IndexEntry.hpp"
 #include "Util/typedefs.hpp"
@@ -8,7 +10,7 @@
 #include "Util/RunSettings.hpp"
 
 /** @brief Enum for IiSaxSplitStrategy implementations */
-enum iSaxSplitStrategyType { DOUBLE_ROUND_ROBIN, ENTROPY_MAXIMIZING };  // , ULISSE_CLOSEST_TO_MEAN, CLOSES_TO_MEAN };
+enum iSaxSplitStrategyType { DOUBLE_ROUND_ROBIN, ENTROPY_MAXIMIZING, ULISSE_CLOSEST_TO_MEAN, CLOSES_TO_MEAN };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(iSaxSplitStrategyType, ISAX_SPLIT_STRATEGY, true);
 
@@ -77,7 +79,6 @@ class EntropyMaximizingStrategy : public IiSaxSplitStrategy<T> {
         auto &RS = RunSettings::get_instance();
 
         const vec<Real> &breakpoints = RS.get_breakpoints();
-        uint br_ind;
 
         SaxSplitIndex split_ind{0, 0};
         Real max_score = -INF;
@@ -115,6 +116,125 @@ class EntropyMaximizingStrategy : public IiSaxSplitStrategy<T> {
 
    private:
     bool m_choose_min_num_bits_when_tied;
+};
+
+/**
+ * @brief Closest to mean split strategy in line with ULISSE implementation
+ *
+ * Split strategy that selects the last segment such that it's mean is closer to it's breakpoint than to the breakpoint
+ * of the previously selected segment, and the breakpoint is within `max_std_dist` standard deviations of the mean
+ */
+template <typename T>
+    requires DerivedFromEntryData<T>
+class UlisseClosestToMeanStrategy : public IiSaxSplitStrategy<T> {
+   public:
+    /** @brief Constructor */
+    UlisseClosestToMeanStrategy(Real max_std_dist = 3.0) : m_max_std_dist(max_std_dist) {}
+
+    SaxSplitIndex get_split_ind(const iSaxSplittableLeaf<T> *leaf, const vec<iSaxWord> &isax_words) override {
+        auto &RS = RunSettings::get_instance();
+
+        SaxSplitIndex split_ind{0, 0};
+        Real split_breakpoint;
+        bool split_ind_set = false;
+
+        const vec<Real> &breakpoints = RS.get_breakpoints();
+        MtsNumChannelsT num_channels = RS.get_dataset_props().num_channels;
+        SaxSegIndT num_segments = RS.get_isax_props().num_segments;
+
+        const vec<vec<T>> &summaries = leaf->get_summaries();
+        for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+            vec<SaxNumBitsT> num_bits = isax_words[c].get_num_bits();
+            for (SaxSegIndT s = 0; s < num_segments; ++s) {
+                Real sum = 0, sum_sq = 0;
+                uint count = 0;
+
+                std::optional<Real> mid_breakpoint = isax_words[c].get_mid_breakpoint(s, breakpoints);
+                if (!mid_breakpoint) continue;
+
+                for (uint i = 0; i < summaries.size(); ++i) {
+                    Real input = summaries[i][c].get_isax_input()[s];
+                    sum += input;
+                    sum_sq += input * input;
+                    ++count;
+                }
+                auto [mu, sigma] = calculate_mu_and_sigma(sum, sum_sq, count);
+
+                if ((*mid_breakpoint - mu) / sigma <= m_max_std_dist &&
+                    (!split_ind_set || (abs(*mid_breakpoint - mu) < abs(split_breakpoint - mu)))) {
+                    split_ind = {s, c};
+                    split_breakpoint = *mid_breakpoint;
+                }
+            }
+        }
+
+        if (!split_ind_set)
+            split_ind = {static_cast<SaxSegIndT>(std::rand() % num_segments),
+                         static_cast<MtsNumChannelsT>(std::rand() % num_channels)};
+        return split_ind;
+    }
+
+   private:
+    Real m_max_std_dist;
+};
+
+/**
+ * @brief Closest to mean split strategy
+ *
+ * Split strategy that selects the segment with mean closest to it's breakpoint
+ */
+template <typename T>
+    requires DerivedFromEntryData<T>
+class ClosestToMeanStrategy : public IiSaxSplitStrategy<T> {
+   public:
+    /** @brief Constructor */
+    ClosestToMeanStrategy(Real max_std_dist = 3.0) : m_max_std_dist(max_std_dist) {}
+
+    SaxSplitIndex get_split_ind(const iSaxSplittableLeaf<T> *leaf, const vec<iSaxWord> &isax_words) override {
+        auto &RS = RunSettings::get_instance();
+
+        SaxSplitIndex split_ind{0, 0};
+        Real min_diff = INF;
+
+        const vec<Real> &breakpoints = RS.get_breakpoints();
+        MtsNumChannelsT num_channels = RS.get_dataset_props().num_channels;
+        SaxSegIndT num_segments = RS.get_isax_props().num_segments;
+
+        const vec<vec<T>> &summaries = leaf->get_summaries();
+        for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+            vec<SaxNumBitsT> num_bits = isax_words[c].get_num_bits();
+            for (SaxSegIndT s = 0; s < num_segments; ++s) {
+                Real sum = 0, sum_sq = 0;
+                uint count = 0;
+
+                std::optional<Real> mid_breakpoint = isax_words[c].get_mid_breakpoint(s, breakpoints);
+                if (!mid_breakpoint) continue;
+
+                for (uint i = 0; i < summaries.size(); ++i) {
+                    Real input = summaries[i][c].get_isax_input()[s];
+                    sum += input;
+                    sum_sq += input * input;
+                    ++count;
+                }
+                auto [mu, sigma] = calculate_mu_and_sigma(sum, sum_sq, count);
+
+                if ((*mid_breakpoint - mu) / sigma <= m_max_std_dist) {
+                    Real diff = abs(*mid_breakpoint - mu);
+                    if (diff < min_diff) {
+                        split_ind = {s, c};
+                        min_diff = diff;
+                    }
+                }
+            }
+        }
+        if (min_diff == INF)
+            split_ind = {static_cast<SaxSegIndT>(std::rand() % num_segments),
+                         static_cast<MtsNumChannelsT>(std::rand() % num_channels)};
+        return split_ind;
+    }
+
+   private:
+    Real m_max_std_dist;
 };
 
 #endif  // ISAX_SPLIT_STRATEGY_HPP
