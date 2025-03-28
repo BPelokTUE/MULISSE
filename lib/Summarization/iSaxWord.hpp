@@ -1,6 +1,7 @@
 #ifndef ISAX_WORD_HPP
 #define ISAX_WORD_HPP
 
+#include <optional>
 #include <vector>
 
 #include "Summarization/SaxWord.hpp"
@@ -113,7 +114,6 @@ class iSaxWord : public SaxWord {
 
     /**
      * @brief Set the symbol at the given index
-     *
      * @param index The index of the symbol
      * @param num_bits Number of bits to use for the symbol
      * @param symbol Symbol (represented using `num_bits` bits)
@@ -122,10 +122,17 @@ class iSaxWord : public SaxWord {
 
     /**
      * @brief For each segment, set the symbols to the maximum of two words
-     *
      * @param other The other iSaxWord to compare to. Assumed to be of the same length.
      */
     void select_max_symbols(const iSaxWord &other);
+
+    /**
+     * @brief Get the breakpoint in the middle of the interval of a given segment
+     * @param segment_ind The index of the segment
+     * @param breakpoints The breakpoints of the iSAX word
+     * @return The breakpoint in the middle of the interval of the given segment
+     */
+    std::optional<Real> get_mid_breakpoint(SaxSegIndT segment_ind, const vec<Real> &breakpoints) const;
 
    private:
     vec<SaxNumBitsT> m_num_bits;

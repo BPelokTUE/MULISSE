@@ -8,7 +8,7 @@
 #include "Util/RunSettings.hpp"
 
 /** @brief Enum for IiSaxSplitStrategy implementations */
-enum iSaxSplitStrategyType { DOUBLE_ROUND_ROBIN, ENTROPY_MAXIMIZING };
+enum iSaxSplitStrategyType { DOUBLE_ROUND_ROBIN, ENTROPY_MAXIMIZING };  // , ULISSE_CLOSEST_TO_MEAN, CLOSES_TO_MEAN };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(iSaxSplitStrategyType, ISAX_SPLIT_STRATEGY, true);
 
@@ -56,6 +56,11 @@ class DoubleRoundRobinStrategy : public IiSaxSplitStrategy<T> {
     MtsNumChannelsT m_num_channels, m_current_channel = 0;
 };
 
+/**
+ * @brief Entropy maximizing split strategy
+ *
+ * Split strategy that selects the segment that, when split, maximizes the entropy of
+ */
 template <typename T>
     requires DerivedFromEntryData<T>
 class EntropyMaximizingStrategy : public IiSaxSplitStrategy<T> {
@@ -68,7 +73,7 @@ class EntropyMaximizingStrategy : public IiSaxSplitStrategy<T> {
     EntropyMaximizingStrategy(bool choose_min_num_bits_when_tied)
         : m_choose_min_num_bits_when_tied(choose_min_num_bits_when_tied) {}
 
-    SaxSplitIndex get_split_ind(const iSaxSplittableLeaf<T> *leaf, const vec<iSaxWord> &isax_mins) override {
+    SaxSplitIndex get_split_ind(const iSaxSplittableLeaf<T> *leaf, const vec<iSaxWord> &isax_words) override {
         auto &RS = RunSettings::get_instance();
 
         const vec<Real> &breakpoints = RS.get_breakpoints();
@@ -80,38 +85,23 @@ class EntropyMaximizingStrategy : public IiSaxSplitStrategy<T> {
 
         const vec<vec<T>> &summaries = leaf->get_summaries();
         for (MtsNumChannelsT c = 0; c < RS.get_dataset_props().num_channels; ++c) {
-            vec<SaxNumBitsT> num_bits = isax_mins[c].get_num_bits();
+            vec<SaxNumBitsT> num_bits = isax_words[c].get_num_bits();
             for (SaxSegIndT s = 0; s < RS.get_isax_props().num_segments; ++s) {
                 Real sum = 0, sum_sq = 0, score = 0;
                 uint count = 0;
 
-                uint alphabet_ratio = (breakpoints.size() + 1) / (1 << (num_bits[s] + 1));
-                // If this segment already has the maximum allowed cardinality ==> skip
-                if (alphabet_ratio == 0) continue;
+                std::optional<Real> mid_breakpoint = isax_words[c].get_mid_breakpoint(s, breakpoints);
+                if (!mid_breakpoint) continue;
 
-                br_ind = alphabet_ratio - 1;
+                // All values either fall within the lower or the upper part of the segment of the current interval
+                uint count_lower = 0;
+                for (uint i = 0; i < summaries.size(); ++i)
+                    if (summaries[i][c].get_isax_input()[s] < mid_breakpoint) ++count_lower;
 
-                vec<Real> isax_input_values(summaries.size());
-                for (uint i = 0; i < summaries.size(); ++i) isax_input_values[i] = summaries[i][c].get_isax_input()[s];
-                std::sort(isax_input_values.begin(), isax_input_values.end());
-
-                for (Real isax_input_val : isax_input_values) {
-                    if (br_ind >= breakpoints.size() || isax_input_val < breakpoints[br_ind]) {
-                        ++count;
-                        sum += isax_input_val;
-                        sum_sq += isax_input_val * isax_input_val;
-                    } else {
-                        Real prob = (Real)count / summaries.size();
-                        if (prob > 0) score -= prob * log2(prob);
-
-                        count = 0;
-                        br_ind += alphabet_ratio;
-                    }
-                }
-                Real prob = (Real)count / summaries.size();
-                if (prob > 0) score -= prob * log2(prob);
-
+                Real prob_lower = static_cast<Real>(count_lower) / summaries.size(), prob_upper = 1 - prob_lower;
+                score = -prob_lower * log(prob_lower) - prob_upper * log(prob_upper);
                 score *= calculate_mu_and_sigma(sum, sum_sq, summaries.size()).second;
+
                 if (score > max_score ||
                     (m_choose_min_num_bits_when_tied && score == max_score && num_bits[s] < min_num_bits)) {
                     max_score = score;

@@ -200,23 +200,13 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
         auto *leaf = static_cast<iSaxSplittableLeaf<T> *>(node_ref.get());
         // Split the leaf
         auto [segment_ind, channel_ind] = m_split_strategy->get_split_ind(leaf, isax_words);
-        SaxNumBitsT split_seg_bits = isax_words[channel_ind].get_num_bits()[segment_ind];
-        // If cannot split further, return
-        if (split_seg_bits == m_alphabet_num_bits) return;
+
+        std::optional<Real> mid_breakpoint = isax_words[channel_ind].get_mid_breakpoint(segment_ind, *m_breakpoints);
+        if (!mid_breakpoint) return;
 
         auto &logger = IndexLogger::get_instance();
         logger.increment_count_col(ISC::NUM_NODES, 2);
         logger.increment_count_col(ISC::NUM_LEAVES);
-
-        // Find the breakpoint in the middle of the symbol at the split index
-        SaxSymbolT alphabet_size_ratio = (m_breakpoints->size() + 1) / (1 << split_seg_bits);
-
-        // `symbol * 2 + 1` goes to the upper interval in the next resolution
-        // `* (alphabet_size_ratio >> 1)` goes to the lowest portion of the upper interval
-        // (i.e. just above the mid breakpoint) in the desired resolution
-        // `-1` adjusts for the fact that the breakpoints have an implicit -inf at the beginning
-        auto symbol = isax_words[channel_ind][segment_ind];
-        auto mid_breakpoint = m_breakpoints->at((symbol * 2 + 1) * (alphabet_size_ratio >> 1) - 1);
 
         // Distribute the mts_envelope across the two new leaves
         vec<SubsequenceInfo> left_subsequence_positions, right_subsequence_positions;
