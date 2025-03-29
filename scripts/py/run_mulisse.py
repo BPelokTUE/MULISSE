@@ -139,36 +139,28 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
             ]
 
         def get_index_settings() -> Settings:
+            common_settings = {
+                "split_strategy": config.get("isax_split_strategies", []),
+                "breakpoint_strategy": config.get("isax_breakpoint_strategies", []),
+                "leaf_capacity": config.get("isax_leaf_cap_ratios", []),
+                "first_layer_bits": config.get("isax_start_bit_numbers", []),
+                "num_segments": config.get("num_segments", []),
+                "adapt": config.get("adapt_index", []),
+                "inserter_type": config.get("index_inserters", []),
+                "isax_breakpoints_file": config.get("isax_breakpoints_file", [""]),
+                "isax_prefer_first_in_em": config.get("isax_prefer_first_in_em", [False]),
+                "isax_num_bits_limit": config.get("isax_num_bits_limits", [0]),
+            }
+
             index_settings = []
             if "isax" in config["search_methods"]:
-                index_settings.append(
-                    {
-                        "index_type": "isax",
-                        "split_strategy": config.get("isax_split_strategies", []),
-                        "breakpoint_strategy": config.get("isax_breakpoint_strategies", []),
-                        "leaf_capacity": config.get("isax_leaf_cap_ratios", []),
-                        "first_layer_bits": config.get("isax_start_bit_numbers", []),
-                        "num_segments": config.get("num_segments", []),
-                        "adapt": config.get("adapt_index", []),
-                        "inserter_type": config.get("index_inserters", []),
-                        "isax_breakpoints_file": config.get("isax_breakpoints_file", [""]),
-                        "isax_prefer_first_in_em": config.get("isax_prefer_first_in_em", [False]),
-                    }
-                )
+                index_settings.append({"index_type": "isax", **common_settings})
             if "isax_envelope" in config["search_methods"]:
                 index_settings.append(
                     {
                         "index_type": "isax_envelope",
-                        "split_strategy": config.get("isax_split_strategies", []),
-                        "breakpoint_strategy": config.get("isax_breakpoint_strategies", []),
-                        "leaf_capacity": config.get("isax_leaf_cap_ratios", []),
-                        "first_layer_bits": config.get("isax_start_bit_numbers", []),
-                        "num_segments": config.get("num_segments", []),
-                        "adapt": config.get("adapt_index", []),
-                        "inserter_type": config.get("index_inserters", []),
-                        "isax_breakpoints_file": config.get("isax_breakpoints_file", [""]),
-                        "isax_prefer_first_in_em": config.get("isax_prefer_first_in_em", [False]),
                         "pos_per_env": config.get("envelope_size_ratios", []),
+                        **common_settings,
                     }
                 )
             if "envelope" in config["search_methods"]:
@@ -249,9 +241,11 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
     for profile in profiles:
         profile_config = {}
         for key, val in config.items():
-            profile_config[key] = val
             if isinstance(val, dict):
-                profile_config[key] = val.get(profile, [])
+                if profile in val:
+                    profile_config[key] = val[profile]
+            else:
+                profile_config[key] = val
 
         parsed_configs[profile] = parse_flat_config(profile_config)
 
@@ -609,6 +603,10 @@ if __name__ == "__main__":
                                 args += ["--breakpoints", breakpoints_file]
                         if index_setting_copy.pop("isax_prefer_first_in_em", False):
                             args += ["--prefer_first_in_em"]
+                        if "isax_num_bits_limit" in index_setting_copy:
+                            num_bits_limit = index_setting_copy.pop("isax_num_bits_limit")
+                            if num_bits_limit > 0:
+                                args += ["--num_bits_limit", str(num_bits_limit)]
 
                         for key, value in index_setting_copy.items():
                             args += [f"--{key}", str(value)]
