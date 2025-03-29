@@ -6,16 +6,19 @@
 #include "magic_enum/magic_enum.hpp"
 
 #include "Util/typedefs.hpp"
+#include "Util/constants.hpp"
 
 // Dataset
 
 /**
  * @brief Get the size of a dataset; TODO: this should be in `RunSettings`
- *
  * @param dataset_path Path to the dataset
  * @return The size of the dataset
  */
-size_t get_dataset_size(const str dataset_path);
+inline size_t get_dataset_size(const str dataset_path) {
+    std::ifstream data_stream(dataset_path, std::ios::binary | std::ios::ate);
+    return data_stream.tellg();
+}
 
 // Helper
 
@@ -96,7 +99,6 @@ umap<T, str> generate_enum_to_string_map() {
 
 /**
  * @brief Get the values of an enum
- *
  * @tparam T Type of the map values
  */
 template <typename T>
@@ -107,7 +109,6 @@ vec<T> get_enum_values() {
 
 /**
  * @brief Get the values of an enum to string map
- *
  * @tparam T Enum type
  * @param map The map
  * @return Vector of strings
@@ -122,7 +123,6 @@ vec<str> get_enum_strings(const umap<T, str> map) {
 
 /**
  * @brief Get the accepted strings of a map
- *
  * @tparam T Type of the map values
  * @param map The map
  * @return Vector of accepted strings
@@ -188,6 +188,16 @@ umap<V, K> get_inverse_map(const umap<K, V> map) {
 
 // Math
 
-std::pair<Real, Real> calculate_mu_and_sigma(Real sum, Real sum_sq, uint count);
+/**
+ * @brief Calculate the mean and standard deviation from the sum, sum of squares and count
+ * @param sum Sum of the values
+ * @param sum_sq Sum of the squares of the values
+ * @param count Number of values
+ */
+inline std::pair<Real, Real> calculate_mu_and_sigma(Real sum, Real sum_sq, uint count) {
+    Real mu = sum / count;
+    Real sigma = std::sqrt(std::max(sum_sq / count - mu * mu, EPS_F));
+    return {mu, sigma};
+}
 
 #endif  // UTILITIES_HPP

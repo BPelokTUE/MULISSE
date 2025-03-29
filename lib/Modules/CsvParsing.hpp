@@ -1,3 +1,6 @@
+#ifndef CSV_PARSING_HPP
+#define CSV_PARSING_HPP
+
 #include "Util/typedefs.hpp"
 
 /**
@@ -18,3 +21,5 @@
  */
 int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, int seed = 0,
                             char col_sep = ',');
+
+#endif  // CSV_PARSING_HPP
