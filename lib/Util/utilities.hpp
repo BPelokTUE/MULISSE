@@ -1,6 +1,7 @@
 #ifndef UTILITIES_HPP
 #define UTILITIES_HPP
 
+#include <cmath>
 #include <sstream>
 
 #include "magic_enum/magic_enum.hpp"

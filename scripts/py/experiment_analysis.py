@@ -1190,12 +1190,20 @@ for istc_col in [ISTC.LEAF_HEIGHT_STATS, ISTC.LEAF_FILL_STATS, ISTC.SEG_LOWER_ST
 
 
 def experiment_ulisse_comparison(
-    logs_dir: str = "EXPERIMENT_LOGS/LINARDI/5K/LOGS_combined",
+    logs_dir: str = "EXPERIMENT_LOGS/base_compare/LOGS_base_compare",
     target_col: QC = QC.TOTAL_TIME_S,
     reducer: Reducer = MeanReducer(),
     max_ulisse_pruning_ratio: float = 1.0,
 ):
-    groups_dict = {ERD.METHODS_COLS: [str(SSC.METHOD_NAME)], ERD.RUNS_COLS: [str(QC.PRUNING_RATIO), str(QC.QUERY_ID)]}
+    groups_dict = {
+        ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
+        ERD.INDEXES_COLS: [
+            str(ISC.BREAKPOINT_STRATEGY),
+            str(ISC.SPLIT_STRATEGY),
+            str(ISC.NUM_BITS_LIMIT),
+        ],
+        ERD.RUNS_COLS: [str(QC.PRUNING_RATIO), str(QC.QUERY_ID)],
+    }
     targets_dict = {ERD.RUNS_COLS: [str(target_col)]}
     columns = groups_dict.copy()
     columns[ERD.RUNS_COLS] += targets_dict[ERD.RUNS_COLS]
@@ -1219,9 +1227,22 @@ def experiment_ulisse_comparison(
     method_labels_keys = list(METHOD_LABELS.keys())
     reduced_values = sort_dict(reduced_values, lambda x: method_labels_keys.index(x[0][0]))
 
+    def get_x_label(key: tuple):
+        method, breakpoint_strat, split_strat, num_bits = key
+        if "isax" not in method:
+            return ""
+
+        breakpoint_str = breakpoint_strat if len(breakpoint_strat) <= 5 else f"{breakpoint_strat[:5]}."
+        breakpoint_str = breakpoint_str.capitalize()
+        split_str = "".join([s[0].upper() for s in split_strat.split("_")])
+        return f"{breakpoint_str}\n{split_str}\n{num_bits}"
+
+    x_labels = {(*key[1:],): get_x_label(key) for key in reduced_values}
+
     plot_bars(
         reduced_values,
         0,
+        x_labels=x_labels,
         y_label=TOTAL_TIME_Y_LABEL,
         scale="linear",
         title="ULISSE vs. MASS",

@@ -1,6 +1,6 @@
 {
     "csv_data_dirs": [],
-    "dataset_sizes": [100],
+    "dataset_sizes": [100000],
     "series_lengths": [4096],
     "syn_num_channels": [1],
     "syn_step_stdevs": [1.0],
@@ -14,7 +14,7 @@
         "envelope": ["envelope"],
         "scan": ["scan"]
     },
-    "isax_split_strategies": ["uctm", "ctm", "em"],
+    "isax_split_strategies": ["uctm", "em"],
     "isax_breakpoint_strategies": {
         "isax_env_fixed": ["fixed"],
         "isax_env": ["equiprobable"]
@@ -22,10 +22,7 @@
     "isax_breakpoints_file": {
         "isax_env_fixed": ["../BREAKPOINTS/ulisse_breakpoints.txt"]
     },
-    "isax_num_bits_limits": {
-        "isax_env_fixed": [8],
-        "isax_env": [8, 15]
-    },
+    "isax_num_bits_limits": [8],
     "isax_leaf_cap_ratios": [0.05],
     "isax_start_bit_numbers": [1],
     "num_segments": [32],
