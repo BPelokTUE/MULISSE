@@ -1,0 +1,46 @@
+{
+    "csv_data_dirs": [],
+    "dataset_sizes": [100000],
+    "series_lengths": [4096],
+    "syn_num_channels": [1],
+    "syn_step_stdevs": [1.0],
+    "query_set_sizes": [10],
+    "l_range_ratios": [[0.0625, 1.0]],
+    "used_channel_ratios": [1.0],
+    "query_noise_stdevs": [0.1],
+    "search_methods": {
+        "isax_env_fixed": ["isax_envelope"],
+        "isax_env": ["isax_envelope"]
+    },
+    "isax_split_strategies": ["uctm", "em"],
+    "isax_breakpoint_strategies": {
+        "isax_env_fixed": ["fixed"],
+        "isax_env": ["equiprobable"]
+    },
+    "isax_breakpoints_file": {
+        "isax_env_fixed": ["../BREAKPOINTS/ulisse_breakpoints.txt"]
+    },
+    "isax_num_bits_limits": [8],
+    "isax_leaf_cap_ratios": [0.05],
+    "isax_start_bit_numbers": [8],
+    "num_segments": [32],
+    "envelope_size_ratios": [1.0],
+    "distance_measures": {
+        "isax_env_fixed": ["ed"],
+        "isax_env": ["ed"]
+    },
+    "early_abandon": [true],
+    "precalculate_ffts": [false],
+    "adapt_index": [false],
+    "index_inserters": {
+        "isax_env_fixed": ["isax_parallel"],
+        "isax_env": ["isax_parallel"]
+    },
+    "search_types": ["knn"],
+    "search_ks": [1],
+    "search_rs": [1.0],
+    "search_approx": [false],
+    "search_raw": [false],
+    "dataset_seeds": [42],
+    "query_set_seeds": [42]
+}

@@ -507,9 +507,12 @@ METHOD_COLORS = {
 }
 METHOD_LABELS = {
     "sequential_scan-ed": "BF",
+    "base_ed-ed": "EAb (C)",
     "sequential_scan-ed-early": "EAb",
+    "base_mass-mass": "MASS (C)",
     "sequential_scan-mass": "MASS, no pre.",
     "sequential_scan-mass-ffts": "MASS",
+    "ulisse-ed-early-ulisse_index": "ULISSE",
     "isax_envelope-ed": "MULISSE (ED)",
     "isax_envelope-ed-early": "MULISSE (ED, EAb)",
     "isax_envelope-mass": "MULISSE (MASS, no pre.)",
@@ -520,9 +523,6 @@ METHOD_LABELS = {
     "envelope-ed-early": "Env. (ED, EAb)",
     "envelope-mass": "Env. (MASS, no pre.)",
     "envelope-mass-ffts": "Envelope (MASS)",
-    "base_ed-ed": "EAb (C)",
-    "base_mass-mass": "MASS (C)",
-    "ulisse-ed-early-ulisse_index": "ULISSE",
 }
 DATASET_ORDER = [
     "weather",
@@ -674,7 +674,6 @@ def simplify_method_name(reduction_result: ReductionResult, method_name_ind: int
                 method_max_len = len(method)
                 simple_method_name = method
 
-        print(simple_method_name)
         group_list[method_name_ind] = simple_method_name
         result[tuple(group_list)] = target_values
     return result
@@ -1172,7 +1171,7 @@ for col in [QC.PRUNING_RATIO, QC.NUM_ENTRIES_EXAMINED]:
 
 # %%
 
-for istc_col in [ISTC.LEAF_HEIGHT_STATS, ISTC.LEAF_FILL_STATS, ISTC.SEG_LOWER_STATS]:
+for istc_col in [ISTC.LEAF_HEIGHT_STATS]:
     y_label_prefix = str(istc_col).replace("_", " ").capitalize()
     for stat in [SCP.MEAN, SCP.STD]:
         experiment_univariate_parametrization(
@@ -1243,15 +1242,16 @@ def experiment_ulisse_comparison(
         reduced_values,
         0,
         x_labels=x_labels,
-        y_label=TOTAL_TIME_Y_LABEL,
+        y_label=PRUNING_RATIO_Y_LABEL,
         scale="linear",
-        title="ULISSE vs. MASS",
     )
 
 
 # %%
 
 # experiment_ulisse_comparison(max_ulisse_pruning_ratio=0.0)
-experiment_ulisse_comparison(max_ulisse_pruning_ratio=1.0, target_col=QC.TOTAL_TIME_S)
+experiment_ulisse_comparison(
+    max_ulisse_pruning_ratio=1.0, target_col=QC.ABANDONING_RATE, logs_dir="LOGS_base_compare/LOGS_mulisse"
+)
 
 # %%

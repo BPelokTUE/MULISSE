@@ -104,7 +104,13 @@ if ! $dirty; then
 fi
 
 # Step 4
+dirty_flag=""
+[[ "$dirty" == true ]] && dirty_flag="-d"
+
+timeout_flag=""
+[[ "$timeout" -gt 0 ]] && timeout_flag="-t $timeout"
+
 remote_cmd="cd '${remote_path}' && \
     chmod u+x ./scripts/slurm/run_mulisse.sh && \
-    sbatch ./scripts/slurm/run_mulisse.sh $experiment_name ${config_files[@]}"
+    sbatch ./scripts/slurm/run_mulisse.sh $experiment_name ${dirty_flag} ${timeout_flag} ${config_files[@]}"
 ssh "$remote_url" "$remote_cmd"
