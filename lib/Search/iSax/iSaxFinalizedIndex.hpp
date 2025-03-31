@@ -182,12 +182,7 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
 
         std::priority_queue<PQueueISaxEntry<FTag>> pq;
 
-        vec<vec<Real>> query_paa(num_channels);
-        size_t query_len = 0;
-        for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-            query_paa[c] = paa(query[c], segment_len);
-            query_len = std::max(query_len, query[c].size());
-        }
+        auto [query_paa, query_len] = this->get_query_paa_and_len(query, segment_len, real_query_inds);
 
         // Go over first layer, calculate MINDIST and iSAX words, push to priority queue
         logger.start_timer(QC::FIRST_LAYER_TIME_S);

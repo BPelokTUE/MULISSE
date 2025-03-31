@@ -31,6 +31,26 @@ class ISearchMethod {
     virtual vec<SearchResult> search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
                                      const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
                                      const vec<uint> *real_query_inds = nullptr) const = 0;
+
+   protected:
+    inline std::pair<vec<vec<Real>>, uint> get_query_paa_and_len(const vec<vec<Real>> &query, uint segment_len,
+                                                                 const vec<uint> *real_query_inds = nullptr) const {
+        vec<vec<Real>> query_paa(query.size());
+        size_t query_len = 0;
+        for (size_t c = 0; c < query.size(); ++c) {
+            if (query[c].empty()) continue;
+            query_len = std::max(query_len, query[c].size());
+
+            if constexpr (QS) {
+                vec<Real> unsorted_query_channel(query_len);
+                for (uint i = 0; i < query_len; ++i) unsorted_query_channel[real_query_inds->at(i)] = query[c][i];
+                query_paa[c] = paa(unsorted_query_channel, segment_len);
+            } else {
+                query_paa[c] = paa(query[c], segment_len);
+            }
+        }
+        return {query_paa, query_len};
+    }
 };
 
 #endif  // SEARCH_METHOD_HPP

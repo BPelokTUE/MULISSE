@@ -102,6 +102,7 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
                 if (RS.ffts_supported()) RS.reset_query_ffts();
             }
 
+            logger.start_timer(QC::TOTAL_TIME_S);
             vec<SearchResult> results;
             if constexpr (QS) {
                 vec<std::pair<Real, uint>> query_magnitudes(query_len);
@@ -125,15 +126,12 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
                     }
                 }
 
-                logger.start_timer(QC::TOTAL_TIME_S);
                 results =
                     method->search(sorted_query, opts, result_set, distance_measure, dataset_ifs, &real_query_inds);
-                logger.stop_timer(QC::TOTAL_TIME_S);
             } else {
-                logger.start_timer(QC::TOTAL_TIME_S);
                 results = method->search(query, opts, result_set, distance_measure, dataset_ifs);
-                logger.stop_timer(QC::TOTAL_TIME_S);
             }
+            logger.stop_timer(QC::TOTAL_TIME_S);
 
             logger.log_results(results);
 

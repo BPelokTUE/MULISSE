@@ -82,12 +82,7 @@ class EnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
         uint series_len = RS.get_dataset_props().series_len;
         MtsNumChannelsT num_channels = RS.get_dataset_props().num_channels;
 
-        vec<vec<Real>> query_paa(num_channels);
-        size_t query_len = 0;
-        for (size_t c = 0; c < num_channels; ++c) {
-            query_paa[c] = paa(query[c], segment_len);
-            query_len = std::max(query_len, query[c].size());
-        }
+        auto [query_paa, query_len] = this->get_query_paa_and_len(query, segment_len, real_query_inds);
 
         std::priority_queue<PQueueEnvelopeEntry> pq;
 

@@ -9,32 +9,36 @@
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {
-        "isax_env_fixed": ["isax_envelope"],
-        "isax_env": ["isax_envelope"]
+        "isax_env_flat": ["isax_envelope"],
+        "isax_env": ["isax_envelope"],
+        "envelope": ["envelope"],
+        "scan": ["scan"]
     },
-    "isax_split_strategies": ["uctm", "em"],
-    "isax_breakpoint_strategies": {
-        "isax_env_fixed": ["fixed"],
-        "isax_env": ["equiprobable"]
-    },
-    "isax_breakpoints_file": {
-        "isax_env_fixed": ["../BREAKPOINTS/ulisse_breakpoints.txt"]
-    },
+    "isax_split_strategies": ["uctm"],
+    "isax_breakpoint_strategies": ["fixed"],
+    "isax_breakpoints_file": ["../BREAKPOINTS/ulisse_breakpoints.txt"],
     "isax_num_bits_limits": [8],
     "isax_leaf_cap_ratios": [0.05],
-    "isax_start_bit_numbers": [8],
+    "isax_start_bit_numbers": {
+        "isax_env_flat": [8],
+        "isax_env": [1]
+    },
     "num_segments": [32],
     "envelope_size_ratios": [1.0],
-    "distance_measures": {
-        "isax_env_fixed": ["ed"],
-        "isax_env": ["ed"]
-    },
+    "distance_measures": ["ed"],
     "early_abandon": [true],
+    "sort_query": {
+        "isax_env_flat": [true, false],
+        "isax_env": [true],
+        "envelope": [true],
+        "scan": [true]
+    },
     "precalculate_ffts": [false],
     "adapt_index": [false],
     "index_inserters": {
-        "isax_env_fixed": ["isax_parallel"],
-        "isax_env": ["isax_parallel"]
+        "isax_env_flat": ["top_down"],
+        "isax_env": ["isax_parallel"],
+        "envelope": ["top_down"]
     },
     "search_types": ["knn"],
     "search_ks": [1],
