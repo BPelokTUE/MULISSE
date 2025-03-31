@@ -15,29 +15,31 @@
  * @brief Interface for distance measures
  * @tparam S SearchType to execute
  * @tparam D DistanceType to use
+ * @tparam QS Whether the query is sorted or not
  * */
-template <SearchType S, DistanceType D>
+template <SearchType S, DistanceType D, bool QS = false>
 class DistanceMeasure {
    public:
+    /** @brief Get the type of the distance measure */
+    DistanceType get_type() const { return D; };
+
     /**
      * @brief Update the result set with the subsequences from the time series
      * @param result_set Result set to update
      * @param subs_info Information about the subsequence in the dataset
      * @param query Query time series
      * @param mts Time series to update the result set with
+     * @param real_query_inds Real indices of the query points (to support sorted queries for early abandoning)
      * @return true if the result set was updated, false otherwise
      */
-    inline bool update_result_set(ResultSet<S> &result_set, SubsequenceInfo subs_info, const vec<vec<Real>> &query,
-                                  const vec<vec<Real>> &mts) const;
-
-    /** @brief Get the type of the distance measure */
-    DistanceType get_type() const { return D; };
+    bool update_result_set(ResultSet<S> &result_set, SubsequenceInfo subs_info, const vec<vec<Real>> &query,
+                           const vec<vec<Real>> &mts, const vec<uint> *real_query_inds = nullptr) const;
 };
 
 // ED
 
-template <SearchType S>
-class DistanceMeasure<S, ED> {
+template <SearchType S, bool QS>
+class DistanceMeasure<S, ED, QS> {
    public:
     /**
      * @brief Constructor
@@ -60,12 +62,18 @@ class DistanceMeasure<S, ED> {
     }
 
     inline bool update_result_set(ResultSet<S> &result_set, SubsequenceInfo subs_info, const vec<vec<Real>> &query,
-                                  const vec<vec<Real>> &mts) const {
+                                  const vec<vec<Real>> &mts, const vec<uint> *real_query_inds = nullptr) const {
         auto &logger = QueryLogger::get_instance();
 
         bool updated = false;
         int num_start_pos, mts_len, query_len;
         vec<uint> present_channels;
+
+        if constexpr (QS) {
+            if (real_query_inds == nullptr) {
+                throw std::runtime_error("No real query indices provided for sorted query");
+            }
+        }
 
         for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
             if (!(query[c].empty())) {
@@ -93,7 +101,10 @@ class DistanceMeasure<S, ED> {
                     auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], query_len);
 
                     for (uint query_ind = 0; query_ind < query_len; ++query_ind) {
-                        Real diff = (mts[c][start_pos + query_ind] - mu) / sigma - query[c][query_ind];
+                        uint real_ind = query_ind;
+                        if constexpr (QS) real_ind = real_query_inds->at(query_ind);
+
+                        Real diff = (mts[c][start_pos + real_ind] - mu) / sigma - query[c][query_ind];
                         dist_squared += diff * diff;
                         if (use_early_abandoning && dist_squared >= result_set.get_distance_lb()) {
                             points_examined += query_ind + 1;
@@ -152,7 +163,7 @@ class DistanceMeasure<S, MASS> {
     }
 
     inline bool update_result_set(ResultSet<S> &result_set, SubsequenceInfo subs_info, const vec<vec<Real>> &query,
-                                  const vec<vec<Real>> &mts) const {
+                                  const vec<vec<Real>> &mts, const vec<uint> *real_query_inds = nullptr) const {
         bool updated = false;
 
         uint mts_len = 0, query_len = 0;

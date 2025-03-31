@@ -146,9 +146,16 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
                        m_alphabet_num_bits, m_breakpoints));
 };
 
-template <typename FTag, SearchType S, DistanceType D>
+/**
+ * @brief iSAX index search method
+ * @tparam FTag The traits of the entries in the index
+ * @tparam S The search type
+ * @tparam D The distance type
+ * @tparam QS Whether to sort the query or not
+ */
+template <typename FTag, SearchType S, DistanceType D, bool QS = false>
     requires ValidEntryTraitsTag<FTag>
-class iSaxIndexSearch : public ISearchMethod<S, D> {
+class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
     using iSaxType = typename SaxTraits<FTag>::iSaxType;
     using SymbolType = typename SaxTraits<FTag>::SymbolType;
 
@@ -160,7 +167,8 @@ class iSaxIndexSearch : public ISearchMethod<S, D> {
     iSaxIndexSearch(uptr<iSaxFinalizedIndex<FTag>> index) : m_index(std::move(index)) {}
 
     vec<SearchResult> search(const vec<vec<Real>>& query, const SearchOptions& opts, ResultSet<S>& result_set,
-                             const DistanceMeasure<S, D>& distance_measure, std::ifstream& dataset_ifs) const override {
+                             const DistanceMeasure<S, D, QS>& distance_measure, std::ifstream& dataset_ifs,
+                             const vec<uint>* real_query_inds) const override {
         auto* series_isax_prop = m_index->get_series_isax_prop();
         uint series_len = series_isax_prop->series_len;
         uint segment_len = series_isax_prop->segment_len;
@@ -250,7 +258,7 @@ class iSaxIndexSearch : public ISearchMethod<S, D> {
                     logger.stop_timer(QC::IO_TIME_S);
 
                     logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-                    distance_measure.update_result_set(result_set, subs_info, query, subsequence);
+                    distance_measure.update_result_set(result_set, subs_info, query, subsequence, real_query_inds);
                     logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
                 }
                 logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED, subsequence_infos.size());

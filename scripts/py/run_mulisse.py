@@ -201,9 +201,15 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
 
             index_method_settings = []
             scan_method_settings = []
+
+            ed_settings = {
+                "distance": "ed",
+                "early_abandon": config.get("early_abandon", []),
+                "sort_query": config.get("sort_query", [False]),
+            }
             distance_measures_settings = {
-                "ed": {"distance": "ed", "early_abandon": config.get("early_abandon", [])},
-                "euclidean": {"distance": "ed", "early_abandon": config.get("early_abandon", [])},
+                "ed": ed_settings,
+                "euclidean": ed_settings,
                 "mass": {"distance": "mass", "precalculate_ffts": config.get("precalculate_ffts", [])},
             }
             for distance_measure, settings in distance_measures_settings.items():
@@ -492,7 +498,7 @@ if __name__ == "__main__":
                 def get_method_args(setting):
                     args = ["search"]
                     for key, value in setting.items():
-                        if key in ["raw", "approx", "early_abandon"]:
+                        if key in ["raw", "approx", "early_abandon", "sort_query"]:
                             if value:
                                 args.append(f"--{key}")
                         elif key == "precalculate_ffts":

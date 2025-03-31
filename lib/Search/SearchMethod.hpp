@@ -11,8 +11,9 @@
  * @brief Interface for search methods
  * @tparam S SearchType to execute
  * @tparam D DistanceType to use
+ * @tparam QS Whether the query is sorted or not
  */
-template <SearchType S, DistanceType D>
+template <SearchType S, DistanceType D, bool QS = false>
 class ISearchMethod {
    public:
     virtual ~ISearchMethod() = default;
@@ -24,11 +25,12 @@ class ISearchMethod {
      * @param result_set Set for managing the results
      * @param distance_measure Distance measure to use
      * @param dataset_ifs Input file stream for the dataset
+     * @param real_query_inds Real indices of the query points (to support sorted queries for early abandoning)
      * @return The start positions of the subsequences in the result set
      */
     virtual vec<SearchResult> search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
-                                     const DistanceMeasure<S, D> &distance_measure,
-                                     std::ifstream &dataset_ifs) const = 0;
+                                     const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
+                                     const vec<uint> *real_query_inds = nullptr) const = 0;
 };
 
 #endif  // SEARCH_METHOD_HPP

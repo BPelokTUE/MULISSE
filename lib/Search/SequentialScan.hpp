@@ -14,14 +14,16 @@
  * @brief Class for sequential scan search method
  * @tparam S SearchType to execute
  * @tparam D DistanceType to use
+ * @tparam QS Whether to sort the query or not
  */
-template <SearchType S, DistanceType D>
-class SequentialScan : public ISearchMethod<S, D> {
+template <SearchType S, DistanceType D, bool QS = false>
+class SequentialScan : public ISearchMethod<S, D, QS> {
    public:
     SequentialScan() = default;
 
     vec<SearchResult> search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
-                             const DistanceMeasure<S, D> &distance_measure, std::ifstream &dataset_ifs) const override {
+                             const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
+                             const vec<uint> *real_query_inds) const override {
         auto [file, num_channels, series_len, num_series] = RunSettings::get_instance().get_dataset_props();
         auto &logger = QueryLogger::get_instance();
 
@@ -39,7 +41,7 @@ class SequentialScan : public ISearchMethod<S, D> {
             logger.stop_timer(QC::IO_TIME_S);
 
             logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-            distance_measure.update_result_set(result_set, {i, 0, series_len}, query, mts);
+            distance_measure.update_result_set(result_set, {i, 0, series_len}, query, mts, real_query_inds);
             logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
 
             logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED);

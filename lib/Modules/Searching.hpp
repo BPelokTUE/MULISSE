@@ -19,27 +19,28 @@
  * @brief Load the search method based on the options
  * @tparam S SearchType to execute
  * @tparam D DistanceType to use
+ * @tparam QS Whether the method takes sorted queries
  * @param opts Options for searching
  * @return Pointer to the search method
  */
-template <SearchType S, DistanceType D>
-uptr<ISearchMethod<S, D>> load_method(const SearchOptions &opts) {
+template <SearchType S, DistanceType D, bool QS>
+uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
     auto &RS = RunSettings::get_instance();
     switch (opts.search_method_type) {
         case ISAX_ENVELOPE: {
             LOAD_INDEX(iSaxFinalizedIndex<EnvelopeTag>);
-            return std::make_unique<iSaxIndexSearch<EnvelopeTag, S, D>>(std::move(index));
+            return std::make_unique<iSaxIndexSearch<EnvelopeTag, S, D, QS>>(std::move(index));
         }
         case ISAX: {
             LOAD_INDEX(iSaxFinalizedIndex<PaaTag>);
-            return std::make_unique<iSaxIndexSearch<PaaTag, S, D>>(std::move(index));
+            return std::make_unique<iSaxIndexSearch<PaaTag, S, D, QS>>(std::move(index));
         }
         case ENVELOPE: {
             LOAD_INDEX(FlatEnvelopeIndex);
-            return std::make_unique<EnvelopeIndexSearch<S, D>>(std::move(index));
+            return std::make_unique<EnvelopeIndexSearch<S, D, QS>>(std::move(index));
         }
         case SEQUENTIAL_SCAN:
-            return std::make_unique<SequentialScan<S, D>>();
+            return std::make_unique<SequentialScan<S, D, QS>>();
     }
     return nullptr;
 }
@@ -48,11 +49,12 @@ uptr<ISearchMethod<S, D>> load_method(const SearchOptions &opts) {
  * @brief Execute similarity search
  * @tparam S SearchType to execute
  * @tparam D DistanceType to use
+ * @tparam QS Whether to sort the query or not
  * @param opts Options for searching
  */
-template <SearchType S, DistanceType D>
-int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<S, D> &distance_measure) {
-    uptr<ISearchMethod<S, D>> method = load_method<S, D>(opts);
+template <SearchType S, DistanceType D, bool QS = false>
+int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<S, D, QS> &distance_measure) {
+    uptr<ISearchMethod<S, D, QS>> method = load_method<S, D, QS>(opts);
 
     if (!method) return 1;
 
@@ -66,7 +68,7 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
     MtsNumChannelsT num_channels = RunSettings::get_instance().get_dataset_props().num_channels;
     vec<vec<Real>> query(num_channels);
 
-    size_t query_count = 0;
+    size_t query_count = 0, query_len = 0;
     for (MtsNumChannelsT c = 0; !query_ifs.eof(); c = (c + 1) % num_channels) {
         str line;
         std::getline(query_ifs, line);
@@ -79,9 +81,12 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
             sum += value;
             sq_sum += value * value;
         }
-        if (opts.normalized && query[c].size() > 0) {
-            auto [mu, sigma] = calculate_mu_and_sigma(sum, sq_sum, query[c].size());
-            for (size_t i = 0; i < query[c].size(); ++i) query[c][i] = (query[c][i] - mu) / sigma;
+        if (!query[c].empty()) {
+            query_len = query[c].size();
+            if (opts.normalized) {
+                auto [mu, sigma] = calculate_mu_and_sigma(sum, sq_sum, query[c].size());
+                for (size_t i = 0; i < query[c].size(); ++i) query[c][i] = (query[c][i] - mu) / sigma;
+            }
         }
 
         if (c == num_channels - 1) {
@@ -97,9 +102,38 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
                 if (RS.ffts_supported()) RS.reset_query_ffts();
             }
 
-            logger.start_timer(QC::TOTAL_TIME_S);
-            vec<SearchResult> results = method->search(query, opts, result_set, distance_measure, dataset_ifs);
-            logger.stop_timer(QC::TOTAL_TIME_S);
+            vec<SearchResult> results;
+            if constexpr (QS) {
+                vec<std::pair<Real, uint>> query_magnitudes(query_len);
+                for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+                    if (query[c].empty()) continue;
+                    for (uint i = 0; i < query_len; ++i) {
+                        query_magnitudes[i].first += std::abs(query[c][i]);
+                        query_magnitudes[i].second = i;
+                    }
+                }
+                std::sort(query_magnitudes.begin(), query_magnitudes.end(), std::greater<std::pair<Real, uint>>());
+
+                vec<uint> real_query_inds(query_len);
+                vec<vec<Real>> sorted_query(num_channels, vec<Real>(query_len));
+
+                for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+                    if (query[c].empty()) continue;
+                    for (uint i = 0; i < query_len; ++i) {
+                        real_query_inds[i] = query_magnitudes[i].second;
+                        sorted_query[c][i] = query[c][real_query_inds[i]];
+                    }
+                }
+
+                logger.start_timer(QC::TOTAL_TIME_S);
+                results =
+                    method->search(sorted_query, opts, result_set, distance_measure, dataset_ifs, &real_query_inds);
+                logger.stop_timer(QC::TOTAL_TIME_S);
+            } else {
+                logger.start_timer(QC::TOTAL_TIME_S);
+                results = method->search(query, opts, result_set, distance_measure, dataset_ifs);
+                logger.stop_timer(QC::TOTAL_TIME_S);
+            }
 
             logger.log_results(results);
 

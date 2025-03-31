@@ -1193,6 +1193,7 @@ def experiment_ulisse_comparison(
     target_col: QC = QC.TOTAL_TIME_S,
     reducer: Reducer = MeanReducer(),
     max_ulisse_pruning_ratio: float = 1.0,
+    query_sort_in_results: bool = False,
 ):
     groups_dict = {
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
@@ -1203,6 +1204,8 @@ def experiment_ulisse_comparison(
         ],
         ERD.RUNS_COLS: [str(QC.PRUNING_RATIO), str(QC.QUERY_ID)],
     }
+    if query_sort_in_results:
+        groups_dict[ERD.METHODS_COLS].append(str(SSC.SORT_QUERY))
     targets_dict = {ERD.RUNS_COLS: [str(target_col)]}
     columns = groups_dict.copy()
     columns[ERD.RUNS_COLS] += targets_dict[ERD.RUNS_COLS]
@@ -1227,22 +1230,39 @@ def experiment_ulisse_comparison(
     reduced_values = sort_dict(reduced_values, lambda x: method_labels_keys.index(x[0][0]))
 
     def get_x_label(key: tuple):
-        method, breakpoint_strat, split_strat, num_bits = key
+        if not query_sort_in_results:
+            method, breakpoint_strat, split_strat, num_bits = key
+        else:
+            method, sort_query, breakpoint_strat, split_strat, num_bits = key
+
         if "isax" not in method:
             return ""
 
         breakpoint_str = breakpoint_strat if len(breakpoint_strat) <= 5 else f"{breakpoint_strat[:5]}."
         breakpoint_str = breakpoint_str.capitalize()
         split_str = "".join([s[0].upper() for s in split_strat.split("_")])
-        return f"{breakpoint_str}\n{split_str}\n{num_bits}"
+
+        label = f"{breakpoint_str}\n{split_str}\n{num_bits}"
+        if query_sort_in_results and sort_query:
+            label = f"Sort\n{label}"
+        return label
 
     x_labels = {(*key[1:],): get_x_label(key) for key in reduced_values}
+
+    for key, val in reduced_values.items():
+        print(f"{key}: {1.0 - val[0]}")
+
+    y_labels = {
+        QC.TOTAL_TIME_S: TOTAL_TIME_Y_LABEL,
+        QC.ABANDONING_RATE: "Abandoning rate",
+        QC.PRUNING_RATIO: PRUNING_RATIO_Y_LABEL,
+    }
 
     plot_bars(
         reduced_values,
         0,
         x_labels=x_labels,
-        y_label=PRUNING_RATIO_Y_LABEL,
+        y_label=y_labels[target_col],
         scale="linear",
     )
 
@@ -1251,7 +1271,11 @@ def experiment_ulisse_comparison(
 
 # experiment_ulisse_comparison(max_ulisse_pruning_ratio=0.0)
 experiment_ulisse_comparison(
-    max_ulisse_pruning_ratio=1.0, target_col=QC.ABANDONING_RATE, logs_dir="LOGS_base_compare/LOGS_mulisse"
+    max_ulisse_pruning_ratio=1.0,
+    target_col=QC.ABANDONING_RATE,
+    # logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_base_compare",
+    logs_dir="LOGS",
+    query_sort_in_results=True,
 )
 
 # %%

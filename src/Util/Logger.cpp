@@ -253,6 +253,9 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
     if (search_options.distance_type == DistanceType::ED)
         early_abandon_str = to_string(search_options.use_early_abandoning);
 
+    str sort_query_str = "";
+    if (search_options.distance_type == DistanceType::ED) sort_query_str = to_string(search_options.sort_queries);
+
     instance.write_row(search_settings_path,
                        {
                            {SSC::ID, instance.m_search_settings_id_str},
@@ -269,6 +272,7 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
                            {SSC::SEARCH_METHOD, SEARCH_METHOD_TYPE_TO_STR.at(search_options.search_method_type)},
                            {SSC::DISTANCE_MEASURE, DISTANCE_TYPE_TO_STR.at(search_options.distance_type)},
                            {SSC::EARLY_ABANDONING, early_abandon_str},
+                           {SSC::SORT_QUERY, sort_query_str},
                        },
                        SEARCH_SETTINGS_COL_ENUMS);
 

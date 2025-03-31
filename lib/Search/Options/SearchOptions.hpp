@@ -27,6 +27,8 @@ struct SearchOptions {
     bool normalized = true;
     /** @brief Whether early abandoning is used (for Euclidean distance) */
     bool use_early_abandoning = true;
+    /** @brief Whether query data points are sorted by absolute value (for Euclidean distance) */
+    bool sort_queries = false;
 };
 
 #endif  // SEARCH_OPTIONS_HPP

@@ -67,6 +67,7 @@ class SearchSettingsColumn(Enum):
     SEARCH_METHOD = auto()
     DISTANCE_MEASURE = auto()
     EARLY_ABANDONING = auto()
+    SORT_QUERY = auto()
 
     METHOD_NAME = auto()
 

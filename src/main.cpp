@@ -80,8 +80,8 @@ int main(int argc, char **argv) {
     vec<uint> exact_lengths = {};
     MtsNumChannelsT num_channels, used_channels = 0;
     vec<bool> channel_mask;
-    bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false, adapt_index = false,
-         prefer_first_in_em = false;
+    bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false, sort_query = false,
+         adapt_index = false, prefer_first_in_em = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -255,6 +255,10 @@ int main(int argc, char **argv) {
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_DISTANCE_TYPE_STRS));
     search_subcommand->add_flag("--early_abandon", early_abandon, "Use early abandoning");
+    search_subcommand->add_flag(
+        "--sort_query", sort_query,
+        "Sort data points of queries based on their absolute values. Only supported for Euclidean distance "
+        "with early abandoning.");
     search_subcommand->add_flag("--approx", approximate, "Approximate search");
     search_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
     //      Search type-specific options
@@ -325,6 +329,17 @@ int main(int argc, char **argv) {
         } else if ((method_type == ENVELOPE || method_type == ISAX_ENVELOPE) && pos_per_env == 0) {
             std::cerr << "--pos_per_env is required\n";
             return 1;
+        }
+    } else if (command_type == SEARCH) {
+        if (sort_query) {
+            if (distance_measure_str != DISTANCE_TYPE_TO_STR.at(ED)) {
+                std::cerr << "Sorting queries is only supported for Euclidean distance\n";
+                return 1;
+            }
+            if (!early_abandon) {
+                std::cerr << "Sorting queries is only supported with early abandoning\n";
+                return 1;
+            }
         }
     }
 
@@ -421,14 +436,21 @@ int main(int argc, char **argv) {
                 .r_range_r = r_range_r,
                 .exact = !approximate,
                 .normalized = !unnormalized,
+                .use_early_abandoning = early_abandon,
+                .sort_queries = sort_query,
             };
 
             switch (distance_type) {
                 case ED:
                     if (search_type == KNN) {
                         ResultSet<KNN> knn_result_set(knn_k);
-                        DistanceMeasure<KNN, ED> distance_measure(!unnormalized, early_abandon);
-                        return search<KNN, ED>(search_options, knn_result_set, distance_measure);
+                        if (sort_query) {
+                            DistanceMeasure<KNN, ED, true> distance_measure(!unnormalized, early_abandon);
+                            return search<KNN, ED, true>(search_options, knn_result_set, distance_measure);
+                        } else {
+                            DistanceMeasure<KNN, ED> distance_measure(!unnormalized, early_abandon);
+                            return search<KNN, ED>(search_options, knn_result_set, distance_measure);
+                        }
                     } else {  // search_type == R_RANGE
                         ResultSet<R_RANGE> result_set(r_range_r);
                         DistanceMeasure<R_RANGE, ED> distance_measure(!unnormalized, early_abandon);

@@ -61,13 +61,20 @@ class FlatEnvelopeIndex : public IIndex<Envelope>,
     MAKE_SERIALIZABLE((m_segment_len, m_pos_per_env, m_entries));
 };
 
-template <SearchType S, DistanceType D>
-class EnvelopeIndexSearch : public ISearchMethod<S, D> {
+/**
+ * @brief Flat envelope index search method
+ * @tparam S SearchType to execute
+ * @tparam D DistanceType to use
+ * @tparam QS Whether the query is sorted or not
+ */
+template <SearchType S, DistanceType D, bool QS = false>
+class EnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
    public:
     EnvelopeIndexSearch(uptr<FlatEnvelopeIndex> index) : m_index(std::move(index)) {}
 
     vec<SearchResult> search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
-                             const DistanceMeasure<S, D> &distance_measure, std::ifstream &dataset_ifs) const override {
+                             const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
+                             const vec<uint> *real_query_inds) const override {
         auto &RS = RunSettings::get_instance();
         auto &logger = QueryLogger::get_instance();
         uint segment_len = m_index->get_segment_len();
@@ -117,7 +124,7 @@ class EnvelopeIndexSearch : public ISearchMethod<S, D> {
             logger.stop_timer(QC::IO_TIME_S);
 
             logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-            distance_measure.update_result_set(result_set, subs_info, query, subsequence);
+            distance_measure.update_result_set(result_set, subs_info, query, subsequence, real_query_inds);
             logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
 
             logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED);

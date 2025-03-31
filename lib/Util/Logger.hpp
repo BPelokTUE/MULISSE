@@ -105,6 +105,7 @@ enum class SearchSettingsColumn {
     SEARCH_METHOD,     // Method used for searching
     DISTANCE_MEASURE,  // Distance measure used
     EARLY_ABANDONING,  // Whether early abandoning is used (for ED)
+    SORT_QUERY,        // Whether the queries are sorted (for ED)
 };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(SearchSettingsColumn, SEARCH_SETTINGS_COL, false);
