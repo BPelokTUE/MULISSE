@@ -22,17 +22,35 @@ class FlatEnvelopeIndex : public IIndex<Envelope>,
    public:
     /**
      * @brief Construct a new FlatEnvelopeIndex instance
-     * @param m_segment_len Length of the segments
-     * @param m_pos_per_env Number of positions per envelope
+     * @param segment_len Length of the segments
+     * @param pos_per_env Number of positions per envelope
+     * @param num_bits Number of bits used for SAX discretization. Defaults to 0, indicating no discretization.
+     * If greater than 0, the breakpoints are assumed to have the same cardinality.
      */
-    FlatEnvelopeIndex(uint m_segment_len, uint m_pos_per_env)
-        : m_segment_len(m_segment_len), m_pos_per_env(m_pos_per_env) {}
+    FlatEnvelopeIndex(uint segment_len, uint pos_per_env, SaxNumBitsT num_bits = 0)
+        : m_segment_len(segment_len), m_pos_per_env(pos_per_env), m_num_bits(num_bits) {}
 
     FlatEnvelopeIndex() = default;
 
-    void insert(const IndexEntry<Envelope> &entry) override { m_entries.push_back(entry); }
+    void insert(IndexEntry<Envelope> &entry) override {
+        if (m_num_bits > 0) {
+            auto &breakpoints = RunSettings::get_instance().get_breakpoints();
+            SaxSegIndT num_seg_per_channel = entry.mts_summary[0].lower.size();
 
-    void insert_entries(const vec<IndexEntry<Envelope>> &entries, EntryInserterType inserter_type) override {
+            for (MtsNumChannelsT c = 0; c < entry.mts_summary.size(); ++c) {
+                SaxWord sax_lower(entry.mts_summary[c].lower, m_num_bits, breakpoints);
+                SaxWord sax_upper(entry.mts_summary[c].upper, m_num_bits, breakpoints);
+
+                for (SaxSegIndT s = 0; s < num_seg_per_channel; ++s) {
+                    entry.mts_summary[c].lower[s] = sax_lower[s] > 0 ? breakpoints[sax_lower[s] - 1] : -INF;
+                    entry.mts_summary[c].upper[s] = sax_upper[s] < breakpoints.size() ? breakpoints[sax_upper[s]] : INF;
+                }
+            }
+        }
+        m_entries.push_back(entry);
+    }
+
+    void insert_entries(vec<IndexEntry<Envelope>> &entries, EntryInserterType inserter_type) override {
         uptr<IEntryInserter<FlatEnvelopeIndex>> inserter;
         switch (inserter_type) {
             case TOP_DOWN:
@@ -57,6 +75,7 @@ class FlatEnvelopeIndex : public IIndex<Envelope>,
    private:
     vec<IndexEntry<Envelope>> m_entries;
     uint m_segment_len, m_pos_per_env;
+    SaxNumBitsT m_num_bits;
 
     MAKE_SERIALIZABLE((m_segment_len, m_pos_per_env, m_entries));
 };

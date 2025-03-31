@@ -35,7 +35,8 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
             LOAD_INDEX(iSaxFinalizedIndex<PaaTag>);
             return std::make_unique<iSaxIndexSearch<PaaTag, S, D, QS>>(std::move(index));
         }
-        case ENVELOPE: {
+        case ENVELOPE:
+        case SAX_ENVELOPE: {
             LOAD_INDEX(FlatEnvelopeIndex);
             return std::make_unique<EnvelopeIndexSearch<S, D, QS>>(std::move(index));
         }

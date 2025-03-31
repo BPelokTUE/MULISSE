@@ -304,6 +304,8 @@ int main(int argc, char **argv) {
                           << '\n';
                 return 1;
             }
+        }
+        if (method_type == ISAX || method_type == ISAX_ENVELOPE || method_type == SAX_ENVELOPE) {
             // When using fixed breakpoints strategy, the breakpoints file must exist and must contain sufficient
             // breakpoints
             iSaxBreakpointStrategyType breakpoint_strategy_type =
@@ -326,7 +328,9 @@ int main(int argc, char **argv) {
                     return 1;
                 }
             }
-        } else if ((method_type == ENVELOPE || method_type == ISAX_ENVELOPE) && pos_per_env == 0) {
+        }
+        if ((method_type == ENVELOPE || method_type == SAX_ENVELOPE || method_type == ISAX_ENVELOPE) &&
+            pos_per_env == 0) {
             std::cerr << "--pos_per_env is required\n";
             return 1;
         }
@@ -397,6 +401,14 @@ int main(int argc, char **argv) {
                 case ENVELOPE:
                     index_params = new EnvelopeIndexParams{pos_per_env, segment_len};
                     break;
+                case SAX_ENVELOPE: {
+                    index_params = new SaxEnvelopeIndexParams{
+                        pos_per_env,          segment_len,
+                        first_layer_num_bits, STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str),
+                        !prefer_first_in_em,  breakpoints_path,
+                    };
+                    break;
+                }
                 case SEQUENTIAL_SCAN:
                     std::cerr << "Sequential scan does not require indexation\n";
                     return 1;

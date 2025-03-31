@@ -140,38 +140,42 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
 
         def get_index_settings() -> Settings:
             common_settings = {
-                "split_strategy": config.get("isax_split_strategies", []),
-                "breakpoint_strategy": config.get("isax_breakpoint_strategies", []),
-                "leaf_capacity": config.get("isax_leaf_cap_ratios", []),
-                "first_layer_bits": config.get("isax_start_bit_numbers", []),
                 "num_segments": config.get("num_segments", []),
-                "adapt": config.get("adapt_index", []),
                 "inserter_type": config.get("index_inserters", []),
+            }
+            sax_settings = {
+                **common_settings,
+                "breakpoint_strategy": config.get("isax_breakpoint_strategies", []),
+                "first_layer_bits": config.get("isax_start_bit_numbers", []),
+                "adapt": config.get("adapt_index", [False]),
                 "isax_breakpoints_file": config.get("isax_breakpoints_file", [""]),
                 "isax_prefer_first_in_em": config.get("isax_prefer_first_in_em", [False]),
+            }
+            isax_settings = {
+                **sax_settings,
+                "split_strategy": config.get("isax_split_strategies", []),
+                "leaf_capacity": config.get("isax_leaf_cap_ratios", []),
                 "isax_num_bits_limit": config.get("isax_num_bits_limits", [0]),
             }
+            envelope_settings = {**common_settings, "pos_per_env": config.get("envelope_size_ratios", [])}
 
             index_settings = []
             if "isax" in config["search_methods"]:
-                index_settings.append({"index_type": "isax", **common_settings})
+                index_settings.append({"index_type": "isax", **isax_settings})
             if "isax_envelope" in config["search_methods"]:
                 index_settings.append(
                     {
                         "index_type": "isax_envelope",
                         "pos_per_env": config.get("envelope_size_ratios", []),
-                        **common_settings,
+                        **isax_settings,
+                        **envelope_settings,
                     }
                 )
+            if "sax_envelope" in config["search_methods"]:
+                index_settings.append({"index_type": "sax_envelope", **sax_settings, **envelope_settings})
             if "envelope" in config["search_methods"]:
-                index_settings.append(
-                    {
-                        "index_type": "envelope",
-                        "num_segments": config.get("num_segments", []),
-                        "pos_per_env": config.get("envelope_size_ratios", []),
-                        "inserter_type": config.get("index_inserters", []),
-                    }
-                )
+                index_settings.append({"index_type": "envelope", **envelope_settings})
+
             return index_settings
 
         def get_method_settings(index_settings: Settings) -> tuple[Settings, Settings]:

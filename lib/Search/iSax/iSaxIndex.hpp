@@ -68,7 +68,7 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
 
     ~iSaxIndex() = default;
 
-    void insert(const IndexEntry<T> &entry) override {
+    void insert(IndexEntry<T> &entry) override {
         MtsNumChannelsT num_channels = m_series_isax_prop->num_channels;
         SaxSegIndT num_seg_per_channel = m_series_isax_prop->num_seg_per_channel;
 
@@ -87,7 +87,7 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
         }
     }
 
-    void insert_entries(const vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) override;
+    void insert_entries(vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) override;
 
     uptr<IFinalizedIndex<FTag>> finalize() override {
         size_t size_first_layer = m_first_layer.size();
@@ -160,17 +160,17 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
         }
     }
 
-    void insert_new_first_layer_node(const vec<vec<SaxSymbolT>> &symbols, const IndexEntry<T> &entry) {
-        m_first_layer.emplace(symbols,
-                              std::make_unique<iSaxSplittableLeaf<T>>(vec<SubsequenceInfo>{entry.subsequence_info},
-                                                                      vec<vec<T>>{entry.mts_summary}));
+    void insert_new_first_layer_node(const vec<vec<SaxSymbolT>> &symbols, IndexEntry<T> &entry) {
+        m_first_layer.emplace(
+            symbols, std::make_unique<iSaxSplittableLeaf<T>>(vec<SubsequenceInfo>{std::move(entry.subsequence_info)},
+                                                             vec<vec<T>>{std::move(entry.mts_summary)}));
         auto &logger = IndexLogger::get_instance();
         logger.increment_count_col(ISC::NUM_NODES);
         logger.increment_count_col(ISC::NUM_LEAVES);
     }
 
     void insert_into_first_layer_node(vec<iSaxWord> &isax_words, m_first_layer_type::iterator &node_it,
-                                      const IndexEntry<T> &entry) {
+                                      IndexEntry<T> &entry) {
         auto node = node_it->second.get();
 
         iSaxSplittableInternal<T> *parent = nullptr;
@@ -185,8 +185,8 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
         }
         // Reached a leaf => insert
         auto *leaf = static_cast<iSaxSplittableLeaf<T> *>(node);
-        leaf->m_subsequence_infos.push_back(entry.subsequence_info);
-        leaf->m_summaries.push_back(entry.mts_summary);
+        leaf->m_subsequence_infos.push_back(std::move(entry.subsequence_info));
+        leaf->m_summaries.push_back(std::move(entry.mts_summary));
 
         // Split if needed (if the leaf size already surpassed the capacity before inserting the new entry, then a split
         // was attempted before and was unsuccessful => don't call split function again)
@@ -288,7 +288,7 @@ class iSaxParallelInserter : public IEntryInserter<iSaxIndex<T>> {
    public:
     iSaxParallelInserter(sptr<iSaxIndex<T>> index) : m_index(index) {}
 
-    void insert_entries(const vec<IndexEntry<T>> &entries) override {
+    void insert_entries(vec<IndexEntry<T>> &entries) override {
         umap_hash<vec<vec<SaxSymbolT>>, vec<uint>, SaxSymbolsHash> symbols_to_entry_inds;
         umap_hash<vec<vec<SaxSymbolT>>, vec<iSaxWord>, SaxSymbolsHash> symbols_to_isax_words;
 
@@ -331,7 +331,7 @@ class iSaxParallelInserter : public IEntryInserter<iSaxIndex<T>> {
 
 template <typename T>
     requires DerivedFromEntryData<T>
-void iSaxIndex<T>::insert_entries(const vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) {
+void iSaxIndex<T>::insert_entries(vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) {
     uptr<IEntryInserter<iSaxIndex<T>>> inserter;
     switch (inserter_type) {
         case TOP_DOWN:

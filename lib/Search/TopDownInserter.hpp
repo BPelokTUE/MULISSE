@@ -11,7 +11,7 @@ class TopDownInserter : public IEntryInserter<IndexType> {
    public:
     TopDownInserter(sptr<IndexType> index) : m_index(index) {}
 
-    void insert_entries(const vec<IndexEntry<EntryType>> &entries) override {
+    void insert_entries(vec<IndexEntry<EntryType>> &entries) override {
         for (auto &entry : entries) m_index->insert(entry);
     }
 

@@ -167,7 +167,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         if (method_type == ISAX || method_type == ISAX_ENVELOPE) {
             auto *params = dynamic_cast<iSaxIndexParams *>(index_options.index_params.get());
             segment_len = params->segment_len;
-            first_layer_num_bits = params->first_layer_num_bits;
+            first_layer_num_bits = params->num_bits;
             leaf_capacity = params->leaf_capacity;
             brs_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(params->breakpoint_strategy_type);
 

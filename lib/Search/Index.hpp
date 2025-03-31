@@ -206,13 +206,13 @@ class IIndex {
      * @param entries The entries to insert
      * @param inserter_type The type of inserter to use
      */
-    virtual void insert_entries(const vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) = 0;
+    virtual void insert_entries(vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) = 0;
 
     /**
      * @brief Insert an entry into the index
      * @param entry The entry to insert
      */
-    virtual void insert(const IndexEntry<T> &entry) = 0;
+    virtual void insert(IndexEntry<T> &entry) = 0;
 };
 
 /**
@@ -232,7 +232,7 @@ class IEntryInserter {
      * @param entries The entries to insert
      * @param inserter_type The type of inserter to use
      */
-    virtual void insert_entries(const vec<IndexEntry<EntryType>> &entries) = 0;
+    virtual void insert_entries(vec<IndexEntry<EntryType>> &entries) = 0;
 };
 
 #endif  // INDEX_HPP
