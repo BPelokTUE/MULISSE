@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env = 0, knn_k = 1;
     Real r_range_r = 1.0;
     int seed;
-    size_t leaf_capacity = 0;
+    size_t leaf_capacity = 0, max_leaves_to_visit = 0;
     vec<uint> exact_lengths = {};
     MtsNumChannelsT num_channels, used_channels = 0;
     vec<bool> channel_mask;
@@ -262,6 +262,12 @@ int main(int argc, char **argv) {
     search_subcommand->add_flag("--no_pq,--no_priority_queue", no_use_pq,
                                 "Do not use a priority queue for flat envelope index search");
     search_subcommand->add_flag("--approx", approximate, "Approximate search");
+    search_subcommand
+        ->add_option(
+            "-M,--max_leaves_to_visit", max_leaves_to_visit,
+            "Maximum number of leaves to visit if approximate search is used. Defaults to 0, indicating no max.")
+        ->capture_default_str()
+        ->check(positive_int);
     search_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
     //      Search type-specific options
     search_subcommand->add_option("-T,--search_type", search_type_str, "Search type")
@@ -449,6 +455,7 @@ int main(int argc, char **argv) {
                 .knn_k = knn_k,
                 .r_range_r = r_range_r,
                 .exact = !approximate,
+                .max_leaves_to_visit = max_leaves_to_visit,
                 .normalized = !unnormalized,
                 .use_early_abandoning = early_abandon,
                 .sort_queries = sort_query,

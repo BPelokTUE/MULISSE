@@ -91,22 +91,23 @@ DEFINE_ENUM_CONSTS_NO_EXTRA(IndexSettingsColumn, INDEX_SETTINGS_COL, false);
 
 /** @brief Enum of the columns of the search settings log file */
 enum class SearchSettingsColumn {
-    ID,                  // ID of the setting within the log file
-    INDEX_FILE,          // Name of the index file used for search (if applicable)
-    DATASET_FILE,        // Name of the dataset file used for search
-    FFTS_FILE,           // Name of the FFTs file, empty if not used
-    QUERY_FILE,          // Name of the query file
-    NUM_QUERIES,         // Number of queries - required for backward compatibility
-    QUERY_TYPE,          // Type of the query
-    R_RANGE_R,           // R parameter for the R-range query
-    KNN_K,               // K parameter for the KNN query
-    EXACT,               // Whether the search is exact
-    NORMALIZED,          // Whether the query and subsequences are normalized
-    SEARCH_METHOD,       // Method used for searching
-    DISTANCE_MEASURE,    // Distance measure used
-    EARLY_ABANDONING,    // Whether early abandoning is used (for ED)
-    SORT_QUERY,          // Whether the queries are sorted (for ED)
-    USE_PRIORITY_QUEUE,  // Whether a priority queue is used (for FlatEnvelopeIndexSearch)
+    ID,                   // ID of the setting within the log file
+    INDEX_FILE,           // Name of the index file used for search (if applicable)
+    DATASET_FILE,         // Name of the dataset file used for search
+    FFTS_FILE,            // Name of the FFTs file, empty if not used
+    QUERY_FILE,           // Name of the query file
+    NUM_QUERIES,          // Number of queries - required for backward compatibility
+    QUERY_TYPE,           // Type of the query
+    R_RANGE_R,            // R parameter for the R-range query
+    KNN_K,                // K parameter for the KNN query
+    EXACT,                // Whether the search is exact
+    MAX_LEAVES_TO_VISIT,  // Maximum number of leaves to visit
+    NORMALIZED,           // Whether the query and subsequences are normalized
+    SEARCH_METHOD,        // Method used for searching
+    DISTANCE_MEASURE,     // Distance measure used
+    EARLY_ABANDONING,     // Whether early abandoning is used (for ED)
+    SORT_QUERY,           // Whether the queries are sorted (for ED)
+    USE_PRIORITY_QUEUE,   // Whether a priority queue is used (for FlatEnvelopeIndexSearch)
 };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(SearchSettingsColumn, SEARCH_SETTINGS_COL, false);
@@ -122,6 +123,7 @@ enum class QueryColumn {
     RESULT_SET_TS_POSITIONS,  // The start positions within their respective time series of the entries of the result
                               // set, separated by ITEM_SEP
     RESULT_SET_DISTANCES,     // The distances of the entries of the result set from the query, separated by ITEM_SEP
+    EXACT_RESULTS,            // Whether the results are known to be exact or not
     NUM_LEAVES_VISITED,       // Number of leaves visited during the search
     NUM_NODES_VISITED,        // Number of nodes visited during the search
     NUM_ENTRIES_EXAMINED,     // Number of index entries examined during the search
@@ -444,7 +446,7 @@ class QueryLogger : public Logger {
      * @brief Log information about the results of the search into the current run entry
      * @param results The results of the search
      */
-    void log_results(const vec<SearchResult> &results);
+    void log_results(const SearchResults &results);
 
     /** @brief Reset the current run entry */
     void reset_entry();

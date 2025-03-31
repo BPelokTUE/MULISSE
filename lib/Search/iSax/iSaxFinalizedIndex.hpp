@@ -166,9 +166,9 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
      */
     iSaxIndexSearch(uptr<iSaxFinalizedIndex<FTag>> index) : m_index(std::move(index)) {}
 
-    vec<SearchResult> search(const vec<vec<Real>>& query, const SearchOptions& opts, ResultSet<S>& result_set,
-                             const DistanceMeasure<S, D, QS>& distance_measure, std::ifstream& dataset_ifs,
-                             const vec<uint>* real_query_inds) const override {
+    SearchResults search(const vec<vec<Real>>& query, const SearchOptions& opts, ResultSet<S>& result_set,
+                         const DistanceMeasure<S, D, QS>& distance_measure, std::ifstream& dataset_ifs,
+                         const vec<uint>* real_query_inds) const override {
         auto* series_isax_prop = m_index->get_series_isax_prop();
         uint series_len = series_isax_prop->series_len;
         uint segment_len = series_isax_prop->segment_len;
@@ -203,12 +203,17 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
 
         logger.start_timer(QC::TREE_TRAVERSAL_TIME_S);
+        size_t leaves_visited = 0;
+        bool exact_results_found = false;
         while (!pq.empty()) {
             auto [min_dist_squared, isax_words, node] = pq.top();
             pq.pop();
             size_t pq_size = pq.size();
 
-            if (min_dist_squared >= result_set.get_distance_lb()) break;
+            if (min_dist_squared >= result_set.get_distance_lb()) {
+                exact_results_found = true;
+                break;
+            }
 
             if (!(node->is_leaf())) {
                 auto [s, c] = node->get_split_ind();
@@ -236,6 +241,8 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
                     pq.push({min_dist_squared + segment_len * (dist - prev_dist), right_isax_words, right});
                 }
             } else {
+                bool updated = false;
+
                 vec<SubsequenceInfo> subsequence_infos = node->get_subsequence_infos();
                 for (SubsequenceInfo subs_info : subsequence_infos) {
                     if (skip_entry(query_len, series_len, subs_info)) continue;
@@ -253,17 +260,21 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
                     logger.stop_timer(QC::IO_TIME_S);
 
                     logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-                    distance_measure.update_result_set(result_set, subs_info, query, subsequence, real_query_inds);
+                    updated |=
+                        distance_measure.update_result_set(result_set, subs_info, query, subsequence, real_query_inds);
                     logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
                 }
                 logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED, subsequence_infos.size());
                 logger.increment_count_col(QC::NUM_LEAVES_VISITED);
+
+                if (!opts.exact && (++leaves_visited >= opts.max_leaves_to_visit || !updated)) break;
             }
             logger.increment_count_col(QC::NUM_NODES_VISITED);
         }
         logger.stop_timer(QC::TREE_TRAVERSAL_TIME_S);
 
-        return result_set.get_results();
+        exact_results_found |= pq.empty();
+        return {result_set.get_results(), exact_results_found};
     }
 
    private:

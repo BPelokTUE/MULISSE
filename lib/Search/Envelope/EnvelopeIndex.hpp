@@ -92,9 +92,9 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
     FlatEnvelopeIndexSearch(uptr<FlatEnvelopeIndex> index, bool use_priority_queue = true)
         : m_index(std::move(index)), m_use_priority_queue(use_priority_queue) {}
 
-    vec<SearchResult> search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
-                             const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
-                             const vec<uint> *real_query_inds) const override {
+    SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
+                         const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
+                         const vec<uint> *real_query_inds) const override {
         auto [query_paa, query_len] = this->get_query_paa_and_len(query, m_index->get_segment_len(), real_query_inds);
 
         if (m_use_priority_queue) {
@@ -107,11 +107,11 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
     };
 
    private:
-    inline vec<SearchResult> search_with_priority_queue(const vec<vec<Real>> &query, const vec<vec<Real>> &query_paa,
-                                                        uint query_len, ResultSet<S> &result_set,
-                                                        const DistanceMeasure<S, D, QS> &distance_measure,
-                                                        std::ifstream &dataset_ifs,
-                                                        const vec<uint> *real_query_inds) const {
+    inline SearchResults search_with_priority_queue(const vec<vec<Real>> &query, const vec<vec<Real>> &query_paa,
+                                                    uint query_len, ResultSet<S> &result_set,
+                                                    const DistanceMeasure<S, D, QS> &distance_measure,
+                                                    std::ifstream &dataset_ifs,
+                                                    const vec<uint> *real_query_inds) const {
         auto &logger = QueryLogger::get_instance();
 
         std::priority_queue<PQueueEnvelopeEntry> pq;
@@ -135,13 +135,13 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
         }
         logger.stop_timer(QC::TREE_TRAVERSAL_TIME_S);
 
-        return result_set.get_results();
+        return {result_set.get_results(), true};
     }
 
-    inline vec<SearchResult> search_sequentially(const vec<vec<Real>> &query, const vec<vec<Real>> &query_paa,
-                                                 uint query_len, ResultSet<S> &result_set,
-                                                 const DistanceMeasure<S, D, QS> &distance_measure,
-                                                 std::ifstream &dataset_ifs, const vec<uint> *real_query_inds) const {
+    inline SearchResults search_sequentially(const vec<vec<Real>> &query, const vec<vec<Real>> &query_paa,
+                                             uint query_len, ResultSet<S> &result_set,
+                                             const DistanceMeasure<S, D, QS> &distance_measure,
+                                             std::ifstream &dataset_ifs, const vec<uint> *real_query_inds) const {
         auto &logger = QueryLogger::get_instance();
 
         logger.start_timer(QC::TREE_TRAVERSAL_TIME_S);
@@ -156,7 +156,7 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
         }
         logger.stop_timer(QC::TREE_TRAVERSAL_TIME_S);
 
-        return result_set.get_results();
+        return {result_set.get_results(), true};
     }
 
     inline Real get_min_dist_squared(const IndexEntry<Envelope> &entry, const vec<vec<Real>> &query_paa,

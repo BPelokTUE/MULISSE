@@ -23,6 +23,8 @@ struct SearchOptions {
     Real r_range_r = 0.0;
     /** @brief Whether to run exact or approximate search */
     bool exact = true;
+    /** @brief Maximum number of leaves to visit if approximate search is used. Defaults to 0, indicating no max. */
+    size_t max_leaves_to_visit = 0;
     /** @brief Whether to Z-normalize or not */
     bool normalized = true;
     /** @brief Whether early abandoning is used (for Euclidean distance) */

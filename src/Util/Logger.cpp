@@ -272,6 +272,7 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
                            {SSC::R_RANGE_R, format_num_param(r_range_r)},
                            {SSC::KNN_K, format_num_param(knn_k)},
                            {SSC::EXACT, to_string(search_options.exact)},
+                           {SSC::MAX_LEAVES_TO_VISIT, format_num_param(search_options.max_leaves_to_visit)},
                            {SSC::NORMALIZED, to_string(search_options.normalized)},
                            {SSC::SEARCH_METHOD, SEARCH_METHOD_TYPE_TO_STR.at(search_options.search_method_type)},
                            {SSC::DISTANCE_MEASURE, DISTANCE_TYPE_TO_STR.at(search_options.distance_type)},
@@ -310,15 +311,16 @@ void QueryLogger::log_query(const vec<vec<Real>> &query) {
     instance.m_collection_cols[QC::QUERY_CHANNELS] = included;
 }
 
-void QueryLogger::log_results(const vec<SearchResult> &results) {
+void QueryLogger::log_results(const SearchResults &results) {
     auto &RS = RunSettings::get_instance();
     size_t series_size = RS.m_dataset_props.series_len * RS.m_dataset_props.num_channels;
-    for (auto result : results) {
+    for (auto result : results.results) {
         auto [ts_index, ts_position, ts_length] = result.subs_info;
         instance.m_collection_cols[QC::RESULT_SET_TS_INDICES].push_back(to_string(ts_index));
         instance.m_collection_cols[QC::RESULT_SET_TS_POSITIONS].push_back(to_string(ts_position));
         instance.m_collection_cols[QC::RESULT_SET_DISTANCES].push_back(to_string(std::sqrt(result.distance)));
     }
+    instance.m_settable_cols[QC::EXACT_RESULTS] = to_string(results.exact);
 }
 
 str QueryLogger::get_collection_str(QC col) {
@@ -336,6 +338,7 @@ void QueryLogger::write_entry() {
     umap<QC, str> columns({
         {QC::ID, to_string(instance.determine_index(run_log_path))},
         {QC::SETTINGS_ID, m_search_settings_id_str},
+        {QC::EXACT_RESULTS, m_settable_cols[QC::EXACT_RESULTS]},
     });
 
     for (const auto &col : QUERY_NUMBER_COLUMNS) columns[col] = m_settable_cols[col];

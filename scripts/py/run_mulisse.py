@@ -187,7 +187,12 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
 
             for i, settings in enumerate(method_settings_base):
                 method_settings_base[i] = dict(
-                    settings, **{"approx": config["search_approx"], "raw": config["search_raw"]}
+                    settings,
+                    **{
+                        "approx": config["search_approx"],
+                        "raw": config["search_raw"],
+                        "max_leaves_to_visit": config.get("max_leaves_to_visit", [0]),
+                    },
                 )
 
             def combine_settings(settings1, settings2):

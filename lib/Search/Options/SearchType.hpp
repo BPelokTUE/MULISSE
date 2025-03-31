@@ -27,4 +27,12 @@ struct SearchResult {
     }
 };
 
+/** @brief List of search results and whether they are known to be exact */
+struct SearchResults {
+    /** @brief List of search results */
+    vec<SearchResult> results;
+    /** @brief Whether the results are known to be exact */
+    bool exact = false;
+};
+
 #endif  // SEARCH_TYPE_HPP

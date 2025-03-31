@@ -28,9 +28,9 @@ class ISearchMethod {
      * @param real_query_inds Real indices of the query points (to support sorted queries for early abandoning)
      * @return The start positions of the subsequences in the result set
      */
-    virtual vec<SearchResult> search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
-                                     const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
-                                     const vec<uint> *real_query_inds = nullptr) const = 0;
+    virtual SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
+                                 const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
+                                 const vec<uint> *real_query_inds = nullptr) const = 0;
 
    protected:
     inline std::pair<vec<vec<Real>>, uint> get_query_paa_and_len(const vec<vec<Real>> &query, uint segment_len,
