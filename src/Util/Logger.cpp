@@ -256,6 +256,10 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
     str sort_query_str = "";
     if (search_options.distance_type == DistanceType::ED) sort_query_str = to_string(search_options.sort_queries);
 
+    str use_priority_queue_str = "";
+    if (search_options.search_method_type == ENVELOPE || search_options.search_method_type == SAX_ENVELOPE)
+        use_priority_queue_str = to_string(search_options.use_priority_queue);
+
     instance.write_row(search_settings_path,
                        {
                            {SSC::ID, instance.m_search_settings_id_str},
@@ -273,6 +277,7 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
                            {SSC::DISTANCE_MEASURE, DISTANCE_TYPE_TO_STR.at(search_options.distance_type)},
                            {SSC::EARLY_ABANDONING, early_abandon_str},
                            {SSC::SORT_QUERY, sort_query_str},
+                           {SSC::USE_PRIORITY_QUEUE, use_priority_queue_str},
                        },
                        SEARCH_SETTINGS_COL_ENUMS);
 

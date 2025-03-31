@@ -217,8 +217,10 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
                 "mass": {"distance": "mass", "precalculate_ffts": config.get("precalculate_ffts", [])},
             }
             for distance_measure, settings in distance_measures_settings.items():
-                if any(d in config["distance_measures"] for d in [distance_measure]):
+                if distance_measure in config["distance_measures"]:
                     for base_setting in index_method_settings_base:
+                        if any(method in base_setting["method_type"] for method in ["envelope", "sax_envelope"]):
+                            base_setting["priority_queue"] = config.get("priority_queue", [False])
                         index_method_settings.append(dict(base_setting, **settings))
                     for base_setting in scan_method_settings_base:
                         scan_method_settings.append(dict(base_setting, **settings))
@@ -505,6 +507,9 @@ if __name__ == "__main__":
                         if key in ["raw", "approx", "early_abandon", "sort_query"]:
                             if value:
                                 args.append(f"--{key}")
+                        elif key == "priority_queue":
+                            if not value:
+                                args.append("--no_pq")
                         elif key == "precalculate_ffts":
                             if value:
                                 args += ["-F", ffts_file]
@@ -645,6 +650,7 @@ if __name__ == "__main__":
                                     logs_dirs.append(f"{LOGS_DIR}_{m_ind}")
                                     args += ["--logs", logs_dirs[-1]]
                                     os.makedirs(logs_dirs[-1], exist_ok=True)
+                                    print(1)
 
                                     futures.append(
                                         executor.submit(

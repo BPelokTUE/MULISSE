@@ -29,6 +29,8 @@ struct SearchOptions {
     bool use_early_abandoning = true;
     /** @brief Whether query data points are sorted by absolute value (for Euclidean distance) */
     bool sort_queries = false;
+    /** @brief Whether a priority queue is used for FlatEnvelopeIndexSearch */
+    bool use_priority_queue = false;
 };
 
 #endif  // SEARCH_OPTIONS_HPP

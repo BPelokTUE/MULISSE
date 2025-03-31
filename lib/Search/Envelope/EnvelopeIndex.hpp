@@ -68,7 +68,7 @@ class FlatEnvelopeIndex : public IIndex<Envelope>,
         return uptr<IFinalizedIndex<EnvelopeTag>>(finalized);
     }
 
-    uint get_segment_len() { return m_segment_len; }
+    inline uint get_segment_len() { return m_segment_len; }
 
     const vec<IndexEntry<Envelope>> &get_entries() const { return m_entries; }
 
@@ -87,21 +87,32 @@ class FlatEnvelopeIndex : public IIndex<Envelope>,
  * @tparam QS Whether the query is sorted or not
  */
 template <SearchType S, DistanceType D, bool QS = false>
-class EnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
+class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
    public:
-    EnvelopeIndexSearch(uptr<FlatEnvelopeIndex> index) : m_index(std::move(index)) {}
+    FlatEnvelopeIndexSearch(uptr<FlatEnvelopeIndex> index, bool use_priority_queue = true)
+        : m_index(std::move(index)), m_use_priority_queue(use_priority_queue) {}
 
     vec<SearchResult> search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
                              const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
                              const vec<uint> *real_query_inds) const override {
-        auto &RS = RunSettings::get_instance();
+        auto [query_paa, query_len] = this->get_query_paa_and_len(query, m_index->get_segment_len(), real_query_inds);
+
+        if (m_use_priority_queue) {
+            return search_with_priority_queue(query, query_paa, query_len, result_set, distance_measure, dataset_ifs,
+                                              real_query_inds);
+        } else {
+            return search_sequentially(query, query_paa, query_len, result_set, distance_measure, dataset_ifs,
+                                       real_query_inds);
+        }
+    };
+
+   private:
+    inline vec<SearchResult> search_with_priority_queue(const vec<vec<Real>> &query, const vec<vec<Real>> &query_paa,
+                                                        uint query_len, ResultSet<S> &result_set,
+                                                        const DistanceMeasure<S, D, QS> &distance_measure,
+                                                        std::ifstream &dataset_ifs,
+                                                        const vec<uint> *real_query_inds) const {
         auto &logger = QueryLogger::get_instance();
-        uint segment_len = m_index->get_segment_len();
-
-        uint series_len = RS.get_dataset_props().series_len;
-        MtsNumChannelsT num_channels = RS.get_dataset_props().num_channels;
-
-        auto [query_paa, query_len] = this->get_query_paa_and_len(query, segment_len, real_query_inds);
 
         std::priority_queue<PQueueEnvelopeEntry> pq;
 
@@ -109,13 +120,8 @@ class EnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
         for (auto entry : m_index->get_entries()) {
             if (entry.subsequence_info.length < query_len) continue;
 
-            Real min_dist_squared = 0;
-            for (MtsNumChannelsT c = 0; c < num_channels; ++c)
-                for (uint s = 0; s < query_paa[c].size(); ++s)
-                    min_dist_squared += distance_measure.min_dist_squared(
-                        query_paa[c][s], entry.mts_summary[c].lower[s], entry.mts_summary[c].upper[s]);
-
-            pq.push({min_dist_squared * segment_len, entry.subsequence_info});
+            Real min_dist_squared = get_min_dist_squared(entry, query_paa, result_set, distance_measure);
+            pq.push({min_dist_squared * m_index->get_segment_len(), entry.subsequence_info});
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
 
@@ -125,31 +131,74 @@ class EnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
             pq.pop();
 
             if (min_dist_squared >= result_set.get_distance_lb()) break;
-
-            vec<vec<Real>> subsequence(num_channels);
-            logger.start_timer(QC::IO_TIME_S);
-            for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-                if (query[c].empty()) continue;
-
-                subsequence[c].resize(subs_info.length);
-                dataset_ifs.seekg(subs_info.get_file_pos(series_len, num_channels, c));
-                dataset_ifs.read(reinterpret_cast<char *>(subsequence[c].data()), subs_info.length * sizeof(Real));
-            }
-            logger.stop_timer(QC::IO_TIME_S);
-
-            logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-            distance_measure.update_result_set(result_set, subs_info, query, subsequence, real_query_inds);
-            logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
-
-            logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED);
+            update_result_set(subs_info, query, result_set, distance_measure, dataset_ifs, real_query_inds);
         }
         logger.stop_timer(QC::TREE_TRAVERSAL_TIME_S);
 
         return result_set.get_results();
-    };
+    }
 
-   private:
+    inline vec<SearchResult> search_sequentially(const vec<vec<Real>> &query, const vec<vec<Real>> &query_paa,
+                                                 uint query_len, ResultSet<S> &result_set,
+                                                 const DistanceMeasure<S, D, QS> &distance_measure,
+                                                 std::ifstream &dataset_ifs, const vec<uint> *real_query_inds) const {
+        auto &logger = QueryLogger::get_instance();
+
+        logger.start_timer(QC::TREE_TRAVERSAL_TIME_S);
+        for (auto entry : m_index->get_entries()) {
+            if (entry.subsequence_info.length < query_len) continue;
+
+            Real min_dist_squared = get_min_dist_squared(entry, query_paa, result_set, distance_measure);
+            if (min_dist_squared >= result_set.get_distance_lb()) continue;
+
+            update_result_set(entry.subsequence_info, query, result_set, distance_measure, dataset_ifs,
+                              real_query_inds);
+        }
+        logger.stop_timer(QC::TREE_TRAVERSAL_TIME_S);
+
+        return result_set.get_results();
+    }
+
+    inline Real get_min_dist_squared(const IndexEntry<Envelope> &entry, const vec<vec<Real>> &query_paa,
+                                     ResultSet<S> &result_set,
+                                     const DistanceMeasure<S, D, QS> &distance_measure) const {
+        Real min_dist_squared = 0;
+        for (MtsNumChannelsT c = 0; c < query_paa.size(); ++c)
+            for (uint s = 0; s < query_paa[c].size(); ++s)
+                min_dist_squared += distance_measure.min_dist_squared(query_paa[c][s], entry.mts_summary[c].lower[s],
+                                                                      entry.mts_summary[c].upper[s]);
+        return min_dist_squared;
+    }
+
+    inline void update_result_set(const SubsequenceInfo &subs_info, const vec<vec<Real>> &query,
+                                  ResultSet<S> &result_set, const DistanceMeasure<S, D, QS> &distance_measure,
+                                  std::ifstream &dataset_ifs, const vec<uint> *real_query_inds) const {
+        auto &logger = QueryLogger::get_instance();
+
+        auto &RS = RunSettings::get_instance();
+        uint series_len = RS.get_dataset_props().series_len;
+        MtsNumChannelsT num_channels = RS.get_dataset_props().num_channels;
+
+        vec<vec<Real>> subsequence(num_channels);
+        logger.start_timer(QC::IO_TIME_S);
+        for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+            if (query[c].empty()) continue;
+
+            subsequence[c].resize(subs_info.length);
+            dataset_ifs.seekg(subs_info.get_file_pos(series_len, num_channels, c));
+            dataset_ifs.read(reinterpret_cast<char *>(subsequence[c].data()), subs_info.length * sizeof(Real));
+        }
+        logger.stop_timer(QC::IO_TIME_S);
+
+        logger.start_timer(QC::TS_EXAMINATION_TIME_S);
+        distance_measure.update_result_set(result_set, subs_info, query, subsequence, real_query_inds);
+        logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
+
+        logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED);
+    }
+
     uptr<FlatEnvelopeIndex> m_index;
+    bool m_use_priority_queue;
 };
 
 #endif  // ENVELOPE_INDEX_HPP

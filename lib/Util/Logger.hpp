@@ -91,21 +91,22 @@ DEFINE_ENUM_CONSTS_NO_EXTRA(IndexSettingsColumn, INDEX_SETTINGS_COL, false);
 
 /** @brief Enum of the columns of the search settings log file */
 enum class SearchSettingsColumn {
-    ID,                // ID of the setting within the log file
-    INDEX_FILE,        // Name of the index file used for search (if applicable)
-    DATASET_FILE,      // Name of the dataset file used for search
-    FFTS_FILE,         // Name of the FFTs file, empty if not used
-    QUERY_FILE,        // Name of the query file
-    NUM_QUERIES,       // Number of queries - required for backward compatibility
-    QUERY_TYPE,        // Type of the query
-    R_RANGE_R,         // R parameter for the R-range query
-    KNN_K,             // K parameter for the KNN query
-    EXACT,             // Whether the search is exact
-    NORMALIZED,        // Whether the query and subsequences are normalized
-    SEARCH_METHOD,     // Method used for searching
-    DISTANCE_MEASURE,  // Distance measure used
-    EARLY_ABANDONING,  // Whether early abandoning is used (for ED)
-    SORT_QUERY,        // Whether the queries are sorted (for ED)
+    ID,                  // ID of the setting within the log file
+    INDEX_FILE,          // Name of the index file used for search (if applicable)
+    DATASET_FILE,        // Name of the dataset file used for search
+    FFTS_FILE,           // Name of the FFTs file, empty if not used
+    QUERY_FILE,          // Name of the query file
+    NUM_QUERIES,         // Number of queries - required for backward compatibility
+    QUERY_TYPE,          // Type of the query
+    R_RANGE_R,           // R parameter for the R-range query
+    KNN_K,               // K parameter for the KNN query
+    EXACT,               // Whether the search is exact
+    NORMALIZED,          // Whether the query and subsequences are normalized
+    SEARCH_METHOD,       // Method used for searching
+    DISTANCE_MEASURE,    // Distance measure used
+    EARLY_ABANDONING,    // Whether early abandoning is used (for ED)
+    SORT_QUERY,          // Whether the queries are sorted (for ED)
+    USE_PRIORITY_QUEUE,  // Whether a priority queue is used (for FlatEnvelopeIndexSearch)
 };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(SearchSettingsColumn, SEARCH_SETTINGS_COL, false);

@@ -38,7 +38,7 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
         case ENVELOPE:
         case SAX_ENVELOPE: {
             LOAD_INDEX(FlatEnvelopeIndex);
-            return std::make_unique<EnvelopeIndexSearch<S, D, QS>>(std::move(index));
+            return std::make_unique<FlatEnvelopeIndexSearch<S, D, QS>>(std::move(index), opts.use_priority_queue);
         }
         case SEQUENTIAL_SCAN:
             return std::make_unique<SequentialScan<S, D, QS>>();

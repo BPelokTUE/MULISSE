@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
     MtsNumChannelsT num_channels, used_channels = 0;
     vec<bool> channel_mask;
     bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false, sort_query = false,
-         adapt_index = false, prefer_first_in_em = false;
+         no_use_pq = false, adapt_index = false, prefer_first_in_em = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -259,6 +259,8 @@ int main(int argc, char **argv) {
         "--sort_query", sort_query,
         "Sort data points of queries based on their absolute values. Only supported for Euclidean distance "
         "with early abandoning.");
+    search_subcommand->add_flag("--no_pq,--no_priority_queue", no_use_pq,
+                                "Do not use a priority queue for flat envelope index search");
     search_subcommand->add_flag("--approx", approximate, "Approximate search");
     search_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
     //      Search type-specific options
@@ -450,6 +452,7 @@ int main(int argc, char **argv) {
                 .normalized = !unnormalized,
                 .use_early_abandoning = early_abandon,
                 .sort_queries = sort_query,
+                .use_priority_queue = !no_use_pq,
             };
 
             switch (distance_type) {
