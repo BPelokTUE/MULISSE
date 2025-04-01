@@ -6,7 +6,9 @@
 #include "Search/Index.hpp"
 #include "Search/Envelope/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxIndex.hpp"
+#include "Search/CombinedIndex.hpp"
 #include "Search/TopDownInserter.hpp"
+#include "Serialization/SerializationRegistration.hpp"
 #include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
@@ -86,12 +88,12 @@ sptr<IIndex<T>> get_isax_index(const IndexOptions &opts) {
     return get_isax_index<T>(opts, params, num_seg_per_channel, std::move(split_strategy));
 }
 
-sptr<IIndex<Envelope>> get_envelope_index(const IndexOptions &opts) {
+sptr<IIndex<Envelope>> get_envelope_index(const IndexOptions &opts, bool discretize_flat_index) {
     auto *params = dynamic_cast<EnvelopeIndexParams *>(opts.index_params.get());
     SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
 
     auto sax_params = dynamic_cast<SaxEnvelopeIndexParams *>(opts.index_params.get());
-    if (sax_params) {
+    if (discretize_flat_index && sax_params && sax_params->num_bits > 0) {
         calculate_sax_breakpoints(sax_params, sax_params->num_bits, num_seg_per_channel);
         auto *index = new FlatEnvelopeIndex(params->segment_len, params->pos_per_env, sax_params->num_bits);
         return sptr<IIndex<Envelope>>(index);
@@ -99,6 +101,19 @@ sptr<IIndex<Envelope>> get_envelope_index(const IndexOptions &opts) {
         auto *index = new FlatEnvelopeIndex(params->segment_len, params->pos_per_env);
         return sptr<IIndex<Envelope>>(index);
     }
+}
+
+sptr<IIndex<Envelope>> get_two_stage_isax_envelope_index(const IndexOptions &opts, bool discretize_flat_index) {
+    vec<sptr<IIndex<Envelope>>> approx_indexes(1);
+    approx_indexes[0] = get_isax_index<Envelope>(opts);
+    if (discretize_flat_index) {
+        auto isax_params = dynamic_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
+        isax_params->num_bits = isax_params->num_bits_limit;
+    }
+    auto exact_index = get_envelope_index(opts, discretize_flat_index);
+
+    auto *index = new CombinedIndex<Envelope>(std::move(approx_indexes), std::move(exact_index));
+    return sptr<IIndex<Envelope>>(index);
 }
 
 // Generator getters
@@ -148,17 +163,26 @@ int create_index(const IndexOptions &opts) {
 
     IndexLogger::initialize(opts);
     auto &logger = IndexLogger::get_instance();
+    bool discretize_flat_index = false;
 
-    switch (opts.index_params->get_type()) {
+    switch (opts.index_method) {
         case ISAX_ENVELOPE:
             construct_index(get_isax_index<Envelope>(opts), get_envelope_generator(opts), opts, RS, logger);
+            break;
+        case ISAX_ENV_W_SAX_ENV:
+            discretize_flat_index = true;
+        case ISAX_ENV_W_ENV:
+            construct_index(get_two_stage_isax_envelope_index(opts, discretize_flat_index),
+                            get_envelope_generator(opts), opts, RS, logger);
             break;
         case ISAX:
             construct_index(get_isax_index<Paa>(opts), get_paa_generator(opts), opts, RS, logger);
             break;
-        case ENVELOPE:
         case SAX_ENVELOPE:
-            construct_index(get_envelope_index(opts), get_envelope_generator(opts), opts, RS, logger);
+            discretize_flat_index = true;
+        case ENVELOPE:
+            construct_index(get_envelope_index(opts, discretize_flat_index), get_envelope_generator(opts), opts, RS,
+                            logger);
             break;
         default:
             break;

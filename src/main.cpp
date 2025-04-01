@@ -266,8 +266,7 @@ int main(int argc, char **argv) {
         ->add_option(
             "-M,--max_leaves_to_visit", max_leaves_to_visit,
             "Maximum number of leaves to visit if approximate search is used. Defaults to 0, indicating no max.")
-        ->capture_default_str()
-        ->check(positive_int);
+        ->capture_default_str();
     search_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
     //      Search type-specific options
     search_subcommand->add_option("-T,--search_type", search_type_str, "Search type")
@@ -382,6 +381,8 @@ int main(int argc, char **argv) {
             IIndexParams *index_params;
             switch (method_type) {
                 case ISAX_ENVELOPE:
+                case ISAX_ENV_W_ENV:
+                case ISAX_ENV_W_SAX_ENV:
                     index_params = new iSaxEnvelopeIndexParams{
                         pos_per_env,
                         segment_len,
@@ -420,11 +421,9 @@ int main(int argc, char **argv) {
                 case SEQUENTIAL_SCAN:
                     std::cerr << "Sequential scan does not require indexation\n";
                     return 1;
-                default:
-                    std::cerr << "Index type \"" << search_method_type_str << "\" is not implemented\n";
-                    return 1;
             }
             IndexOptions index_options{
+                .index_method = method_type,
                 .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
                 .l_min = l_min,
                 .l_max = l_max,

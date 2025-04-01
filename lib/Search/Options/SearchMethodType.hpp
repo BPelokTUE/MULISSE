@@ -5,7 +5,15 @@
 #include "Util/utilities.hpp"
 
 /** @brief Enumeration type for search methods */
-enum SearchMethodType { ISAX, ISAX_ENVELOPE, ENVELOPE, SAX_ENVELOPE, SEQUENTIAL_SCAN };
+enum SearchMethodType {
+    ISAX,
+    ISAX_ENVELOPE,
+    ENVELOPE,
+    SAX_ENVELOPE,
+    ISAX_ENV_W_ENV,
+    ISAX_ENV_W_SAX_ENV,
+    SEQUENTIAL_SCAN,
+};
 
 DEFINE_ENUM_CONSTS(SearchMethodType, SEARCH_METHOD_TYPE, false,
                    (umap<str, SearchMethodType>{

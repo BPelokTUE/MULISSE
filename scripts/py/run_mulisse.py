@@ -12,6 +12,146 @@ from typing import Any, Iterator, Optional
 import pandas as pd
 from pydantic import BaseModel
 
+# Config keys
+CK_CSV_DATA_DIRS = "csv_data_dirs"
+CK_DATASET_SIZES = "dataset_sizes"
+CK_SERIES_LENGTHS = "series_lengths"
+CK_NUM_SEGMENTS = "num_segments"
+CK_NUM_CHANNELS = "num_channels"
+CK_SYN_NUM_CHANNELS = "syn_num_channels"
+CK_QUERY_SET_SIZES = "query_set_sizes"
+CK_SYN_STEP_STDEVS = "syn_step_stdevs"
+CK_L_RANGE_RATIOS = "l_range_ratios"
+CK_USED_CHANNEL_RATIOS = "used_channel_ratios"
+CK_QUERY_NOISE_STDEVS = "query_noise_stdevs"
+CK_SEARCH_METHODS = "search_methods"
+CK_INDEX_INSERTERS = "index_inserters"
+CK_ISAX_BREAKPOINT_STRATEGIES = "isax_breakpoint_strategies"
+CK_ISAX_START_BIT_NUMBERS = "isax_start_bit_numbers"
+CK_DISTANCE_MEASURES = "distance_measures"
+CK_SEARCH_TYPES = "search_types"
+CK_SEARCH_APPROX = "search_approx"
+CK_SEARCH_RAW = "search_raw"
+CK_DATASET_SEEDS = "dataset_seeds"
+CK_QUERY_SET_SEEDS = "query_set_seeds"
+CK_SEPARATE_CSV_DATASETS = "separate_csv_datasets"
+CK_CALCULATE_QUERY_STATS = "calculate_query_stats"
+CK_CALCULATE_INDEX_STATS = "calculate_index_stats"
+CK_ADAPT_INDEX = "adapt_index"
+CK_ISAX_BREAKPOINTS_FILE = "isax_breakpoints_file"
+CK_ISAX_PREFER_FIRST_IN_EM = "isax_prefer_first_in_em"
+CK_ISAX_SPLIT_STRATEGIES = "isax_split_strategies"
+CK_ISAX_LEAF_CAP_RATIOS = "isax_leaf_cap_ratios"
+CK_ISAX_NUM_BITS_LIMITS = "isax_num_bits_limits"
+CK_ENVELOPE_SIZE_RATIOS = "envelope_size_ratios"
+CK_SEARCH_KS = "search_ks"
+CK_SEARCH_RS = "search_rs"
+CK_MAX_LEAVES_TO_VISIT = "max_leaves_to_visit"
+CK_EARLY_ABANDON = "early_abandon"
+CK_SORT_QUERY = "sort_query"
+CK_PRECALCULATE_FFTS = "precalculate_ffts"
+CK_PRIORITY_QUEUE = "priority_queue"
+
+# Runner keys
+RK_SERIES_LEN = "series_len"
+RK_L_RANGE = "l_range"
+RK_COMMAND = "command"
+RK_LOCATION = "location"
+RK_SIZE = "size"
+RK_NUM_SEGMENTS = "num_segments"
+RK_NUM_CHANNELS = "num_channels"
+RK_STEP_STDEV = "step_stdev"
+RK_USED_CHANNEL_RATIO = "used_channel_ratio"
+RK_NOISE_STDEV = "noise_stdev"
+RK_INSERTER_TYPE = "inserter_type"
+RK_BREAKPOINT_STRATEGY = "breakpoint_strategy"
+RK_DATASET_SEED = "dataset_seed"
+RK_QUERY_SET_SEED = "query_set_seed"
+RK_FIRST_LAYER_BITS = "first_layer_bits"
+RK_ADAPT = "adapt"
+RK_ISAX_BREAKPOINTS_FILE = "isax_breakpoints_file"
+RK_ISAX_PREFER_FIRST_IN_EM = "isax_prefer_first_in_em"
+RK_SPLIT_STRATEGY = "split_strategy"
+RK_LEAF_CAPACITY = "leaf_capacity"
+RK_ISAX_NUM_BITS_LIMIT = "isax_num_bits_limit"
+RK_POS_PER_ENV = "pos_per_env"
+RK_INDEX_TYPE = "index_type"
+RK_K = "k"
+RK_R = "r"
+RK_SEARCH_TYPE = "search_type"
+RK_APPROX = "approx"
+RK_RAW = "raw"
+RK_MAX_LEAVES_TO_VISIT = "max_leaves_to_visit"
+RK_METHOD_TYPE = "method_type"
+RK_DISTANCE = "distance"
+RK_EARLY_ABANDON = "early_abandon"
+RK_SORT_QUERY = "sort_query"
+RK_PRECALCULATE_FFTS = "precalculate_ffts"
+RK_PRIORITY_QUEUE = "priority_queue"
+
+# MULISSE subcommands
+SUB_CREATE_DS = "create_ds"
+SUB_PARSE_CSV = "parse_csv"
+SUB_CALC_FFTS = "calc_ffts"
+SUB_CREATE_QS = "create_qs"
+SUB_CALC_Q_STATS = "calc_q_stats"
+SUB_INDEX = "index"
+SUB_CALC_I_STATS = "calc_i_stats"
+
+# Data locations
+LOC_SYNTHETIC = "synthetic"
+LOC_STOCKS = "stocks"
+LOC_WEATHER = "weather"
+
+# Search methods
+METHOD_ISAX = "isax"
+METHOD_ISAX_ENVELOPE = "isax_envelope"
+METHOD_SAX_ENVELOPE = "sax_envelope"
+METHOD_ENVELOPE = "envelope"
+METHOD_ISAX_ENV_W_ENV = "isax_env_w_env"
+METHOD_ISAX_ENV_W_SAX_ENV = "isax_env_w_sax_env"
+
+ENVELOPE_METHODS = [
+    METHOD_ISAX_ENVELOPE,
+    METHOD_SAX_ENVELOPE,
+    METHOD_ENVELOPE,
+    METHOD_ISAX_ENV_W_ENV,
+    METHOD_ISAX_ENV_W_SAX_ENV,
+]
+METHODS_W_FLAT_INDEX = [
+    METHOD_SAX_ENVELOPE,
+    METHOD_ISAX_ENV_W_SAX_ENV,
+    METHOD_ENVELOPE,
+    METHOD_ISAX_ENV_W_ENV,
+]
+METHODS_W_TRIE_INDEX = [METHOD_ISAX, METHOD_ISAX_ENVELOPE, METHOD_ISAX_ENV_W_ENV, METHOD_ISAX_ENV_W_SAX_ENV]
+
+
+# Search types
+TYPE_KNN = "knn"
+TYPE_R_RANGE = "r_range"
+
+# Distance measures
+DIST_ED = "ed"
+DIST_EUCLIDEAN = "euclidean"
+DIST_MASS = "mass"
+
+# Local settings keys
+LS_DEFAULT_RUN_CONFIG = "DEFAULT_RUN_CONFIG"
+LS_CSV_PATH = "CSV_PATH"
+LS_REPO_PATH = "REPO_PATH"
+
+# Out csv column names
+COL_ID = "id"
+COL_SETTINGS_ID = "settings_id"
+
+# File names
+COMMAND_LOG_NAME = "command_log.txt"
+LOCAL_SETTINGS_NAME = "local_settings.json"
+SEARCH_SETTINGS_CSV = "search_settings.csv"
+RUNS_CSV = "runs.csv"
+CHECK_RESULTS_SCRIPT_PATH = "../scripts/py/check_results.py"
+
 
 def check_config_keys(config: dict, required: list[str]):
     for key in required:
@@ -83,128 +223,126 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
     check_config_keys(
         config,
         required = [
-            "csv_data_dirs", "dataset_sizes", "series_lengths", "syn_num_channels", "query_set_sizes",
-            "syn_step_stdevs", "l_range_ratios", "used_channel_ratios", "query_noise_stdevs", "search_methods",
-            "distance_measures", "search_types", "search_approx", "search_raw"
+            CK_CSV_DATA_DIRS, CK_DATASET_SIZES, CK_SERIES_LENGTHS, CK_SYN_NUM_CHANNELS, CK_QUERY_SET_SIZES,
+            CK_SYN_STEP_STDEVS, CK_L_RANGE_RATIOS, CK_USED_CHANNEL_RATIOS, CK_QUERY_NOISE_STDEVS, CK_SEARCH_METHODS,
+            CK_DISTANCE_MEASURES, CK_SEARCH_TYPES, CK_SEARCH_APPROX, CK_SEARCH_RAW
         ],
     )
     # fmt: on
 
     def parse_flat_config(config) -> ParsedConfig:
         def get_length_settings() -> Settings:
-            return [{"series_len": config["series_lengths"], "l_range": config["l_range_ratios"]}]
+            return [{RK_SERIES_LEN: config[CK_SERIES_LENGTHS], RK_L_RANGE: config[CK_L_RANGE_RATIOS]}]
 
         def get_dataset_settings() -> Settings:
-            dataset_seeds = config.get("dataset_seeds", [0])
+            dataset_seeds = config.get(CK_DATASET_SEEDS, [0])
             dataset_settings = [
                 {
-                    "command": "create_ds",
-                    "location": "synthetic",
-                    "size": config["dataset_sizes"],
-                    "num_channels": config["syn_num_channels"],
-                    "step_stdev": config["syn_step_stdevs"],
-                    "dataset_seeds": dataset_seeds,
+                    RK_COMMAND: SUB_CREATE_DS,
+                    RK_LOCATION: LOC_SYNTHETIC,
+                    RK_SIZE: config[CK_DATASET_SIZES],
+                    RK_NUM_CHANNELS: config[CK_SYN_NUM_CHANNELS],
+                    RK_STEP_STDEV: config[CK_SYN_STEP_STDEVS],
+                    RK_DATASET_SEED: dataset_seeds,
                 }
             ]
 
-            separate_csv_datasets = config.get("separate_csv_datasets", False)
+            separate_csv_datasets = config.get(CK_SEPARATE_CSV_DATASETS, False)
             csv_data_paths = [
-                os.path.join(local_settings["CSV_PATH"], data_dir) for data_dir in config["csv_data_dirs"]
+                os.path.join(local_settings[LS_CSV_PATH], data_dir) for data_dir in config[CK_CSV_DATA_DIRS]
             ]
             for path in csv_data_paths:
                 item = {
-                    "command": "parse_csv",
-                    "location": os.path.basename(path),
-                    "size": config["dataset_sizes"],
-                    "num_channels": [len(os.listdir(path))],
-                    "dataset_seeds": dataset_seeds,
+                    RK_COMMAND: SUB_PARSE_CSV,
+                    RK_LOCATION: os.path.basename(path),
+                    RK_SIZE: config[CK_DATASET_SIZES],
+                    RK_NUM_CHANNELS: [len(os.listdir(path))],
+                    RK_DATASET_SEED: dataset_seeds,
                 }
                 if not separate_csv_datasets:
                     dataset_settings.append(item)
                 else:
-                    item["num_channels"] = 1
+                    item[RK_NUM_CHANNELS] = 1
                     for csv_dir in os.listdir(path):
-                        item["location"] = os.path.join(os.path.basename(path), csv_dir)
+                        item[RK_LOCATION] = os.path.join(os.path.basename(path), csv_dir)
                         dataset_settings.append(item.copy())
             return dataset_settings
 
         def get_query_set_settings() -> Settings:
             return [
                 {
-                    "size": config["query_set_sizes"],
-                    "used_channel_ratio": config["used_channel_ratios"],
-                    "noise_stdev": config["query_noise_stdevs"],
-                    "query_set_seeds": config.get("query_set_seeds", [0]),
+                    RK_SIZE: config[CK_QUERY_SET_SIZES],
+                    RK_USED_CHANNEL_RATIO: config[CK_USED_CHANNEL_RATIOS],
+                    RK_NOISE_STDEV: config[CK_QUERY_NOISE_STDEVS],
+                    RK_QUERY_SET_SEED: config.get(CK_QUERY_SET_SEEDS, [0]),
                 }
             ]
 
         def get_index_settings() -> Settings:
             common_settings = {
-                "num_segments": config.get("num_segments", []),
-                "inserter_type": config.get("index_inserters", []),
+                RK_NUM_SEGMENTS: config.get(CK_NUM_SEGMENTS, []),
+                RK_INSERTER_TYPE: config.get(CK_INDEX_INSERTERS, []),
             }
             sax_settings = {
                 **common_settings,
-                "breakpoint_strategy": config.get("isax_breakpoint_strategies", []),
-                "first_layer_bits": config.get("isax_start_bit_numbers", []),
-                "adapt": config.get("adapt_index", [False]),
-                "isax_breakpoints_file": config.get("isax_breakpoints_file", [""]),
-                "isax_prefer_first_in_em": config.get("isax_prefer_first_in_em", [False]),
+                RK_BREAKPOINT_STRATEGY: config.get(CK_ISAX_BREAKPOINT_STRATEGIES, []),
+                RK_FIRST_LAYER_BITS: config.get(CK_ISAX_START_BIT_NUMBERS, []),
+                RK_ADAPT: config.get(CK_ADAPT_INDEX, [False]),
+                RK_ISAX_BREAKPOINTS_FILE: config.get(CK_ISAX_BREAKPOINTS_FILE, [""]),
+                RK_ISAX_PREFER_FIRST_IN_EM: config.get(CK_ISAX_PREFER_FIRST_IN_EM, [False]),
             }
             isax_settings = {
                 **sax_settings,
-                "split_strategy": config.get("isax_split_strategies", []),
-                "leaf_capacity": config.get("isax_leaf_cap_ratios", []),
-                "isax_num_bits_limit": config.get("isax_num_bits_limits", [0]),
+                RK_SPLIT_STRATEGY: config.get(CK_ISAX_SPLIT_STRATEGIES, []),
+                RK_LEAF_CAPACITY: config.get(CK_ISAX_LEAF_CAP_RATIOS, []),
+                RK_ISAX_NUM_BITS_LIMIT: config.get(CK_ISAX_NUM_BITS_LIMITS, [0]),
             }
-            envelope_settings = {**common_settings, "pos_per_env": config.get("envelope_size_ratios", [])}
+            envelope_settings = {**common_settings, RK_POS_PER_ENV: config.get(CK_ENVELOPE_SIZE_RATIOS, [])}
+            isax_envelope_settings = {**isax_settings, **envelope_settings}
 
             index_settings = []
-            if "isax" in config["search_methods"]:
-                index_settings.append({"index_type": "isax", **isax_settings})
-            if "isax_envelope" in config["search_methods"]:
-                index_settings.append(
-                    {
-                        "index_type": "isax_envelope",
-                        "pos_per_env": config.get("envelope_size_ratios", []),
-                        **isax_settings,
-                        **envelope_settings,
-                    }
-                )
-            if "sax_envelope" in config["search_methods"]:
-                index_settings.append({"index_type": "sax_envelope", **sax_settings, **envelope_settings})
-            if "envelope" in config["search_methods"]:
-                index_settings.append({"index_type": "envelope", **envelope_settings})
+            if METHOD_ISAX in config[CK_SEARCH_METHODS]:
+                index_settings.append({RK_INDEX_TYPE: METHOD_ISAX, **isax_settings})
+            if METHOD_ISAX_ENVELOPE in config[CK_SEARCH_METHODS]:
+                index_settings.append({RK_INDEX_TYPE: METHOD_ISAX_ENVELOPE, **isax_envelope_settings})
+            if METHOD_SAX_ENVELOPE in config[CK_SEARCH_METHODS]:
+                index_settings.append({RK_INDEX_TYPE: METHOD_SAX_ENVELOPE, **sax_settings, **envelope_settings})
+            if METHOD_ENVELOPE in config[CK_SEARCH_METHODS]:
+                index_settings.append({RK_INDEX_TYPE: METHOD_ENVELOPE, **envelope_settings})
+            if METHOD_ISAX_ENV_W_ENV in config[CK_SEARCH_METHODS]:
+                index_settings.append({RK_INDEX_TYPE: METHOD_ISAX_ENV_W_ENV, **isax_envelope_settings})
+            if METHOD_ISAX_ENV_W_SAX_ENV in config[CK_SEARCH_METHODS]:
+                index_settings.append({RK_INDEX_TYPE: METHOD_ISAX_ENV_W_SAX_ENV, **isax_envelope_settings})
 
             return index_settings
 
         def get_method_settings(index_settings: Settings) -> tuple[Settings, Settings]:
             method_settings_base = []
-            if "knn" in config["search_types"]:
-                method_settings_base.append({"search_type": "knn", "k": config.get("search_ks", [])})
-            if "r_range" in config["search_types"]:
-                method_settings_base.append({"search_type": "r_range", "r": config.get("search_rs", [])})
+            if TYPE_KNN in config[CK_SEARCH_TYPES]:
+                method_settings_base.append({RK_SEARCH_TYPE: TYPE_KNN, RK_K: config.get(CK_SEARCH_KS, [])})
+            if TYPE_R_RANGE in config[CK_SEARCH_TYPES]:
+                method_settings_base.append({RK_SEARCH_TYPE: TYPE_R_RANGE, RK_R: config.get(CK_SEARCH_RS, [])})
 
             for i, settings in enumerate(method_settings_base):
                 method_settings_base[i] = dict(
                     settings,
                     **{
-                        "approx": config["search_approx"],
-                        "raw": config["search_raw"],
-                        "max_leaves_to_visit": config.get("max_leaves_to_visit", [0]),
+                        RK_APPROX: config[CK_SEARCH_APPROX],
+                        RK_RAW: config[CK_SEARCH_RAW],
+                        RK_MAX_LEAVES_TO_VISIT: config.get(CK_MAX_LEAVES_TO_VISIT, [0]),
                     },
                 )
 
             def combine_settings(settings1, settings2):
                 return [dict(**d1, **d2) for d1 in settings1 for d2 in settings2]
 
-            index_methods = {setting["index_type"] for setting in index_settings}
+            index_methods = {setting[RK_INDEX_TYPE] for setting in index_settings}
             index_method_settings_base = [
-                {"method_type": [method for method in config["search_methods"] if method in index_methods]}
+                {RK_METHOD_TYPE: [method for method in config[CK_SEARCH_METHODS] if method in index_methods]}
             ]
             index_method_settings_base = combine_settings(index_method_settings_base, method_settings_base)
             scan_method_settings_base = [
-                {"method_type": [method for method in config["search_methods"] if method not in index_methods]}
+                {RK_METHOD_TYPE: [method for method in config[CK_SEARCH_METHODS] if method not in index_methods]}
             ]
             scan_method_settings_base = combine_settings(scan_method_settings_base, method_settings_base)
 
@@ -212,20 +350,20 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
             scan_method_settings = []
 
             ed_settings = {
-                "distance": "ed",
-                "early_abandon": config.get("early_abandon", []),
-                "sort_query": config.get("sort_query", [False]),
+                RK_DISTANCE: DIST_ED,
+                RK_EARLY_ABANDON: config.get(CK_EARLY_ABANDON, []),
+                RK_SORT_QUERY: config.get(CK_SORT_QUERY, [False]),
             }
             distance_measures_settings = {
-                "ed": ed_settings,
-                "euclidean": ed_settings,
-                "mass": {"distance": "mass", "precalculate_ffts": config.get("precalculate_ffts", [])},
+                DIST_ED: ed_settings,
+                DIST_EUCLIDEAN: ed_settings,
+                DIST_MASS: {RK_DISTANCE: DIST_MASS, RK_PRECALCULATE_FFTS: config.get(CK_PRECALCULATE_FFTS, [])},
             }
             for distance_measure, settings in distance_measures_settings.items():
-                if distance_measure in config["distance_measures"]:
+                if distance_measure in config[CK_DISTANCE_MEASURES]:
                     for base_setting in index_method_settings_base:
-                        if any(method in base_setting["method_type"] for method in ["envelope", "sax_envelope"]):
-                            base_setting["priority_queue"] = config.get("priority_queue", [False])
+                        if any(method in base_setting[RK_METHOD_TYPE] for method in METHODS_W_FLAT_INDEX):
+                            base_setting[RK_PRIORITY_QUEUE] = config.get(CK_PRIORITY_QUEUE, [False])
                         index_method_settings.append(dict(base_setting, **settings))
                     for base_setting in scan_method_settings_base:
                         scan_method_settings.append(dict(base_setting, **settings))
@@ -243,8 +381,8 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
             scan_method_settings=scan_method_settings,
         )
 
-    calculate_query_stats = config.get("calculate_query_stats", False)
-    calculate_index_stats = config.get("calculate_index_stats", False)
+    calculate_query_stats = config.get(CK_CALCULATE_QUERY_STATS, False)
+    calculate_index_stats = config.get(CK_CALCULATE_INDEX_STATS, False)
 
     profiles: set[str] = set()
     for val in config.values():
@@ -330,24 +468,23 @@ class SettingIterator:
 #        Setup        #
 # --------------------#
 
-local_settings_path = "local_settings.json"
+local_settings_path = LOCAL_SETTINGS_NAME
 if not os.path.exists(local_settings_path):
     raise FileNotFoundError(
         f"Local settings file {local_settings_path} not found. Make sure the script is run from the root of the repository."
     )
 local_settings = json.load(open(local_settings_path))
-check_config_keys(local_settings, ["DEFAULT_RUN_CONFIG", "CSV_PATH", "REPO_PATH"])
+check_config_keys(local_settings, [LS_DEFAULT_RUN_CONFIG, LS_CSV_PATH, LS_REPO_PATH])
 
-DATA_DIR = os.path.join(local_settings["REPO_PATH"], "DATA")
-LOGS_DIR = os.path.join(local_settings["REPO_PATH"], "LOGS")
-BUILD_PATH = os.path.join(local_settings["REPO_PATH"], "build")
+DATA_DIR = os.path.join(local_settings[LS_REPO_PATH], "DATA")
+LOGS_DIR = os.path.join(local_settings[LS_REPO_PATH], "LOGS")
+BUILD_PATH = os.path.join(local_settings[LS_REPO_PATH], "build")
 EXECUTABLE_PATH = os.path.join(BUILD_PATH, "mulisse")
 
 dataset_counter = 0
 query_counter = 0
 index_counter = 0
 
-COMMAND_LOG_NAME = "command_log.txt"
 COMMAND_LOG_PATH = os.path.join(LOGS_DIR, COMMAND_LOG_NAME)
 
 
@@ -368,10 +505,6 @@ def run_command_with_logging(
         return True
 
 
-SEARCH_SETTINGS_CSV = "search_settings.csv"
-RUNS_CSV = "runs.csv"
-
-
 def add_logs_to_logs_dir(logs_to_add: str):
     # Merge command logs
     with open(COMMAND_LOG_PATH, "a+") as f_base:
@@ -386,9 +519,9 @@ def add_logs_to_logs_dir(logs_to_add: str):
         new_search_settings = pd.read_csv(os.path.join(logs_to_add, SEARCH_SETTINGS_CSV))
         if search_settings_exists:
             search_settings_id_base = (
-                pd.read_csv(os.path.join(LOGS_DIR, SEARCH_SETTINGS_CSV), usecols=["id"])["id"].max() + 1
+                pd.read_csv(os.path.join(LOGS_DIR, SEARCH_SETTINGS_CSV), usecols=[COL_ID])[COL_ID].max() + 1
             )
-            new_search_settings["id"] += search_settings_id_base
+            new_search_settings[COL_ID] += search_settings_id_base
             new_search_settings.to_csv(f_base, index=False, header=False, mode="a")
         else:
             new_search_settings.to_csv(f_base, index=False, header=True)
@@ -399,10 +532,10 @@ def add_logs_to_logs_dir(logs_to_add: str):
     runs_exists = os.path.exists(runs_path)
     with open(runs_path, "a+") as f_base:
         new_runs = pd.read_csv(os.path.join(logs_to_add, RUNS_CSV))
-        new_runs["settings_id"] += search_settings_id_base
+        new_runs[COL_SETTINGS_ID] += search_settings_id_base
         if runs_exists:
-            runs_id_base = pd.read_csv(os.path.join(LOGS_DIR, RUNS_CSV), usecols=["id"])["id"].max() + 1
-            new_runs["id"] += runs_id_base
+            runs_id_base = pd.read_csv(os.path.join(LOGS_DIR, RUNS_CSV), usecols=[COL_ID])[COL_ID].max() + 1
+            new_runs[COL_ID] += runs_id_base
             new_runs.to_csv(f_base, index=False, header=False, mode="a")
         else:
             new_runs.to_csv(f_base, index=False, header=True)
@@ -460,48 +593,48 @@ if __name__ == "__main__":
 
     with ProcessPoolExecutor() as executor:
         for l_profile, length_setting in SettingIterator(length_settings).iterate(desc="Length settings"):
-            series_len = length_setting["series_len"]
-            l_min = int(series_len * length_setting["l_range"][0])
-            l_max = int(series_len * length_setting["l_range"][1])
+            series_len = length_setting[RK_SERIES_LEN]
+            l_min = int(series_len * length_setting[RK_L_RANGE][0])
+            l_max = int(series_len * length_setting[RK_L_RANGE][1])
 
             for d_profile, dataset_setting in SettingIterator(dataset_settings, l_profile).iterate(
                 desc="Dataset settings", leave=False
             ):
-                command = dataset_setting["command"]
-                num_series = dataset_setting["size"]
-                num_channels = dataset_setting["num_channels"]
-                seed = dataset_setting["dataset_seeds"]
+                command = dataset_setting[RK_COMMAND]
+                num_series = dataset_setting[RK_SIZE]
+                num_channels = dataset_setting[RK_NUM_CHANNELS]
+                seed = dataset_setting[RK_DATASET_SEED]
 
-                data_file = os.path.join(dataset_setting["location"], f"data-{dataset_counter}.bin")
+                data_file = os.path.join(dataset_setting[RK_LOCATION], f"data-{dataset_counter}.bin")
                 dataset_counter += 1
 
                 args = [command, "-d", data_file, "-n", str(num_series), "-m", str(series_len), "-S", str(seed)]
-                if command == "parse_csv":
+                if command == SUB_PARSE_CSV:
                     args += ["-l", str(l_min), "-L", str(l_max)]
-                    csv_location = os.path.join(local_settings["CSV_PATH"], dataset_setting["location"])
+                    csv_location = os.path.join(local_settings[LS_CSV_PATH], dataset_setting[RK_LOCATION])
                     if os.path.isdir(csv_location):
                         args += ["-i", *[os.path.join(csv_location, f) for f in os.listdir(csv_location)]]
                     else:
                         args += ["-i", csv_location]
-                if command == "create_ds":
+                if command == SUB_CREATE_DS:
                     args += ["-c", str(num_channels)]
-                    args += ["-s", str(dataset_setting["step_stdev"])]
+                    args += ["-s", str(dataset_setting[RK_STEP_STDEV])]
 
                 if not run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout):
                     continue
                 ffts_required = any(
-                    method.get("precalculate_ffts", False)
+                    method.get(RK_PRECALCULATE_FFTS, False)
                     for _profile, method in itertools.chain(
                         SettingIterator(index_method_settings, d_profile),
                         SettingIterator(scan_method_settings, d_profile),
                     )
                 )
                 ffts_calculated = False
-                ffts_file = os.path.join(dataset_setting["location"], f"ffts-{dataset_counter - 1}.bin")
+                ffts_file = os.path.join(dataset_setting[RK_LOCATION], f"ffts-{dataset_counter - 1}.bin")
                 if ffts_required:
                     # fmt: off
                     ffts_calculated = run_command_with_logging([
-                        EXECUTABLE_PATH, "calc_ffts", "-d", data_file, "-F", ffts_file, "-m", str(series_len), "-c",
+                        EXECUTABLE_PATH, SUB_CALC_FFTS, "-d", data_file, "-F", ffts_file, "-m", str(series_len), "-c",
                         str(num_channels), 
                     ], timeout=input_args.timeout)
                     # fmt: on
@@ -509,13 +642,13 @@ if __name__ == "__main__":
                 def get_method_args(setting):
                     args = ["search"]
                     for key, value in setting.items():
-                        if key in ["raw", "approx", "early_abandon", "sort_query"]:
+                        if key in [RK_RAW, RK_APPROX, RK_EARLY_ABANDON, RK_SORT_QUERY]:
                             if value:
                                 args.append(f"--{key}")
-                        elif key == "priority_queue":
+                        elif key == RK_PRIORITY_QUEUE:
                             if not value:
                                 args.append("--no_pq")
-                        elif key == "precalculate_ffts":
+                        elif key == RK_PRECALCULATE_FFTS:
                             if value:
                                 args += ["-F", ffts_file]
                         else:
@@ -525,16 +658,16 @@ if __name__ == "__main__":
                 for q_profile, query_setting in SettingIterator(query_set_settings, d_profile).iterate(
                     desc="Query settings", leave=False
                 ):
-                    num_queries = query_setting["size"]
-                    used_channels = int(num_channels * query_setting["used_channel_ratio"])
-                    noise_stdev = query_setting["noise_stdev"]
-                    seed = query_setting["query_set_seeds"]
+                    num_queries = query_setting[RK_SIZE]
+                    used_channels = int(num_channels * query_setting[RK_USED_CHANNEL_RATIO])
+                    noise_stdev = query_setting[RK_NOISE_STDEV]
+                    seed = query_setting[RK_QUERY_SET_SEED]
 
-                    query_file = os.path.join(dataset_setting["location"], f"queries-{query_counter}.txt")
+                    query_file = os.path.join(dataset_setting[RK_LOCATION], f"queries-{query_counter}.txt")
                     query_counter += 1
                     # fmt: off
                     args = [
-                        "create_qs", "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
+                        SUB_CREATE_QS, "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
                         "-Q", str(num_queries), "-l", str(l_min), "-L", str(l_max), "-u", str(used_channels), "--noise",
                         str(noise_stdev), "-S", str(seed)
                     ]
@@ -544,7 +677,7 @@ if __name__ == "__main__":
                     if queries_created and calculate_query_stats:
                         # fmt: off
                         args = [
-                            "calc_q_stats", "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
+                            SUB_CALC_Q_STATS, "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
                             "--noise", str(noise_stdev)
                         ]
                         # fmt: on
@@ -558,7 +691,7 @@ if __name__ == "__main__":
                                 desc="Scan method settings", leave=False
                             )
                         ):
-                            if scan_method_setting.get("precalculate_ffts", False) and not ffts_calculated:
+                            if scan_method_setting.get(RK_PRECALCULATE_FFTS, False) and not ffts_calculated:
                                 continue
                             args = get_method_args(scan_method_setting)
                             args += ["-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file]
@@ -584,47 +717,47 @@ if __name__ == "__main__":
                     for i_profile, index_setting in SettingIterator(index_settings, q_profile).iterate(
                         desc="Index settings", leave=False
                     ):
-                        index_method = index_setting["index_type"]
+                        index_method = index_setting[RK_INDEX_TYPE]
                         index_file = os.path.join(
-                            dataset_setting["location"], f"index-{index_method}-{index_counter}.bin"
+                            dataset_setting[RK_LOCATION], f"index-{index_method}-{index_counter}.bin"
                         )
                         index_counter += 1
                         index_setting_copy = index_setting.copy()
 
                         # fmt: off
                         args = [
-                            "index", "-i", index_file, "-l", str(l_min), "-L", str(l_max), "-t", 
-                            index_setting_copy.pop("index_type"), "-m", str(series_len), "-c", str(num_channels), "-d", data_file 
+                            SUB_INDEX, "-i", index_file, "-l", str(l_min), "-L", str(l_max), "-t", 
+                            index_setting_copy.pop(RK_INDEX_TYPE), "-m", str(series_len), "-c", str(num_channels), "-d", data_file 
                         ]
                         # fmt: on
 
                         pos_per_env = 1
-                        if "num_segments" in index_setting_copy:
-                            args += ["-s", str(series_len // index_setting_copy.pop("num_segments"))]
-                        if "pos_per_env" in index_setting_copy:
+                        if RK_NUM_SEGMENTS in index_setting_copy:
+                            args += ["-s", str(series_len // index_setting_copy.pop(RK_NUM_SEGMENTS))]
+                        if RK_POS_PER_ENV in index_setting_copy:
                             max_pos_per_env = series_len - l_min + 1
-                            pos_per_env = int(max_pos_per_env * index_setting_copy.pop("pos_per_env"))
+                            pos_per_env = int(max_pos_per_env * index_setting_copy.pop(RK_POS_PER_ENV))
                             args += ["-p", str(pos_per_env)]
-                        if "leaf_capacity" in index_setting_copy:
+                        if RK_LEAF_CAPACITY in index_setting_copy:
                             num_entries = num_series
-                            if index_method == "isax":
+                            if index_method == METHOD_ISAX:
                                 l_range = l_max - l_min + 1
                                 num_entries = l_range * ((series_len - l_max + 1) + (l_range - 1) / 2) * num_series
-                            elif index_method == "isax_envelope":
+                            elif index_method in METHODS_W_TRIE_INDEX:
                                 num_entries = ((series_len - l_min + pos_per_env) // pos_per_env) * num_series
-                            leaf_capacity = int(index_setting_copy.pop("leaf_capacity") * num_entries)
+                            leaf_capacity = int(index_setting_copy.pop(RK_LEAF_CAPACITY) * num_entries)
                             leaf_capacity = max(1, leaf_capacity)
                             args += ["-C", str(leaf_capacity)]
-                        if index_setting_copy.pop("adapt", False):
+                        if index_setting_copy.pop(RK_ADAPT, False):
                             args += ["--adapt"]
-                        if "isax_breakpoints_file" in index_setting_copy:
-                            breakpoints_file = index_setting_copy.pop("isax_breakpoints_file", "")
+                        if RK_ISAX_BREAKPOINTS_FILE in index_setting_copy:
+                            breakpoints_file = index_setting_copy.pop(RK_ISAX_BREAKPOINTS_FILE, "")
                             if len(breakpoints_file) > 0:
                                 args += ["--breakpoints", breakpoints_file]
-                        if index_setting_copy.pop("isax_prefer_first_in_em", False):
+                        if index_setting_copy.pop(RK_ISAX_PREFER_FIRST_IN_EM, False):
                             args += ["--prefer_first_in_em"]
-                        if "isax_num_bits_limit" in index_setting_copy:
-                            num_bits_limit = index_setting_copy.pop("isax_num_bits_limit")
+                        if RK_ISAX_NUM_BITS_LIMIT in index_setting_copy:
+                            num_bits_limit = index_setting_copy.pop(RK_ISAX_NUM_BITS_LIMIT)
                             if num_bits_limit > 0:
                                 args += ["--num_bits_limit", str(num_bits_limit)]
 
@@ -633,7 +766,7 @@ if __name__ == "__main__":
 
                         if run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout):
                             if calculate_index_stats:
-                                args = ["calc_i_stats", "-i", index_file, "-c", str(num_channels), "-t", index_method]
+                                args = [SUB_CALC_I_STATS, "-i", index_file, "-c", str(num_channels), "-t", index_method]
                                 run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
 
                             if queries_created:
@@ -646,7 +779,7 @@ if __name__ == "__main__":
                                 ):
                                     # fmt: off
                                     args = get_method_args({
-                                        **index_method_setting, "method_type": index_method
+                                        **index_method_setting, RK_METHOD_TYPE: index_method
                                     }) + [
                                         "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q",
                                         query_file, "-i", index_file
@@ -677,4 +810,4 @@ if __name__ == "__main__":
                 file_cleanup(ffts_file)
 
     # Run check
-    run_command_with_logging(["../scripts/py/check_results.py", "-l", LOGS_DIR])
+    run_command_with_logging([CHECK_RESULTS_SCRIPT_PATH, "-l", LOGS_DIR])

@@ -53,6 +53,7 @@ class FlatEnvelopeIndex : public IIndex<Envelope>,
     void insert_entries(vec<IndexEntry<Envelope>> &entries, EntryInserterType inserter_type) override {
         uptr<IEntryInserter<FlatEnvelopeIndex>> inserter;
         switch (inserter_type) {
+            case ISAX_PARALLEL:  // Temporary solution to support two-stage indexes
             case TOP_DOWN:
                 inserter = std::make_unique<TopDownInserter<FlatEnvelopeIndex>>(this->shared_from_this());
                 break;
@@ -89,7 +90,7 @@ class FlatEnvelopeIndex : public IIndex<Envelope>,
 template <SearchType S, DistanceType D, bool QS = false>
 class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
    public:
-    FlatEnvelopeIndexSearch(uptr<FlatEnvelopeIndex> index, bool use_priority_queue = true)
+    FlatEnvelopeIndexSearch(sptr<FlatEnvelopeIndex> index, bool use_priority_queue = true)
         : m_index(std::move(index)), m_use_priority_queue(use_priority_queue) {}
 
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
@@ -197,7 +198,7 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
         logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED);
     }
 
-    uptr<FlatEnvelopeIndex> m_index;
+    sptr<FlatEnvelopeIndex> m_index;
     bool m_use_priority_queue;
 };
 

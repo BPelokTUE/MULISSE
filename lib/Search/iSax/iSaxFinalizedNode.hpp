@@ -159,9 +159,6 @@ struct iSaxInternalNodeArgs {
     }
 };
 
-// Required for Cereal (de)serialization
-CEREAL_REGISTER_TYPE(iSaxInternalNodeArgs<PaaTag>)
-
 struct iSaxEnvelopeInternalNodeArgs : iSaxInternalNodeArgs<EnvelopeTag> {
     SaxSymbolT max_symbol_left;
     SaxSymbolT max_symbol_right;
@@ -182,10 +179,6 @@ struct iSaxEnvelopeInternalNodeArgs : iSaxInternalNodeArgs<EnvelopeTag> {
         ar(cereal::base_class<iSaxInternalNodeArgs<EnvelopeTag>>(this), max_symbol_left, max_symbol_right);
     }
 };
-
-// Required for Cereal (de)serialization
-CEREAL_REGISTER_TYPE(iSaxEnvelopeInternalNodeArgs)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxInternalNodeArgs<EnvelopeTag>, iSaxEnvelopeInternalNodeArgs)
 
 /**
  * @brief Finalized internal node
@@ -228,12 +221,6 @@ class iSaxFinalizedInternal : public iSaxFinalizedNode<FTag> {
     }
 };
 
-// Required for Cereal (de)serialization
-CEREAL_REGISTER_TYPE(iSaxFinalizedInternal<PaaTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<PaaTag>, iSaxFinalizedInternal<PaaTag>)
-CEREAL_REGISTER_TYPE(iSaxFinalizedInternal<EnvelopeTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<EnvelopeTag>, iSaxFinalizedInternal<EnvelopeTag>)
-
 /**
  * @brief Finalized leaf node
  * @tparam T The SAX traits to use
@@ -274,11 +261,5 @@ class iSaxFinalizedLeaf : public iSaxFinalizedNode<T> {
         ar(m_subsequence_infos);
     }
 };
-
-// Required for Cereal (de)serialization
-CEREAL_REGISTER_TYPE(iSaxFinalizedLeaf<PaaTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<PaaTag>, iSaxFinalizedLeaf<PaaTag>)
-CEREAL_REGISTER_TYPE(iSaxFinalizedLeaf<EnvelopeTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<EnvelopeTag>, iSaxFinalizedLeaf<EnvelopeTag>)
 
 #endif  // ISAX_FINALIZED_NODE_HPP

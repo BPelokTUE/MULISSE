@@ -61,10 +61,6 @@ struct SeriesISaxEnvelopeProperties : SeriesISaxProperties {
     }
 };
 
-CEREAL_REGISTER_TYPE(SeriesISaxProperties)
-CEREAL_REGISTER_TYPE(SeriesISaxEnvelopeProperties)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(SeriesISaxProperties, SeriesISaxEnvelopeProperties)
-
 template <typename FTag>
     requires ValidEntryTraitsTag<FTag>
 struct PQueueISaxEntry {
@@ -164,7 +160,7 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
      * @brief Construct a new iSaxIndexSearch object
      * @param index The iSAX index to use for searching
      */
-    iSaxIndexSearch(uptr<iSaxFinalizedIndex<FTag>> index) : m_index(std::move(index)) {}
+    iSaxIndexSearch(sptr<iSaxFinalizedIndex<FTag>> index) : m_index(index) {}
 
     SearchResults search(const vec<vec<Real>>& query, const SearchOptions& opts, ResultSet<S>& result_set,
                          const DistanceMeasure<S, D, QS>& distance_measure, std::ifstream& dataset_ifs,
@@ -278,7 +274,7 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
     }
 
    private:
-    uptr<iSaxFinalizedIndex<FTag>> m_index;
+    sptr<iSaxFinalizedIndex<FTag>> m_index;
 
     bool skip_entry(uint query_len, uint series_len, const SubsequenceInfo& subs_info) const {
         if constexpr (std::is_same_v<FTag, PaaTag>) {

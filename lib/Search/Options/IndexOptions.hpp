@@ -172,6 +172,8 @@ DEFINE_ENUM_CONSTS_NO_EXTRA(ArchiveType, ARCHIVE_TYPE, false);
 
 /** @brief Options for creating an index */
 struct IndexOptions {
+    /** @brief The type of the index method to use */
+    SearchMethodType index_method;
     /** @brief Format to save the index in */
     ArchiveType index_format;
     /** @brief Minimum accepted query length */
