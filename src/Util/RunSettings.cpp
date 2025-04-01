@@ -221,15 +221,3 @@ str RunSettings::get_index_path() const { return m_index_file.empty() ? "" : fs:
 str RunSettings::get_ffts_path() const { return m_ffts_file.empty() ? "" : fs::path(DATA_DIR) / m_ffts_file; }
 
 str RunSettings::get_logs_path() const { return logs_dir; }
-
-// Load index
-
-std::ifstream RunSettings::get_index_ifs() const {
-    str index_path = get_index_path();
-    std::ifstream index_stream(index_path, std::ios::binary);
-    if (!index_stream) {
-        std::cerr << "Could not open index file " << index_path << std::endl;
-        return std::ifstream();
-    }
-    return index_stream;
-}

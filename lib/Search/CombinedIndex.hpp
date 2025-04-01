@@ -18,11 +18,28 @@ class CombinedFinalizedIndex : public IFinalizedIndex<FTag> {
 
     sptr<IFinalizedIndex<FTag>> &get_exact_index() { return m_exact_index; }
 
+    void save(const str &out_file, ArchiveType ar_type) override {
+        for (uint approx_ind = 0; approx_ind < m_approx_indexes.size(); ++approx_ind)
+            m_approx_indexes[approx_ind]->save(get_index_file_path(out_file, false, approx_ind), ar_type);
+        m_exact_index->save(get_index_file_path(out_file, true), ar_type);
+    }
+
+    void load(const str &in_file, ArchiveType ar_type) override {
+        for (uint approx_ind = 0; approx_ind < m_approx_indexes.size(); ++approx_ind)
+            m_approx_indexes[approx_ind]->load(get_index_file_path(in_file, false, approx_ind), ar_type);
+        m_exact_index->load(get_index_file_path(in_file, true), ar_type);
+    }
+
    private:
     vec<sptr<IFinalizedIndex<FTag>>> m_approx_indexes;
     sptr<IFinalizedIndex<FTag>> m_exact_index;
 
-    MAKE_SERIALIZABLE((m_approx_indexes, m_exact_index));
+    str get_index_file_path(const str &path_base, bool exact, uint approx_ind = 0) const {
+        auto dot_pos = path_base.find_last_of('.');
+        str base = (dot_pos == str::npos) ? path_base : path_base.substr(0, dot_pos);
+        str extension = (dot_pos == str::npos) ? "" : path_base.substr(dot_pos);
+        return base + (exact ? "_exact" : "_approx_" + std::to_string(approx_ind)) + extension;
+    }
 };
 
 template <typename T>

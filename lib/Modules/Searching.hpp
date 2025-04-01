@@ -11,11 +11,6 @@
 #include "Search/CombinedIndex.hpp"
 #include "Search/SequentialScan.hpp"
 
-#define LOAD_INDEX(INDEX_TYPE)                   \
-    auto index_stream = RS.get_index_ifs();      \
-    auto index = std::make_unique<INDEX_TYPE>(); \
-    index->load(index_stream, opts.index_format);
-
 /**
  * @brief Load the search method based on the options
  * @tparam S SearchType to execute
@@ -29,34 +24,35 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
     auto &RS = RunSettings::get_instance();
     switch (opts.search_method_type) {
         case ISAX_ENVELOPE: {
-            LOAD_INDEX(iSaxFinalizedIndex<EnvelopeTag>);
+            auto index = std::make_unique<iSaxFinalizedIndex<EnvelopeTag>>();
+            index->load(RS.get_index_path(), opts.index_format);
             return std::make_unique<iSaxIndexSearch<EnvelopeTag, S, D, QS>>(std::move(index));
         }
         case ISAX_ENV_W_ENV:
         case ISAX_ENV_W_SAX_ENV: {
-            LOAD_INDEX(CombinedFinalizedIndex<EnvelopeTag>);
+            auto approx_index = std::make_shared<iSaxFinalizedIndex<EnvelopeTag>>();
+            auto exact_index = std::make_shared<FlatEnvelopeIndex>();
+            auto index = std::make_unique<CombinedFinalizedIndex<EnvelopeTag>>(
+                vec<sptr<IFinalizedIndex<EnvelopeTag>>>{
+                    static_pointer_cast<IFinalizedIndex<EnvelopeTag>>(approx_index)},
+                static_pointer_cast<IFinalizedIndex<EnvelopeTag>>(exact_index));
 
-            if (dynamic_cast<const iSaxFinalizedIndex<EnvelopeTag> *>(index->get_approx_indexes()[0].get()) ==
-                    nullptr ||
-                dynamic_cast<const FlatEnvelopeIndex *>(index->get_exact_index().get()) == nullptr) {
-                std::cerr << "Invalid index type for ISAX_ENV_W_SAX_ENV\n";
-                return nullptr;
-            }
+            index->load(RS.get_index_path(), opts.index_format);
 
             vec<sptr<ISearchMethod<S, D, QS>>> approx_methods(1);
-            approx_methods[0] = std::make_shared<iSaxIndexSearch<EnvelopeTag, S, D, QS>>(
-                static_pointer_cast<iSaxFinalizedIndex<EnvelopeTag>>(index->get_approx_indexes()[0]));
-            auto exact_method = std::make_shared<FlatEnvelopeIndexSearch<S, D, QS>>(
-                static_pointer_cast<FlatEnvelopeIndex>(index->get_exact_index()));
+            approx_methods[0] = std::make_shared<iSaxIndexSearch<EnvelopeTag, S, D, QS>>(approx_index);
+            auto exact_method = std::make_shared<FlatEnvelopeIndexSearch<S, D, QS>>(exact_index);
             return std::make_unique<CombinedSearch<S, D, QS>>(std::move(approx_methods), std::move(exact_method));
         }
         case ISAX: {
-            LOAD_INDEX(iSaxFinalizedIndex<PaaTag>);
+            auto index = std::make_unique<iSaxFinalizedIndex<PaaTag>>();
+            index->load(RS.get_index_path(), opts.index_format);
             return std::make_unique<iSaxIndexSearch<PaaTag, S, D, QS>>(std::move(index));
         }
         case ENVELOPE:
         case SAX_ENVELOPE: {
-            LOAD_INDEX(FlatEnvelopeIndex);
+            auto index = std::make_unique<FlatEnvelopeIndex>();
+            index->load(RS.get_index_path(), opts.index_format);
             return std::make_unique<FlatEnvelopeIndexSearch<S, D, QS>>(std::move(index), opts.use_priority_queue);
         }
         case SEQUENTIAL_SCAN:

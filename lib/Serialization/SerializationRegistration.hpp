@@ -40,26 +40,6 @@ CEREAL_REGISTER_TYPE(iSaxFinalizedLeaf<EnvelopeTag>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<PaaTag>, iSaxFinalizedLeaf<PaaTag>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<EnvelopeTag>, iSaxFinalizedLeaf<EnvelopeTag>)
 
-// Register base index
-CEREAL_REGISTER_TYPE(IFinalizedIndex<PaaTag>)
-CEREAL_REGISTER_TYPE(IFinalizedIndex<EnvelopeTag>)
-
-// Register iSAX index types
-CEREAL_REGISTER_TYPE(iSaxFinalizedIndex<PaaTag>)
-CEREAL_REGISTER_TYPE(iSaxFinalizedIndex<EnvelopeTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(IFinalizedIndex<PaaTag>, iSaxFinalizedIndex<PaaTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(IFinalizedIndex<EnvelopeTag>, iSaxFinalizedIndex<EnvelopeTag>)
-
-// Register FlatEnvelopeIndex
-CEREAL_REGISTER_TYPE(FlatEnvelopeIndex)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(IFinalizedIndex<EnvelopeTag>, FlatEnvelopeIndex)
-
-// Register combined index types
-CEREAL_REGISTER_TYPE(CombinedFinalizedIndex<PaaTag>)
-CEREAL_REGISTER_TYPE(CombinedFinalizedIndex<EnvelopeTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(IFinalizedIndex<PaaTag>, CombinedFinalizedIndex<PaaTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(IFinalizedIndex<EnvelopeTag>, CombinedFinalizedIndex<EnvelopeTag>)
-
 // Dynamic initialization if needed
 #ifdef CEREAL_DYNAMIC_INIT
 CEREAL_REGISTER_DYNAMIC_INIT(SeriesISaxProperties)

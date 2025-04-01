@@ -41,17 +41,17 @@ class IFinalizedIndex {
 
     /**
      * @brief Save the index into a file
-     * @param ofs Output file stream
+     * @param out_file Path to the output file
      * @param ar_type Archive type
      */
-    virtual void save(std::ofstream &ofs, ArchiveType ar_type) = 0;
+    virtual void save(const str &out_file, ArchiveType ar_type) = 0;
 
     /**
      * @brief Load the index from a file
-     * @param ifs Input file stream
+     * @param in_file Path to the input file
      * @param ar_type Archive type
      */
-    virtual void load(std::ifstream &ifs, ArchiveType ar_type) = 0;
+    virtual void load(const str &in_file, ArchiveType ar_type) = 0;
 
     /**
      * @brief Get the length of the series in the index
@@ -94,23 +94,26 @@ class IFinalizedIndex {
  * IFinalizedIndex.
  * @param members Members of the class to be serialized
  */
-#define MAKE_SERIALIZABLE(members)                                    \
-   private:                                                           \
-    template <typename Archive>                                       \
-    void serialize(Archive &ar) {                                     \
-        ar members;                                                   \
-    }                                                                 \
-    template <typename Archive>                                       \
-    void deserialize(Archive &ar) {                                   \
-        ar members;                                                   \
-    }                                                                 \
-                                                                      \
-   public:                                                            \
-    void save(std::ofstream &ofs, ArchiveType ar_type) override {     \
-        SERIALIZATION_MACRO(ar_type, ofs, serialize, OutputArchive);  \
-    }                                                                 \
-    void load(std::ifstream &ifs, ArchiveType ar_type) override {     \
-        SERIALIZATION_MACRO(ar_type, ifs, deserialize, InputArchive); \
+#define MAKE_SERIALIZABLE(members)                                                 \
+   private:                                                                        \
+    template <typename Archive>                                                    \
+    void serialize(Archive &ar) {                                                  \
+        ar members;                                                                \
+    }                                                                              \
+    template <typename Archive>                                                    \
+    void deserialize(Archive &ar) {                                                \
+        ar members;                                                                \
+    }                                                                              \
+                                                                                   \
+   public:                                                                         \
+    void save(const str &out_file, ArchiveType ar_type) override {                 \
+        std::ofstream ofs(out_file, std::ios::binary);                             \
+        SERIALIZATION_MACRO(ar_type, ofs, serialize, OutputArchive);               \
+    }                                                                              \
+    void load(const str &in_file, ArchiveType ar_type) override {                  \
+        std::ifstream ifs(in_file, std::ios::binary);                              \
+        if (!ifs.is_open()) throw std::runtime_error("Could not open index file"); \
+        SERIALIZATION_MACRO(ar_type, ifs, deserialize, InputArchive);              \
     }
 
 // Forward declarations

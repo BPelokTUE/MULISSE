@@ -53,9 +53,9 @@ void IndexAnalyzer<FlatEnvelopeIndex, EnvelopeTag>::analyze() {
 
 #define ANALYZE_INDEX(INDEX_TYPE, F_TAG)                            \
     try {                                                           \
-        auto index_stream = RS.get_index_ifs();                     \
+        auto index_file = RS.get_index_path();                      \
         auto index = std::make_unique<INDEX_TYPE>();                \
-        index->load(index_stream, index_format);                    \
+        index->load(index_file, index_format);                      \
         using IndexType = INDEX_TYPE;                               \
         IndexAnalyzer<IndexType, F_TAG> analyzer(std::move(index)); \
         analyzer.analyze();                                         \

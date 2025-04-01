@@ -146,8 +146,7 @@ void construct_index(sptr<IIndex<T>> index, uptr<IEntryGenerator<T>> generator, 
     logger.start_timer(ISC::INDEXING_TIME_S);
     index->construct(RS.get_dataset_path(), std::move(generator), opts.inserter_type, opts.num_channels,
                      opts.series_len, opts.adapt);
-    std::ofstream index_stream(RS.get_index_path(), std::ios::binary);
-    index->finalize()->save(index_stream, opts.index_format);
+    index->finalize()->save(RS.get_index_path(), opts.index_format);
     logger.stop_timer(ISC::INDEXING_TIME_S);
 }
 
