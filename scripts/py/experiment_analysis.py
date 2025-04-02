@@ -1250,7 +1250,7 @@ def experiment_ulisse_comparison(
     x_labels = {(*key[1:],): get_x_label(key) for key in reduced_values}
 
     for key, val in reduced_values.items():
-        print(f"{key}: {1.0 - val[0]}")
+        print(f"{key}: {val[0]}")  #
 
     y_labels = {
         QC.TOTAL_TIME_S: TOTAL_TIME_Y_LABEL,
@@ -1271,10 +1271,10 @@ def experiment_ulisse_comparison(
 
 # experiment_ulisse_comparison(max_ulisse_pruning_ratio=0.0)
 experiment_ulisse_comparison(
-    max_ulisse_pruning_ratio=1.0,
+    max_ulisse_pruning_ratio=0.0,
     target_col=QC.ABANDONING_RATE,
     # logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_base_compare",
-    logs_dir="LOGS",
+    logs_dir="LOGS_base_compare_2",
     query_sort_in_results=True,
 )
 

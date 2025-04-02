@@ -70,3 +70,9 @@
 2. Fix (or at least minimize) discrepancy between ULISSE, MASS, ED and their MULISSE library counterparts
     - ULISSE uses some "interesting" split strategies. See if these make a difference.
 3. Add support for length-based grouping 
+
+Checks to do:
+- Rerun ED (C), MASS (C) and ULISSE (original and on a single thread)
+- Important comparisons:
+  - ED (C) vs ED scan vs ED scan with sorting vs ULISSE vs ULISSE single threaded
+  - iSAX env vs iSAX env w SAX env w no priority queue vs ULISSE vs ULISSE single threaded

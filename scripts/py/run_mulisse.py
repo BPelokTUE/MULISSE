@@ -788,7 +788,6 @@ if __name__ == "__main__":
                                     logs_dirs.append(f"{LOGS_DIR}_{m_ind}")
                                     args += ["--logs", logs_dirs[-1]]
                                     os.makedirs(logs_dirs[-1], exist_ok=True)
-                                    print(1)
 
                                     futures.append(
                                         executor.submit(

@@ -120,7 +120,7 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
 
             logger.start_timer(QC::TOTAL_TIME_S);
             SearchResults results;
-            if constexpr (QS) {
+            if constexpr (QS && D == ED) {
                 vec<std::pair<Real, uint>> query_magnitudes(query_len);
                 for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
                     if (query[c].empty()) continue;
