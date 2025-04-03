@@ -92,7 +92,7 @@ sptr<IIndex<Envelope>> get_envelope_index(const IndexOptions &opts, bool discret
     auto *params = dynamic_cast<EnvelopeIndexParams *>(opts.index_params.get());
     SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
 
-    auto sax_params = dynamic_cast<SaxEnvelopeIndexParams *>(opts.index_params.get());
+    auto sax_params = dynamic_cast<SaxIndexParams *>(opts.index_params.get());
     if (discretize_flat_index && sax_params && sax_params->num_bits > 0) {
         calculate_sax_breakpoints(sax_params, sax_params->num_bits, num_seg_per_channel);
         auto *index = new FlatEnvelopeIndex(params->segment_len, params->pos_per_env, sax_params->num_bits);

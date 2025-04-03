@@ -164,27 +164,30 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         auto method_type = index_options.index_params->get_type();
         method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(method_type);
 
-        if (method_type == ISAX || method_type == ISAX_ENVELOPE) {
-            auto *params = dynamic_cast<iSaxIndexParams *>(index_options.index_params.get());
-            segment_len = params->segment_len;
-            first_layer_num_bits = params->num_bits;
-            leaf_capacity = params->leaf_capacity;
-            brs_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(params->breakpoint_strategy_type);
+        auto *paa_params = dynamic_cast<PaaIndexParams *>(index_options.index_params.get());
+        segment_len = paa_params->segment_len;
 
-            auto split_strategy = params->split_strategy_type;
-            sps_str = ISAX_SPLIT_STRATEGY_TO_STR.at(split_strategy);
+        if (std::find(METHODS_W_SAX.begin(), METHODS_W_SAX.end(), method_type) != METHODS_W_SAX.end()) {
+            auto *sax_params = dynamic_cast<SaxIndexParams *>(index_options.index_params.get());
+            first_layer_num_bits = sax_params->num_bits;
+            brs_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(sax_params->breakpoint_strategy_type);
 
-            if (split_strategy == ENTROPY_MAXIMIZING) min_num_bits_on_tie_str = to_string(params->min_num_bits_on_tie);
-            num_bits_limit = params->num_bits_limit;
+            if (std::find(METHODS_W_ISAX.begin(), METHODS_W_ISAX.end(), method_type) != METHODS_W_ISAX.end()) {
+                auto *isax_params = dynamic_cast<iSaxIndexParams *>(index_options.index_params.get());
+                leaf_capacity = isax_params->leaf_capacity;
 
-            if (method_type == ISAX_ENVELOPE) {
-                auto *env_params = dynamic_cast<iSaxEnvelopeIndexParams *>(params);
-                pos_per_env = env_params->pos_per_env;
+                auto split_strategy = isax_params->split_strategy_type;
+                sps_str = ISAX_SPLIT_STRATEGY_TO_STR.at(split_strategy);
+
+                if (split_strategy == ENTROPY_MAXIMIZING)
+                    min_num_bits_on_tie_str = to_string(isax_params->min_num_bits_on_tie);
+                num_bits_limit = isax_params->num_bits_limit;
             }
-        } else if (method_type == ENVELOPE) {
-            auto *params = dynamic_cast<EnvelopeIndexParams *>(index_options.index_params.get());
-            segment_len = params->segment_len;
-            pos_per_env = params->pos_per_env;
+        }
+        if (std::find(METHODS_W_ENVELOPE.begin(), METHODS_W_ENVELOPE.end(), method_type) != METHODS_W_ENVELOPE.end()) {
+            auto *env_params = dynamic_cast<EnvelopeIndexParams *>(index_options.index_params.get());
+            segment_len = env_params->segment_len;
+            pos_per_env = env_params->pos_per_env;
         }
     }
 

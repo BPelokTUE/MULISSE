@@ -135,7 +135,7 @@ class ExperimentResults(BaseModel):
         if str(QC.NUM_ENTRIES_EXAMINED) in self.runs_df.columns:
             qc_query_length = get_merged_col_name(ERD.RUNS_COLS, str(QC.QUERY_LENGTH))
             merged_df["num_relevant_entries"] = np.where(
-                merged_df[ssc_search_method].str.contains("envelope"),
+                merged_df[ssc_search_method].str.contains("env"),
                 (merged_df[dsc_series_length] - merged_df[qc_query_length] + merged_df[isc_pos_per_env])
                 // merged_df[isc_pos_per_env],
                 np.where(
@@ -148,8 +148,8 @@ class ExperimentResults(BaseModel):
             qc_num_entries_examined = get_merged_col_name(ERD.RUNS_COLS, str(QC.NUM_ENTRIES_EXAMINED))
             qc_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.ID))
 
-            merged_df[str(QC.PRUNING_RATIO)] = (
-                1.0 - merged_df[qc_num_entries_examined] / merged_df["num_relevant_entries"]
+            merged_df[str(QC.PRUNING_RATIO)] = np.clip(
+                1.0 - merged_df[qc_num_entries_examined] / merged_df["num_relevant_entries"], 0.0, 1.0
             )
         else:  # Handle case for backward compatibility
             isc_l_min = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MIN))
@@ -488,41 +488,71 @@ def execute_reduction(
 # %%
 
 METHOD_COLORS = {
-    "sequential_scan-ed": PALETTE["Greens"][1],
-    "base_ed-ed": PALETTE["Greens"][2],
-    "sequential_scan-ed-early": PALETTE["Greens"][4],
+    "sequential_scan-ed": PALETTE["Yellows"][2],
+    "base_ed-ed": PALETTE["Yellows"][3],
+    "sequential_scan-ed-early": PALETTE["Yellows"][4],
     "sequential_scan-mass": PALETTE["Oranges"][0],
     "base_mass-mass": PALETTE["Oranges"][1],
     "sequential_scan-mass-ffts": PALETTE["Oranges"][2],
-    "isax_envelope-ed-early": PALETTE["Blues"][4],
+    "ulisse_single-ed-early": PALETTE["Greys"][1],
+    "ulisse_parallel-ed-early": PALETTE["Greys"][3],
+    "isax_envelope-ed-early": PALETTE["Blues"][0],
     "isax_envelope-mass": PALETTE["Blues"][2],
-    "isax_envelope-mass-ffts": PALETTE["Blues"][1],
-    "isax-ed-early": PALETTE["Reds"][4],
+    "isax_envelope-mass-ffts": PALETTE["Blues"][4],
+    "isax-ed": PALETTE["Reds"][1],
+    "isax-ed-early": PALETTE["Reds"][1],
     "isax-mass": PALETTE["Reds"][2],
-    "isax-mass-ffts": PALETTE["Reds"][1],
-    "envelope-ed-early": PALETTE["Purples"][4],
-    "envelope-mass": PALETTE["Purples"][2],
-    "envelope-mass-ffts": PALETTE["Purples"][1],
-    "ulisse-ed-early-ulisse_index": PALETTE["Greys"][3],
+    "isax-mass-ffts": PALETTE["Reds"][4],
+    "envelope-ed": PALETTE["Purples"][0],
+    "envelope-ed-early": PALETTE["Purples"][0],
+    "sax_envelope-ed": PALETTE["Purples"][2],
+    "sax_envelope-ed-early": PALETTE["Purples"][2],
+    "envelope-mass": PALETTE["Purples"][3],
+    "envelope-mass-ffts": PALETTE["Purples"][3],
+    "sax_envelope-mass": PALETTE["Purples"][6],
+    "sax_envelope-mass-ffts": PALETTE["Purples"][6],
+    "isax_env_w_env-ed": PALETTE["Greens"][0],
+    "isax_env_w_env-ed-early": PALETTE["Greens"][0],
+    "isax_env_w_sax_env-ed": PALETTE["Greens"][2],
+    "isax_env_w_sax_env-ed-early": PALETTE["Greens"][2],
+    "isax_env_w_env-mass": PALETTE["Greens"][3],
+    "isax_env_w_env-mass-ffts": PALETTE["Greens"][3],
+    "isax_env_w_sax_env-mass": PALETTE["Greens"][6],
+    "isax_env_w_sax_env-mass-ffts": PALETTE["Greens"][6],
 }
 METHOD_LABELS = {
     "sequential_scan-ed": "BF",
-    "base_ed-ed": "EAb (C)",
-    "sequential_scan-ed-early": "EAb",
+    "base_ed-ed": "ED, EAb (C)",
+    "sequential_scan-ed-early": "ED, EAb",
     "base_mass-mass": "MASS (C)",
     "sequential_scan-mass": "MASS, no pre.",
     "sequential_scan-mass-ffts": "MASS",
-    "ulisse-ed-early-ulisse_index": "ULISSE",
+    "ulisse_single-ed-early": "ULISSE single",
+    "ulisse_parallel-ed-early": "ULISSE parallel",
     "isax_envelope-ed": "MULISSE (ED)",
     "isax_envelope-ed-early": "MULISSE (ED, EAb)",
     "isax_envelope-mass": "MULISSE (MASS, no pre.)",
     "isax_envelope-mass-ffts": "MULISSE (MASS)",
+    "isax-ed": "iSAX (ED)",
     "isax-ed-early": "iSAX (ED, EAb)",
     "isax-mass": "iSAX (MASS, no pre.)",
     "isax-mass-ffts": "iSAX (MASS)",
-    "envelope-ed-early": "Env. (ED, EAb)",
-    "envelope-mass": "Env. (MASS, no pre.)",
+    "envelope-ed": "Envelope (ED)",
+    "envelope-ed-early": "Envelope (ED, EAb)",
+    "envelope-mass": "Envelope (MASS, no pre.)",
     "envelope-mass-ffts": "Envelope (MASS)",
+    "sax_envelope-ed": "SAX Env (ED)",
+    "sax_envelope-ed-early": "SAX Env (ED, EAb)",
+    "sax_envelope-mass": "SAX Env (MASS, no pre.)",
+    "sax_envelope-mass-ffts": "SAX Env (MASS)",
+    "isax_env_w_env-ed": "iSAX+Env (ED)",
+    "isax_env_w_env-ed-early": "iSAX+Env (ED, EAb)",
+    "isax_env_w_env-mass": "iSAX+Env (MASS, no pre.)",
+    "isax_env_w_env-mass-ffts": "iSAX+Env (MASS)",
+    "isax_env_w_sax_env-ed": "iSAX+SAX Env (ED)",
+    "isax_env_w_sax_env-ed-early": "iSAX+SAX Env (ED, EAb)",
+    "isax_env_w_sax_env-mass": "iSAX+SAX Env (MASS, no pre.)",
+    "isax_env_w_sax_env-mass-ffts": "iSAX+SAX Env (MASS)",
 }
 DATASET_ORDER = [
     "weather",
@@ -587,31 +617,28 @@ def plot_bars(
 
     for bar_group_key, bars in bar_groups.items():
         bars_values = [bar[1] for bar in bars]
-        colors = [color_map[bar[0]] for bar in bars]
 
-        labels = []
+        colors = []
         for bar in bars:
+            color = color_map[bar[0]]
+            colors.append(color)
             label = label_map[bar[0]]
             if label not in seen_labels:
                 seen_labels.add(label)
-                labels.append(label)
-        labels = labels if len(labels) > 0 else None
+                ax.bar(0, 0, color=color, label=label, edgecolor="black")
 
         for b_ind, bar_values in enumerate(bars_values):
             bar_start = 0
             for v_ind, value in enumerate(bar_values):
-                color = colors[b_ind]
                 hatch = hatches[v_ind] if hatches is not None and len(hatches) >= v_ind else None
                 # fmt: off
                 ax.bar(
                     b_ind * bar_width + x_start, height=value, bottom=bar_start, width=bar_width, align="edge",
-                    color=color, edgecolor="black", hatch=hatch
+                    color=colors[b_ind], edgecolor="black", hatch=hatch
                 )
                 # fmt: on
                 bar_start += value
 
-                label = labels[b_ind] if labels is not None and v_ind == 0 else None
-                ax.bar(0, 0, color=color, label=label, edgecolor="black")
                 if hatch is not None and hatch not in seen_hatches:
                     seen_hatches.add(v_ind)
 
@@ -1189,14 +1216,14 @@ for istc_col in [ISTC.LEAF_HEIGHT_STATS]:
 
 
 def experiment_ulisse_comparison(
-    logs_dir: str = "EXPERIMENT_LOGS/base_compare/LOGS_base_compare",
+    logs_dir: str = "EXPERIMENT_LOGS/base_compare/LOGS_base_compare_final",
     target_col: QC = QC.TOTAL_TIME_S,
     reducer: Reducer = MeanReducer(),
     max_ulisse_pruning_ratio: float = 1.0,
-    query_sort_in_results: bool = False,
+    only_important: bool = False,
 ):
     groups_dict = {
-        ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
+        ERD.METHODS_COLS: [str(SSC.METHOD_NAME), str(SSC.SORT_QUERY), str(SSC.USE_PRIORITY_QUEUE)],
         ERD.INDEXES_COLS: [
             str(ISC.BREAKPOINT_STRATEGY),
             str(ISC.SPLIT_STRATEGY),
@@ -1204,8 +1231,7 @@ def experiment_ulisse_comparison(
         ],
         ERD.RUNS_COLS: [str(QC.PRUNING_RATIO), str(QC.QUERY_ID)],
     }
-    if query_sort_in_results:
-        groups_dict[ERD.METHODS_COLS].append(str(SSC.SORT_QUERY))
+
     targets_dict = {ERD.RUNS_COLS: [str(target_col)]}
     columns = groups_dict.copy()
     columns[ERD.RUNS_COLS] += targets_dict[ERD.RUNS_COLS]
@@ -1226,32 +1252,40 @@ def experiment_ulisse_comparison(
     groups = dict_to_tuples(groups_dict)
     reduced_values = execute_reduction([results], targets, groups)
     reduced_values = simplify_method_name(reduced_values, 0)
+
+    if only_important:
+        important_run_keys = [
+            ("isax_envelope-mass", 0, 0, "equiprobable", "entropy_maximizing", 8),
+            ("isax_env_w_env-mass", 0, 1, "equiprobable", "entropy_maximizing", 8),
+            ("envelope-mass", 0, 1, 0, 0, 0),
+            ("isax_env_w_sax_env-ed-early", 1, 0, "fixed", "ulisse_closest_to_mean", 8),
+            ("ulisse_single-ed-early", 1, 0, "fixed", "ulisse_closest_to_mean", 8),
+            ("ulisse_parallel-ed-early", 1, 0, "fixed", "ulisse_closest_to_mean", 8),
+            ("sequential_scan-ed-early", 0, 0, 0, 0, 0),
+            ("sequential_scan-mass", 0, 0, 0, 0, 0),
+        ]
+        reduced_values = {key: reduced_values[key] for key in important_run_keys}
+
     method_labels_keys = list(METHOD_LABELS.keys())
     reduced_values = sort_dict(reduced_values, lambda x: method_labels_keys.index(x[0][0]))
 
     def get_x_label(key: tuple):
-        if not query_sort_in_results:
-            method, breakpoint_strat, split_strat, num_bits = key
-        else:
-            method, sort_query, breakpoint_strat, split_strat, num_bits = key
+        method, sort_query, use_pq, breakpoint_strat, split_strat, num_bits = key
+
+        sort_str = "Sort\n" if sort_query else ""
+        pq_str = "PQ\n" if use_pq else ""
 
         if "isax" not in method:
-            return ""
+            return sort_str + pq_str
 
         breakpoint_str = breakpoint_strat if len(breakpoint_strat) <= 5 else f"{breakpoint_strat[:5]}."
         breakpoint_str = breakpoint_str.capitalize()
         split_str = "".join([s[0].upper() for s in split_strat.split("_")])
+        num_bits_str = f"{int(num_bits)} bits" if num_bits > 0 else ""
 
-        label = f"{breakpoint_str}\n{split_str}\n{num_bits}"
-        if query_sort_in_results and sort_query:
-            label = f"Sort\n{label}"
-        return label
+        return f"{sort_str}{pq_str}{breakpoint_str}\n{split_str}\n{num_bits_str}"
 
     x_labels = {(*key[1:],): get_x_label(key) for key in reduced_values}
-
-    for key, val in reduced_values.items():
-        print(f"{key}: {val[0]}")  #
-
     y_labels = {
         QC.TOTAL_TIME_S: TOTAL_TIME_Y_LABEL,
         QC.ABANDONING_RATE: "Abandoning rate",
@@ -1271,11 +1305,7 @@ def experiment_ulisse_comparison(
 
 # experiment_ulisse_comparison(max_ulisse_pruning_ratio=0.0)
 experiment_ulisse_comparison(
-    max_ulisse_pruning_ratio=0.0,
     target_col=QC.ABANDONING_RATE,
-    # logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_base_compare",
-    logs_dir="LOGS_base_compare_2",
-    query_sort_in_results=True,
+    logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_base_compare_final",
+    only_important=True,
 )
-
-# %%

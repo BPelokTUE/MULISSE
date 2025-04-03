@@ -57,22 +57,22 @@
             - The one major difference between this and previous experiments on synthetic data, is that **the range of query length is much greater:** $|Q|\in[256,4096]$ with $m=4096$
                 - One hypothesis for the low pruning ratio then is that the large number (and varied size) of subsequences leads to loose envelopes $\Rightarrow$ **Suggestion**: let me implement length-based grouping (in addition to starting position based grouping). At this point I think we have seen plenty of evidence that shorter query ranges lead to better pruning, and with this implementation, this hypothesis could be denied or confirmed and potentially solved.
 
-### Work Items
-0. Double check
-    - Why MASS and ED w EA are the same time
-        - Bug in parsing corrected
-    - Double-check ULISSE EA 
-        - The two algorithms are the same
-    - Measure ULISSE vs ED w EA on query with 0 pruning power
-        - Compared the average runtime between methods on the queries where ULISSE got pruning ratio 0. ULISSE is still the best performing method, and in fact the difference increases.
-1. Add support for measuring abandoning power and run experiments with it
-    - For non-MULISSE-lib implementations as well
-2. Fix (or at least minimize) discrepancy between ULISSE, MASS, ED and their MULISSE library counterparts
-    - ULISSE uses some "interesting" split strategies. See if these make a difference.
-3. Add support for length-based grouping 
+## ULISSE backtracking
 
-Checks to do:
-- Rerun ED (C), MASS (C) and ULISSE (original and on a single thread)
-- Important comparisons:
-  - ED (C) vs ED scan vs ED scan with sorting vs ULISSE vs ULISSE single threaded
-  - iSAX env vs iSAX env w SAX env w no priority queue vs ULISSE vs ULISSE single threaded
+ULISSE and pure C sequential scan implementations were achieving faster query times than their MULISSE-lib counterparts. This issue has been addressed by:
+- The discrepancy between sequential scan implementations was due to unnecessary floating point type conversions and run-time (as opposed to compile-time) polymorphism. These have been fixed, and sequential scan methods in MULISSE operate at similar speeds to stand-alone implementations.
+- The main reason for the good performance of ULISSE was that **it was using parallelism during search** (all other methods, including MASS are single-threaded). Once parallelism was disabled (by settings the number of cores to 1) **ULISSE became the slowest method out of all the ones tested**. Do note however, that using a single separate thread for running all scans still brings some overhead, so it is not an entirely fair comparison.
+- Other aspects of ULISSE were also discovered during the backtracking process:
+    - Most importantly: ULISSE uses two indexes for search: an iSAX prefix-tree for a quick approximate search, and a *flat SAX+Envelope index* for the exhaustive search right after. This aspect is mentioned in the paper, but was overlooked during the first implementation, which only used a prefix-tree, for a single exhaustive search.
+    - Interestingly: ULISSE sorts the data points in each query by their absolute value, in order to increase early abandoning power. While this goal is achieved by sorting, **final query-time is higher for sorted queries**, most likely due to increased number of indirections (more indexing) and reduced cache locality. Perhaps ED with sorted queries could be improved, but considering that MASS outperforms ED in all cases, this is probably a poor use of time.
+    - Less importantly: The backtracking revealed some questionable implementation choices in ULISSE, in particular a bugged splitting strategy, and the use of fixed breakpoint indexes, many of them being equal. Implementing these did not lead to significant changes.
+
+The following may be inferred from this investigation:
+- MASS outperforms ED, with or without early abandoning, with or without sorting query data points, **even without precomputing FFT components** 
+- Flat indexes (at least with envelopes as they are currently) substantially outperform prefix indexes. Anecdotally, even the creators of ULISSE fundamentally rely on a flat index to do most of the computation, as **the initial approximate search will visit at most 5 leaves** (5 is the default value in the code, and the value mentioned in the paper that is the best for approximate search).
+- The pruning ratios observed during this investigation ($>0.3$) are far below what has previously been seen with synthetic data generated in the same way. **This is in line with the observation that increased query length range leads to lower pruning**, most likely due to loose envelopes.
+
+**Note on parallelism**: there is no good reason to parallelize the current method, following in the footsteps of ULISSE:
+1. Only parallelizing indexing methods is disingenuous
+2. Parallelizing all methods will likely benefit sequential scan more, as in that case all time series have to be examined either way
+3. Parallelizing on the level of the whole search (i.e. running multiple queries in parallel) will likely lead to faster overall run-time, while not benefiting any technique (although it may have adverse consequences, e.g. reducing cache locality, memory issues, etc)

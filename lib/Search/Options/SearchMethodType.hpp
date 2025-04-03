@@ -1,6 +1,8 @@
 #ifndef SEARCH_METHOD_TYPE_HPP
 #define SEARCH_METHOD_TYPE_HPP
 
+#include <array>
+
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 
@@ -18,5 +20,13 @@ enum SearchMethodType {
 DEFINE_ENUM_CONSTS(SearchMethodType, SEARCH_METHOD_TYPE, false,
                    (umap<str, SearchMethodType>{
                        {"mulisse", ISAX_ENVELOPE}, {"scan", SEQUENTIAL_SCAN}, {"sequential", SEQUENTIAL_SCAN}}));
+
+constexpr std::array<SearchMethodType, 4> METHODS_W_ISAX{ISAX, ISAX_ENVELOPE, ISAX_ENV_W_ENV, ISAX_ENV_W_SAX_ENV};
+
+constexpr std::array<SearchMethodType, 5> METHODS_W_SAX{ISAX, ISAX_ENVELOPE, SAX_ENVELOPE, ISAX_ENV_W_ENV,
+                                                        ISAX_ENV_W_SAX_ENV};
+
+constexpr std::array<SearchMethodType, 5> METHODS_W_ENVELOPE{ENVELOPE, ISAX_ENVELOPE, SAX_ENVELOPE, ISAX_ENV_W_ENV,
+                                                             ISAX_ENV_W_SAX_ENV};
 
 #endif  // SEARCH_METHOD_TYPE_HPP
