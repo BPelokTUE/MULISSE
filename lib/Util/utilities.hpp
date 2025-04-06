@@ -2,6 +2,7 @@
 #define UTILITIES_HPP
 
 #include <cmath>
+#include <filesystem>
 #include <sstream>
 
 #include "magic_enum/magic_enum.hpp"
@@ -10,6 +11,8 @@
 #include "Util/constants.hpp"
 
 // Paths
+
+namespace fs = std::filesystem;
 
 /**
  * @brief Get the size of a dataset; TODO: this should be in `RunSettings`
@@ -27,9 +30,17 @@ inline size_t get_dataset_size(const str dataset_path) {
  * @return The base name and extension of the file
  */
 inline std::pair<str, str> get_file_base_and_extension(const str file_path) {
-    auto dot_pos = file_path.find_last_of('.');
-    str base = (dot_pos == str::npos) ? file_path : file_path.substr(0, dot_pos);
-    str extension = (dot_pos == str::npos) ? "" : file_path.substr(dot_pos);
+    auto path = fs::path(file_path);
+    str dir_path = path.parent_path().string();
+    if (!fs::exists(dir_path)) {
+        throw std::runtime_error("Directory does not exist: " + dir_path);
+    }
+    str file_name = path.filename().string();
+    str abs_path = (fs::canonical(dir_path) / file_name).string();
+
+    auto dot_pos = abs_path.find_last_of('.');
+    str base = (dot_pos == str::npos) ? abs_path : abs_path.substr(0, dot_pos);
+    str extension = (dot_pos == str::npos) ? "" : abs_path.substr(dot_pos);
     return {base, extension};
 }
 

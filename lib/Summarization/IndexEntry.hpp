@@ -66,10 +66,7 @@ class IEntryGenerator {
      * @brief Get the number of length groups
      * @return Number of length groups
      */
-    uint get_num_length_groups() const { return m_num_length_groups; }
-
-   protected:
-    uint m_num_length_groups = 1;
+    virtual uint get_num_len_groups() const { return 1; }
 };
 
 /**

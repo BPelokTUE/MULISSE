@@ -58,17 +58,19 @@ class PaaEntryGenerator : public IEntryGenerator<Paa> {
      * @brief Construct a new PaaEntryGenerator object
      * @param num_channels Number of channels of each series
      * @param paa_params Parameters for the PAA computation
-     * @param num_length_groups Number of length groups
+     * @param num_len_groups Number of length groups
      */
-    PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params, uint num_length_groups = 1);
+    PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params, uint num_len_groups = 1);
 
     vec<vec<IndexEntry<Paa>>> get_entries(const vec<vec<Real>> &mts, uint series_ind) override;
 
+    uint get_num_len_groups() const override;
+
    private:
-    MtsNumChannelsT m_num_channels;
     bool m_normalized;
+    MtsNumChannelsT m_num_channels;
+    uint m_num_len_groups;
     iSaxPaaParams m_paa_params;
-    uint m_num_length_groups;
 
     /**
      * @brief Get the PAA entries for all normalized subsequences of a UTS, grouped by length

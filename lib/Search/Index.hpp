@@ -94,26 +94,26 @@ class IFinalizedIndex {
  * IFinalizedIndex.
  * @param members Members of the class to be serialized
  */
-#define MAKE_SERIALIZABLE(members)                                                                                     \
-   private:                                                                                                            \
-    template <typename Archive>                                                                                        \
-    void serialize(Archive &ar) {                                                                                      \
-        ar members;                                                                                                    \
-    }                                                                                                                  \
-    template <typename Archive>                                                                                        \
-    void deserialize(Archive &ar) {                                                                                    \
-        ar members;                                                                                                    \
-    }                                                                                                                  \
-                                                                                                                       \
-   public:                                                                                                             \
-    void save(const str &out_file, ArchiveType ar_type) override {                                                     \
-        std::ofstream ofs(add_archive_extension(out_file, ar_type), std::ios::binary);                                 \
-        SERIALIZATION_MACRO(ar_type, ofs, serialize, OutputArchive);                                                   \
-    }                                                                                                                  \
-    void load(const str &in_file, ArchiveType ar_type) override {                                                      \
-        std::ifstream ifs(add_archive_extension(in_file, ar_type) + get_archive_extension(ar_type), std::ios::binary); \
-        if (!ifs.is_open()) throw std::runtime_error("Could not open index file");                                     \
-        SERIALIZATION_MACRO(ar_type, ifs, deserialize, InputArchive);                                                  \
+#define MAKE_SERIALIZABLE(members)                                                     \
+   private:                                                                            \
+    template <typename Archive>                                                        \
+    void serialize(Archive &ar) {                                                      \
+        ar members;                                                                    \
+    }                                                                                  \
+    template <typename Archive>                                                        \
+    void deserialize(Archive &ar) {                                                    \
+        ar members;                                                                    \
+    }                                                                                  \
+                                                                                       \
+   public:                                                                             \
+    void save(const str &out_file, ArchiveType ar_type) override {                     \
+        std::ofstream ofs(add_archive_extension(out_file, ar_type), std::ios::binary); \
+        SERIALIZATION_MACRO(ar_type, ofs, serialize, OutputArchive);                   \
+    }                                                                                  \
+    void load(const str &in_file, ArchiveType ar_type) override {                      \
+        std::ifstream ifs(add_archive_extension(in_file, ar_type), std::ios::binary);  \
+        if (!ifs.is_open()) throw std::runtime_error("Could not open index file");     \
+        SERIALIZATION_MACRO(ar_type, ifs, deserialize, InputArchive);                  \
     }
 
 // Forward declarations
@@ -207,7 +207,7 @@ class IIndex {
         size_t N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(Real),
                series_size = channel_size * num_channels, num_series = N / series_size;
 
-        uint num_length_groups = generator->get_num_length_groups();
+        uint num_length_groups = generator->get_num_len_groups();
         vec<vec<IndexEntry<T>>> dataset_entry_groups(num_length_groups);
 
         logger.start_timer(ISC::SUMMARIZATION_TIME_S);
@@ -231,9 +231,12 @@ class IIndex {
         }
         logger.stop_timer(ISC::SUMMARIZATION_TIME_S);
 
+        for (uint l = 0; l < num_length_groups; ++l) {
+            logger.increment_count_col(ISC::NUM_ENTRIES, dataset_entry_groups[l].size());
+        }
+
         if (adapt) adapt_to_dataset_groups(dataset_entry_groups);
 
-        logger.increment_count_col(ISC::NUM_ENTRIES, dataset_entry_groups.size());
         logger.start_timer(ISC::INSERTION_TIME_S);
         insert_entry_groups(dataset_entry_groups, inserter_type);
         logger.stop_timer(ISC::INSERTION_TIME_S);

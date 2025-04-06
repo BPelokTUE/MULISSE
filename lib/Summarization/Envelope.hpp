@@ -67,9 +67,12 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
 
     vec<vec<IndexEntry<Envelope>>> get_entries(const vec<vec<Real>> &mts, uint series_ind) override;
 
+    uint get_num_len_groups() const override;
+
    private:
-    MtsNumChannelsT m_num_channels;
     bool m_normalized;
+    MtsNumChannelsT m_num_channels;
+    uint m_num_len_groups;
     EnvelopeParams m_env_params;
 
     /**

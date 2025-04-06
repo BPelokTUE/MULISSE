@@ -46,7 +46,7 @@ vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normali
 
         for (int start_ind = min_start_ind; start_ind <= max_start_ind; ++start_ind) {
             int subs_len = last_ind - start_ind + 1;
-            uint length_group = get_length_group(subs_len, ts.size(), m_num_length_groups);
+            uint length_group = get_length_group(subs_len, ts.size(), m_num_len_groups);
             auto [mu, sigma] = calculate_mu_and_sigma(tmp_sum, tmp_sum_sq, subs_len);
 
             vec<Real> subsequence(subs_len);
@@ -64,9 +64,8 @@ vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normali
     return entry_tuple_groups;
 }
 
-PaaEntryGenerator::PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params,
-                                     uint num_length_groups)
-    : m_num_channels(num_channels), m_paa_params(paa_params), m_num_length_groups(num_length_groups) {}
+PaaEntryGenerator::PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params, uint num_len_groups)
+    : m_num_channels(num_channels), m_paa_params(paa_params), m_num_len_groups(num_len_groups) {}
 
 vec<vec<IndexEntry<Paa>>> PaaEntryGenerator::get_entries(const vec<vec<Real>> &mts, uint series_ind) {
     uint series_len = mts[0].size();
@@ -74,7 +73,7 @@ vec<vec<IndexEntry<Paa>>> PaaEntryGenerator::get_entries(const vec<vec<Real>> &m
 
     for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
         auto entry_tuple_groups = get_paa_entries_normalized(mts[c], m_paa_params);
-        for (uint l_ind = 0; l_ind < m_num_length_groups; ++l_ind) {
+        for (uint l_ind = 0; l_ind < m_num_len_groups; ++l_ind) {
             auto &entry_tuples = entry_tuple_groups[l_ind];
             auto &entry_group = entry_groups[l_ind];
             for (uint i = 0; i < entry_tuples.size(); ++i) {
@@ -91,3 +90,5 @@ vec<vec<IndexEntry<Paa>>> PaaEntryGenerator::get_entries(const vec<vec<Real>> &m
 
     return entry_groups;
 }
+
+uint PaaEntryGenerator::get_num_len_groups() const { return m_num_len_groups; }

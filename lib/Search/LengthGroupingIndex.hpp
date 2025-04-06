@@ -47,6 +47,11 @@ class LengthGroupingFinalizedIndex : public IFinalizedIndex<FTag> {
         }
     }
 
+    IFinalizedIndex<FTag> *release_index(uint length_group) {
+        assert(length_group < m_indexes.size());
+        return m_indexes[length_group].release();
+    }
+
    private:
     vec<uptr<IFinalizedIndex<FTag>>> m_indexes;
     uint m_series_len;

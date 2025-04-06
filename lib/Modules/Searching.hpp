@@ -50,8 +50,11 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
     index->load(RS.get_index_path(), opts.index_format);
 
     if (num_len_groups > 0) {
+        auto grouping_index = uptr<LengthGroupingFinalizedIndex<FTag>>(
+            static_cast<LengthGroupingFinalizedIndex<FTag> *>(index.release()));
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {
-            search_methods[l_ind] = search_method_factory(std::move(group_indexes[l_ind]));
+            search_methods[l_ind] =
+                search_method_factory(uptr<IFinalizedIndex<FTag>>(grouping_index->release_index(l_ind)));
         }
         return std::make_unique<LengthGroupingIndexSearch<S, D, QS>>(std::move(search_methods), series_len);
     } else {
