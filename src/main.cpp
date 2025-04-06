@@ -73,7 +73,8 @@ int main(int argc, char **argv) {
     vec<str> csv_paths;
     Real step_sd = 1.0, noise = 0.1;
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT;
-    uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env = 0, knn_k = 1;
+    uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env = 0,
+         lens_per_group = 0, knn_k = 1;
     Real r_range_r = 1.0;
     int seed;
     size_t leaf_capacity = 0, max_leaves_to_visit = 0;
@@ -194,6 +195,11 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-p,--pos_per_env", pos_per_env, "Positions per envelope")
         ->capture_default_str()
         ->check(positive_int);
+    index_subcommand
+        ->add_option("-g,--lens_per_group", lens_per_group,
+                     "Lengths per group, 0 by default, indicating no length-based grouping")
+        ->capture_default_str()
+        ->check(positive_int);
     index_subcommand->add_option("-C,--leaf_capacity", leaf_capacity, "Leaf capacity")
         ->capture_default_str()
         ->check(positive_int);
@@ -248,6 +254,11 @@ int main(int argc, char **argv) {
     search_subcommand->add_option("-t,--method_type", search_method_type_str, "Search method type")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_SEARCH_METHOD_TYPE_STRS));
+    search_subcommand
+        ->add_option("-g,--lens_per_group", lens_per_group,
+                     "Lengths per group, 0 by default, indicating no length-based grouping")
+        ->capture_default_str()
+        ->check(positive_int);
     search_subcommand->add_option("-f,--format", index_format_str, "Index format")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ARCHIVE_TYPE_STRS));
@@ -423,15 +434,16 @@ int main(int argc, char **argv) {
                     return 1;
             }
             IndexOptions index_options{
+                .normalized = !unnormalized,
+                .adapt = adapt_index,
                 .index_method = method_type,
                 .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
+                .inserter_type = STR_TO_ENTRY_INSERTER_TYPE.at(inserter_type_str),
+                .num_channels = num_channels,
                 .l_min = l_min,
                 .l_max = l_max,
                 .series_len = series_len,
-                .num_channels = num_channels,
-                .normalized = !unnormalized,
-                .adapt = adapt_index,
-                .inserter_type = STR_TO_ENTRY_INSERTER_TYPE.at(inserter_type_str),
+                .lens_per_group = lens_per_group,
                 .index_params = std::unique_ptr<IIndexParams>(index_params),
             };
             return create_index(index_options);
@@ -447,18 +459,19 @@ int main(int argc, char **argv) {
             DistanceType distance_type = STR_TO_DISTANCE_TYPE.at(distance_measure_str);
 
             SearchOptions search_options = {
+                .exact = !approximate,
+                .normalized = !unnormalized,
+                .use_early_abandoning = early_abandon,
+                .sort_queries = sort_query,
+                .use_priority_queue = !no_use_pq,
                 .search_method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str),
                 .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
                 .search_type = search_type,
                 .distance_type = distance_type,
                 .knn_k = knn_k,
+                .lens_per_group = lens_per_group,
                 .r_range_r = r_range_r,
-                .exact = !approximate,
                 .max_leaves_to_visit = max_leaves_to_visit,
-                .normalized = !unnormalized,
-                .use_early_abandoning = early_abandon,
-                .sort_queries = sort_query,
-                .use_priority_queue = !no_use_pq,
             };
 
             switch (distance_type) {

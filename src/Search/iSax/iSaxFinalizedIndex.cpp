@@ -56,5 +56,5 @@ std::pair<vec<EnvelopeISax>, vec<EnvelopeISax>> iSaxFinalizedIndex<EnvelopeTag>:
     right_isax_words[c].isax_min.append_to_symbol(s, 1);
     right_isax_words[c].isax_max.set_symbol(s, num_bits + 1, max_symbol_right);
 
-    return {left_isax_words, right_isax_words};
+    return {std::move(left_isax_words), std::move(right_isax_words)};
 }

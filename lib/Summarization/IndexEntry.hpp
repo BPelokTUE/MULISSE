@@ -54,13 +54,32 @@ class IEntryGenerator {
     virtual ~IEntryGenerator() = default;
 
     /**
-     * @brief Generate entries for a given time series
+     * @brief Generate entries for a given time series, grouped by length
      * @tparam D Type of data stored in the entries
      * @param mts Multivariate time series
      * @param series_ind Index of the time series within the dataset
      * @return Entries
      */
-    virtual vec<IndexEntry<T>> get_entries(const vec<vec<Real>> &mts, uint series_ind) = 0;
+    virtual vec<vec<IndexEntry<T>>> get_entries(const vec<vec<Real>> &mts, uint series_ind) = 0;
+
+    /**
+     * @brief Get the number of length groups
+     * @return Number of length groups
+     */
+    uint get_num_length_groups() const { return m_num_length_groups; }
+
+   protected:
+    uint m_num_length_groups = 1;
 };
+
+/**
+ * @brief Get the index of the length group for a subsequence, based on its length
+ * @param subs_length Length of the subsequence
+ * @param ts_length Length of the time series
+ * @param num_length_groups Number of length groups
+ */
+inline uint get_length_group(uint subs_length, uint ts_length, uint num_length_groups) {
+    return static_cast<uint>(static_cast<Real>(subs_length - 1) / ts_length * num_length_groups);
+}
 
 #endif  // INDEX_ENTRY_HPP

@@ -26,9 +26,9 @@ void Paa::resize(size_t new_size) { paa_values.resize(new_size); }
 
 vec<Real> Paa::get_isax_input() const { return paa_values; }
 
-vec<std::tuple<Paa, uint, uint>> PaaEntryGenerator::get_paa_entries_normalized(const vec<Real> &ts,
-                                                                               const iSaxPaaParams &paa_params) {
-    vec<std::tuple<Paa, uint, uint>> entries;
+vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normalized(const vec<Real> &ts,
+                                                                                    const iSaxPaaParams &paa_params) {
+    vec<vec<std::tuple<Paa, uint, uint>>> entry_tuple_groups;
 
     Real sum = 0, sum_sq = 0;
     for (int last_ind = 0; last_ind < ts.size(); ++last_ind) {
@@ -46,6 +46,7 @@ vec<std::tuple<Paa, uint, uint>> PaaEntryGenerator::get_paa_entries_normalized(c
 
         for (int start_ind = min_start_ind; start_ind <= max_start_ind; ++start_ind) {
             int subs_len = last_ind - start_ind + 1;
+            uint length_group = get_length_group(subs_len, ts.size(), m_num_length_groups);
             auto [mu, sigma] = calculate_mu_and_sigma(tmp_sum, tmp_sum_sq, subs_len);
 
             vec<Real> subsequence(subs_len);
@@ -53,35 +54,40 @@ vec<std::tuple<Paa, uint, uint>> PaaEntryGenerator::get_paa_entries_normalized(c
             vec<Real> paa_values = paa(subsequence, paa_params.segment_len);
             paa_values.resize(ts.size() / paa_params.segment_len, 0.0);
 
-            entries.push_back(
+            entry_tuple_groups[length_group].push_back(
                 std::make_tuple(Paa(paa_values), static_cast<uint>(start_ind), static_cast<uint>(subs_len)));
 
             tmp_sum -= ts[start_ind];
             tmp_sum_sq -= ts[start_ind] * ts[start_ind];
         }
     }
-    return entries;
+    return entry_tuple_groups;
 }
 
-PaaEntryGenerator::PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params)
-    : m_num_channels(num_channels), m_paa_params(paa_params) {}
+PaaEntryGenerator::PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params,
+                                     uint num_length_groups)
+    : m_num_channels(num_channels), m_paa_params(paa_params), m_num_length_groups(num_length_groups) {}
 
-vec<IndexEntry<Paa>> PaaEntryGenerator::get_entries(const vec<vec<Real>> &mts, uint series_ind) {
+vec<vec<IndexEntry<Paa>>> PaaEntryGenerator::get_entries(const vec<vec<Real>> &mts, uint series_ind) {
     uint series_len = mts[0].size();
-    vec<IndexEntry<Paa>> entries;
+    vec<vec<IndexEntry<Paa>>> entry_groups;
 
     for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
-        auto channel_items = get_paa_entries_normalized(mts[c], m_paa_params);
-        for (uint i = 0; i < channel_items.size(); ++i) {
-            if (c == 0) {
-                entries.push_back(IndexEntry<Paa>{});
-                entries.back().subsequence_info = {series_ind, std::get<1>(channel_items[i]),
-                                                   std::get<2>(channel_items[i])};
-                entries.back().mts_summary.resize(m_num_channels);
+        auto entry_tuple_groups = get_paa_entries_normalized(mts[c], m_paa_params);
+        for (uint l_ind = 0; l_ind < m_num_length_groups; ++l_ind) {
+            auto &entry_tuples = entry_tuple_groups[l_ind];
+            auto &entry_group = entry_groups[l_ind];
+            for (uint i = 0; i < entry_tuples.size(); ++i) {
+                if (c == 0) {
+                    entry_group.push_back(IndexEntry<Paa>{});
+                    entry_group.back().subsequence_info = {series_ind, std::get<1>(entry_tuples[i]),
+                                                           std::get<2>(entry_tuples[i])};
+                    entry_group.back().mts_summary.resize(m_num_channels);
+                }
+                entry_group[i].mts_summary[c] = std::move(std::get<0>(entry_tuples[i]));
             }
-            entries[i].mts_summary[c] = std::move(std::get<0>(channel_items[i]));
         }
     }
 
-    return entries;
+    return entry_groups;
 }

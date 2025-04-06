@@ -90,7 +90,7 @@ class FlatEnvelopeIndex : public IIndex<Envelope>,
 template <SearchType S, DistanceType D, bool QS = false>
 class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
    public:
-    FlatEnvelopeIndexSearch(sptr<FlatEnvelopeIndex> index, bool use_priority_queue = true)
+    FlatEnvelopeIndexSearch(uptr<FlatEnvelopeIndex> index, bool use_priority_queue = true)
         : m_index(std::move(index)), m_use_priority_queue(use_priority_queue) {}
 
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
@@ -198,7 +198,7 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
         logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED);
     }
 
-    sptr<FlatEnvelopeIndex> m_index;
+    uptr<FlatEnvelopeIndex> m_index;
     bool m_use_priority_queue;
 };
 

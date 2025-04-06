@@ -9,12 +9,14 @@ int calculate_ffts(bool normalized) {
     MtsNumChannelsT num_channels = RS.get_dataset_props().num_channels;
 
     IndexLogger::initialize({
+        .normalized = normalized,
+        .adapt = false,
         .index_format = ArchiveType::NONE,
+        .num_channels = num_channels,
         .l_min = 0,
         .l_max = 0,
         .series_len = series_len,
-        .num_channels = num_channels,
-        .normalized = normalized,
+        .lens_per_group = 0,
         .index_params = nullptr,
     });
     auto &logger = IndexLogger::get_instance();

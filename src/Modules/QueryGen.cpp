@@ -92,7 +92,7 @@ int create_queries(QuerySetOptions opts) {
     std::sort(query_descriptors.begin(), query_descriptors.end());
 
     for (size_t q = 0; q < query_descriptors.size(); ++q) {
-        const auto &[subs_info, length, channels] = query_descriptors[q];
+        const auto [subs_info, length, channels] = query_descriptors[q];
         SubsequenceInfo series_start = {subs_info.series_ind, 0, series_len};
 
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {

@@ -94,26 +94,26 @@ class IFinalizedIndex {
  * IFinalizedIndex.
  * @param members Members of the class to be serialized
  */
-#define MAKE_SERIALIZABLE(members)                                                 \
-   private:                                                                        \
-    template <typename Archive>                                                    \
-    void serialize(Archive &ar) {                                                  \
-        ar members;                                                                \
-    }                                                                              \
-    template <typename Archive>                                                    \
-    void deserialize(Archive &ar) {                                                \
-        ar members;                                                                \
-    }                                                                              \
-                                                                                   \
-   public:                                                                         \
-    void save(const str &out_file, ArchiveType ar_type) override {                 \
-        std::ofstream ofs(out_file, std::ios::binary);                             \
-        SERIALIZATION_MACRO(ar_type, ofs, serialize, OutputArchive);               \
-    }                                                                              \
-    void load(const str &in_file, ArchiveType ar_type) override {                  \
-        std::ifstream ifs(in_file, std::ios::binary);                              \
-        if (!ifs.is_open()) throw std::runtime_error("Could not open index file"); \
-        SERIALIZATION_MACRO(ar_type, ifs, deserialize, InputArchive);              \
+#define MAKE_SERIALIZABLE(members)                                                                                     \
+   private:                                                                                                            \
+    template <typename Archive>                                                                                        \
+    void serialize(Archive &ar) {                                                                                      \
+        ar members;                                                                                                    \
+    }                                                                                                                  \
+    template <typename Archive>                                                                                        \
+    void deserialize(Archive &ar) {                                                                                    \
+        ar members;                                                                                                    \
+    }                                                                                                                  \
+                                                                                                                       \
+   public:                                                                                                             \
+    void save(const str &out_file, ArchiveType ar_type) override {                                                     \
+        std::ofstream ofs(add_archive_extension(out_file, ar_type), std::ios::binary);                                 \
+        SERIALIZATION_MACRO(ar_type, ofs, serialize, OutputArchive);                                                   \
+    }                                                                                                                  \
+    void load(const str &in_file, ArchiveType ar_type) override {                                                      \
+        std::ifstream ifs(add_archive_extension(in_file, ar_type) + get_archive_extension(ar_type), std::ios::binary); \
+        if (!ifs.is_open()) throw std::runtime_error("Could not open index file");                                     \
+        SERIALIZATION_MACRO(ar_type, ifs, deserialize, InputArchive);                                                  \
     }
 
 // Forward declarations
@@ -121,16 +121,6 @@ class IFinalizedIndex {
 template <typename T>
     requires DerivedFromEntryData<T>
 class IIndex;
-
-template <typename IndexType>
-concept ImplementsIIndex = requires {
-    typename IndexType::EntryType;
-    requires std::derived_from<IndexType, IIndex<typename IndexType::EntryType>>;
-};
-
-template <typename IndexType>
-    requires ImplementsIIndex<IndexType>
-class IEntryInserter;
 
 /**
  * @brief Interface for indexes
@@ -146,7 +136,63 @@ class IIndex {
     virtual ~IIndex() = default;
 
     /**
+     * @brief Adapt the index to the dataset entries
+     * @param dataset_entries The entries to adapt to
+     */
+    virtual void adapt_to_dataset(const vec<IndexEntry<T>> &dataset_entries) {}
+
+    /**
+     * @brief Adapt the index to the dataset entry groups
+     * @param dataset_entries The entry groups to adapt to
+     */
+    virtual void adapt_to_dataset_groups(const vec<vec<IndexEntry<T>>> &dataset_entry_groups) {
+        if (dataset_entry_groups.size() != 1) {
+            throw std::runtime_error("This index does not support multiple entry groups");
+        }
+        adapt_to_dataset(dataset_entry_groups[0]);
+    }
+
+    /**
+     * @brief Finalize the index
+     *
+     * Creates a finalized index, that can no longer be inserted into, but can be used for searching.
+     *
+     * @return A unique pointer to the finalized index
+     */
+    virtual uptr<IFinalizedIndex<FTag>> finalize() = 0;
+
+    /**
+     * @brief Insert entry groups into the index
+     *
+     * This function facilitates length-based group entry insertion. The default implementation assumes that there is
+     * only a single entry group.
+     *
+     * @param entry_groups The entry groups to insert
+     * @param inserter_type The type of inserter to use for each group
+     */
+    virtual void insert_entry_groups(vec<vec<IndexEntry<T>>> &entry_groups, EntryInserterType inserter_type) {
+        if (entry_groups.size() != 1) {
+            throw std::runtime_error("This index does not support multiple entry groups");
+        }
+        insert_entries(entry_groups[0], inserter_type);
+    };
+
+    /**
+     * @brief Insert entries into the index
+     * @param entries The entries to insert
+     * @param inserter_type The type of inserter to use
+     */
+    virtual void insert_entries(vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) = 0;
+
+    /**
+     * @brief Insert an entry into the index
+     * @param entry The entry to insert
+     */
+    virtual void insert(IndexEntry<T> &entry) = 0;
+
+    /**
      * @brief Construct the index from a dataset
+     * @tparam The type of entry to insert into the index
      * @param dataset_path Path to the dataset
      * @param generator Generator to produce the entries from the dataset
      * @param inserter_type The type of inserter to use
@@ -161,61 +207,43 @@ class IIndex {
         size_t N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(Real),
                series_size = channel_size * num_channels, num_series = N / series_size;
 
-        vec<IndexEntry<T>> dataset_entries;
+        uint num_length_groups = generator->get_num_length_groups();
+        vec<vec<IndexEntry<T>>> dataset_entry_groups(num_length_groups);
 
         logger.start_timer(ISC::SUMMARIZATION_TIME_S);
         OMP_PRAGMA(omp parallel) {
             std::ifstream data_stream(dataset_path, std::ios::binary);
-            OMP_PRAGMA(omp for)
-            for (size_t i = 0; i < num_series; ++i) {
-                vec<vec<Real>> mts(num_channels, vec<Real>(series_len));
-                data_stream.seekg(i * series_size);
-                for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-                    data_stream.read(reinterpret_cast<char *>(mts[c].data()), channel_size);
-                }
-                auto mts_entries = generator->get_entries(mts, i);
-                OMP_PRAGMA(omp critical) {
-                    dataset_entries.insert(dataset_entries.end(), mts_entries.begin(), mts_entries.end());
+        OMP_PRAGMA(omp for)
+        for (size_t i = 0; i < num_series; ++i) {
+            vec<vec<Real>> mts(num_channels, vec<Real>(series_len));
+            data_stream.seekg(i * series_size);
+            for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+                data_stream.read(reinterpret_cast<char *>(mts[c].data()), channel_size);
+            }
+            auto mts_entries = generator->get_entries(mts, i);
+            OMP_PRAGMA(omp critical) {
+                for (uint l = 0; l < num_length_groups; ++l) {
+                    dataset_entry_groups[l].insert(dataset_entry_groups[l].end(), mts_entries[l].begin(),
+                                                   mts_entries[l].end());
                 }
             }
         }
+        }
         logger.stop_timer(ISC::SUMMARIZATION_TIME_S);
 
-        if (adapt) adapt_to_dataset(dataset_entries);
+        if (adapt) adapt_to_dataset_groups(dataset_entry_groups);
 
-        logger.increment_count_col(ISC::NUM_ENTRIES, dataset_entries.size());
+        logger.increment_count_col(ISC::NUM_ENTRIES, dataset_entry_groups.size());
         logger.start_timer(ISC::INSERTION_TIME_S);
-        insert_entries(dataset_entries, inserter_type);
+        insert_entry_groups(dataset_entry_groups, inserter_type);
         logger.stop_timer(ISC::INSERTION_TIME_S);
     }
+};
 
-    /**
-     * @brief Adapt the index to the dataset entries
-     * @param dataset_entries The entries to adapt to
-     */
-    virtual void adapt_to_dataset(const vec<IndexEntry<T>> &dataset_entries) {}
-
-    /**
-     * @brief Finalize the index
-     *
-     * Creates a finalized index, that can no longer be inserted into, but can be used for searching.
-     *
-     * @return A unique pointer to the finalized index
-     */
-    virtual uptr<IFinalizedIndex<FTag>> finalize() = 0;
-
-    /**
-     * @brief Insert entries into the index
-     * @param entries The entries to insert
-     * @param inserter_type The type of inserter to use
-     */
-    virtual void insert_entries(vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) = 0;
-
-    /**
-     * @brief Insert an entry into the index
-     * @param entry The entry to insert
-     */
-    virtual void insert(IndexEntry<T> &entry) = 0;
+template <typename IndexType>
+concept ImplementsIIndex = requires {
+    typename IndexType::EntryType;
+    requires std::derived_from<IndexType, IIndex<typename IndexType::EntryType>>;
 };
 
 /**

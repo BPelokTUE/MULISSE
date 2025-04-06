@@ -9,7 +9,7 @@
 #include "Util/typedefs.hpp"
 #include "Util/constants.hpp"
 
-// Dataset
+// Paths
 
 /**
  * @brief Get the size of a dataset; TODO: this should be in `RunSettings`
@@ -21,11 +21,28 @@ inline size_t get_dataset_size(const str dataset_path) {
     return data_stream.tellg();
 }
 
+/**
+ * @brief Get file base and extension
+ * @param file_path Path to the file
+ * @return The base name and extension of the file
+ */
+inline std::pair<str, str> get_file_base_and_extension(const str file_path) {
+    auto dot_pos = file_path.find_last_of('.');
+    str base = (dot_pos == str::npos) ? file_path : file_path.substr(0, dot_pos);
+    str extension = (dot_pos == str::npos) ? "" : file_path.substr(dot_pos);
+    return {base, extension};
+}
+
 // Helper
 
 template <typename T>
 bool vec_contains(const vec<T>& vec, const T& value) {
     return std::find(vec.begin(), vec.end(), value) != vec.end();
+}
+
+template <typename T>
+bool arr_contains(const std::array<T, 2>& arr, const T& value) {
+    return std::find(arr.begin(), arr.end(), value) != arr.end();
 }
 
 // Enums

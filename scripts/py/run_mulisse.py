@@ -718,9 +718,7 @@ if __name__ == "__main__":
                         desc="Index settings", leave=False
                     ):
                         index_method = index_setting[RK_INDEX_TYPE]
-                        index_file = os.path.join(
-                            dataset_setting[RK_LOCATION], f"index-{index_method}-{index_counter}.bin"
-                        )
+                        index_file = os.path.join(dataset_setting[RK_LOCATION], f"index-{index_method}-{index_counter}")
                         index_counter += 1
                         index_setting_copy = index_setting.copy()
 

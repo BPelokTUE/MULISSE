@@ -45,36 +45,12 @@ struct Envelope : EntryData {
  * @param l_min The minimum length of a subsequence
  * @param l_max The maximum length of a subsequence
  */
-struct UlisseEnvelopeParams {
+struct EnvelopeParams {
     uint pos_per_env;
     uint segment_len;
     uint l_min;
     uint l_max;
 };
-
-/**
- * @brief Compute the ULISSE envelopes of subsequences of a time series WITHOUT normalization
- *
- * This function computes the ULISSE envelopes of subsequences of a time series between a
- * given range of start indices WITHOUT normalization. The envelopes are not discretized with iSAX.
- *
- * @param ts The (subsequence of the) univariate time series / channel
- * @param env_params The parameters for the envelope computation
- * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively
- */
-vec<Envelope> ulisse_envelope_raw(const vec<Real> &ts, const UlisseEnvelopeParams &env_params);
-
-/**
- * @brief Compute the ULISSE envelopes of subsequences of a time series WITH normalization
- *
- * This function computes the ULISSE envelopes of subsequences of a time series between a
- * given range of start indices WITH normalization. The envelopes are not discretized with iSAX.
- *
- * @param ts The (subsequence of the) univariate time series / channel
- * @param env_params The parameters for the envelope computation
- * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively
- */
-vec<Envelope> ulisse_envelope_normalized(const vec<Real> &ts, const UlisseEnvelopeParams &env_params);
 
 /** @brief Envelope generator for iSAX (ULISSE) envelopes */
 class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
@@ -83,17 +59,40 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
      * @brief Construct a new EnvelopeEntryGenerator object
      * @param num_channels Number of channels in each series
      * @param normalized Whether to normalize the subsequences
-     * @param uli_params Parameters for the ULISSE envelope computation
+     * @param env_params Parameters for the ULISSE envelope computation
+     * @param num_length_groups Number of length groups
      */
-    EnvelopeEntryGenerator(MtsNumChannelsT num_channels, bool normalized, const UlisseEnvelopeParams &uli_params);
+    EnvelopeEntryGenerator(MtsNumChannelsT num_channels, bool normalized, const EnvelopeParams &env_params,
+                           uint num_length_groups = 1);
 
-    vec<IndexEntry<Envelope>> get_entries(const vec<vec<Real>> &mts, uint series_ind) override;
+    vec<vec<IndexEntry<Envelope>>> get_entries(const vec<vec<Real>> &mts, uint series_ind) override;
 
    private:
     MtsNumChannelsT m_num_channels;
     bool m_normalized;
-    UlisseEnvelopeParams m_uli_params;
-    vec<Envelope> (*m_envelope_func)(const vec<Real> &, const UlisseEnvelopeParams &);
+    EnvelopeParams m_env_params;
+
+    /**
+     * @brief Compute the ULISSE envelopes of subsequences of a time series WITHOUT normalization
+     *
+     * This function computes the ULISSE envelopes of subsequences of a time series between a
+     * given range of start indices WITHOUT normalization. The envelopes are not discretized with iSAX.
+     *
+     * @param ts The (subsequence of the) univariate time series / channel
+     * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively
+     */
+    inline vec<vec<Envelope>> ulisse_envelope_raw(const vec<Real> &ts);
+
+    /**
+     * @brief Compute the ULISSE envelopes of subsequences of a time series WITH normalization
+     *
+     * This function computes the ULISSE envelopes of subsequences of a time series between a
+     * given range of start indices WITH normalization. The envelopes are not discretized with iSAX.
+     *
+     * @param ts The (subsequence of the) univariate time series / channel
+     * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively
+     */
+    inline vec<vec<Envelope>> ulisse_envelope_normalized(const vec<Real> &ts);
 };
 
 #endif  // ENVELOPE_HPP

@@ -57,24 +57,27 @@ class PaaEntryGenerator : public IEntryGenerator<Paa> {
     /**
      * @brief Construct a new PaaEntryGenerator object
      * @param num_channels Number of channels of each series
-     * @param uli_params Parameters for the ULISSE envelope computation
+     * @param paa_params Parameters for the PAA computation
+     * @param num_length_groups Number of length groups
      */
-    PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params);
+    PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params, uint num_length_groups = 1);
 
-    vec<IndexEntry<Paa>> get_entries(const vec<vec<Real>> &mts, uint series_ind) override;
+    vec<vec<IndexEntry<Paa>>> get_entries(const vec<vec<Real>> &mts, uint series_ind) override;
 
    private:
     MtsNumChannelsT m_num_channels;
     bool m_normalized;
     iSaxPaaParams m_paa_params;
+    uint m_num_length_groups;
 
     /**
-     * @brief Get the PAA entries for all normalized subsequences of a UTS
+     * @brief Get the PAA entries for all normalized subsequences of a UTS, grouped by length
      * @param ts The time series
      * @param paa_params The parameters for the PAA computation
-     * @return The PAA entries and their starting positions
+     * @return The PAA entries, their time series index and their starting position
      */
-    vec<std::tuple<Paa, uint, uint>> get_paa_entries_normalized(const vec<Real> &ts, const iSaxPaaParams &paa_params);
+    vec<vec<std::tuple<Paa, uint, uint>>> get_paa_entries_normalized(const vec<Real> &ts,
+                                                                     const iSaxPaaParams &paa_params);
 };
 
 #endif  // PAA_HPP

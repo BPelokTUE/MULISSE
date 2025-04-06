@@ -61,6 +61,10 @@ struct SeriesISaxEnvelopeProperties : SeriesISaxProperties {
     }
 };
 
+/**
+ * @brief Priority queue entry, intended to be used in iSaxFinalizedIndex
+ * @tparam FTag The traits of the entries in the index
+ */
 template <typename FTag>
     requires ValidEntryTraitsTag<FTag>
 struct PQueueISaxEntry {
@@ -73,6 +77,10 @@ struct PQueueISaxEntry {
     bool operator<(const PQueueISaxEntry& other) const { return min_dist_squared > other.min_dist_squared; }
 };
 
+/**
+ * @brief Finalized iSAX index
+ * @tparam FTag The traits of the entries in the index
+ */
 template <typename FTag>
     requires ValidEntryTraitsTag<FTag>
 class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
@@ -160,7 +168,7 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
      * @brief Construct a new iSaxIndexSearch object
      * @param index The iSAX index to use for searching
      */
-    iSaxIndexSearch(sptr<iSaxFinalizedIndex<FTag>> index) : m_index(index) {}
+    iSaxIndexSearch(uptr<iSaxFinalizedIndex<FTag>> index) : m_index(std::move(index)) {}
 
     SearchResults search(const vec<vec<Real>>& query, const SearchOptions& opts, ResultSet<S>& result_set,
                          const DistanceMeasure<S, D, QS>& distance_measure, std::ifstream& dataset_ifs,
@@ -274,7 +282,7 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
     }
 
    private:
-    sptr<iSaxFinalizedIndex<FTag>> m_index;
+    uptr<iSaxFinalizedIndex<FTag>> m_index;
 
     bool skip_entry(uint query_len, uint series_len, const SubsequenceInfo& subs_info) const {
         if constexpr (std::is_same_v<FTag, PaaTag>) {

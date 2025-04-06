@@ -170,26 +170,54 @@ enum ArchiveType { BINARY, JSON, NONE };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(ArchiveType, ARCHIVE_TYPE, false);
 
+/**
+ * @brief Get the extension for a given archive type
+ * @param ar_type The archive type
+ * @return The extension for the archive type
+ */
+inline str get_archive_extension(ArchiveType ar_type) {
+    switch (ar_type) {
+        case BINARY:
+            return ".bin";
+        case JSON:
+            return ".json";
+        case NONE:
+            return "";
+    }
+}
+
+/**
+ * @brief Add the extension for a given archive type to a file name, if not already present
+ * @param file_name The file name
+ * @return The file name with the extension added, if not already present
+ */
+inline str add_archive_extension(const str &file_name, ArchiveType ar_type) {
+    auto [base, extension] = get_file_base_and_extension(file_name);
+    return base + (extension.empty() ? get_archive_extension(ar_type) : extension);
+}
+
 /** @brief Options for creating an index */
 struct IndexOptions {
+    /** @brief Whether to Z-normalize the subsequences */
+    bool normalized;
+    /** @brief Whether to adapt the index properties to the dataset entries */
+    bool adapt;
     /** @brief The type of the index method to use */
     SearchMethodType index_method;
     /** @brief Format to save the index in */
     ArchiveType index_format;
+    /** @brief Type of inserter to use */
+    EntryInserterType inserter_type;
+    /** @brief Number of channels of each series */
+    MtsNumChannelsT num_channels;
     /** @brief Minimum accepted query length */
     uint l_min;
     /** @brief Maximum accepted query length */
     uint l_max;
     /** @brief Length time series in the dataset */
     uint series_len;
-    /** @brief Number of channels of each series */
-    MtsNumChannelsT num_channels;
-    /** @brief Whether to Z-normalize the subsequences */
-    bool normalized;
-    /** @brief Whether to adapt the index properties to the dataset entries */
-    bool adapt;
-    /** @brief Type of inserter to use */
-    EntryInserterType inserter_type;
+    /** @brief Lengths per group */
+    uint lens_per_group;
     /** @brief Unique pointer to the index parameters */
     std::unique_ptr<IIndexParams> index_params;
 };

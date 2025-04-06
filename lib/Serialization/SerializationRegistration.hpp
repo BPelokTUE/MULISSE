@@ -9,7 +9,7 @@
 #include "Search/Index.hpp"
 #include "Search/iSax/iSaxFinalizedIndex.hpp"
 #include "Search/Envelope/EnvelopeIndex.hpp"
-#include "Search/CombinedIndex.hpp"
+#include "Search/ChainIndex.hpp"
 
 // Register archive types
 CEREAL_REGISTER_ARCHIVE(cereal::BinaryInputArchive)
@@ -45,7 +45,7 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<EnvelopeTag>, iSaxFinaliz
 CEREAL_REGISTER_DYNAMIC_INIT(SeriesISaxProperties)
 CEREAL_REGISTER_DYNAMIC_INIT(iSaxFinalizedIndex)
 CEREAL_REGISTER_DYNAMIC_INIT(FlatEnvelopeIndex)
-CEREAL_REGISTER_DYNAMIC_INIT(CombinedFinalizedIndex)
+CEREAL_REGISTER_DYNAMIC_INIT(ChainFinalizedIndex)
 #endif
 
 #endif  // SERIALIZATION_REGISTRATION_HPP

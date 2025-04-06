@@ -1,12 +1,14 @@
 #include <filesystem>
 #include <fstream>
+#include <functional>
 
 #include "Modules/Indexing.hpp"
 #include "Search/Options/IndexOptions.hpp"
 #include "Search/Index.hpp"
 #include "Search/Envelope/EnvelopeIndex.hpp"
 #include "Search/iSax/iSaxIndex.hpp"
-#include "Search/CombinedIndex.hpp"
+#include "Search/ChainIndex.hpp"
+#include "Search/LengthGroupingIndex.hpp"
 #include "Search/TopDownInserter.hpp"
 #include "Serialization/SerializationRegistration.hpp"
 #include "Util/constants.hpp"
@@ -76,9 +78,18 @@ void calculate_sax_breakpoints(const SaxIndexParams *params, SaxNumBitsT num_bit
         {num_seg_per_channel, params->segment_len, std::move(breakpoint_strategy), breakpoints, num_bits_limit});
 }
 
+// Index factory functions
+
+struct IndexFactoryParams {
+    bool discretize_flat_index = false;
+    const IndexOptions &opts;
+};
+
 template <typename T>
     requires DerivedFromEntryData<T>
-sptr<IIndex<T>> get_isax_index(const IndexOptions &opts) {
+sptr<IIndex<T>> get_isax_index(const IndexFactoryParams &factory_params) {
+    const IndexOptions &opts = factory_params.opts;
+
     auto *params = dynamic_cast<iSaxIndexParams *>(opts.index_params.get());
     SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
 
@@ -88,7 +99,10 @@ sptr<IIndex<T>> get_isax_index(const IndexOptions &opts) {
     return get_isax_index<T>(opts, params, num_seg_per_channel, std::move(split_strategy));
 }
 
-sptr<IIndex<Envelope>> get_envelope_index(const IndexOptions &opts, bool discretize_flat_index) {
+sptr<IIndex<Envelope>> get_envelope_index(const IndexFactoryParams &factory_params) {
+    bool discretize_flat_index = factory_params.discretize_flat_index;
+    const IndexOptions &opts = factory_params.opts;
+
     auto *params = dynamic_cast<EnvelopeIndexParams *>(opts.index_params.get());
     SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
 
@@ -103,16 +117,19 @@ sptr<IIndex<Envelope>> get_envelope_index(const IndexOptions &opts, bool discret
     }
 }
 
-sptr<IIndex<Envelope>> get_two_stage_isax_envelope_index(const IndexOptions &opts, bool discretize_flat_index) {
+sptr<IIndex<Envelope>> get_two_stage_isax_envelope_index(const IndexFactoryParams &factory_params) {
+    bool discretize_flat_index = factory_params.discretize_flat_index;
+    const IndexOptions &opts = factory_params.opts;
+
     vec<sptr<IIndex<Envelope>>> approx_indexes(1);
-    approx_indexes[0] = get_isax_index<Envelope>(opts);
+    approx_indexes[0] = get_isax_index<Envelope>(factory_params);
     if (discretize_flat_index) {
         auto isax_params = dynamic_cast<iSaxEnvelopeIndexParams *>(opts.index_params.get());
         isax_params->num_bits = isax_params->num_bits_limit;
     }
-    auto exact_index = get_envelope_index(opts, discretize_flat_index);
+    auto exact_index = get_envelope_index(factory_params);
 
-    auto *index = new CombinedIndex<Envelope>(std::move(approx_indexes), std::move(exact_index));
+    auto *index = new ChainIndex<Envelope>(std::move(approx_indexes), std::move(exact_index));
     return sptr<IIndex<Envelope>>(index);
 }
 
@@ -130,19 +147,35 @@ uptr<IEntryGenerator<Paa>> get_paa_generator(const IndexOptions &opts) {
 
 uptr<IEntryGenerator<Envelope>> get_envelope_generator(const IndexOptions &opts) {
     auto *params = dynamic_cast<EnvelopeIndexParams *>(opts.index_params.get());
-    UlisseEnvelopeParams uli_params = {
+    EnvelopeParams env_params = {
         .pos_per_env = params->pos_per_env,
         .segment_len = params->segment_len,
         .l_min = opts.l_min,
         .l_max = opts.l_max,
     };
-    return std::make_unique<EnvelopeEntryGenerator>(opts.num_channels, opts.normalized, uli_params);
+    return std::make_unique<EnvelopeEntryGenerator>(opts.num_channels, opts.normalized, env_params);
 }
 
 template <typename T>
     requires DerivedFromEntryData<T>
-void construct_index(sptr<IIndex<T>> index, uptr<IEntryGenerator<T>> generator, const IndexOptions &opts,
-                     RunSettings &RS, IndexLogger &logger) {
+void construct_index(std::function<sptr<IIndex<T>>(const IndexFactoryParams &)> index_factory,
+                     uptr<IEntryGenerator<T>> generator, const IndexFactoryParams &factory_params) {
+    auto &RS = RunSettings::get_instance();
+    auto &logger = IndexLogger::get_instance();
+    auto &opts = factory_params.opts;
+
+    sptr<IIndex<T>> index;
+    if (opts.lens_per_group > 0) {
+        uint num_len_groups = (opts.series_len + opts.lens_per_group - 1) / opts.lens_per_group;
+        vec<sptr<IIndex<T>>> group_indexes(num_len_groups);
+        for (uint l_ind; l_ind < num_len_groups; l_ind++) {
+            group_indexes[l_ind] = index_factory(factory_params);
+        }
+        index = std::make_shared<LengthGroupingIndex<T>>(std::move(group_indexes), opts.series_len);
+    } else {
+        index = index_factory(factory_params);
+    }
+
     logger.start_timer(ISC::INDEXING_TIME_S);
     index->construct(RS.get_dataset_path(), std::move(generator), opts.inserter_type, opts.num_channels,
                      opts.series_len, opts.adapt);
@@ -162,26 +195,33 @@ int create_index(const IndexOptions &opts) {
 
     IndexLogger::initialize(opts);
     auto &logger = IndexLogger::get_instance();
-    bool discretize_flat_index = false;
+
+#define CONSTRUCT_INDEX(Type, index_factory, generator)                                                               \
+    construct_index<Type>(                                                                                            \
+        [](const IndexFactoryParams &factory_params) -> sptr<IIndex<Type>> { return index_factory(factory_params); }, \
+        generator, factory_params);
+
+    IndexFactoryParams factory_params{
+        .discretize_flat_index = false,
+        .opts = opts,
+    };
 
     switch (opts.index_method) {
         case ISAX_ENVELOPE:
-            construct_index(get_isax_index<Envelope>(opts), get_envelope_generator(opts), opts, RS, logger);
+            CONSTRUCT_INDEX(Envelope, get_isax_index<Envelope>, get_envelope_generator(opts));
             break;
         case ISAX_ENV_W_SAX_ENV:
-            discretize_flat_index = true;
+            factory_params.discretize_flat_index = true;
         case ISAX_ENV_W_ENV:
-            construct_index(get_two_stage_isax_envelope_index(opts, discretize_flat_index),
-                            get_envelope_generator(opts), opts, RS, logger);
+            CONSTRUCT_INDEX(Envelope, get_two_stage_isax_envelope_index, get_envelope_generator(opts));
             break;
         case ISAX:
-            construct_index(get_isax_index<Paa>(opts), get_paa_generator(opts), opts, RS, logger);
+            CONSTRUCT_INDEX(Paa, get_isax_index<Paa>, get_paa_generator(opts));
             break;
         case SAX_ENVELOPE:
-            discretize_flat_index = true;
+            factory_params.discretize_flat_index = true;
         case ENVELOPE:
-            construct_index(get_envelope_index(opts, discretize_flat_index), get_envelope_generator(opts), opts, RS,
-                            logger);
+            CONSTRUCT_INDEX(Envelope, get_envelope_index, get_envelope_generator(opts));
             break;
         default:
             break;
