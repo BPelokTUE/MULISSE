@@ -22,10 +22,15 @@ class LengthGroupingFinalizedIndex : public IFinalizedIndex<FTag> {
     /**
      * @brief Construct a new LengthGroupingFinalizedIndex object
      * @param indexes The indexes to use for each length group
-     * @param series_len The length of each time series
+     * @param l_min Minimum query length
+     * @param l_max Maximum query length
      */
-    LengthGroupingFinalizedIndex(vec<uptr<IFinalizedIndex<FTag>>> indexes, uint series_len)
-        : m_indexes(std::move(indexes)), m_series_len(series_len) {};
+    LengthGroupingFinalizedIndex(vec<uptr<IFinalizedIndex<FTag>>> indexes, uint l_min, uint l_max)
+        : m_indexes(std::move(indexes)), m_l_min(l_min), m_l_max(l_max) {
+        assert(l_min > 0);
+        assert(l_max > 0);
+        assert(l_min <= l_max);
+    }
 
     void save(const str &out_file, ArchiveType ar_type) override {
         str base = get_file_base_and_extension(out_file).first;
@@ -54,7 +59,7 @@ class LengthGroupingFinalizedIndex : public IFinalizedIndex<FTag> {
 
    private:
     vec<uptr<IFinalizedIndex<FTag>>> m_indexes;
-    uint m_series_len;
+    uint m_l_min, m_l_max;
 
     str get_index_file_name(uint length_group) const { return "LG_" + std::to_string(length_group); }
 };
@@ -72,9 +77,15 @@ class LengthGroupingIndex : public IIndex<T> {
     /**
      * @brief Construct a new LengthGroupingIndex object
      * @param indexes The indexes to use for each length group
-     * @param series_len The length of each time series
+     * @param l_min Minimum query length
+     * @param l_max Maximum query length
      */
-    LengthGroupingIndex(vec<sptr<IIndex<T>>> indexes, uint series_len) : m_indexes(indexes), m_series_len(series_len) {}
+    LengthGroupingIndex(vec<sptr<IIndex<T>>> indexes, uint l_min, uint l_max)
+        : m_indexes(indexes), m_l_min(l_min), m_l_max(l_max) {
+        assert(l_min > 0);
+        assert(l_max > 0);
+        assert(l_min <= l_max);
+    }
 
     void insert_entry_groups(vec<vec<IndexEntry<T>>> &entry_groups, EntryInserterType inserter_type) override {
         OMP_PRAGMA(omp parallel for)
@@ -98,7 +109,7 @@ class LengthGroupingIndex : public IIndex<T> {
             finalized_indexes[l_ind] = m_indexes[l_ind]->finalize();
         }
         return uptr<IFinalizedIndex<FTag>>(
-            new LengthGroupingFinalizedIndex<FTag>(std::move(finalized_indexes), m_series_len));
+            new LengthGroupingFinalizedIndex<FTag>(std::move(finalized_indexes), m_l_min, m_l_max));
     }
 
     void adapt_to_dataset_groups(const vec<vec<IndexEntry<T>>> &dataset_entry_groups) override {
@@ -109,10 +120,10 @@ class LengthGroupingIndex : public IIndex<T> {
 
    private:
     vec<sptr<IIndex<T>>> m_indexes;
-    uint m_series_len;
+    uint m_l_min, m_l_max;
 
     inline uint get_entry_length_group(const IndexEntry<T> &entry) const {
-        return get_length_group(entry.subsequence_info.length, m_series_len, m_indexes.size());
+        return get_length_group(entry.subsequence_info.length, m_l_min, m_l_max, m_indexes.size());
     }
 };
 
@@ -127,11 +138,16 @@ class LengthGroupingIndexSearch : public ISearchMethod<S, D, QS> {
    public:
     /**
      * @brief Construct a new LengthGroupingIndexSearch object
-     * @param
-     * @param series_len The length of each time series
+     * @param search_methods The search methods to use for each length group
+     * @param l_min Minimum query length
+     * @param l_max Maximum query length
      */
-    LengthGroupingIndexSearch(vec<uptr<ISearchMethod<S, D, QS>>> search_methods, uint series_len)
-        : m_search_methods(std::move(search_methods)), m_series_len(series_len) {}
+    LengthGroupingIndexSearch(vec<uptr<ISearchMethod<S, D, QS>>> search_methods, uint l_min, uint l_max)
+        : m_search_methods(std::move(search_methods)), m_l_min(l_min), m_l_max(l_max) {
+        assert(l_min > 0);
+        assert(l_max > 0);
+        assert(l_min <= l_max);
+    }
 
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
                          const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
@@ -143,14 +159,14 @@ class LengthGroupingIndexSearch : public ISearchMethod<S, D, QS> {
                 break;
             }
         }
-        uint length_group = get_length_group(query_len, m_series_len, m_search_methods.size());
+        uint length_group = get_length_group(query_len, m_l_min, m_l_max, m_search_methods.size());
         return m_search_methods[length_group]->search(query, opts, result_set, distance_measure, dataset_ifs,
                                                       real_query_inds);
     }
 
    private:
     vec<uptr<ISearchMethod<S, D, QS>>> m_search_methods;
-    uint m_series_len;
+    uint m_l_min, m_l_max;
 };
 
 #endif  // LENGTH_GROUPING_INDEX_HPP

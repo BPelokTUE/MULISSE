@@ -85,7 +85,7 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::ulisse_envelope_raw(const vec<Real>& 
         Real paa_val = paa_acc / segment_len;
         for (uint seg_ind = 0; seg_ind < segments_in_subs; ++seg_ind) {
             int first_ind = last_ind + 1 - (seg_ind + 1) * segment_len;
-            uint length_group = get_length_group(subs_len, ts.size(), m_num_len_groups);
+            uint length_group = get_length_group(subs_len, l_min, l_max, m_num_len_groups);
             if (ts.size() - first_ind >= l_min) {
                 auto& envelope = envelopes[length_group][first_ind / pos_per_env];
                 envelope.lower[seg_ind] = std::min(envelope.lower[seg_ind], paa_val);
@@ -119,7 +119,7 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::ulisse_envelope_normalized(const vec<
             auto [mu, sigma] = calculate_mu_and_sigma(sum_accs[last_ind + 1] - sum_accs[start],
                                                       sq_sum_accs[last_ind + 1] - sq_sum_accs[start], subs_len);
 
-            uint length_group = get_length_group(subs_len, ts.size(), m_num_len_groups);
+            uint length_group = get_length_group(subs_len, l_min, l_max, m_num_len_groups);
             int num_seg_in_subs = subs_len / segment_len;
             for (int seg_ind = 0; seg_ind < num_seg_in_subs; ++seg_ind) {
                 Real paa_val =

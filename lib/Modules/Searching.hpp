@@ -4,6 +4,7 @@
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
 #include "Util/Logger.hpp"
+#include "Serialization/SerializationRegistration.hpp"
 #include "Search/LengthGroupingIndex.hpp"
 #include "Search/Options/SearchOptions.hpp"
 #include "Search/Envelope/EnvelopeIndex.hpp"
@@ -32,8 +33,8 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
     auto &RS = RunSettings::get_instance();
 
     uptr<IFinalizedIndex<FTag>> index;
-    uint series_len = RS.get_dataset_props().series_len;
-    uint num_len_groups = opts.lens_per_group > 0 ? (series_len + opts.lens_per_group - 1) / opts.lens_per_group : 0;
+    str index_path = RS.get_index_path();
+    uint num_len_groups = opts.get_num_len_groups();
 
     vec<uptr<IFinalizedIndex<FTag>>> group_indexes(num_len_groups);
     vec<uptr<ISearchMethod<S, D, QS>>> search_methods(num_len_groups);
@@ -42,12 +43,12 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {
             group_indexes[l_ind] = finalized_index_factory();
         }
-        index = std::make_unique<LengthGroupingFinalizedIndex<FTag>>(std::move(group_indexes), series_len);
+        index = std::make_unique<LengthGroupingFinalizedIndex<FTag>>(std::move(group_indexes), opts.l_min, opts.l_max);
     } else {
         index = finalized_index_factory();
     }
 
-    index->load(RS.get_index_path(), opts.index_format);
+    index->load(index_path, opts.index_format);
 
     if (num_len_groups > 0) {
         auto grouping_index = uptr<LengthGroupingFinalizedIndex<FTag>>(
@@ -56,7 +57,7 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
             search_methods[l_ind] =
                 search_method_factory(uptr<IFinalizedIndex<FTag>>(grouping_index->release_index(l_ind)));
         }
-        return std::make_unique<LengthGroupingIndexSearch<S, D, QS>>(std::move(search_methods), series_len);
+        return std::make_unique<LengthGroupingIndexSearch<S, D, QS>>(std::move(search_methods), opts.l_min, opts.l_max);
     } else {
         return search_method_factory(std::move(index));
     }
@@ -107,7 +108,7 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
                 },
                 opts);
         case ISAX:
-            load_index_based_method<PaaTag, S, D, QS>(
+            return load_index_based_method<PaaTag, S, D, QS>(
                 []() { return std::make_unique<iSaxFinalizedIndex<PaaTag>>(); },
                 [](uptr<IFinalizedIndex<PaaTag>> index) {
                     return std::make_unique<iSaxIndexSearch<PaaTag, S, D, QS>>(
@@ -115,8 +116,8 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
                 },
                 opts);
         case ENVELOPE:
-        case SAX_ENVELOPE: {
-            load_index_based_method<EnvelopeTag, S, D, QS>(
+        case SAX_ENVELOPE:
+            return load_index_based_method<EnvelopeTag, S, D, QS>(
                 []() { return std::make_unique<FlatEnvelopeIndex>(); },
                 [opts](uptr<IFinalizedIndex<EnvelopeTag>> index) {
                     return std::make_unique<FlatEnvelopeIndexSearch<S, D, QS>>(
@@ -124,7 +125,6 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
                         opts.use_priority_queue);
                 },
                 opts);
-        }
         case SEQUENTIAL_SCAN:
             return std::make_unique<SequentialScan<S, D, QS>>();
     }

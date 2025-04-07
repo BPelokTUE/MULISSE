@@ -3,6 +3,7 @@
 import argparse
 import itertools
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -44,6 +45,7 @@ CK_ISAX_SPLIT_STRATEGIES = "isax_split_strategies"
 CK_ISAX_LEAF_CAP_RATIOS = "isax_leaf_cap_ratios"
 CK_ISAX_NUM_BITS_LIMITS = "isax_num_bits_limits"
 CK_ENVELOPE_SIZE_RATIOS = "envelope_size_ratios"
+CK_LENGTH_GROUP_SIZE_RATIOS = "length_group_size_ratios"
 CK_SEARCH_KS = "search_ks"
 CK_SEARCH_RS = "search_rs"
 CK_MAX_LEAVES_TO_VISIT = "max_leaves_to_visit"
@@ -75,6 +77,7 @@ RK_SPLIT_STRATEGY = "split_strategy"
 RK_LEAF_CAPACITY = "leaf_capacity"
 RK_ISAX_NUM_BITS_LIMIT = "isax_num_bits_limit"
 RK_POS_PER_ENV = "pos_per_env"
+RK_LENS_PER_GROUP = "lens_per_group"
 RK_INDEX_TYPE = "index_type"
 RK_K = "k"
 RK_R = "r"
@@ -282,6 +285,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
             common_settings = {
                 RK_NUM_SEGMENTS: config.get(CK_NUM_SEGMENTS, []),
                 RK_INSERTER_TYPE: config.get(CK_INDEX_INSERTERS, []),
+                RK_LENS_PER_GROUP: config.get(CK_LENGTH_GROUP_SIZE_RATIOS, []),
             }
             sax_settings = {
                 **common_settings,
@@ -729,9 +733,14 @@ if __name__ == "__main__":
                         ]
                         # fmt: on
 
-                        pos_per_env = 1
+                        l_range = l_max - l_min + 1
+                        lens_per_group = 0
+                        if RK_LENS_PER_GROUP in index_setting_copy:
+                            lens_per_group = int(math.ceil(l_range * index_setting_copy.pop(RK_LENS_PER_GROUP)))
+                            args += ["-g", str(lens_per_group)]
                         if RK_NUM_SEGMENTS in index_setting_copy:
                             args += ["-s", str(series_len // index_setting_copy.pop(RK_NUM_SEGMENTS))]
+                        pos_per_env = 1
                         if RK_POS_PER_ENV in index_setting_copy:
                             max_pos_per_env = series_len - l_min + 1
                             pos_per_env = int(max_pos_per_env * index_setting_copy.pop(RK_POS_PER_ENV))
@@ -739,7 +748,6 @@ if __name__ == "__main__":
                         if RK_LEAF_CAPACITY in index_setting_copy:
                             num_entries = num_series
                             if index_method == METHOD_ISAX:
-                                l_range = l_max - l_min + 1
                                 num_entries = l_range * ((series_len - l_max + 1) + (l_range - 1) / 2) * num_series
                             elif index_method in METHODS_W_TRIE_INDEX:
                                 num_entries = ((series_len - l_min + pos_per_env) // pos_per_env) * num_series
@@ -783,6 +791,9 @@ if __name__ == "__main__":
                                         query_file, "-i", index_file
                                     ]
                                     # fmt: on
+                                    if lens_per_group > 0:
+                                        args += ["-g", str(lens_per_group), "-l", str(l_min), "-L", str(l_max)]
+
                                     logs_dirs.append(f"{LOGS_DIR}_{m_ind}")
                                     args += ["--logs", logs_dirs[-1]]
                                     os.makedirs(logs_dirs[-1], exist_ok=True)

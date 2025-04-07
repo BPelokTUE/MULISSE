@@ -28,7 +28,7 @@ vec<Real> Paa::get_isax_input() const { return paa_values; }
 
 vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normalized(const vec<Real> &ts,
                                                                                     const iSaxPaaParams &paa_params) {
-    vec<vec<std::tuple<Paa, uint, uint>>> entry_tuple_groups;
+    vec<vec<std::tuple<Paa, uint, uint>>> entry_tuple_groups(m_num_len_groups);
 
     Real sum = 0, sum_sq = 0;
     for (int last_ind = 0; last_ind < ts.size(); ++last_ind) {
@@ -46,7 +46,7 @@ vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normali
 
         for (int start_ind = min_start_ind; start_ind <= max_start_ind; ++start_ind) {
             int subs_len = last_ind - start_ind + 1;
-            uint length_group = get_length_group(subs_len, ts.size(), m_num_len_groups);
+            uint length_group = get_length_group(subs_len, m_paa_params.l_min, m_paa_params.l_max, m_num_len_groups);
             auto [mu, sigma] = calculate_mu_and_sigma(tmp_sum, tmp_sum_sq, subs_len);
 
             vec<Real> subsequence(subs_len);
@@ -69,7 +69,7 @@ PaaEntryGenerator::PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaa
 
 vec<vec<IndexEntry<Paa>>> PaaEntryGenerator::get_entries(const vec<vec<Real>> &mts, uint series_ind) {
     uint series_len = mts[0].size();
-    vec<vec<IndexEntry<Paa>>> entry_groups;
+    vec<vec<IndexEntry<Paa>>> entry_groups(m_num_len_groups);
 
     for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
         auto entry_tuple_groups = get_paa_entries_normalized(mts[c], m_paa_params);

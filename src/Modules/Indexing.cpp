@@ -142,8 +142,7 @@ uptr<IEntryGenerator<Paa>> get_paa_generator(const IndexOptions &opts) {
         .l_min = opts.l_min,
         .l_max = opts.l_max,
     };
-    uint num_len_groups =
-        opts.lens_per_group > 0 ? (opts.series_len + opts.lens_per_group - 1) / opts.lens_per_group : 1;
+    uint num_len_groups = opts.get_num_len_groups();
 
     return std::make_unique<PaaEntryGenerator>(opts.num_channels, paa_params, num_len_groups);
 }
@@ -156,8 +155,7 @@ uptr<IEntryGenerator<Envelope>> get_envelope_generator(const IndexOptions &opts)
         .l_min = opts.l_min,
         .l_max = opts.l_max,
     };
-    uint num_len_groups =
-        opts.lens_per_group > 0 ? (opts.series_len + opts.lens_per_group - 1) / opts.lens_per_group : 1;
+    uint num_len_groups = opts.get_num_len_groups();
 
     return std::make_unique<EnvelopeEntryGenerator>(opts.num_channels, opts.normalized, env_params, num_len_groups);
 }
@@ -172,12 +170,12 @@ void construct_index(std::function<sptr<IIndex<T>>(const IndexFactoryParams &)> 
 
     sptr<IIndex<T>> index;
     if (opts.lens_per_group > 0) {
-        uint num_len_groups = (opts.series_len + opts.lens_per_group - 1) / opts.lens_per_group;
+        uint num_len_groups = opts.get_num_len_groups();
         vec<sptr<IIndex<T>>> group_indexes(num_len_groups);
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {
             group_indexes[l_ind] = index_factory(factory_params);
         }
-        index = std::make_shared<LengthGroupingIndex<T>>(std::move(group_indexes), opts.series_len);
+        index = std::make_shared<LengthGroupingIndex<T>>(std::move(group_indexes), opts.l_min, opts.l_max);
     } else {
         index = index_factory(factory_params);
     }

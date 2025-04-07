@@ -259,6 +259,12 @@ int main(int argc, char **argv) {
                      "Lengths per group, 0 by default, indicating no length-based grouping")
         ->capture_default_str()
         ->check(positive_int);
+    search_subcommand->add_option("-l,--l_min", l_min, "Minimum length of subsequences")
+        ->capture_default_str()
+        ->check(positive_int);
+    search_subcommand->add_option("-L,--l_max", l_max, "Maximum length of subsequences")
+        ->capture_default_str()
+        ->check(positive_int);
     search_subcommand->add_option("-f,--format", index_format_str, "Index format")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ARCHIVE_TYPE_STRS));
@@ -360,6 +366,12 @@ int main(int argc, char **argv) {
             }
             if (!early_abandon) {
                 std::cerr << "Sorting queries is only supported with early abandoning\n";
+                return 1;
+            }
+        }
+        if (lens_per_group > 0) {
+            if (l_min == 0 || l_max == 0 || l_min > l_max) {
+                std::cerr << "When using length-based grouping, --l_min and --l_max must be provided\n";
                 return 1;
             }
         }
@@ -468,8 +480,10 @@ int main(int argc, char **argv) {
                 .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
                 .search_type = search_type,
                 .distance_type = distance_type,
-                .knn_k = knn_k,
+                .l_min = l_min,
+                .l_max = l_max,
                 .lens_per_group = lens_per_group,
+                .knn_k = knn_k,
                 .r_range_r = r_range_r,
                 .max_leaves_to_visit = max_leaves_to_visit,
             };
