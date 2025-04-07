@@ -73,8 +73,8 @@ int main(int argc, char **argv) {
     vec<str> csv_paths;
     Real step_sd = 1.0, noise = 0.1;
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT;
-    uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env = 0,
-         lens_per_group = 0, knn_k = 1;
+    uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env = 0, l_per_group = 0,
+         knn_k = 1;
     Real r_range_r = 1.0;
     int seed;
     size_t leaf_capacity = 0, max_leaves_to_visit = 0;
@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
         ->capture_default_str()
         ->check(positive_int);
     index_subcommand
-        ->add_option("-g,--lens_per_group", lens_per_group,
+        ->add_option("-g,--l_per_group", l_per_group,
                      "Lengths per group, 0 by default, indicating no length-based grouping")
         ->capture_default_str()
         ->check(positive_int);
@@ -255,7 +255,7 @@ int main(int argc, char **argv) {
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_SEARCH_METHOD_TYPE_STRS));
     search_subcommand
-        ->add_option("-g,--lens_per_group", lens_per_group,
+        ->add_option("-g,--l_per_group", l_per_group,
                      "Lengths per group, 0 by default, indicating no length-based grouping")
         ->capture_default_str()
         ->check(positive_int);
@@ -369,7 +369,7 @@ int main(int argc, char **argv) {
                 return 1;
             }
         }
-        if (lens_per_group > 0) {
+        if (l_per_group > 0) {
             if (l_min == 0 || l_max == 0 || l_min > l_max) {
                 std::cerr << "When using length-based grouping, --l_min and --l_max must be provided\n";
                 return 1;
@@ -455,7 +455,7 @@ int main(int argc, char **argv) {
                 .l_min = l_min,
                 .l_max = l_max,
                 .series_len = series_len,
-                .lens_per_group = lens_per_group,
+                .l_per_group = l_per_group,
                 .index_params = std::unique_ptr<IIndexParams>(index_params),
             };
             return create_index(index_options);
@@ -482,7 +482,7 @@ int main(int argc, char **argv) {
                 .distance_type = distance_type,
                 .l_min = l_min,
                 .l_max = l_max,
-                .lens_per_group = lens_per_group,
+                .l_per_group = l_per_group,
                 .knn_k = knn_k,
                 .r_range_r = r_range_r,
                 .max_leaves_to_visit = max_leaves_to_visit,

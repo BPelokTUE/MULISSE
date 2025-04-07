@@ -39,7 +39,7 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
     vec<uptr<IFinalizedIndex<FTag>>> group_indexes(num_len_groups);
     vec<uptr<ISearchMethod<S, D, QS>>> search_methods(num_len_groups);
 
-    if (opts.lens_per_group > 0) {
+    if (opts.l_per_group > 0) {
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {
             group_indexes[l_ind] = finalized_index_factory();
         }
@@ -50,7 +50,7 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
 
     index->load(index_path, opts.index_format);
 
-    if (opts.lens_per_group > 0) {
+    if (opts.l_per_group > 0) {
         auto grouping_index = uptr<LengthGroupingFinalizedIndex<FTag>>(
             static_cast<LengthGroupingFinalizedIndex<FTag> *>(index.release()));
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {

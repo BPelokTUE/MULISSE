@@ -169,7 +169,7 @@ void construct_index(std::function<sptr<IIndex<T>>(const IndexFactoryParams &)> 
     auto &opts = factory_params.opts;
 
     sptr<IIndex<T>> index;
-    if (opts.lens_per_group > 0) {
+    if (opts.l_per_group > 0) {
         uint num_len_groups = opts.get_num_len_groups();
         vec<sptr<IIndex<T>>> group_indexes(num_len_groups);
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {

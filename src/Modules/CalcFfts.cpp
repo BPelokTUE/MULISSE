@@ -16,7 +16,7 @@ int calculate_ffts(bool normalized) {
         .l_min = 0,
         .l_max = 0,
         .series_len = series_len,
-        .lens_per_group = 0,
+        .l_per_group = 0,
         .index_params = nullptr,
     });
     auto &logger = IndexLogger::get_instance();

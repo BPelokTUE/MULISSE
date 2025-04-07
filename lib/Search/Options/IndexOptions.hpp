@@ -217,13 +217,13 @@ struct IndexOptions {
     /** @brief Length time series in the dataset */
     uint series_len;
     /** @brief Lengths per group */
-    uint lens_per_group;
+    uint l_per_group;
     /** @brief Unique pointer to the index parameters */
     std::unique_ptr<IIndexParams> index_params;
 
     /** @brief Get the number of lengths per length group */
     uint get_num_len_groups() const {
-        return lens_per_group > 0 ? ((l_max - l_min + 1) + lens_per_group - 1) / lens_per_group : 1;
+        return l_per_group > 0 ? ((l_max - l_min + 1) + l_per_group - 1) / l_per_group : 1;
     }
 };
 
