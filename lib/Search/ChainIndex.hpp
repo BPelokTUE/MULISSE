@@ -1,9 +1,9 @@
-#ifndef COMBINED_INDEX_HPP
-#define COMBINED_INDEX_HPP
+#ifndef CHAIN_INDEX_HPP
+#define CHAIN_INDEX_HPP
 
+#include "Util/typedefs.hpp"
+#include "Summarization/IndexEntry.hpp"
 #include "Search/Index.hpp"
-#include "Search/Envelope/EnvelopeIndex.hpp"
-#include "Search/iSax/iSaxFinalizedIndex.hpp"
 
 /**
  * @brief Set of finalized indexes, intended to be used in a chain, with the approximate indexes being used first and
@@ -136,4 +136,4 @@ class ChainSearch : public ISearchMethod<S, D, QS> {
     uptr<ISearchMethod<S, D, QS>> m_exact_method;
 };
 
-#endif  // COMBINED_INDEX_HPP
+#endif  // CHAIN_INDEX_HPP

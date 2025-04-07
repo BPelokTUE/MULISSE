@@ -34,12 +34,12 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
 
     uptr<IFinalizedIndex<FTag>> index;
     str index_path = RS.get_index_path();
-    uint num_len_groups = opts.get_num_len_groups();
 
+    uint num_len_groups = opts.get_num_len_groups();
     vec<uptr<IFinalizedIndex<FTag>>> group_indexes(num_len_groups);
     vec<uptr<ISearchMethod<S, D, QS>>> search_methods(num_len_groups);
 
-    if (num_len_groups > 0) {
+    if (opts.lens_per_group > 0) {
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {
             group_indexes[l_ind] = finalized_index_factory();
         }
@@ -50,7 +50,7 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
 
     index->load(index_path, opts.index_format);
 
-    if (num_len_groups > 0) {
+    if (opts.lens_per_group > 0) {
         auto grouping_index = uptr<LengthGroupingFinalizedIndex<FTag>>(
             static_cast<LengthGroupingFinalizedIndex<FTag> *>(index.release()));
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {
@@ -91,7 +91,7 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
                 []() {
                     vec<uptr<IFinalizedIndex<EnvelopeTag>>> approx_indexes(1);
                     approx_indexes[0] = std::make_unique<iSaxFinalizedIndex<EnvelopeTag>>();
-                    auto exact_index = uptr<IFinalizedIndex<EnvelopeTag>>(new iSaxFinalizedIndex<EnvelopeTag>());
+                    auto exact_index = uptr<IFinalizedIndex<EnvelopeTag>>(new FlatEnvelopeIndex());
                     return std::make_unique<ChainFinalizedIndex<EnvelopeTag>>(std::move(approx_indexes),
                                                                               std::move(exact_index));
                 },

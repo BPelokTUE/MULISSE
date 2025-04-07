@@ -1,8 +1,6 @@
 #ifndef SERIALIZATION_REGISTRATION_HPP
 #define SERIALIZATION_REGISTRATION_HPP
 
-#include <iostream>
-
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/memory.hpp>

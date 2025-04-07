@@ -9,15 +9,15 @@
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {
-        "flat": ["envelope", "sax_envelope"],
-        "hier": ["isax_env_w_env", "isax_env_w_sax_env"]
+        "flat": ["sax_envelope", "envelope"],
+        "hier": ["isax_envelope", "isax_env_w_env", "isax_env_w_sax_env"]
     },
     "isax_split_strategies": ["em"],
     "isax_breakpoint_strategies": ["equiprobable"],
     "isax_num_bits_limits": [15],
     "isax_leaf_cap_ratios": [0.0128],
     "isax_start_bit_numbers": {
-        "flat": [8],
+        "flat": [15],
         "hier": [1]
     },
     "max_leaves_to_visit": [5],

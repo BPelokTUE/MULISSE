@@ -285,7 +285,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
             common_settings = {
                 RK_NUM_SEGMENTS: config.get(CK_NUM_SEGMENTS, []),
                 RK_INSERTER_TYPE: config.get(CK_INDEX_INSERTERS, []),
-                RK_LENS_PER_GROUP: config.get(CK_LENGTH_GROUP_SIZE_RATIOS, []),
+                RK_LENS_PER_GROUP: config.get(CK_LENGTH_GROUP_SIZE_RATIOS, [0]),
             }
             sax_settings = {
                 **common_settings,
@@ -577,7 +577,10 @@ if __name__ == "__main__":
 
         data_path = os.path.join(DATA_DIR, file)
         if os.path.exists(data_path):
-            os.remove(data_path)
+            if os.path.isfile(data_path):
+                os.remove(data_path)
+            else:
+                shutil.rmtree(data_path)
 
     parsed_config, calculate_query_stats, calculate_index_stats = parse_config_file(input_args.input_config)
 
@@ -737,7 +740,8 @@ if __name__ == "__main__":
                         lens_per_group = 0
                         if RK_LENS_PER_GROUP in index_setting_copy:
                             lens_per_group = int(math.ceil(l_range * index_setting_copy.pop(RK_LENS_PER_GROUP)))
-                            args += ["-g", str(lens_per_group)]
+                            if lens_per_group > 0:
+                                args += ["-g", str(lens_per_group)]
                         if RK_NUM_SEGMENTS in index_setting_copy:
                             args += ["-s", str(series_len // index_setting_copy.pop(RK_NUM_SEGMENTS))]
                         pos_per_env = 1
