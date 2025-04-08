@@ -66,8 +66,9 @@ class DistanceMeasure<S, ED, QS> {
         auto &logger = QueryLogger::get_instance();
 
         bool updated = false;
-        int num_start_pos, mts_len, query_len;
-        vec<uint> present_channels;
+        int num_start_pos;
+        uint mts_len, query_len;
+        vec<MtsNumChannelsT> present_channels;
 
         if constexpr (QS) {
             if (real_query_inds == nullptr) {
@@ -93,7 +94,7 @@ class DistanceMeasure<S, ED, QS> {
                 }
             }
 
-            for (int start_pos = 0; start_pos < num_start_pos; ++start_pos) {
+            for (uint start_pos = 0; static_cast<int>(start_pos) < num_start_pos; ++start_pos) {
                 Real dist_squared = 0;
                 uint64_t points_examined = 0, point_in_entry = 0;
 
@@ -120,7 +121,7 @@ class DistanceMeasure<S, ED, QS> {
                      dist_squared});
                 updated = true;
             start_pos_it_end:;
-                int end_pos = start_pos + query_len;
+                uint end_pos = start_pos + query_len;
                 if (end_pos < mts_len) {
                     for (MtsNumChannelsT c : present_channels) {
                         sums[c] += mts[c][end_pos] - mts[c][start_pos];

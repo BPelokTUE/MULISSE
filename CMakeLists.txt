@@ -6,6 +6,8 @@ project(mulisse)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wconversion -Wsign-conversion")
+
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)
     set(CMAKE_C_COMPILER_LAUNCHER ccache)
@@ -37,7 +39,7 @@ include_directories(${CMAKE_SOURCE_DIR}/extern SYSTEM GLAD)
 
 # Add Boost
 find_package(Boost 1.74 REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
+include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 # Add FFTW3
 set(LOCAL_SETTINGS_FILE "${CMAKE_SOURCE_DIR}/local_settings.json")
@@ -46,27 +48,9 @@ string(REGEX MATCH "\"FFTW_PATH\"[ \t]*:[ \t]*\"([^\"]*)\"" _ ${LOCAL_SETTINGS})
 set(FFTW_PATH "${CMAKE_MATCH_1}")
 
 include_directories(${FFTW_PATH}include)
-link_directories(${FFTW_PATH}lib)
+link_directories(SYSTEM ${FFTW_PATH}lib)
 
 # Add OpenMP
-# Apple settings from: https://stackoverflow.com/a/60198415/27492177
-if(APPLE)
-    set(CMAKE_C_COMPILER clang)
-    set(CMAKE_CXX_COMPILER clang++)
-
-    if(CMAKE_C_COMPILER_ID MATCHES "Clang\$")
-        set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp")
-        set(OpenMP_C_LIB_NAMES "omp")
-        set(OpenMP_omp_LIBRARY omp)
-    endif()
-
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang\$")
-        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp")
-        set(OpenMP_CXX_LIB_NAMES "omp")
-        set(OpenMP_omp_LIBRARY omp)
-    endif()
-endif()
-
 find_package(OpenMP REQUIRED)
 
 # Ensure flags are passed to ccache
@@ -78,10 +62,8 @@ endif()
 # Function for setting up target (adding compile options, preprocessor definitions, and linking libraries)
 function(set_up_target target)
     # Set compiler-specific flags to ignore warnings for the extern directory
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        target_compile_options(${target} PRIVATE -isystem ${CMAKE_SOURCE_DIR}/extern)
-    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        target_compile_options(${target} PRIVATE -isystem ${CMAKE_SOURCE_DIR}/extern)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_include_directories(${target} SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/extern)
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         target_compile_options(${target} PRIVATE /external:I ${CMAKE_SOURCE_DIR}/extern)
     endif()

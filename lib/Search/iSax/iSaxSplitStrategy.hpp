@@ -89,7 +89,6 @@ class EntropyMaximizingStrategy : public IiSaxSplitStrategy<T> {
             vec<SaxNumBitsT> num_bits = isax_words[c].get_num_bits();
             for (SaxSegIndT s = 0; s < RS.get_isax_props().num_segments; ++s) {
                 Real sum = 0, sum_sq = 0, score = 0;
-                uint count = 0;
 
                 std::optional<Real> mid_breakpoint = isax_words[c].get_mid_breakpoint(s, breakpoints);
                 if (!mid_breakpoint) continue;

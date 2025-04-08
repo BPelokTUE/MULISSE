@@ -20,6 +20,8 @@ struct iSaxWordSettings {
 /** @brief indexable Symbolic Aggregate approXimation (iSAX) word */
 class iSaxWord : public SaxWord {
    public:
+    ~iSaxWord() = default;
+
     /**
      * @brief Constructor from the PAA of a time series
      *

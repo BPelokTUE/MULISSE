@@ -231,9 +231,8 @@ class IIndex {
         }
         logger.stop_timer(ISC::SUMMARIZATION_TIME_S);
 
-        for (uint l = 0; l < num_length_groups; ++l) {
-            logger.increment_count_col(ISC::NUM_ENTRIES, dataset_entry_groups[l].size());
-        }
+        // TODO: Reconsider if this is a valid approach
+        logger.increment_count_col(ISC::NUM_ENTRIES, dataset_entry_groups[0].size());
 
         if (adapt) adapt_to_dataset_groups(dataset_entry_groups);
 

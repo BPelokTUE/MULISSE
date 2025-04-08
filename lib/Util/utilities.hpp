@@ -21,7 +21,11 @@ namespace fs = std::filesystem;
  */
 inline size_t get_dataset_size(const str dataset_path) {
     std::ifstream data_stream(dataset_path, std::ios::binary | std::ios::ate);
-    return data_stream.tellg();
+    auto pos = data_stream.tellg();
+    if (pos == -1) {
+        throw std::runtime_error("Failed to determine dataset size");
+    }
+    return static_cast<size_t>(pos);
 }
 
 /**
@@ -224,8 +228,9 @@ umap<V, K> get_inverse_map(const umap<K, V> map) {
  * @param count Number of values
  */
 inline std::pair<Real, Real> calculate_mu_and_sigma(Real sum, Real sum_sq, uint count) {
-    Real mu = sum / count;
-    Real sigma = std::sqrt(std::max(sum_sq / count - mu * mu, EPS_F));
+    Real count_r = static_cast<Real>(count);
+    Real mu = sum / count_r;
+    Real sigma = std::sqrt(std::max(sum_sq / count_r - mu * mu, EPS_F));
     return {mu, sigma};
 }
 

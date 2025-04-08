@@ -181,7 +181,7 @@ inline str get_archive_extension(ArchiveType ar_type) {
             return ".bin";
         case JSON:
             return ".json";
-        case NONE:
+        default:
             return "";
     }
 }

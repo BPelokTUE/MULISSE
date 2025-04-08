@@ -10,6 +10,8 @@
 /** @brief Symbolic Aggregate approXimation (SAX) word */
 class SaxWord {
    public:
+    virtual ~SaxWord() = default;
+
     /**
      * @brief Construct a new iSaxWord object from the PAA of a time series.
      *
