@@ -1,32 +1,30 @@
 {
     "csv_data_dirs": ["weather"],
-    "dataset_sizes": [100],
-    "series_lengths": [512],
+    "dataset_sizes": [10000],
+    "series_lengths": [1024],
     "syn_num_channels": [],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [10],
-    "l_range_ratios": [[0.5, 1.0]],
+    "l_range_ratios": [[0.25, 1.0]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {
-        "flat": ["sax_envelope", "envelope"],
-        "hier": ["isax_envelope", "isax_env_w_env", "isax_env_w_sax_env"]
+        "flat": ["envelope"]
     },
     "isax_split_strategies": ["em"],
     "isax_breakpoint_strategies": ["equiprobable"],
     "isax_num_bits_limits": [15],
     "isax_leaf_cap_ratios": [0.0128],
     "isax_start_bit_numbers": {
-        "flat": [15],
-        "hier": [1]
+        "flat": [15]
     },
     "max_leaves_to_visit": [5],
     "num_segments": [8],
     "envelope_size_ratios": [1.0],
-    "length_group_size_ratios": [0.25, 0.5, 1.0],
-    "distance_measures": ["ed", "mass"],
+    "length_group_size_ratios": [0.05, 0.2, 1.0],
+    "distance_measures": ["mass"],
     "early_abandon": [true],
-    "precalculate_ffts": [false],
+    "precalculate_ffts": [true],
     "adapt_index": [false],
     "index_inserters": ["isax_parallel"],
     "search_types": ["knn"],

@@ -367,7 +367,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
                 if distance_measure in config[CK_DISTANCE_MEASURES]:
                     for base_setting in index_method_settings_base:
                         if any(method in base_setting[RK_METHOD_TYPE] for method in METHODS_W_FLAT_INDEX):
-                            base_setting[RK_PRIORITY_QUEUE] = config.get(CK_PRIORITY_QUEUE, [False])
+                            base_setting[RK_PRIORITY_QUEUE] = config.get(CK_PRIORITY_QUEUE, [True])
                         index_method_settings.append(dict(base_setting, **settings))
                     for base_setting in scan_method_settings_base:
                         scan_method_settings.append(dict(base_setting, **settings))

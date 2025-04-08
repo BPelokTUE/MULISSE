@@ -198,6 +198,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         {ISC::FFTS_FILE, RS.m_ffts_file},
         {ISC::L_MIN, format_num_param(index_options.l_min)},
         {ISC::L_MAX, format_num_param(index_options.l_max)},
+        {ISC::L_PER_GROUP, format_num_param(index_options.l_per_group)},
         {ISC::NORMALIZED, to_string(index_options.normalized)},
         {ISC::INDEX_TYPE, method_type_str},
         {ISC::SEGMENT_LENGTH, format_num_param(segment_len)},
