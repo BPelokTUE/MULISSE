@@ -1303,9 +1303,15 @@ def experiment_ulisse_comparison(
 
 # %%
 
-# experiment_ulisse_comparison(max_ulisse_pruning_ratio=0.0)
 experiment_ulisse_comparison(
     target_col=QC.TOTAL_TIME_S,
-    logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_base_compare_final",
+    logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_5M",
+    # max_ulisse_pruning_ratio=0.0,
+)
+
+# %%
+experiment_ulisse_comparison(
+    target_col=QC.TOTAL_TIME_S,
+    logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_100K",
     only_important=True,
 )
