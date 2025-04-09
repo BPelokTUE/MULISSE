@@ -1221,7 +1221,11 @@ def experiment_ulisse_comparison(
     reducer: Reducer = MeanReducer(),
     max_ulisse_pruning_ratio: float = 1.0,
     only_important: bool = False,
+    bars_by_query_length: bool = False,
 ):
+    if only_important and bars_by_query_length:
+        raise ValueError("Cannot use both only_important and bars_by_query_length")
+
     groups_dict = {
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME), str(SSC.SORT_QUERY), str(SSC.USE_PRIORITY_QUEUE)],
         ERD.INDEXES_COLS: [
@@ -1231,6 +1235,9 @@ def experiment_ulisse_comparison(
         ],
         ERD.RUNS_COLS: [str(QC.PRUNING_RATIO), str(QC.QUERY_ID)],
     }
+
+    if bars_by_query_length:
+        groups_dict[ERD.RUNS_COLS].append(str(QC.QUERY_LENGTH))
 
     targets_dict = {ERD.RUNS_COLS: [str(target_col)]}
     columns = groups_dict.copy()
@@ -1247,6 +1254,9 @@ def experiment_ulisse_comparison(
         ][str(QC.QUERY_ID)].values
         results.runs_df = results.runs_df[results.runs_df[str(QC.QUERY_ID)].isin(queries_to_keep)]
     groups_dict.pop(ERD.RUNS_COLS)
+
+    if bars_by_query_length:
+        groups_dict[ERD.RUNS_COLS] = [str(QC.QUERY_LENGTH)]
 
     targets = [(ERD.RUNS_COLS, target_col, reducer) for target_col in targets_dict[ERD.RUNS_COLS]]
     groups = dict_to_tuples(groups_dict)
@@ -1270,20 +1280,28 @@ def experiment_ulisse_comparison(
     reduced_values = sort_dict(reduced_values, lambda x: method_labels_keys.index(x[0][0]))
 
     def get_x_label(key: tuple):
-        method, sort_query, use_pq, breakpoint_strat, split_strat, num_bits = key
+        if not bars_by_query_length:
+            method, sort_query, use_pq, breakpoint_strat, split_strat, num_bits = key
+            ql_str = ""
+        else:
+            method, sort_query, use_pq, breakpoint_strat, split_strat, num_bits, query_length = key
+            ql_str = f"QL={int(query_length)}"
 
         sort_str = "Sort\n" if sort_query else ""
         pq_str = "PQ\n" if use_pq else ""
 
         if "isax" not in method:
-            return sort_str + pq_str
+            return sort_str + pq_str + ql_str
 
         breakpoint_str = breakpoint_strat if len(breakpoint_strat) <= 5 else f"{breakpoint_strat[:5]}."
         breakpoint_str = breakpoint_str.capitalize()
         split_str = "".join([s[0].upper() for s in split_strat.split("_")])
         num_bits_str = f"{int(num_bits)} bits" if num_bits > 0 else ""
 
-        return f"{sort_str}{pq_str}{breakpoint_str}\n{split_str}\n{num_bits_str}"
+        label = f"{sort_str}{pq_str}{breakpoint_str}\n{split_str}\n{num_bits_str}"
+        if bars_by_query_length:
+            label += f"\n{ql_str}"
+        return label
 
     x_labels = {(*key[1:],): get_x_label(key) for key in reduced_values}
     y_labels = {
@@ -1307,11 +1325,13 @@ experiment_ulisse_comparison(
     target_col=QC.TOTAL_TIME_S,
     logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_5M",
     # max_ulisse_pruning_ratio=0.0,
+    # bars_by_query_length=True,
+    # reducer=MaxReducer(),
 )
 
 # %%
 experiment_ulisse_comparison(
     target_col=QC.TOTAL_TIME_S,
     logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_100K",
-    only_important=True,
+    only_important=False,
 )

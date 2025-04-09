@@ -787,10 +787,10 @@ if __name__ == "__main__":
                                         desc="Indexing method settings", leave=False
                                     )
                                 ):
+                                    if index_method_setting[RK_METHOD_TYPE] != index_method:
+                                        continue
                                     # fmt: off
-                                    args = get_method_args({
-                                        **index_method_setting, RK_METHOD_TYPE: index_method
-                                    }) + [
+                                    args = get_method_args(index_method_setting) + [
                                         "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q",
                                         query_file, "-i", index_file
                                     ]

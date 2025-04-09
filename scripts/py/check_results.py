@@ -119,7 +119,7 @@ if __name__ == "__main__":
 
             if len(differences) > 0:
                 print(f"Query {query_id} has different results:")
-                print("\tReference:")
+                print(f"\tReference ({ref_key}):")
                 print(f"\t\t{results_by_method[ref_key]}")
                 print("\tDifferences:")
                 for key in differences:
