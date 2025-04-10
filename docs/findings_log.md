@@ -10,7 +10,7 @@
 
 ## 05-03-2025
 
-1. Pure iSAX as poorly ( #10 )
+1. Pure iSAX performs poorly ( #10 )
     - Index size is much larger (relative to dataset size) than other indexes (iSAX + envelope or pure envelope)
     - Consequently index construction takes much longer
     - Searching the index is 1 to 2 orders of magnitude slower than iSAX + envelope or envelope, even though the pruning ratio ($1 - \frac{\text{subsequences examined}}{\text{subsequences in the index}}$) is very high
@@ -68,7 +68,7 @@ ULISSE and pure C sequential scan implementations were achieving faster query ti
     - Less importantly: The backtracking revealed some questionable implementation choices in ULISSE, in particular a bugged splitting strategy, and the use of fixed breakpoint indexes, many of them being equal. Implementing these did not lead to significant changes.
 
 The following may be inferred from this investigation:
-- MASS outperforms ED, with or without early abandoning, with or without sorting query data points, **even without precomputing FFT components** 
+- **MASS outperforms ED**, with or without early abandoning, with or without sorting query data points, **even without precomputing FFT components** 
 - Flat indexes (at least with envelopes as they are currently) substantially outperform prefix indexes. Anecdotally, even the creators of ULISSE fundamentally rely on a flat index to do most of the computation, as **the initial approximate search will visit at most 5 leaves** (5 is the default value in the code, and the value mentioned in the paper that is the best for approximate search).
 - The pruning ratios observed during this investigation ($>0.3$) are far below what has previously been seen with synthetic data generated in the same way. **This is in line with the observation that increased query length range leads to lower pruning**, most likely due to loose envelopes.
 
@@ -76,3 +76,20 @@ The following may be inferred from this investigation:
 1. Only parallelizing indexing methods is disingenuous
 2. Parallelizing all methods will likely benefit sequential scan more, as in that case all time series have to be examined either way
 3. Parallelizing on the level of the whole search (i.e. running multiple queries in parallel) will likely lead to faster overall run-time, while not benefiting any technique (although it may have adverse consequences, e.g. reducing cache locality, memory issues, etc)
+
+## 09-04-2025
+- *Note*:
+    - Envelope tightness refers to the lower bounds
+    - Envelope fullness refers the # subsequences summarized by the envelope
+- Does the pruning power of ULISSE for large queries come from the last (few) tight envelope segments, or just the added dimensionality due to more segments:
+    - ULISSE performs poorly on small queries
+    - Envelopes > Trees
+        - Compare to pure iSAX as well
+- Optimize one-phase approach
+    - The pre-filter should get back subsequences grouped by time series (or just time series). Ideally keep envelopes at a time series level (or even multi-time-series-level) to increase the potency of MASS.
+
+- TODO:
+    - **Main task**: Create table of statements (similar to the ones above) supported by plots
+    - Figure out how to group
+    - Tradeoff between memory footprint and pruning power
+    - Grouping into envelopes could be (partially) done after insertion

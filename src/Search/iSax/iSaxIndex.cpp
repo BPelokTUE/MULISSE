@@ -13,7 +13,7 @@
 
 std::size_t SaxSymbolsHash::operator()(const vec<vec<SaxSymbolT>> &symbols) const {
     std::size_t seed = 0, num_symbols = symbols[0].size();
-    for (auto channel : symbols) {
+    for (auto &channel : symbols) {
         for (SaxSymbolT symbol : channel) {
             boost::hash_combine(seed, symbol);
         }

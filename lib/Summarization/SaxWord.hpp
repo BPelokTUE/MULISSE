@@ -14,12 +14,24 @@ class SaxWord {
 
     /**
      * @brief Construct a new iSaxWord object from the PAA of a time series.
-     *
      * @param paa The Piecewise Aggregate Approximation (PAA) of a time series.
      * @param num_bits The number of bits to use for the symbols.
      * @param breakpoints The breakpoints to use for the symbols.
      */
-    SaxWord(const vec<Real>& paa, SaxNumBitsT num_bits, const vec<Real>& breakpoints);
+    inline SaxWord(const vec<Real>& paa, SaxNumBitsT num_bits, const vec<Real>& breakpoints) {
+        assert(num_bits > 0);
+        assert(breakpoints.size() == (1 << num_bits) - 1);
+        assert(std::is_sorted(breakpoints.begin(), breakpoints.end()));
+
+        m_alphabet_num_bits = num_bits;
+        uint paa_len = paa.size();
+        m_symbols.resize(paa_len);
+
+        for (uint i = 0; i < paa_len; ++i) {
+            auto it = std::lower_bound(breakpoints.begin(), breakpoints.end(), paa[i]);
+            m_symbols[i] = it - breakpoints.begin();
+        }
+    }
 
     /**
      * @brief Default constructor
@@ -28,14 +40,12 @@ class SaxWord {
 
     /**
      * @brief Copy constructor.
-     *
      * @param other The SaxWord to copy.
      */
     SaxWord(const SaxWord&) = default;
 
     /**
      * @brief Construct a new SaxWord object.
-     *
      * @param symbols The symbols of the word.
      * @param num_bits The number of bits to use for the symbols.
      */
@@ -43,7 +53,6 @@ class SaxWord {
 
     /**
      * @brief Get the symbol at the given index.
-     *
      * @param index The index of the symbol.
      * @return The symbol at the given index.
      */
@@ -51,7 +60,6 @@ class SaxWord {
 
     /**
      * @brief Equality operator.
-     *
      * @param other The other SaxWord to compare to. Assumed to be of the same length.
      * @return `True` if `this` is equal to the `other`.
      */
@@ -59,14 +67,12 @@ class SaxWord {
 
     /**
      * @brief Get the number of bits of the alphabet.
-     *
      * @return The number of bits
      */
     SaxNumBitsT get_alphabet_num_bits() const;
 
     /**
      * @brief Get the length of the word.
-     *
      * @return The length of the word.
      */
     size_t size() const;

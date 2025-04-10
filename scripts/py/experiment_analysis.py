@@ -1145,11 +1145,11 @@ logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_2"]
 # logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ie_lc"]
 # logs_dirs = ["EXPERIMENT_LOGS/adapting/LOGS_adapting_index_2"]
 
-merge_datasets = True
+merge_datasets = False
 use_adapt_to_dataset = True
 show_indexing_time = False
-datasets_to_show = ["weather"]
-l_ranges_to_show = [(256, 1024)]
+datasets_to_show = None  # ["weather"]
+l_ranges_to_show = None  # [(256, 1024)]
 
 hatches = None
 hatch_labels = None
@@ -1163,9 +1163,9 @@ if show_indexing_time:
 
 reducers = {
     "Mean": MeanReducer(),
-    "Std": StdReducer(),
-    "Min": MinReducer(),
-    "Max": MaxReducer(),
+    # "Std": StdReducer(),
+    # "Min": MinReducer(),
+    # "Max": MaxReducer(),
 }
 
 for key, reducer in reducers.items():

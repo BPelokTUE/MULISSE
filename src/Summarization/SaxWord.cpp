@@ -4,21 +4,6 @@
 #include "Summarization/SaxWord.hpp"
 #include "Util/typedefs.hpp"
 
-SaxWord::SaxWord(const vec<Real> &paa, SaxNumBitsT num_bits, const vec<Real> &breakpoints) {
-    assert(num_bits > 0);
-    assert(breakpoints.size() == (1 << num_bits) - 1);
-    assert(std::is_sorted(breakpoints.begin(), breakpoints.end()));
-
-    m_alphabet_num_bits = num_bits;
-    uint paa_len = paa.size();
-    m_symbols.resize(paa_len);
-
-    for (uint i = 0; i < paa_len; ++i) {
-        auto it = std::lower_bound(breakpoints.begin(), breakpoints.end(), paa[i]);
-        m_symbols[i] = it - breakpoints.begin();
-    }
-}
-
 SaxWord::SaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT num_bits) : m_symbols(symbols), m_alphabet_num_bits(num_bits) {
     assert(num_bits > 0);
 };

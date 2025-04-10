@@ -2,12 +2,6 @@
 #include "Summarization/SaxWord.hpp"
 #include "Util/typedefs.hpp"
 
-iSaxWord::iSaxWord(const vec<Real> &paa, const iSaxWordSettings &settings)
-    : SaxWord(paa, settings.alphabet_num_bits, settings.breakpoints), m_num_bits(settings.num_bits) {
-    assert(paa.size() == settings.num_bits.size());
-    assert(m_alphabet_num_bits >= *std::max_element(settings.num_bits.begin(), settings.num_bits.end()));
-}
-
 iSaxWord::iSaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT alphabet_num_bits)
     : SaxWord(symbols, alphabet_num_bits), m_num_bits(symbols.size(), alphabet_num_bits) {}
 
@@ -15,10 +9,6 @@ iSaxWord::iSaxWord(vec<SaxSymbolT> symbols, vec<SaxNumBitsT> num_bits, SaxNumBit
     : SaxWord(symbols, alphabet_num_bits), m_num_bits(num_bits) {
     assert(symbols.size() == num_bits.size());
     assert(alphabet_num_bits >= *std::max_element(num_bits.begin(), num_bits.end()));
-}
-
-SaxSymbolT iSaxWord::operator[](SaxSegIndT index) const {
-    return m_symbols[index] >> (m_alphabet_num_bits - m_num_bits[index]);
 }
 
 SaxSymbolT iSaxWord::symbol_no_shift(SaxSegIndT index) const { return m_symbols[index]; }

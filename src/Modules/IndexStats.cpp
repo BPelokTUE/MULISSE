@@ -51,21 +51,22 @@ void IndexAnalyzer<FlatEnvelopeIndex, EnvelopeTag>::analyze() {
 
 // Main
 
-#define ANALYZE_INDEX(INDEX_TYPE, F_TAG)                            \
-    try {                                                           \
-        auto index_file = RS.get_index_path();                      \
-        auto index = std::make_unique<INDEX_TYPE>();                \
-        index->load(index_file, index_format);                      \
-        using IndexType = INDEX_TYPE;                               \
-        IndexAnalyzer<IndexType, F_TAG> analyzer(std::move(index)); \
-        analyzer.analyze();                                         \
-    } catch (const std::exception &e) {                             \
-        std::cerr << "Error analyzing index: " << e.what() << '\n'; \
-        return 1;                                                   \
-    }
-
 int calculate_index_stats(SearchMethodType method_type, ArchiveType index_format) {
     auto &RS = RunSettings::get_instance();
+
+#define ANALYZE_INDEX(INDEX_TYPE, F_TAG)                              \
+    try {                                                             \
+        auto index_file = RS.get_index_path();                        \
+        index_file = add_archive_extension(index_file, index_format); \
+        auto index = std::make_unique<INDEX_TYPE>();                  \
+        index->load(index_file, index_format);                        \
+        using IndexType = INDEX_TYPE;                                 \
+        IndexAnalyzer<IndexType, F_TAG> analyzer(std::move(index));   \
+        analyzer.analyze();                                           \
+    } catch (const std::exception &e) {                               \
+        std::cerr << "Error analyzing index: " << e.what() << '\n';   \
+        return 1;                                                     \
+    }
 
     switch (method_type) {
         case ISAX: {

@@ -150,13 +150,31 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
     using m_first_layer_type = decltype(m_first_layer);
 
    private:
-    void calculate_symbols_and_isax(const IndexEntry<T> &entry, vec<vec<SaxSymbolT>> &symbols,
-                                    vec<iSaxWord> &isax_words) {
+    inline void calculate_isax_channel(const IndexEntry<T> &entry, MtsNumChannelsT c, iSaxWord &isax_word) {
+        auto isax_input = entry.mts_summary[c].get_isax_input();
+        isax_word = iSaxWord(isax_input, {vec<SaxNumBitsT>(isax_input.size(), m_first_layer_num_bits),
+                                          m_alphabet_num_bits, *m_breakpoints});
+    }
+
+    inline void calculate_isax(const IndexEntry<T> &entry, vec<iSaxWord> &isax_words) {
+        for (MtsNumChannelsT c = 0; c < m_series_isax_prop->num_channels; ++c)
+            calculate_isax_channel(entry, c, isax_words[c]);
+    }
+
+    inline void calculate_symbols_and_isax(const IndexEntry<T> &entry, vec<vec<SaxSymbolT>> &symbols,
+                                           vec<iSaxWord> &isax_words) {
+        for (MtsNumChannelsT c = 0; c < m_series_isax_prop->num_channels; ++c) {
+            calculate_isax_channel(entry, c, isax_words[c]);
+            for (SaxSegIndT s = 0; s < m_series_isax_prop->num_seg_per_channel; ++s) symbols[c][s] = isax_words[c][s];
+        }
+    }
+
+    inline void calculate_first_layer_symbols(const IndexEntry<T> &entry, vec<vec<SaxSymbolT>> &symbols) {
         for (MtsNumChannelsT c = 0; c < m_series_isax_prop->num_channels; ++c) {
             auto isax_input = entry.mts_summary[c].get_isax_input();
-            isax_words[c] = iSaxWord(isax_input, {vec<SaxNumBitsT>(isax_input.size(), m_first_layer_num_bits),
-                                                  m_alphabet_num_bits, *m_breakpoints});
-            for (SaxSegIndT s = 0; s < m_series_isax_prop->num_seg_per_channel; ++s) symbols[c][s] = isax_words[c][s];
+            iSaxWord isax_word(isax_input, {vec<SaxNumBitsT>(isax_input.size(), m_first_layer_num_bits),
+                                            m_alphabet_num_bits, *m_breakpoints});
+            for (SaxSegIndT s = 0; s < m_series_isax_prop->num_seg_per_channel; ++s) symbols[c][s] = isax_word[s];
         }
     }
 
@@ -290,23 +308,21 @@ class iSaxParallelInserter : public IEntryInserter<iSaxIndex<T>> {
 
     void insert_entries(vec<IndexEntry<T>> &entries) override {
         umap_hash<vec<vec<SaxSymbolT>>, vec<uint>, SaxSymbolsHash> symbols_to_entry_inds;
-        umap_hash<vec<vec<SaxSymbolT>>, vec<iSaxWord>, SaxSymbolsHash> symbols_to_isax_words;
 
         MtsNumChannelsT num_channels = m_index->m_series_isax_prop->num_channels;
         SaxSegIndT num_seg_per_channel = m_index->m_series_isax_prop->num_seg_per_channel;
 
         OMP_PRAGMA(omp parallel for)
-        for (uint i = 0; i < entries.size(); ++i) {
-            vec<iSaxWord> isax_words(num_channels);
+        for (uint e_ind = 0; e_ind < entries.size(); ++e_ind) {
             vec<vec<SaxSymbolT>> symbols(num_channels, vec<SaxSymbolT>(num_seg_per_channel));
-            m_index->calculate_symbols_and_isax(entries[i], symbols, isax_words);
+            m_index->calculate_first_layer_symbols(entries[e_ind], symbols);
 
             OMP_PRAGMA(omp critical) {
-                bool inserted = symbols_to_isax_words.try_emplace(symbols, std::move(isax_words)).second;
-                if (inserted) {
-                    m_index->insert_new_first_layer_node(symbols, entries[i]);
+                auto first_layer_node_it = m_index->m_first_layer.find(symbols);
+                if (first_layer_node_it == m_index->m_first_layer.end()) {
+                    m_index->insert_new_first_layer_node(symbols, entries[e_ind]);
                 } else {
-                    symbols_to_entry_inds[symbols].push_back(i);
+                    symbols_to_entry_inds[symbols].push_back(e_ind);
                 }
             }
         }
@@ -315,11 +331,11 @@ class iSaxParallelInserter : public IEntryInserter<iSaxIndex<T>> {
         for (size_t bucket = 0; bucket < symbols_to_entry_inds.bucket_count(); ++bucket) {
             for (auto it = symbols_to_entry_inds.begin(bucket); it != symbols_to_entry_inds.end(bucket); ++it) {
                 const auto &symbols = it->first;
-                auto isax_words = symbols_to_isax_words.at(symbols);
-                auto node_it = m_index->m_first_layer.find(symbols);
-                for (uint ind : it->second) {
-                    auto isax_words_copy = isax_words;
-                    m_index->insert_into_first_layer_node(isax_words_copy, node_it, entries[ind]);
+                auto first_layer_node_it = m_index->m_first_layer.find(symbols);
+                for (uint e_ind : it->second) {
+                    vec<iSaxWord> isax_words(num_channels);
+                    m_index->calculate_isax(entries[e_ind], isax_words);
+                    m_index->insert_into_first_layer_node(isax_words, first_layer_node_it, entries[e_ind]);
                 }
             }
         }

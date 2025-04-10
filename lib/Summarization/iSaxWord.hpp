@@ -24,25 +24,26 @@ class iSaxWord : public SaxWord {
 
     /**
      * @brief Constructor from the PAA of a time series
-     *
      * @param paa The Piecewise Aggregate Approximation (PAA) of a time series
      * @param settings iSAX word settings containing the number of bits per symbol, the number
      *        of bits for the alphabet and the breakpoints
      */
-    iSaxWord(const vec<Real> &paa, const iSaxWordSettings &settings);
+    inline iSaxWord(const vec<Real> &paa, const iSaxWordSettings &settings)
+        : SaxWord(paa, settings.alphabet_num_bits, settings.breakpoints), m_num_bits(settings.num_bits) {
+        assert(paa.size() == settings.num_bits.size());
+        assert(m_alphabet_num_bits >= *std::max_element(settings.num_bits.begin(), settings.num_bits.end()));
+    }
 
     iSaxWord() = default;
 
     /**
      * @brief Copy constructor
-     *
      * @param other The iSaxWord to copy
      */
     iSaxWord(const iSaxWord &) = default;
 
     /**
      * @brief Constructor with the same number of bits for each segment
-     *
      * @param symbols The symbols of the word
      * @param alphabet_num_bits The number of bits to use for the symbols. All symbols will have the same number of
      * bits.
@@ -51,7 +52,6 @@ class iSaxWord : public SaxWord {
 
     /**
      * @brief Constructor with different number of bits per segment
-     *
      * @param symbols The symbols of the word
      * @param num_bits The number of bits to use for the symbols
      * @param alphabet_num_bits The number of bits used by alphabet
@@ -60,16 +60,16 @@ class iSaxWord : public SaxWord {
 
     /**
      * @brief Get the symbol at the given index
-     *
      * @param index The index of the symbol
      * @return The symbol at the given index
      */
-    SaxSymbolT operator[](SaxSegIndT index) const override;
+    inline SaxSymbolT operator[](SaxSegIndT index) const override {
+        return m_symbols[index] >> (m_alphabet_num_bits - m_num_bits[index]);
+    }
 
     /**
      * @brief Get the symbol at the given index without shifting; TODO: this should be removed, and the iSAX symbol
      * access logic reworked
-     *
      * @param index The index of the symbol
      * @return The symbol at the given index without shifting
      */
@@ -77,7 +77,6 @@ class iSaxWord : public SaxWord {
 
     /**
      * @brief Get the number of bits used for the symbol at the given index
-     *
      * @param index The index of the symbol
      * @return The (reference to) the number of bits vector
      */
