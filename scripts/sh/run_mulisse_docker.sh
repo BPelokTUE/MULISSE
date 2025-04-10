@@ -18,7 +18,7 @@ for arg in "$@"; do
     configs+=("$arg")
 done
 
-docker build -t mulisse .
+docker build --rm -t mulisse .
 for config in "${configs[@]}"; do
     logs_dir="EXPERIMENT_LOGS/$(dirname $config)/LOGS_$(basename $config .json)"
     docker run --rm -v $(pwd)/${logs_dir}:/mulisse/LOGS -v $(pwd)/mulisse_pack:/mulisse/mulisse_pack mulisse -i /mulisse/scripts/run_configs/$config

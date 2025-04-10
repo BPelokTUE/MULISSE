@@ -10,13 +10,21 @@
     "query_noise_stdevs": [0.1],
     "search_methods": {
         "ulisse": ["isax_env_w_sax_env"],
-        "sax_env": ["sax_envelope"]
+        "sensible": ["isax_env_w_env"],
+        "isax_env": ["isax_envelope"],
+        "sax_env": ["sax_envelope"],
+        "envelope": ["envelope"],
+        "scan": ["scan"]
     },
     "isax_split_strategies": {
-        "ulisse": ["uctm"]
+        "ulisse": ["uctm"],
+        "sensible": ["em"],
+        "isax_env": ["em"]
     },
     "isax_breakpoint_strategies": {
         "ulisse": ["fixed"],
+        "sensible": ["equiprobable"],
+        "isax_env": ["equiprobable"],
         "sax_env": ["equiprobable"]
     },
     "isax_breakpoints_file": {
@@ -25,10 +33,13 @@
     "isax_num_bits_limits": [8],
     "isax_leaf_cap_ratios": [0.05],
     "max_leaves_to_visit": {
-        "ulisse": [5]
+        "ulisse": [5],
+        "sensible": [5]
     },
     "isax_start_bit_numbers": {
         "ulisse": [1],
+        "sensible": [1],
+        "isax_env": [1],
         "sax_env": [8]
     },
     "num_segments": [32],
@@ -39,12 +50,17 @@
     "precalculate_ffts": [false],
     "priority_queue": {
         "ulisse": [false],
-        "sax_env": [false, true]
+        "sensible": [false, true],
+        "sax_env": [false, true],
+        "envelope": [false, true]
     },
     "adapt_index": [false],
     "index_inserters": {
         "ulisse": ["isax_parallel"],
-        "sax_env": ["top_down"]
+        "sensible": ["isax_parallel"],
+        "isax_env": ["isax_parallel"],
+        "sax_env": ["top_down"],
+        "envelope": ["top_down"]
     },
     "search_types": ["knn"],
     "search_ks": [1],

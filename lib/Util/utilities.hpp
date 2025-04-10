@@ -40,11 +40,12 @@ inline std::pair<str, str> get_file_base_and_extension(const str file_path) {
         throw std::runtime_error("Directory does not exist: " + dir_path);
     }
     str file_name = path.filename().string();
-    str abs_path = (fs::canonical(dir_path) / file_name).string();
+    auto dot_pos = file_name.find_last_of('.');
 
-    auto dot_pos = abs_path.find_last_of('.');
-    str base = (dot_pos == str::npos) ? abs_path : abs_path.substr(0, dot_pos);
-    str extension = (dot_pos == str::npos) ? "" : abs_path.substr(dot_pos);
+    str extension = (dot_pos == str::npos) ? "" : file_name.substr(dot_pos);
+    file_name = (dot_pos == str::npos) ? file_name : file_name.substr(0, dot_pos);
+    str base = (fs::canonical(dir_path) / file_name).string();
+
     return {base, extension};
 }
 

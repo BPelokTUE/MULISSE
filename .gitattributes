@@ -1,1 +1,2 @@
 EXPERIMENT_LOGS/ARCHIVE/* filter=lfs diff=lfs merge=lfs -text
+docs/summaries/images/* filter=lfs diff=lfs merge=lfs -text

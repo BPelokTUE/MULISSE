@@ -28,3 +28,7 @@ docs/mulisse_src/*
 html
 latex
 
+# Other documents
+docs/summaries/*
+!docs/summaries/*.md
+!docs/summaries/images

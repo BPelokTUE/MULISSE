@@ -18,6 +18,7 @@ This script contains the necessary classes and functions to analyze the results 
 # %%
 
 import os
+import re
 from enum import Enum, auto
 from typing import Any
 
@@ -824,6 +825,7 @@ def experiment_envelope_parametrization(
     y_scale: str = "log",
     target_labels: list[str] = None,
     logs_dir="EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size_param",
+    method_name_re: str = r".*",
 ):
     if isinstance(target_cols, str):
         target_cols = [target_cols]
@@ -839,6 +841,8 @@ def experiment_envelope_parametrization(
     groups = dict_to_tuples(group_dict)
     mean_values = execute_reduction([parametrization_results], targets, groups)
     mean_values = simplify_method_name(mean_values, 3)
+    mean_values = {group: values for group, values in mean_values.items() if re.match(method_name_re, group[3])}
+
     mean_values = {(*group[:4], group[4].rsplit("/")[0]): values for group, values in mean_values.items()}
 
     def get_x_label(key: tuple):
@@ -865,7 +869,7 @@ def experiment_envelope_parametrization(
 
 # %%
 
-for i in range(1, 4):
+for i in range(3, 4):
     print(f"Experiment {i}:")
     exp_logs_dir = "EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size" + (f"_{i}" if i > 1 else "")
     print("Total time:")
@@ -874,7 +878,11 @@ for i in range(1, 4):
     )
     print("Pruning ratio:")
     experiment_envelope_parametrization(
-        str(QC.PRUNING_RATIO), PRUNING_RATIO_Y_LABEL, y_scale="linear", logs_dir=exp_logs_dir
+        str(QC.PRUNING_RATIO),
+        PRUNING_RATIO_Y_LABEL,
+        y_scale="linear",
+        logs_dir=exp_logs_dir,
+        method_name_re=r".*mass.*",
     )
 
 # %%[markdown]
@@ -1104,7 +1112,11 @@ def experiment_univariate_parametrization(
             _dataset, _l_min, _l_max, method, first_layer_bits, pos_per_env, leaf_capacity = key
         bits_str = f"Bits={int(first_layer_bits)}" if first_layer_bits is not None and first_layer_bits > 0 else ""
         ppe_str = f"PPE={int(pos_per_env)}" if pos_per_env is not None and pos_per_env > 0 else ""
-        leaf_str = f"LC={int(leaf_capacity)}" if leaf_capacity is not None and leaf_capacity > 0 else ""
+        leaf_str = (
+            f"C={int(leaf_capacity) if leaf_capacity < 10000 else str(int(leaf_capacity / 1000)) + 'K'}"
+            if leaf_capacity is not None and leaf_capacity > 0
+            else ""
+        )
         adapt_str = "Adapt" if use_adapt_to_dataset and "isax" in method and adapt == 1 else ""
         return "\n".join([s for s in [bits_str, ppe_str, leaf_str, adapt_str] if s])
 
@@ -1139,15 +1151,15 @@ def experiment_univariate_parametrization(
 
 # %%
 
-# logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_2_old"]
-logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_2"]
+# logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_2"]
+logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_3"]
 # logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ppe"]
 # logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ie_lc"]
 # logs_dirs = ["EXPERIMENT_LOGS/adapting/LOGS_adapting_index_2"]
 
-merge_datasets = False
-use_adapt_to_dataset = True
-show_indexing_time = False
+merge_datasets = True
+use_adapt_to_dataset = False
+show_indexing_time = True
 datasets_to_show = None  # ["weather"]
 l_ranges_to_show = None  # [(256, 1024)]
 
@@ -1180,6 +1192,7 @@ for key, reducer in reducers.items():
         l_ranges_to_show=l_ranges_to_show,
         datasets_to_show=datasets_to_show,
         reducer=reducer,
+        y_scale="log" if show_indexing_time else "linear",
     )
 
 # %%
@@ -1265,14 +1278,17 @@ def experiment_ulisse_comparison(
 
     if only_important:
         important_run_keys = [
+            ("sequential_scan-ed-early", 0, 0, 0, 0, 0),
+            ("sequential_scan-mass", 0, 0, 0, 0, 0),
+            ("isax_envelope-ed-early", 0, 0, "equiprobable", "entropy_maximizing", 8),
             ("isax_envelope-mass", 0, 0, "equiprobable", "entropy_maximizing", 8),
+            ("isax_env_w_env-ed-early", 0, 1, "equiprobable", "entropy_maximizing", 8),
             ("isax_env_w_env-mass", 0, 1, "equiprobable", "entropy_maximizing", 8),
+            ("envelope-ed-early", 0, 1, 0, 0, 0),
             ("envelope-mass", 0, 1, 0, 0, 0),
             ("isax_env_w_sax_env-ed-early", 1, 0, "fixed", "ulisse_closest_to_mean", 8),
             ("ulisse_single-ed-early", 1, 0, "fixed", "ulisse_closest_to_mean", 8),
             ("ulisse_parallel-ed-early", 1, 0, "fixed", "ulisse_closest_to_mean", 8),
-            ("sequential_scan-ed-early", 0, 0, 0, 0, 0),
-            ("sequential_scan-mass", 0, 0, 0, 0, 0),
         ]
         reduced_values = {key: reduced_values[key] for key in important_run_keys}
 
@@ -1322,10 +1338,10 @@ def experiment_ulisse_comparison(
 # %%
 
 experiment_ulisse_comparison(
-    target_col=QC.TOTAL_TIME_S,
+    target_col=QC.PRUNING_RATIO,
     logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_5M",
     # max_ulisse_pruning_ratio=0.0,
-    # bars_by_query_length=True,
+    bars_by_query_length=True,
     # reducer=MaxReducer(),
 )
 
@@ -1333,5 +1349,5 @@ experiment_ulisse_comparison(
 experiment_ulisse_comparison(
     target_col=QC.TOTAL_TIME_S,
     logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_100K",
-    only_important=False,
+    only_important=True,
 )
