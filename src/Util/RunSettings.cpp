@@ -93,8 +93,8 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
 }
 
 #ifdef ENABLE_TEST_CODE
-void RunSettings::set_instance(sptr<RunSettings> instance) {
-    RunSettings::instance = instance;
+void RunSettings::set_instance(sptr<RunSettings> instance_) {
+    RunSettings::instance = instance_;
     initialized = true;
 }
 #endif

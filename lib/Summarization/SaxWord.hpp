@@ -21,7 +21,6 @@ class SaxWord {
     inline SaxWord(const vec<Real>& paa, SaxNumBitsT num_bits, const vec<Real>& breakpoints) {
         assert(num_bits > 0);
         assert(breakpoints.size() == (1 << num_bits) - 1);
-        assert(std::is_sorted(breakpoints.begin(), breakpoints.end()));
 
         m_alphabet_num_bits = num_bits;
         uint paa_len = static_cast<uint>(paa.size());

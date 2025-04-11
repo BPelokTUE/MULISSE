@@ -6,7 +6,7 @@ vec<Real> paa(const vec<Real> &ts, uint segment_len) {
     uint num_segments = static_cast<uint>(ts.size() / segment_len);
     vec<Real> paa(num_segments);
 
-    Real sum, segment_len_r = static_cast<Real>(segment_len);
+    Real sum, segment_len_r = R(segment_len);
     uint ind = 0, i, j;
     for (i = 0; i < num_segments; ++i) {
         sum = 0;

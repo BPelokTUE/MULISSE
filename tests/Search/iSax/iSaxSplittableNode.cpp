@@ -1,13 +1,14 @@
-#include "doctest/doctest.h"
-#include "fakeit/fakeit.hpp"
+#include <doctest/doctest.h>
+#include <fakeit/fakeit.hpp>
 
+#include "Util/utilities.hpp"
 #include "Search/iSax/iSaxSplittableNode.hpp"
 
 TEST_CASE("iSAX leaf finalization works") {
     vec<SubsequenceInfo> subsequence_positions{{51, 100}, {26, 21}, {6, 387}};
-    vec<vec<Envelope>> envelopes = {{{{-1.5, 2.3}, {-0.1, 4.9}}, {{-7.9, 0.5}, {-3.3, 2.7}}},
-                                    {{{-2.3, 3.6}, {0.6, 9.7}}, {{-8.1, -0.5}, {-1.5, 6.3}}},
-                                    {{{-1.9, 1.9}, {1.9, 7.1}}, {{-10, -0.9}, {-9, 1.9}}}};
+    vec<vec<Envelope>> envelopes = {{{{R(-1.5), R(2.3)}, {R(-0.1), R(4.9)}}, {{R(-7.9), R(0.5)}, {R(-3.3), R(2.7)}}},
+                                    {{{R(-2.3), R(3.6)}, {R(0.6), R(9.7)}}, {{R(-8.1), R(-0.5)}, {R(-1.5), R(6.3)}}},
+                                    {{{R(-1.9), R(1.9)}, {R(1.9), R(7.1)}}, {{R(-10), R(-0.9)}, {R(-9), R(1.9)}}}};
 
     iSaxSplittableLeaf leaf(subsequence_positions, envelopes);
 

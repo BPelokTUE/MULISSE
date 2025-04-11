@@ -173,7 +173,7 @@ class DistanceMeasure<S, MASS> {
             if (!query[c].empty()) {
                 mts_len = static_cast<uint>(mts[c].size());
                 query_len = static_cast<uint>(query[c].size());
-                query_len_r = static_cast<Real>(query_len);
+                query_len_r = R(query_len);
                 break;
             }
         }
@@ -209,14 +209,13 @@ class DistanceMeasure<S, MASS> {
 
                     // TODO: Assuming that the query is already normalized ==> query_mu = 0, query_sigma = 1
                     Real corr = (dot - query_len_r * query_mu * subs_mu) / (query_len_r * query_sigma * subs_sigma);
-                    squared_dists[start_pos] += std::max(static_cast<Real>(0.0), 2 * query_len_r * (1 - corr));
+                    squared_dists[start_pos] += std::max(R(0.0), 2 * query_len_r * (1 - corr));
                 }
             } else {
                 for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
                     Real dot = dot_products[query_len - 1 + start_pos];
-                    squared_dists[start_pos] +=
-                        std::max(static_cast<Real>(0.0),
-                                 query_sum_sq + (mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos]) + dot);
+                    squared_dists[start_pos] += std::max(
+                        R(0.0), query_sum_sq + (mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos]) + dot);
                 }
             }
         }
@@ -283,7 +282,7 @@ class DistanceMeasure<S, MASS> {
         fftwr_destroy_plan(plan);
 
         vec<Real> dot_products_real(mts_len);
-        for (uint i = 0; i < mts_len; ++i) dot_products_real[i] = dot_products[i][0] / static_cast<Real>(fft_size);
+        for (uint i = 0; i < mts_len; ++i) dot_products_real[i] = dot_products[i][0] / R(fft_size);
 
         return dot_products_real;
     }

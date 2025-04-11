@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
         distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(TOP_DOWN);
     vec<str> csv_paths;
-    Real step_sd = static_cast<Real>(1.0), noise = static_cast<Real>(0.1);
+    Real step_sd = R(1.0), noise = R(0.1);
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env = 0, l_per_group = 0,
          knn_k = 1, seed = 0;

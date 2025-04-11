@@ -61,6 +61,11 @@ bool arr_contains(const std::array<T, 2>& arr, const T& value) {
     return std::find(arr.begin(), arr.end(), value) != arr.end();
 }
 
+template <typename T>
+constexpr Real R(T value) {
+    return static_cast<Real>(value);
+}
+
 // Enums
 
 /**
@@ -229,7 +234,7 @@ umap<V, K> get_inverse_map(const umap<K, V> map) {
  * @param count Number of values
  */
 inline std::pair<Real, Real> calculate_mu_and_sigma(Real sum, Real sum_sq, uint count) {
-    Real count_r = static_cast<Real>(count);
+    Real count_r = R(count);
     Real mu = sum / count_r;
     Real sigma = std::sqrt(std::max(sum_sq / count_r - mu * mu, EPS_F));
     return {mu, sigma};

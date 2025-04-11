@@ -350,9 +350,7 @@ void QueryLogger::write_entry() {
 
     bool abandoning_used = num_points_examined < num_points_in_examined_entries;
     columns[QC::ABANDONING_RATE] =
-        to_string(abandoning_used
-                      ? 1.0 - static_cast<Real>(num_points_examined) / static_cast<Real>(num_points_in_examined_entries)
-                      : 0.0);
+        to_string(abandoning_used ? 1.0 - R(num_points_examined) / R(num_points_in_examined_entries) : 0.0);
 
     write_row(run_log_path, columns, QUERY_COL_ENUMS);
 }
@@ -374,8 +372,8 @@ void AttributeStats::update(Real value) {
 void AttributeStats::update(Real value, size_t count) {
     min = std::min(min, value);
     max = std::max(max, value);
-    sum += value * static_cast<Real>(count);
-    sum_sq += value * value * static_cast<Real>(count);
+    sum += value * R(count);
+    sum_sq += value * value * R(count);
 }
 
 void AttributeStats::calculate(uint count) {
@@ -391,8 +389,8 @@ void QueryStats::calculate() {
 }
 
 void IndexStats::update_leaf_stats(size_t num_entries, size_t height) {
-    leaf_size_stats.update(static_cast<Real>(num_entries));
-    leaf_height_stats.update(static_cast<Real>(height));
+    leaf_size_stats.update(R(num_entries));
+    leaf_height_stats.update(R(height));
     ++leaf_count;
 }
 

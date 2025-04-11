@@ -1,9 +1,22 @@
-#include "doctest/doctest.h"
+#include <doctest/doctest.h>
 
 #include "Util/constants.hpp"
 #include "Summarization/Envelope.hpp"
 
-TEST_CASE("ULISSE raw happy-flow works") {
+class EnvelopeTest {
+   public:
+    static vec<Envelope> get_raw_envelope(const vec<Real> &ts, EnvelopeParams env_params) {
+        EnvelopeEntryGenerator generator(1, false, env_params);
+        return generator.get_raw_envelopes(ts)[0];
+    }
+
+    static vec<Envelope> get_normalized_envelope(const vec<Real> &ts, EnvelopeParams env_params) {
+        EnvelopeEntryGenerator generator(1, true, env_params);
+        return generator.get_normalized_envelopes(ts)[0];
+    }
+};
+
+TEST_CASE("raw envelope happy-flow works") {
     const vec<Real> ts = {1, 3.5, 1, 4, 2, 8, 10, -3.5, 2.5, 12, -9};
     uint ms_per_env = 4;
     uint segment_len = 2;
@@ -16,11 +29,12 @@ TEST_CASE("ULISSE raw happy-flow works") {
     5.5,  9,    3.25, -0.5 -> (-0.5, 9)
     ...
     */
-    auto envelopes = ulisse_envelope_raw(ts, {ms_per_env, segment_len, l_min, l_max});
+
+    auto envelopes = EnvelopeTest::get_raw_envelope(ts, {ms_per_env, segment_len, l_min, l_max});
     vec<Envelope> expected = {
-        {{2.25, 2.5, -0.5}, {3, 9, 9}},
-        {{-0.5, -0.5, 1.5}, {9, 7.25, 7.25}},
-        {{7.25, -INF, -INF}, {7.25, INF, INF}},
+        {{R(2.25), R(2.5), R(-0.5)}, {3, 9, 9}},
+        {{R(-0.5), R(-0.5), R(1.5)}, {9, R(7.25), R(7.25)}},
+        {{R(7.25), -INF, -INF}, {R(7.25), INF, INF}},
     };
 
     REQUIRE(envelopes.size() == expected.size());
@@ -33,7 +47,7 @@ TEST_CASE("ULISSE raw happy-flow works") {
     }
 }
 
-TEST_CASE("ULISSE normalized happy-flow works") {
+TEST_CASE("normalized envelope happy-flow works") {
     const vec<Real> ts = {1, 3.5, 1, 4, 2, 8, 10, -3.5, 2.5, 12, -9};
     uint ms_per_env = 4;
     uint segment_len = 2;
@@ -50,13 +64,13 @@ TEST_CASE("ULISSE normalized happy-flow works") {
     [0.6308598694087654, -inf, -inf]
     [0.6308598694087654, inf, inf]
     */
-    auto envelopes = ulisse_envelope_normalized(ts, {ms_per_env, segment_len, l_min, l_max});
+    auto envelopes = EnvelopeTest::get_normalized_envelope(ts, {ms_per_env, segment_len, l_min, l_max});
 
-    vec<Envelope> expected = {{{-0.9486832980505138, -0.5449492609130661, -1.1111677990074318},
-                               {0.35355339059327384, 1.1835854998978794, 1.323448205074589}},
-                              {{-0.6529396220694627, -1.1196572438256696, -0.24324618014776567},
-                               {0.9047619047619049, 0.6113337453508021, 0.5872853026473694}},
-                              {{0.6308598694087654, -INF, -INF}, {0.6308598694087654, INF, INF}}};
+    vec<Envelope> expected = {{{R(-0.9486832980505138), R(-0.5449492609130661), R(-1.1111677990074318)},
+                               {R(0.35355339059327384), R(1.1835854998978794), R(1.323448205074589)}},
+                              {{R(-0.6529396220694627), R(-1.1196572438256696), R(-0.24324618014776567)},
+                               {R(0.9047619047619049), R(0.6113337453508021), R(0.5872853026473694)}},
+                              {{R(0.6308598694087654), -INF, -INF}, {R(0.6308598694087654), INF, INF}}};
 
     REQUIRE(envelopes.size() == expected.size());
     for (size_t e = 0; e < envelopes.size(); ++e) {

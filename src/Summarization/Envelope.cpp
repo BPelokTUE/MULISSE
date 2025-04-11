@@ -21,19 +21,6 @@ vec<Real> Envelope::get_isax_input() const { return lower; }
 // --------------- ULISSE ENVELOPE --------------- //
 // ----------------------------------------------- //
 
-void flip_env_infinities(vec<vec<Envelope>>& envelope_groups) {
-    for (auto& envelope_group : envelope_groups) {
-        for (auto& envelope : envelope_group) {
-            for (SaxSegIndT s = 0; s < envelope.size(); ++s) {
-                if (envelope.lower[s] > envelope.upper[s]) {
-                    envelope.lower[s] = -INF;
-                    envelope.upper[s] = INF;
-                }
-            }
-        }
-    }
-}
-
 EnvelopeEntryGenerator::EnvelopeEntryGenerator(MtsNumChannelsT num_channels, bool normalized,
                                                const EnvelopeParams& uli_params, uint num_len_groups)
     : m_num_channels(num_channels), m_normalized(normalized), m_env_params(uli_params) {
@@ -46,7 +33,7 @@ vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec
     vec<vec<IndexEntry<Envelope>>> entries(m_num_len_groups, vec<IndexEntry<Envelope>>(num_env));
 
     for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
-        auto channel_envs_groups = m_normalized ? ulisse_envelope_normalized(mts[c]) : ulisse_envelope_raw(mts[c]);
+        auto channel_envs_groups = m_normalized ? get_normalized_envelopes(mts[c]) : get_raw_envelopes(mts[c]);
         for (uint l = 0; l < m_num_len_groups; ++l) {
             auto& channel_envs = channel_envs_groups[l];
             for (uint i = 0; i < channel_envs.size(); ++i) {
@@ -63,78 +50,6 @@ vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec
     }
 
     return entries;
-}
-
-vec<vec<Envelope>> EnvelopeEntryGenerator::ulisse_envelope_raw(const vec<Real>& ts) {
-    auto [pos_per_env, segment_len, l_min, l_max] = m_env_params;
-
-    uint segments_per_env = l_max / segment_len;
-    uint num_env = static_cast<uint>((ts.size() - l_min + pos_per_env) / pos_per_env);
-    vec<vec<Envelope>> envelopes(m_num_len_groups, vec<Envelope>(num_env, {vec<Real>(segments_per_env, INF),
-                                                                           vec<Real>(segments_per_env, -INF)}));
-
-    Real paa_acc = 0.0, segment_len_r = static_cast<Real>(segment_len);
-
-    for (uint last_ind = 0; last_ind < ts.size(); ++last_ind) {
-        paa_acc += ts[last_ind];
-        uint subs_len = last_ind + 1;
-        if (subs_len > segment_len) paa_acc -= ts[last_ind - segment_len];
-
-        uint segments_in_subs = std::min(l_max, subs_len) / segment_len;
-
-        Real paa_val = paa_acc / segment_len_r;
-        for (uint seg_ind = 0; seg_ind < segments_in_subs; ++seg_ind) {
-            uint first_ind = last_ind + 1 - (seg_ind + 1) * segment_len;
-            uint length_group = get_length_group(subs_len, l_min, l_max, m_num_len_groups);
-            if (ts.size() - first_ind >= l_min) {
-                auto& envelope = envelopes[length_group][first_ind / pos_per_env];
-                envelope.lower[seg_ind] = std::min(envelope.lower[seg_ind], paa_val);
-                envelope.upper[seg_ind] = std::max(envelope.upper[seg_ind], paa_val);
-            }
-        }
-    }
-    flip_env_infinities(envelopes);
-    return envelopes;
-}
-
-vec<vec<Envelope>> EnvelopeEntryGenerator::ulisse_envelope_normalized(const vec<Real>& ts) {
-    auto [pos_per_env, segment_len, l_min, l_max] = m_env_params;
-
-    uint segments_per_env = l_max / segment_len;
-    uint num_env = static_cast<uint>((ts.size() - l_min + pos_per_env) / pos_per_env);
-    vec<vec<Envelope>> envelopes(m_num_len_groups, vec<Envelope>(num_env, {vec<Real>(segments_per_env, INF),
-                                                                           vec<Real>(segments_per_env, -INF)}));
-
-    vec<Real> sum_accs(ts.size() + 1, 0.0), sq_sum_accs(ts.size() + 1, 0.0);
-
-    for (uint last_ind = 0; last_ind < ts.size(); ++last_ind) {
-        sum_accs[last_ind + 1] = sum_accs[last_ind] + ts[last_ind];
-        sq_sum_accs[last_ind + 1] = sq_sum_accs[last_ind] + ts[last_ind] * ts[last_ind];
-
-        uint start_min = static_cast<uint>(std::max(0, static_cast<int>(last_ind + 1 - l_max)));
-        int start_max = static_cast<int>(last_ind + 1 - l_min);
-
-        for (uint start = start_min; static_cast<int>(start) <= start_max; ++start) {
-            uint subs_len = last_ind - start + 1;
-            auto [mu, sigma] = calculate_mu_and_sigma(sum_accs[last_ind + 1] - sum_accs[start],
-                                                      sq_sum_accs[last_ind + 1] - sq_sum_accs[start], subs_len);
-
-            uint length_group = get_length_group(subs_len, l_min, l_max, m_num_len_groups);
-            uint num_seg_in_subs = subs_len / segment_len;
-            for (uint seg_ind = 0; seg_ind < num_seg_in_subs; ++seg_ind) {
-                Real paa_val =
-                    (sum_accs[start + (seg_ind + 1) * segment_len] - sum_accs[start + seg_ind * segment_len]) /
-                    static_cast<Real>(segment_len);
-                paa_val = (paa_val - mu) / sigma;
-
-                auto& envelope = envelopes[length_group][start / pos_per_env];
-                envelope.lower[seg_ind] = std::min(envelope.lower[seg_ind], paa_val);
-                envelope.upper[seg_ind] = std::max(envelope.upper[seg_ind], paa_val);
-            }
-        }
-    }
-    flip_env_infinities(envelopes);
-    return envelopes;
 }
 
 uint EnvelopeEntryGenerator::get_num_len_groups() const { return m_num_len_groups; }
