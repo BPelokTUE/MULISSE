@@ -22,7 +22,7 @@ int create_queries(QuerySetOptions opts) {
     auto &RS = RunSettings::get_instance();
     const str &dataset_path = RS.get_dataset_path();
     const str &query_path = RS.get_query_path();
-    uint num_channels = RS.get_dataset_props().num_channels;
+    MtsNumChannelsT num_channels = RS.get_dataset_props().num_channels;
     uint series_len = RS.get_dataset_props().series_len;
 
     if (!std::filesystem::exists(dataset_path)) {
@@ -54,7 +54,7 @@ int create_queries(QuerySetOptions opts) {
     std::default_random_engine rng(opts.seed);
     std::normal_distribution<Real> noise_normal_dist(0.0, opts.noise);
 
-    uint num_series = get_dataset_size(dataset_path) / (num_channels * series_len * sizeof(Real));
+    uint num_series = static_cast<uint>(get_dataset_size(dataset_path) / (num_channels * series_len * sizeof(Real)));
     std::uniform_int_distribution<uint> series_uniform_dist(0, num_series - 1), channel_uniform_dist(1, num_channels),
         length_uniform_dist(opts.l_min, opts.l_max);
 
@@ -62,7 +62,8 @@ int create_queries(QuerySetOptions opts) {
     std::ofstream query_file(query_path);
 
     bool random_lengths = (opts.l_min > 0 && opts.l_max >= opts.l_min);
-    uint total_num_queries = random_lengths ? opts.num_queries : opts.num_queries * opts.exact_lengths.size();
+    uint total_num_queries =
+        random_lengths ? opts.num_queries : opts.num_queries * static_cast<uint>(opts.exact_lengths.size());
     vec<QueryDescriptor> query_descriptors(total_num_queries);
 
     auto generate_query_descriptor = [&](uint length) -> QueryDescriptor {

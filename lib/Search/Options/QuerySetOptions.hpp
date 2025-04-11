@@ -22,7 +22,7 @@ struct QuerySetOptions {
     /** @brief The mask describing which channels to use in the queries. Overrides `used_channels` if provided. */
     vec<bool> channel_mask;
     /** @brief Seed for the random number generator */
-    int seed;
+    uint seed;
 };
 
 #endif  // QUERY_SET_OPTIONS

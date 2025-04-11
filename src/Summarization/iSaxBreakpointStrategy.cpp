@@ -15,8 +15,8 @@ EquiprobableBreakpointStrategy::EquiprobableBreakpointStrategy(Real mean, Real s
 
 vec<Real> EquiprobableBreakpointStrategy::get_breakpoints(SaxSymbolT alphabet_size) const {
     vec<Real> thresholds(alphabet_size - 1);
-    for (size_t i = 0; i < alphabet_size - 1; ++i) {
-        Real p = (i + 1) / static_cast<Real>(alphabet_size);
+    for (SaxSymbolT i = 0; i < alphabet_size - 1; ++i) {
+        Real p = static_cast<Real>(i + 1) / static_cast<Real>(alphabet_size);
         thresholds[i] = boost::math::quantile(m_distribution, p);
     }
     return thresholds;
@@ -49,7 +49,7 @@ vec<Real> FixedBreakpointStrategy::get_breakpoints(SaxSymbolT alphabet_size) con
     }
 
     vec<Real> breakpoints(alphabet_size - 1);
-    SaxSymbolT alphabet_ratio = (m_breakpoints.size() + 1) / alphabet_size;
+    SaxSymbolT alphabet_ratio = static_cast<SaxSymbolT>((m_breakpoints.size() + 1) / alphabet_size);
     for (SaxSymbolT i = 1; i < alphabet_size; ++i) {
         breakpoints[i] = m_breakpoints[i * alphabet_ratio - 1];
     }

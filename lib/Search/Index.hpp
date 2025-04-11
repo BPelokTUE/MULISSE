@@ -216,11 +216,11 @@ class IIndex {
         OMP_PRAGMA(omp for)
         for (size_t i = 0; i < num_series; ++i) {
             vec<vec<Real>> mts(num_channels, vec<Real>(series_len));
-            data_stream.seekg(i * series_size);
+            data_stream.seekg(static_cast<std::streamsize>(i * series_size));
             for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-                data_stream.read(reinterpret_cast<char *>(mts[c].data()), channel_size);
+                data_stream.read(reinterpret_cast<char *>(mts[c].data()), static_cast<std::streamsize>(channel_size));
             }
-            auto mts_entries = generator->get_entries(mts, i);
+            auto mts_entries = generator->get_entries(mts, static_cast<uint>(i));
             OMP_PRAGMA(omp critical) {
                 for (uint l = 0; l < num_length_groups; ++l) {
                     dataset_entry_groups[l].insert(dataset_entry_groups[l].end(), mts_entries[l].begin(),
@@ -232,7 +232,7 @@ class IIndex {
         logger.stop_timer(ISC::SUMMARIZATION_TIME_S);
 
         // TODO: Reconsider if this is a valid approach
-        logger.increment_count_col(ISC::NUM_ENTRIES, dataset_entry_groups[0].size());
+        logger.increment_count_col(ISC::NUM_ENTRIES, static_cast<uint>(dataset_entry_groups[0].size()));
 
         if (adapt) adapt_to_dataset_groups(dataset_entry_groups);
 

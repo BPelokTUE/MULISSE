@@ -67,7 +67,6 @@ class PaaEntryGenerator : public IEntryGenerator<Paa> {
     uint get_num_len_groups() const override;
 
    private:
-    bool m_normalized;
     MtsNumChannelsT m_num_channels;
     uint m_num_len_groups;
     iSaxPaaParams m_paa_params;

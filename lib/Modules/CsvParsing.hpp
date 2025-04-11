@@ -19,7 +19,7 @@
  * @param seed The seed for the random number generator
  * @param col_sep The column separator in the CSV files
  */
-int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, int seed = 0,
+int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, uint seed = 0,
                             char col_sep = ',');
 
 #endif  // CSV_PARSING_HPP

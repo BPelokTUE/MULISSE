@@ -41,7 +41,7 @@ EnvelopeEntryGenerator::EnvelopeEntryGenerator(MtsNumChannelsT num_channels, boo
 }
 
 vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec<Real>>& mts, uint series_ind) {
-    uint series_len = mts[0].size();
+    uint series_len = static_cast<uint>(mts[0].size());
     uint num_env = (series_len - m_env_params.l_min + m_env_params.pos_per_env) / m_env_params.pos_per_env;
     vec<vec<IndexEntry<Envelope>>> entries(m_num_len_groups, vec<IndexEntry<Envelope>>(num_env));
 
@@ -69,22 +69,22 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::ulisse_envelope_raw(const vec<Real>& 
     auto [pos_per_env, segment_len, l_min, l_max] = m_env_params;
 
     uint segments_per_env = l_max / segment_len;
-    uint num_env = (ts.size() - l_min + pos_per_env) / pos_per_env;
+    uint num_env = static_cast<uint>((ts.size() - l_min + pos_per_env) / pos_per_env);
     vec<vec<Envelope>> envelopes(m_num_len_groups, vec<Envelope>(num_env, {vec<Real>(segments_per_env, INF),
                                                                            vec<Real>(segments_per_env, -INF)}));
 
-    Real paa_acc = 0.0;
+    Real paa_acc = 0.0, segment_len_r = static_cast<Real>(segment_len);
 
-    for (int last_ind = 0; last_ind < ts.size(); ++last_ind) {
+    for (uint last_ind = 0; last_ind < ts.size(); ++last_ind) {
         paa_acc += ts[last_ind];
         uint subs_len = last_ind + 1;
         if (subs_len > segment_len) paa_acc -= ts[last_ind - segment_len];
 
         uint segments_in_subs = std::min(l_max, subs_len) / segment_len;
 
-        Real paa_val = paa_acc / segment_len;
+        Real paa_val = paa_acc / segment_len_r;
         for (uint seg_ind = 0; seg_ind < segments_in_subs; ++seg_ind) {
-            int first_ind = last_ind + 1 - (seg_ind + 1) * segment_len;
+            uint first_ind = last_ind + 1 - (seg_ind + 1) * segment_len;
             uint length_group = get_length_group(subs_len, l_min, l_max, m_num_len_groups);
             if (ts.size() - first_ind >= l_min) {
                 auto& envelope = envelopes[length_group][first_ind / pos_per_env];
@@ -101,30 +101,30 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::ulisse_envelope_normalized(const vec<
     auto [pos_per_env, segment_len, l_min, l_max] = m_env_params;
 
     uint segments_per_env = l_max / segment_len;
-    uint num_env = (ts.size() - l_min + pos_per_env) / pos_per_env;
+    uint num_env = static_cast<uint>((ts.size() - l_min + pos_per_env) / pos_per_env);
     vec<vec<Envelope>> envelopes(m_num_len_groups, vec<Envelope>(num_env, {vec<Real>(segments_per_env, INF),
                                                                            vec<Real>(segments_per_env, -INF)}));
 
     vec<Real> sum_accs(ts.size() + 1, 0.0), sq_sum_accs(ts.size() + 1, 0.0);
 
-    for (int last_ind = 0; last_ind < ts.size(); ++last_ind) {
+    for (uint last_ind = 0; last_ind < ts.size(); ++last_ind) {
         sum_accs[last_ind + 1] = sum_accs[last_ind] + ts[last_ind];
         sq_sum_accs[last_ind + 1] = sq_sum_accs[last_ind] + ts[last_ind] * ts[last_ind];
 
-        int start_min = std::max(0, last_ind + 1 - static_cast<int>(l_max));
-        int start_max = last_ind + 1 - static_cast<int>(l_min);
+        uint start_min = static_cast<uint>(std::max(0, static_cast<int>(last_ind + 1 - l_max)));
+        int start_max = static_cast<int>(last_ind + 1 - l_min);
 
-        for (int start = start_min; start <= start_max; ++start) {
-            int subs_len = last_ind - start + 1;
+        for (uint start = start_min; static_cast<int>(start) <= start_max; ++start) {
+            uint subs_len = last_ind - start + 1;
             auto [mu, sigma] = calculate_mu_and_sigma(sum_accs[last_ind + 1] - sum_accs[start],
                                                       sq_sum_accs[last_ind + 1] - sq_sum_accs[start], subs_len);
 
             uint length_group = get_length_group(subs_len, l_min, l_max, m_num_len_groups);
-            int num_seg_in_subs = subs_len / segment_len;
-            for (int seg_ind = 0; seg_ind < num_seg_in_subs; ++seg_ind) {
+            uint num_seg_in_subs = subs_len / segment_len;
+            for (uint seg_ind = 0; seg_ind < num_seg_in_subs; ++seg_ind) {
                 Real paa_val =
                     (sum_accs[start + (seg_ind + 1) * segment_len] - sum_accs[start + seg_ind * segment_len]) /
-                    segment_len;
+                    static_cast<Real>(segment_len);
                 paa_val = (paa_val - mu) / sigma;
 
                 auto& envelope = envelopes[length_group][start / pos_per_env];

@@ -11,8 +11,8 @@
 #include "Util/Logger.hpp"
 #include "Util/RunSettings.hpp"
 
-std::size_t SaxSymbolsHash::operator()(const vec<vec<SaxSymbolT>> &symbols) const {
-    std::size_t seed = 0, num_symbols = symbols[0].size();
+size_t SaxSymbolsHash::operator()(const vec<vec<SaxSymbolT>> &symbols) const {
+    size_t seed = 0;
     for (auto &channel : symbols) {
         for (SaxSymbolT symbol : channel) {
             boost::hash_combine(seed, symbol);
@@ -32,7 +32,6 @@ std::pair<uptr<iSaxFinalizedNode<FTagPaa>>, vec<vec<SymbolTypePaa>>> iSaxPaaInde
     SaxSegIndT num_seg_per_channel = m_series_isax_prop->num_seg_per_channel;
 
     vec<vec<SymbolTypePaa>> symbols(num_channels, vec<SymbolTypePaa>(num_seg_per_channel));
-    SaxNumBitsT shift = m_alphabet_num_bits - m_first_layer_num_bits;
     for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
         for (SaxSegIndT s = 0; s < num_seg_per_channel; ++s) symbols[c][s] = SymbolTypePaa(key_symbols[c][s]);
     }

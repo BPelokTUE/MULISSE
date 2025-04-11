@@ -120,8 +120,8 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
         uint num_shift = m_alphabet_num_bits - num_bits;
         auto [lower_ind, upper_ind] = get_limit_breakpoint_indexes(symbol, num_shift);
         return {
-            lower_ind == -1 ? -INF : m_breakpoints[lower_ind],
-            upper_ind == m_breakpoints.size() ? INF : m_breakpoints[upper_ind],
+            lower_ind == -1 ? -INF : m_breakpoints[static_cast<uint>(lower_ind)],
+            upper_ind == m_breakpoints.size() ? INF : m_breakpoints[static_cast<uint>(upper_ind)],
         };
     }
 
@@ -212,7 +212,6 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
         while (!pq.empty()) {
             auto [min_dist_squared, isax_words, node] = pq.top();
             pq.pop();
-            size_t pq_size = pq.size();
 
             if (min_dist_squared >= result_set.get_distance_lb()) {
                 exact_results_found = true;
@@ -227,7 +226,7 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
                     pq.push({min_dist_squared, isax_words, left});
                     pq.push({min_dist_squared, isax_words, right});
                 } else {
-                    uint num_bits = isax_words[c].get_num_bits()[s];
+                    SaxNumBitsT num_bits = isax_words[c].get_num_bits()[s];
                     auto limits = m_index->get_segment_limits(num_bits, isax_words[c].symbol_no_shift(s));
                     Real prev_dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second);
                     ++num_bits;
@@ -259,7 +258,8 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
 
                         subsequence[c].resize(data_to_read);
                         dataset_ifs.seekg(subs_info.get_file_pos(series_len, num_channels, c));
-                        dataset_ifs.read(reinterpret_cast<char*>(subsequence[c].data()), data_to_read * sizeof(Real));
+                        dataset_ifs.read(reinterpret_cast<char*>(subsequence[c].data()),
+                                         static_cast<std::streamsize>(data_to_read * sizeof(Real)));
                     }
                     logger.stop_timer(QC::IO_TIME_S);
 
@@ -268,7 +268,7 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
                         distance_measure.update_result_set(result_set, subs_info, query, subsequence, real_query_inds);
                     logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
                 }
-                logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED, subsequence_infos.size());
+                logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED, static_cast<uint>(subsequence_infos.size()));
                 logger.increment_count_col(QC::NUM_LEAVES_VISITED);
 
                 if (!opts.exact && (++leaves_visited >= opts.max_leaves_to_visit || !updated)) break;

@@ -88,8 +88,7 @@ uptr<FinalizationResult> iSaxSplittableLeaf<Envelope>::finalize(const iSaxWordSe
     if (m_summaries.size() > 0) {
         assert(m_summaries[0].size() > 0);
 
-        size_t num_envelopes = m_summaries.size(), num_channels = m_summaries[0].size(),
-               num_segments = m_summaries[0][0].upper.size();
+        size_t num_envelopes = m_summaries.size(), num_channels = m_summaries[0].size();
 
         vec<iSaxWord> isax_max(num_channels);
 

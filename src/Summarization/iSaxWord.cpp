@@ -29,13 +29,13 @@ void iSaxWord::unsplit(SaxSegIndT seg_ind) {
 }
 
 void iSaxWord::set_new_bit(SaxSegIndT seg_ind, uint8_t bit) {
-    SaxSymbolT mask = 1 << (m_alphabet_num_bits - m_num_bits[seg_ind]);
-    SaxSymbolT shifted_bit = bit << (m_alphabet_num_bits - m_num_bits[seg_ind]);
+    SaxSymbolT mask = static_cast<SaxSymbolT>(1 << (m_alphabet_num_bits - m_num_bits[seg_ind]));
+    SaxSymbolT shifted_bit = static_cast<SaxSymbolT>(bit << (m_alphabet_num_bits - m_num_bits[seg_ind]));
     m_symbols[seg_ind] = (m_symbols[seg_ind] & ~mask) | shifted_bit;
 }
 
 void iSaxWord::append_to_symbol(SaxSegIndT index, uint8_t bit) {
-    m_symbols[index] = (symbol_no_shift(index) << 1) | bit;
+    m_symbols[index] = static_cast<SaxSymbolT>((symbol_no_shift(index) << 1) | bit);
     m_num_bits[index]++;
     m_alphabet_num_bits = std::max(m_alphabet_num_bits, m_num_bits[index]);
 }
@@ -56,7 +56,7 @@ void iSaxWord::select_max_symbols(const iSaxWord &other) {
 }
 
 std::optional<Real> iSaxWord::get_mid_breakpoint(SaxSegIndT segment_ind, const vec<Real> &breakpoints) const {
-    uint alphabet_ratio = (breakpoints.size() + 1) / (1 << m_num_bits[segment_ind]);
+    uint alphabet_ratio = static_cast<uint>(breakpoints.size() + 1) / (1 << m_num_bits[segment_ind]);
     // If this segment already has the maximum allowed cardinality ==> cannot be split further
     if (alphabet_ratio <= 1) return std::nullopt;
 

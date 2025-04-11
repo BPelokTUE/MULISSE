@@ -3,17 +3,17 @@
 #include "Util/utilities.hpp"
 
 vec<Real> paa(const vec<Real> &ts, uint segment_len) {
-    uint num_segments = ts.size() / segment_len;
+    uint num_segments = static_cast<uint>(ts.size() / segment_len);
     vec<Real> paa(num_segments);
 
-    Real sum;
+    Real sum, segment_len_r = static_cast<Real>(segment_len);
     uint ind = 0, i, j;
     for (i = 0; i < num_segments; ++i) {
         sum = 0;
         for (j = 0; j < segment_len; ++j, ++ind) {
             sum += ts[ind];
         }
-        paa[i] = sum / segment_len;
+        paa[i] = sum / segment_len_r;
     }
     return paa;
 }
@@ -31,12 +31,12 @@ vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normali
     vec<vec<std::tuple<Paa, uint, uint>>> entry_tuple_groups(m_num_len_groups);
 
     Real sum = 0, sum_sq = 0;
-    for (int last_ind = 0; last_ind < ts.size(); ++last_ind) {
+    for (uint last_ind = 0; last_ind < ts.size(); ++last_ind) {
         sum += ts[last_ind];
         sum_sq += ts[last_ind] * ts[last_ind];
 
-        int min_start_ind = std::max(0, last_ind - (int)m_paa_params.l_max + 1);
-        int max_start_ind = last_ind - (int)m_paa_params.l_min + 1;
+        uint min_start_ind = static_cast<uint>(std::max(0, static_cast<int>(last_ind - m_paa_params.l_max + 1)));
+        int max_start_ind = static_cast<int>(last_ind - m_paa_params.l_min + 1);
 
         if (min_start_ind > 0) {
             sum -= ts[min_start_ind - 1];
@@ -44,18 +44,18 @@ vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normali
         }
         Real tmp_sum = sum, tmp_sum_sq = sum_sq;
 
-        for (int start_ind = min_start_ind; start_ind <= max_start_ind; ++start_ind) {
-            int subs_len = last_ind - start_ind + 1;
+        for (uint start_ind = min_start_ind; static_cast<int>(start_ind) <= max_start_ind; ++start_ind) {
+            uint subs_len = last_ind - start_ind + 1;
             uint length_group = get_length_group(subs_len, m_paa_params.l_min, m_paa_params.l_max, m_num_len_groups);
             auto [mu, sigma] = calculate_mu_and_sigma(tmp_sum, tmp_sum_sq, subs_len);
 
             vec<Real> subsequence(subs_len);
-            for (int i = 0; i < subs_len; ++i) subsequence[i] = (ts[start_ind + i] - mu) / sigma;
+            for (uint i = 0; i < subs_len; ++i) subsequence[i] = (ts[start_ind + i] - mu) / sigma;
             vec<Real> paa_values = paa(subsequence, paa_params.segment_len);
             paa_values.resize(ts.size() / paa_params.segment_len, 0.0);
 
             entry_tuple_groups[length_group].push_back(
-                std::make_tuple(Paa(paa_values), static_cast<uint>(start_ind), static_cast<uint>(subs_len)));
+                std::make_tuple(Paa(paa_values), static_cast<uint>(start_ind), subs_len));
 
             tmp_sum -= ts[start_ind];
             tmp_sum_sq -= ts[start_ind] * ts[start_ind];
@@ -68,7 +68,6 @@ PaaEntryGenerator::PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaa
     : m_num_channels(num_channels), m_paa_params(paa_params), m_num_len_groups(num_len_groups) {}
 
 vec<vec<IndexEntry<Paa>>> PaaEntryGenerator::get_entries(const vec<vec<Real>> &mts, uint series_ind) {
-    uint series_len = mts[0].size();
     vec<vec<IndexEntry<Paa>>> entry_groups(m_num_len_groups);
 
     for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {

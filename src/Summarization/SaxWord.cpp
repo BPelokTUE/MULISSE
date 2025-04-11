@@ -13,7 +13,8 @@ SaxSymbolT SaxWord::operator[](SaxSegIndT index) const { return m_symbols[index]
 bool SaxWord::operator==(const SaxWord &other) const {
     assert(size() == other.size());
 
-    for (size_t i = 0; i < m_symbols.size(); ++i) {
+    SaxSegIndT num_symbols = static_cast<SaxSegIndT>(m_symbols.size());
+    for (SaxSegIndT i = 0; i < num_symbols; ++i) {
         if (operator[](i) != other[i]) return false;
     }
     return true;

@@ -90,7 +90,7 @@ struct SubsequenceInfo {
         return series_ind == other.series_ind && start_pos == other.start_pos;
     }
 
-    size_t get_file_pos(uint series_len, MtsNumChannelsT num_channels, MtsNumChannelsT channel = 0) const {
+    std::streampos get_file_pos(uint series_len, MtsNumChannelsT num_channels, MtsNumChannelsT channel = 0) const {
         return ((series_ind * num_channels + channel) * series_len + start_pos) * sizeof(Real);
     }
 

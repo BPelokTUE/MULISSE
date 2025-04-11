@@ -512,7 +512,7 @@ struct IndexStats {
 
     IndexStats() = default;
 
-    void update_leaf_stats(Real fill, Real height);
+    void update_leaf_stats(size_t num_entries, size_t height);
 
     void update_seg_stats(Real lower, Real upper, size_t count = 1);
 

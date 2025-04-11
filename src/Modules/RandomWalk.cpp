@@ -9,7 +9,7 @@
 #include "Util/Logger.hpp"
 #include "Util/RunSettings.hpp"
 
-int create_random_walks(Real step_sigma, bool zero_start, int seed) {
+int create_random_walks(Real step_sigma, bool zero_start, uint seed) {
     auto &RS = RunSettings::get_instance();
     str dataset_path = RS.get_dataset_path();
     auto [file, num_channels, series_len, num_series] = RS.get_dataset_props();

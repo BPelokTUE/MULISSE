@@ -66,8 +66,7 @@ class DistanceMeasure<S, ED, QS> {
         auto &logger = QueryLogger::get_instance();
 
         bool updated = false;
-        int num_start_pos;
-        uint mts_len, query_len;
+        uint num_start_pos, mts_len, query_len;
         vec<MtsNumChannelsT> present_channels;
 
         if constexpr (QS) {
@@ -78,9 +77,10 @@ class DistanceMeasure<S, ED, QS> {
 
         for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
             if (!(query[c].empty())) {
-                query_len = query[c].size();
-                mts_len = mts[c].size();
-                num_start_pos = mts[c].size() - query_len + 1;
+                query_len = static_cast<uint>(query[c].size());
+                mts_len = static_cast<uint>(mts[c].size());
+                assert(mts_len >= query_len);
+                num_start_pos = static_cast<uint>(mts_len - query_len + 1);
                 present_channels.push_back(c);
             }
         }
@@ -94,7 +94,7 @@ class DistanceMeasure<S, ED, QS> {
                 }
             }
 
-            for (uint start_pos = 0; static_cast<int>(start_pos) < num_start_pos; ++start_pos) {
+            for (uint start_pos = 0; start_pos < num_start_pos; ++start_pos) {
                 Real dist_squared = 0;
                 uint64_t points_examined = 0, point_in_entry = 0;
 
@@ -168,10 +168,12 @@ class DistanceMeasure<S, MASS> {
         bool updated = false;
 
         uint mts_len = 0, query_len = 0;
+        Real query_len_r = 0.0;
         for (MtsNumChannelsT c = 0; c < mts.size(); ++c) {
             if (!query[c].empty()) {
-                mts_len = mts[c].size();
-                query_len = query[c].size();
+                mts_len = static_cast<uint>(mts[c].size());
+                query_len = static_cast<uint>(query[c].size());
+                query_len_r = static_cast<Real>(query_len);
                 break;
             }
         }
@@ -206,8 +208,8 @@ class DistanceMeasure<S, MASS> {
                     auto [subs_mu, subs_sigma] = calculate_mu_and_sigma(subs_sum, subs_sum_sq, query_len);
 
                     // TODO: Assuming that the query is already normalized ==> query_mu = 0, query_sigma = 1
-                    Real corr = (dot - query_len * query_mu * subs_mu) / (query_len * query_sigma * subs_sigma);
-                    squared_dists[start_pos] += std::max(static_cast<Real>(0.0), 2 * query_len * (1 - corr));
+                    Real corr = (dot - query_len_r * query_mu * subs_mu) / (query_len_r * query_sigma * subs_sigma);
+                    squared_dists[start_pos] += std::max(static_cast<Real>(0.0), 2 * query_len_r * (1 - corr));
                 }
             } else {
                 for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
@@ -235,9 +237,11 @@ class DistanceMeasure<S, MASS> {
    private:
     inline vec<Real> calculate_dot_products(const vec<Real> &q_channel, const vec<Real> &mts_channel,
                                             SubsequenceInfo subs_info, MtsNumChannelsT channel_ind) const {
-        uint mts_len = mts_channel.size(), query_len = q_channel.size();
+        uint mts_len = static_cast<uint>(mts_channel.size()), query_len = static_cast<uint>(q_channel.size());
+        uint fft_size = 2 * mts_len;
+        int fft_size_i = static_cast<int>(fft_size);
 
-        FftArray query_fft(2 * mts_len), mts_fft(2 * mts_len), dot_prods_fft(2 * mts_len), dot_products(2 * mts_len);
+        FftArray query_fft(fft_size), mts_fft(fft_size), dot_prods_fft(fft_size), dot_products(fft_size);
         fftwr_plan plan;
 
         auto &RS = RunSettings::get_instance();
@@ -256,30 +260,30 @@ class DistanceMeasure<S, MASS> {
             }
             query_fft = *query_fft_ptr;
         } else {
-            FftArray mts_complex(2 * mts_len);
+            FftArray mts_complex(fft_size);
             for (uint i = 0; i < mts_len; ++i) mts_complex[i][0] = mts_channel[i];
-            plan = fftwr_plan_dft_1d(2 * mts_len, mts_complex.data(), mts_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
+            plan = fftwr_plan_dft_1d(fft_size_i, mts_complex.data(), mts_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
             fftwr_execute(plan);
             fftwr_destroy_plan(plan);
 
-            FftArray q_complex(2 * mts_len);
+            FftArray q_complex(fft_size);
             for (uint i = 0; i < query_len; ++i) q_complex[i][0] = q_channel[query_len - 1 - i];
-            plan = fftwr_plan_dft_1d(2 * mts_len, q_complex.data(), query_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
+            plan = fftwr_plan_dft_1d(fft_size_i, q_complex.data(), query_fft.data(), FFTW_FORWARD, FFTW_ESTIMATE);
             fftwr_execute(plan);
             fftwr_destroy_plan(plan);
         }
 
-        for (uint i = 0; i < 2 * mts_len; ++i) {
+        for (uint i = 0; i < fft_size; ++i) {
             dot_prods_fft[i][0] = query_fft[i][0] * mts_fft[i][0] - query_fft[i][1] * mts_fft[i][1];
             dot_prods_fft[i][1] = query_fft[i][0] * mts_fft[i][1] + query_fft[i][1] * mts_fft[i][0];
         }
 
-        plan = fftwr_plan_dft_1d(2 * mts_len, dot_prods_fft.data(), dot_products.data(), FFTW_BACKWARD, FFTW_ESTIMATE);
+        plan = fftwr_plan_dft_1d(fft_size_i, dot_prods_fft.data(), dot_products.data(), FFTW_BACKWARD, FFTW_ESTIMATE);
         fftwr_execute(plan);
         fftwr_destroy_plan(plan);
 
         vec<Real> dot_products_real(mts_len);
-        for (uint i = 0; i < mts_len; ++i) dot_products_real[i] = dot_products[i][0] / (2 * mts_len);
+        for (uint i = 0; i < mts_len; ++i) dot_products_real[i] = dot_products[i][0] / static_cast<Real>(fft_size);
 
         return dot_products_real;
     }

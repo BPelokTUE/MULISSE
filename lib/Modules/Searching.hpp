@@ -73,8 +73,6 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
  */
 template <SearchType S, DistanceType D, bool QS>
 uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
-    auto &RS = RunSettings::get_instance();
-
     switch (opts.search_method_type) {
         case ISAX_ENVELOPE:
             return load_index_based_method<EnvelopeTag, S, D, QS>(
@@ -170,7 +168,7 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
         if (!query[c].empty()) {
             query_len = query[c].size();
             if (opts.normalized) {
-                auto [mu, sigma] = calculate_mu_and_sigma(sum, sq_sum, query[c].size());
+                auto [mu, sigma] = calculate_mu_and_sigma(sum, sq_sum, static_cast<uint>(query[c].size()));
                 for (size_t i = 0; i < query[c].size(); ++i) query[c][i] = (query[c][i] - mu) / sigma;
             }
         }
@@ -192,10 +190,10 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
             SearchResults results;
             if constexpr (QS && D == ED) {
                 vec<std::pair<Real, uint>> query_magnitudes(query_len);
-                for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-                    if (query[c].empty()) continue;
+                for (MtsNumChannelsT cc = 0; cc < num_channels; ++cc) {
+                    if (query[cc].empty()) continue;
                     for (uint i = 0; i < query_len; ++i) {
-                        query_magnitudes[i].first += std::abs(query[c][i]);
+                        query_magnitudes[i].first += std::abs(query[cc][i]);
                         query_magnitudes[i].second = i;
                     }
                 }
@@ -204,11 +202,11 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
                 vec<uint> real_query_inds(query_len);
                 vec<vec<Real>> sorted_query(num_channels, vec<Real>(query_len));
 
-                for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-                    if (query[c].empty()) continue;
+                for (MtsNumChannelsT cc = 0; cc < num_channels; ++cc) {
+                    if (query[cc].empty()) continue;
                     for (uint i = 0; i < query_len; ++i) {
                         real_query_inds[i] = query_magnitudes[i].second;
-                        sorted_query[c][i] = query[c][real_query_inds[i]];
+                        sorted_query[cc][i] = query[cc][real_query_inds[i]];
                     }
                 }
 

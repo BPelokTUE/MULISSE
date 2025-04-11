@@ -35,7 +35,7 @@ class FlatEnvelopeIndex : public IIndex<Envelope>,
     void insert(IndexEntry<Envelope> &entry) override {
         if (m_num_bits > 0) {
             auto &breakpoints = RunSettings::get_instance().get_breakpoints();
-            SaxSegIndT num_seg_per_channel = entry.mts_summary[0].lower.size();
+            SaxSegIndT num_seg_per_channel = static_cast<SaxSegIndT>(entry.mts_summary[0].lower.size());
 
             for (MtsNumChannelsT c = 0; c < entry.mts_summary.size(); ++c) {
                 SaxWord sax_lower(entry.mts_summary[c].lower, m_num_bits, breakpoints);
@@ -122,7 +122,7 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
             if (entry.subsequence_info.length < query_len) continue;
 
             Real min_dist_squared = get_min_dist_squared(entry, query_paa, result_set, distance_measure);
-            pq.push({min_dist_squared * m_index->get_segment_len(), entry.subsequence_info});
+            pq.push({min_dist_squared * static_cast<Real>(m_index->get_segment_len()), entry.subsequence_info});
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
 

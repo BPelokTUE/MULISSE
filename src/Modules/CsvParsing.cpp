@@ -14,7 +14,7 @@
 #include "Util/RunSettings.hpp"
 #include "Util/Logger.hpp"
 
-int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, int seed,
+int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, uint seed,
                             char col_sep) {
     for (str csv_path : csv_paths) {
         if (!std::filesystem::exists(csv_path)) {
@@ -33,7 +33,7 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
     }
 
     auto &RS = RunSettings::get_instance();
-    MtsNumChannelsT num_channels = csv_paths.size();
+    MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(csv_paths.size());
     uint series_len = RS.get_dataset_props().series_len;
     str dataset_path = RS.get_dataset_path();
 
@@ -51,7 +51,6 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
     vec<vec<vec<Real>>> all_mts;
     MtsNumChannelsT channel = 0;
     bool discard = false;
-    uint length = series_len, ts_ind = 0;
 
     while (true) {
         std::getline(csv_streams[channel], line);
@@ -73,11 +72,11 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
                 sum_sq += mts[channel][ind] * mts[channel][ind];
 
                 ++ind;
-                int start_min = std::max(0, static_cast<int>(ind) - static_cast<int>(l_max));
-                int start_max = static_cast<int>(ind) - static_cast<int>(l_min);
+                uint start_min = static_cast<uint>(std::max(0, static_cast<int>(ind - l_max)));
+                int start_max = static_cast<int>(ind - l_min);
                 Real sum_tmp = sum, sum_sq_tmp = sum_sq;
-                for (int start = start_min; start <= start_max; ++start) {
-                    Real sigma = calculate_mu_and_sigma(sum_tmp, sum_sq_tmp, ind - start).second;
+                for (uint start = start_min; static_cast<int>(start) <= start_max; ++start) {
+                    Real sigma = calculate_mu_and_sigma(sum_tmp, sum_sq_tmp, static_cast<uint>(ind - start)).second;
                     if (sigma < MIN_SUBS_SIGMA) {
                         discard = true;
                         goto next_channel;
@@ -97,9 +96,7 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
         if (++channel == num_channels) {
             if (!discard) all_mts.push_back(mts);
             channel = 0;
-            length = series_len;
             discard = false;
-            ++ts_ind;
         }
         if (csv_streams[channel].eof()) break;
     }

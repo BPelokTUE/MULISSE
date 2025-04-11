@@ -73,7 +73,7 @@ sptr<IIndex<Envelope>> get_isax_index(const IndexOptions &opts, const iSaxIndexP
 void calculate_sax_breakpoints(const SaxIndexParams *params, SaxNumBitsT num_bits_limit,
                                SaxSegIndT num_seg_per_channel) {
     auto breakpoint_strategy = get_breakpoint_strategy(params);
-    auto breakpoints = breakpoint_strategy->get_breakpoints(1 << num_bits_limit);
+    auto breakpoints = breakpoint_strategy->get_breakpoints(static_cast<SaxSymbolT>(1 << num_bits_limit));
     RunSettings::get_instance().set_isax_properties(
         {num_seg_per_channel, params->segment_len, std::move(breakpoint_strategy), breakpoints, num_bits_limit});
 }
@@ -91,7 +91,7 @@ sptr<IIndex<T>> get_isax_index(const IndexFactoryParams &factory_params) {
     const IndexOptions &opts = factory_params.opts;
 
     auto *params = dynamic_cast<iSaxIndexParams *>(opts.index_params.get());
-    SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
+    SaxSegIndT num_seg_per_channel = static_cast<SaxSegIndT>(opts.l_max / params->segment_len);
 
     calculate_sax_breakpoints(params, params->num_bits_limit, num_seg_per_channel);
     auto split_strategy = get_split_strategy<T>(params, num_seg_per_channel, opts.num_channels);
@@ -104,7 +104,7 @@ sptr<IIndex<Envelope>> get_envelope_index(const IndexFactoryParams &factory_para
     const IndexOptions &opts = factory_params.opts;
 
     auto *params = dynamic_cast<EnvelopeIndexParams *>(opts.index_params.get());
-    SaxSegIndT num_seg_per_channel = opts.l_max / params->segment_len;
+    SaxSegIndT num_seg_per_channel = static_cast<SaxSegIndT>(opts.l_max / params->segment_len);
 
     auto sax_params = dynamic_cast<SaxIndexParams *>(opts.index_params.get());
     if (discretize_flat_index && sax_params && sax_params->num_bits > 0) {

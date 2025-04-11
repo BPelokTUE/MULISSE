@@ -279,7 +279,8 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
         auto &RS = RunSettings::get_instance();
         auto &isax_props = RS.get_isax_props();
 
-        Real sum = 0, sum_sq = 0, count = 0;
+        Real sum = 0, sum_sq = 0;
+        uint count = 0;
         for (const auto &entry : dataset_entries) {
             for (const auto &summary : entry.mts_summary) {
                 auto isax_input = summary.get_isax_input();
@@ -313,7 +314,7 @@ class iSaxParallelInserter : public IEntryInserter<iSaxIndex<T>> {
         SaxSegIndT num_seg_per_channel = m_index->m_series_isax_prop->num_seg_per_channel;
 
         OMP_PRAGMA(omp parallel for)
-        for (uint e_ind = 0; e_ind < entries.size(); ++e_ind) {
+        for (uint e_ind = 0; e_ind < static_cast<uint>(entries.size()); ++e_ind) {
             vec<vec<SaxSymbolT>> symbols(num_channels, vec<SaxSymbolT>(num_seg_per_channel));
             m_index->calculate_first_layer_symbols(entries[e_ind], symbols);
 

@@ -81,7 +81,7 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
             auto *csv_attributes = static_cast<CsvDatasetLogAttributes *>(attributes.get());
             num_series = csv_attributes->series_generated;
             const vec<str> &source_csvs = csv_attributes->source_csvs;
-            num_channels = source_csvs.size();
+            num_channels = static_cast<MtsNumChannelsT>(source_csvs.size());
             for (uint i = 0; i < source_csvs.size(); ++i) {
                 source_csv_str += source_csvs[i];
                 if (i < source_csvs.size() - 1) source_csv_str += instance.ITEM_SEP;
@@ -316,8 +316,6 @@ void QueryLogger::log_query(const vec<vec<Real>> &query) {
 }
 
 void QueryLogger::log_results(const SearchResults &results) {
-    auto &RS = RunSettings::get_instance();
-    size_t series_size = RS.m_dataset_props.series_len * RS.m_dataset_props.num_channels;
     for (auto result : results.results) {
         auto [ts_index, ts_position, ts_length] = result.subs_info;
         instance.m_collection_cols[QC::RESULT_SET_TS_INDICES].push_back(to_string(ts_index));
@@ -351,8 +349,10 @@ void QueryLogger::write_entry() {
     for (const auto &col : QUERY_COLLECTION_COLUMNS) columns[col] = get_collection_str(col);
 
     bool abandoning_used = num_points_examined < num_points_in_examined_entries;
-    columns[QC::ABANDONING_RATE] = to_string(
-        abandoning_used ? 1.0 - static_cast<Real>(num_points_examined) / num_points_in_examined_entries : 0.0);
+    columns[QC::ABANDONING_RATE] =
+        to_string(abandoning_used
+                      ? 1.0 - static_cast<Real>(num_points_examined) / static_cast<Real>(num_points_in_examined_entries)
+                      : 0.0);
 
     write_row(run_log_path, columns, QUERY_COL_ENUMS);
 }
@@ -374,8 +374,8 @@ void AttributeStats::update(Real value) {
 void AttributeStats::update(Real value, size_t count) {
     min = std::min(min, value);
     max = std::max(max, value);
-    sum += value * count;
-    sum_sq += value * value * count;
+    sum += value * static_cast<Real>(count);
+    sum_sq += value * value * static_cast<Real>(count);
 }
 
 void AttributeStats::calculate(uint count) {
@@ -385,14 +385,14 @@ void AttributeStats::calculate(uint count) {
 }
 
 void QueryStats::calculate() {
-    dist_stats.calculate(subs_count);
+    dist_stats.calculate(static_cast<uint>(subs_count));
     rc_using_max = (dist_stats.max - dist_stats.min) / dist_stats.min;
     rc_using_mean = dist_stats.mean / dist_stats.min;
 }
 
-void IndexStats::update_leaf_stats(Real fill, Real height) {
-    leaf_size_stats.update(fill);
-    leaf_height_stats.update(height);
+void IndexStats::update_leaf_stats(size_t num_entries, size_t height) {
+    leaf_size_stats.update(static_cast<Real>(num_entries));
+    leaf_height_stats.update(static_cast<Real>(height));
     ++leaf_count;
 }
 
@@ -413,8 +413,8 @@ void IndexStats::update_seg_stats(Real lower, Real upper, size_t count) {
 void IndexStats::calculate() {
     vec<AttributeStats *> leaf_type_stats = {&leaf_size_stats, &leaf_height_stats},
                           seg_type_stats = {&seg_range_stats, &seg_lower_stats, &seg_upper_stats};
-    for (AttributeStats *leaf_stats : leaf_type_stats) leaf_stats->calculate(leaf_count);
-    for (AttributeStats *seg_stats : seg_type_stats) seg_stats->calculate(seg_count);
+    for (AttributeStats *leaf_stats : leaf_type_stats) leaf_stats->calculate(static_cast<uint>(leaf_count));
+    for (AttributeStats *seg_stats : seg_type_stats) seg_stats->calculate(static_cast<uint>(seg_count));
 }
 
 // QueryStatsLogger

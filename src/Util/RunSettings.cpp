@@ -38,7 +38,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     if (dataset_props.num_series == 0 && !dataset_props.file.empty()) {
         size_t dataset_size = get_dataset_size(instance->get_dataset_path());
         instance->m_dataset_props.num_series =
-            dataset_size / (dataset_props.series_len * dataset_props.num_channels * sizeof(Real));
+            static_cast<uint>(dataset_size / (dataset_props.series_len * dataset_props.num_channels * sizeof(Real)));
     }
 
     instance->m_query_properties = query_props;
@@ -123,7 +123,8 @@ void RunSettings::calculate_ffts() const {
         FftArray channel_complex(fft_len), channel_ffts(fft_len);
         for (uint j = 0; j < m_dataset_props.series_len; ++j) channel_complex[j][0] = channel[j];
 
-        plan = fftwr_plan_dft_1d(fft_len, channel_complex.data(), channel_ffts.data(), FFTW_FORWARD, FFTW_ESTIMATE);
+        plan = fftwr_plan_dft_1d(static_cast<int>(fft_len), channel_complex.data(), channel_ffts.data(), FFTW_FORWARD,
+                                 FFTW_ESTIMATE);
 
         fftwr_execute(plan);
         fftwr_destroy_plan(plan);
@@ -142,9 +143,9 @@ FftArray RunSettings::get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channe
     // (*2) for real and imaginary parts
     // (*2) for extra components at the end
     uint file_size_ratio = 4;
-    size_t data_file_pos =
-        subs_info.get_file_pos(m_dataset_props.series_len, m_dataset_props.num_channels, channel_ind);
-    m_ffts_ifs.seekg(file_size_ratio * data_file_pos);
+    size_t data_file_pos = static_cast<size_t>(
+        subs_info.get_file_pos(m_dataset_props.series_len, m_dataset_props.num_channels, channel_ind));
+    m_ffts_ifs.seekg(static_cast<std::streamsize>(file_size_ratio * data_file_pos));
 
     FftArray ffts(2 * num_component);
     m_ffts_ifs.read(reinterpret_cast<char *>(ffts.data()), file_size_ratio * num_component * sizeof(Real));
@@ -159,13 +160,13 @@ void RunSettings::calculate_query_ffts(const vec<Real> &q_channel, MtsNumChannel
 
     assert(channel_ind < m_dataset_props.num_channels);
 
-    uint fft_len = 2 * num_components, query_len = q_channel.size();
+    uint fft_len = 2 * num_components, query_len = static_cast<uint>(q_channel.size());
     FftArray q_complex(fft_len);
     for (uint i = 0; i < query_len; ++i) q_complex[i][0] = q_channel[query_len - 1 - i];
 
     m_query_ffts[channel_ind] = std::make_unique<FftArray>(fft_len);
-    fftwr_plan plan =
-        fftwr_plan_dft_1d(fft_len, q_complex.data(), m_query_ffts[channel_ind]->data(), FFTW_FORWARD, FFTW_ESTIMATE);
+    fftwr_plan plan = fftwr_plan_dft_1d(static_cast<int>(fft_len), q_complex.data(), m_query_ffts[channel_ind]->data(),
+                                        FFTW_FORWARD, FFTW_ESTIMATE);
 
     fftwr_execute(plan);
     fftwr_destroy_plan(plan);
@@ -191,7 +192,8 @@ const vec<Real> &RunSettings::get_breakpoints() { return m_isax_props.breakpoint
 
 void RunSettings::update_breakpoints() {
     auto &breakpoint_strategy = m_isax_props.breakpoint_strategy;
-    m_isax_props.breakpoints = breakpoint_strategy->get_breakpoints(1 << m_isax_props.breakpoint_num_bits);
+    m_isax_props.breakpoints =
+        breakpoint_strategy->get_breakpoints(static_cast<SaxSymbolT>(1 << m_isax_props.breakpoint_num_bits));
 }
 
 void RunSettings::set_isax_properties(iSaxProperties isax_props) {
