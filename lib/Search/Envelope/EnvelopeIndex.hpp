@@ -9,10 +9,10 @@
 #include "Util/typedefs.hpp"
 
 struct PQueueEnvelopeEntry {
-    Real min_dist_squared;
-    SubsequenceInfo subs_info;
+    Real m_min_dist_squared;
+    SubsequenceInfo m_subs_info;
 
-    bool operator<(const PQueueEnvelopeEntry &other) const { return min_dist_squared > other.min_dist_squared; }
+    bool operator<(const PQueueEnvelopeEntry &other) const { return m_min_dist_squared > other.m_min_dist_squared; }
 };
 
 /** @brief Flat envelope index */
@@ -35,15 +35,16 @@ class FlatEnvelopeIndex : public IIndex<Envelope>,
     void insert(IndexEntry<Envelope> &entry) override {
         if (m_num_bits > 0) {
             auto &breakpoints = RunSettings::get_instance().get_breakpoints();
-            SaxSegIndT num_seg_per_channel = static_cast<SaxSegIndT>(entry.mts_summary[0].lower.size());
+            SaxSegIndT num_seg_per_channel = static_cast<SaxSegIndT>(entry.m_mts_summary[0].m_lower.size());
 
-            for (MtsNumChannelsT c = 0; c < entry.mts_summary.size(); ++c) {
-                SaxWord sax_lower(entry.mts_summary[c].lower, m_num_bits, breakpoints);
-                SaxWord sax_upper(entry.mts_summary[c].upper, m_num_bits, breakpoints);
+            for (MtsNumChannelsT c = 0; c < entry.m_mts_summary.size(); ++c) {
+                SaxWord sax_lower(entry.m_mts_summary[c].m_lower, m_num_bits, breakpoints);
+                SaxWord sax_upper(entry.m_mts_summary[c].m_upper, m_num_bits, breakpoints);
 
                 for (SaxSegIndT s = 0; s < num_seg_per_channel; ++s) {
-                    entry.mts_summary[c].lower[s] = sax_lower[s] > 0 ? breakpoints[sax_lower[s] - 1] : -INF;
-                    entry.mts_summary[c].upper[s] = sax_upper[s] < breakpoints.size() ? breakpoints[sax_upper[s]] : INF;
+                    entry.m_mts_summary[c].m_lower[s] = sax_lower[s] > 0 ? breakpoints[sax_lower[s] - 1] : -INF;
+                    entry.m_mts_summary[c].m_upper[s] =
+                        sax_upper[s] < breakpoints.size() ? breakpoints[sax_upper[s]] : INF;
                 }
             }
         }
@@ -119,10 +120,10 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
 
         logger.start_timer(QC::FIRST_LAYER_TIME_S);
         for (auto entry : m_index->get_entries()) {
-            if (entry.subsequence_info.length < query_len) continue;
+            if (entry.m_subs_info.m_length < query_len) continue;
 
             Real min_dist_squared = get_min_dist_squared(entry, query_paa, result_set, distance_measure);
-            pq.push({min_dist_squared * R(m_index->get_segment_len()), entry.subsequence_info});
+            pq.push({min_dist_squared * R(m_index->get_segment_len()), entry.m_subs_info});
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
 
@@ -147,13 +148,12 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
 
         logger.start_timer(QC::TREE_TRAVERSAL_TIME_S);
         for (auto entry : m_index->get_entries()) {
-            if (entry.subsequence_info.length < query_len) continue;
+            if (entry.m_subs_info.m_length < query_len) continue;
 
             Real min_dist_squared = get_min_dist_squared(entry, query_paa, result_set, distance_measure);
             if (min_dist_squared >= result_set.get_distance_lb()) continue;
 
-            update_result_set(entry.subsequence_info, query, result_set, distance_measure, dataset_ifs,
-                              real_query_inds);
+            update_result_set(entry.m_subs_info, query, result_set, distance_measure, dataset_ifs, real_query_inds);
         }
         logger.stop_timer(QC::TREE_TRAVERSAL_TIME_S);
 
@@ -166,8 +166,8 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
         Real min_dist_squared = 0;
         for (MtsNumChannelsT c = 0; c < query_paa.size(); ++c)
             for (uint s = 0; s < query_paa[c].size(); ++s)
-                min_dist_squared += distance_measure.min_dist_squared(query_paa[c][s], entry.mts_summary[c].lower[s],
-                                                                      entry.mts_summary[c].upper[s]);
+                min_dist_squared += distance_measure.min_dist_squared(
+                    query_paa[c][s], entry.m_mts_summary[c].m_lower[s], entry.m_mts_summary[c].m_upper[s]);
         return min_dist_squared;
     }
 
@@ -177,17 +177,17 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
         auto &logger = QueryLogger::get_instance();
 
         auto &RS = RunSettings::get_instance();
-        uint series_len = RS.get_dataset_props().series_len;
-        MtsNumChannelsT num_channels = RS.get_dataset_props().num_channels;
+        uint series_len = RS.get_dataset_props().m_series_len;
+        MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
 
         vec<vec<Real>> subsequence(num_channels);
         logger.start_timer(QC::IO_TIME_S);
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             if (query[c].empty()) continue;
 
-            subsequence[c].resize(subs_info.length);
+            subsequence[c].resize(subs_info.m_length);
             dataset_ifs.seekg(subs_info.get_file_pos(series_len, num_channels, c));
-            dataset_ifs.read(reinterpret_cast<char *>(subsequence[c].data()), subs_info.length * sizeof(Real));
+            dataset_ifs.read(reinterpret_cast<char *>(subsequence[c].data()), subs_info.m_length * sizeof(Real));
         }
         logger.stop_timer(QC::IO_TIME_S);
 

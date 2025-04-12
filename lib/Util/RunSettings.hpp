@@ -15,30 +15,30 @@ enum CommandType { CREATE_DS, PARSE_CSV, CREATE_QS, CALC_Q_STATS, INDEX, CALC_I_
 DEFINE_ENUM_CONSTS_NO_EXTRA(CommandType, CMD_TYPE, false);
 
 struct DatasetProperties {
-    str file;
-    MtsNumChannelsT num_channels;
-    uint series_len;
-    uint num_series;
+    str m_file;
+    MtsNumChannelsT m_num_channels;
+    uint m_series_len;
+    uint m_num_series;
 };
 
 // TODO: Rewrite, `l_min` and `l_max` are not properties of the query
 struct QueryProperties {
-    str file;
-    uint l_min;
-    uint l_max;
+    str m_file;
+    uint m_l_min;
+    uint m_l_max;
 };
 
 struct EnvelopeProperties {
-    uint pos_per_env;
-    uint envs_per_ts;
+    uint m_pos_per_env;
+    uint m_envs_per_ts;
 };
 
 struct iSaxProperties {
-    SaxSegIndT num_segments;
-    uint segment_len;
-    uptr<IiSaxBreakpointStrategy> breakpoint_strategy;
-    vec<Real> breakpoints;
-    SaxNumBitsT breakpoint_num_bits;
+    SaxSegIndT m_num_segments;
+    uint m_segment_len;
+    uptr<IiSaxBreakpointStrategy> m_breakpoint_strategy;
+    vec<Real> m_breakpoints;
+    SaxNumBitsT m_breakpoint_num_bits;
 };
 
 class RunSettings {

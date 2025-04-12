@@ -11,9 +11,9 @@
  */
 struct Envelope : EntryData {
     /** @brief Lower bounds of the envelope */
-    vec<Real> lower;
+    vec<Real> m_lower;
     /** @brief Upper bounds of the envelope */
-    vec<Real> upper;
+    vec<Real> m_upper;
 
     Envelope(vec<Real> lower, vec<Real> upper);
 
@@ -27,7 +27,7 @@ struct Envelope : EntryData {
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(lower, upper);
+        ar(m_lower, m_upper);
     }
 };
 
@@ -46,10 +46,10 @@ struct Envelope : EntryData {
  * @param l_max The maximum length of a subsequence
  */
 struct EnvelopeParams {
-    uint pos_per_env;
-    uint segment_len;
-    uint l_min;
-    uint l_max;
+    uint m_pos_per_env;
+    uint m_segment_len;
+    uint m_l_min;
+    uint m_l_max;
 };
 
 /** @brief Envelope generator for iSAX (ULISSE) envelopes */
@@ -109,8 +109,8 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
                 uint first_ind = last_ind + 1 - (seg_ind + 1) * segment_len;
                 if (ts.size() - first_ind >= l_min) {
                     auto &envelope = envelope_groups[0][first_ind / pos_per_env];
-                    envelope.lower[seg_ind] = std::min(envelope.lower[seg_ind], paa_val);
-                    envelope.upper[seg_ind] = std::max(envelope.upper[seg_ind], paa_val);
+                    envelope.m_lower[seg_ind] = std::min(envelope.m_lower[seg_ind], paa_val);
+                    envelope.m_upper[seg_ind] = std::max(envelope.m_upper[seg_ind], paa_val);
                 }
             }
         }
@@ -159,8 +159,8 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
                     paa_val = (paa_val - mu) / sigma;
 
                     auto &envelope = envelopes[length_group][start / pos_per_env];
-                    envelope.lower[seg_ind] = std::min(envelope.lower[seg_ind], paa_val);
-                    envelope.upper[seg_ind] = std::max(envelope.upper[seg_ind], paa_val);
+                    envelope.m_lower[seg_ind] = std::min(envelope.m_lower[seg_ind], paa_val);
+                    envelope.m_upper[seg_ind] = std::max(envelope.m_upper[seg_ind], paa_val);
                 }
             }
         }
@@ -176,9 +176,9 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
         for (auto &envelope_group : envelope_groups) {
             for (auto &envelope : envelope_group) {
                 for (SaxSegIndT s = 0; s < envelope.size(); ++s) {
-                    if (envelope.lower[s] > envelope.upper[s]) {
-                        envelope.lower[s] = -INF;
-                        envelope.upper[s] = INF;
+                    if (envelope.m_lower[s] > envelope.m_upper[s]) {
+                        envelope.m_lower[s] = -INF;
+                        envelope.m_upper[s] = INF;
                     }
                 }
             }

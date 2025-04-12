@@ -4,18 +4,18 @@
 #include "Util/utilities.hpp"
 
 Envelope::Envelope(vec<Real> lower, vec<Real> upper) {
-    this->lower = std::move(lower);
-    this->upper = std::move(upper);
+    this->m_lower = std::move(lower);
+    this->m_upper = std::move(upper);
 }
 
-size_t Envelope::size() const { return lower.size(); }
+size_t Envelope::size() const { return m_lower.size(); }
 
 void Envelope::resize(size_t new_size) {
-    lower.resize(new_size);
-    upper.resize(new_size);
+    m_lower.resize(new_size);
+    m_upper.resize(new_size);
 }
 
-vec<Real> Envelope::get_isax_input() const { return lower; }
+vec<Real> Envelope::get_isax_input() const { return m_lower; }
 
 // ----------------------------------------------- //
 // --------------- ULISSE ENVELOPE --------------- //
@@ -29,7 +29,7 @@ EnvelopeEntryGenerator::EnvelopeEntryGenerator(MtsNumChannelsT num_channels, boo
 
 vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec<Real>>& mts, uint series_ind) {
     uint series_len = static_cast<uint>(mts[0].size());
-    uint num_env = (series_len - m_env_params.l_min + m_env_params.pos_per_env) / m_env_params.pos_per_env;
+    uint num_env = (series_len - m_env_params.m_l_min + m_env_params.m_pos_per_env) / m_env_params.m_pos_per_env;
     vec<vec<IndexEntry<Envelope>>> entries(m_num_len_groups, vec<IndexEntry<Envelope>>(num_env));
 
     for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
@@ -37,14 +37,14 @@ vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec
         for (uint l = 0; l < m_num_len_groups; ++l) {
             auto& channel_envs = channel_envs_groups[l];
             for (uint i = 0; i < channel_envs.size(); ++i) {
-                uint start_pos = i * m_env_params.pos_per_env;
-                uint length = std::min(series_len + m_env_params.pos_per_env - 1, series_len - start_pos);
+                uint start_pos = i * m_env_params.m_pos_per_env;
+                uint length = std::min(series_len + m_env_params.m_pos_per_env - 1, series_len - start_pos);
 
                 if (c == 0) {
-                    entries[l][i].subsequence_info = {series_ind, start_pos, length};
-                    entries[l][i].mts_summary.resize(m_num_channels);
+                    entries[l][i].m_subs_info = {series_ind, start_pos, length};
+                    entries[l][i].m_mts_summary.resize(m_num_channels);
                 }
-                entries[l][i].mts_summary[c] = std::move(channel_envs[i]);
+                entries[l][i].m_mts_summary[c] = std::move(channel_envs[i]);
             }
         }
     }

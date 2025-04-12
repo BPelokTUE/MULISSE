@@ -35,19 +35,19 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
 
     instance->m_command_type = command_type;
     instance->m_dataset_props = dataset_props;
-    if (dataset_props.num_series == 0 && !dataset_props.file.empty()) {
+    if (dataset_props.m_num_series == 0 && !dataset_props.m_file.empty()) {
         size_t dataset_size = get_dataset_size(instance->get_dataset_path());
-        instance->m_dataset_props.num_series =
-            static_cast<uint>(dataset_size / (dataset_props.series_len * dataset_props.num_channels * sizeof(Real)));
+        instance->m_dataset_props.m_num_series = static_cast<uint>(
+            dataset_size / (dataset_props.m_series_len * dataset_props.m_num_channels * sizeof(Real)));
     }
 
     instance->m_query_properties = query_props;
 
     uint envs_per_ts =
-        pos_per_env == 0 ? 1 : (dataset_props.series_len - query_props.l_min + pos_per_env) / pos_per_env;
+        pos_per_env == 0 ? 1 : (dataset_props.m_series_len - query_props.m_l_min + pos_per_env) / pos_per_env;
     instance->m_envelope_props = {
-        .pos_per_env = pos_per_env,
-        .envs_per_ts = envs_per_ts,
+        .m_pos_per_env = pos_per_env,
+        .m_envs_per_ts = envs_per_ts,
     };
 
     instance->m_index_file = index_path;
@@ -85,7 +85,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
             if (instance->ffts_supported()) {
                 check_path_exists(instance->get_ffts_path(), "FFTs");
                 instance->m_ffts_ifs.open(instance->get_ffts_path(), std::ios::binary);
-                instance->m_query_ffts.resize(instance->m_dataset_props.num_channels);
+                instance->m_query_ffts.resize(instance->m_dataset_props.m_num_channels);
                 for (auto &channel_ffts : instance->m_query_ffts) channel_ffts = nullptr;
             }
             break;
@@ -114,14 +114,14 @@ void RunSettings::calculate_ffts() const {
     }
 
     fftwr_plan plan;
-    uint num_chunks = m_dataset_props.num_series * m_dataset_props.num_channels;
+    uint num_chunks = m_dataset_props.m_num_series * m_dataset_props.m_num_channels;
     for (uint i = 0; i < num_chunks; ++i) {
-        vec<Real> channel(m_dataset_props.series_len);
-        ifs.read(reinterpret_cast<char *>(channel.data()), m_dataset_props.series_len * sizeof(Real));
+        vec<Real> channel(m_dataset_props.m_series_len);
+        ifs.read(reinterpret_cast<char *>(channel.data()), m_dataset_props.m_series_len * sizeof(Real));
 
-        uint fft_len = 2 * m_dataset_props.series_len;
+        uint fft_len = 2 * m_dataset_props.m_series_len;
         FftArray channel_complex(fft_len), channel_ffts(fft_len);
-        for (uint j = 0; j < m_dataset_props.series_len; ++j) channel_complex[j][0] = channel[j];
+        for (uint j = 0; j < m_dataset_props.m_series_len; ++j) channel_complex[j][0] = channel[j];
 
         plan = fftwr_plan_dft_1d(static_cast<int>(fft_len), channel_complex.data(), channel_ffts.data(), FFTW_FORWARD,
                                  FFTW_ESTIMATE);
@@ -144,7 +144,7 @@ FftArray RunSettings::get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channe
     // (*2) for extra components at the end
     uint file_size_ratio = 4;
     size_t data_file_pos = static_cast<size_t>(
-        subs_info.get_file_pos(m_dataset_props.series_len, m_dataset_props.num_channels, channel_ind));
+        subs_info.get_file_pos(m_dataset_props.m_series_len, m_dataset_props.m_num_channels, channel_ind));
     m_ffts_ifs.seekg(static_cast<std::streamsize>(file_size_ratio * data_file_pos));
 
     FftArray ffts(2 * num_component);
@@ -158,7 +158,7 @@ bool RunSettings::ffts_supported() const { return m_ffts_supported; }
 void RunSettings::calculate_query_ffts(const vec<Real> &q_channel, MtsNumChannelsT channel_ind, uint num_components) {
     if (!ffts_supported()) return;
 
-    assert(channel_ind < m_dataset_props.num_channels);
+    assert(channel_ind < m_dataset_props.m_num_channels);
 
     uint fft_len = 2 * num_components, query_len = static_cast<uint>(q_channel.size());
     FftArray q_complex(fft_len);
@@ -175,7 +175,7 @@ void RunSettings::calculate_query_ffts(const vec<Real> &q_channel, MtsNumChannel
 const FftArray *RunSettings::get_query_ffts(MtsNumChannelsT channel_ind) const {
     if (!ffts_supported()) throw std::runtime_error("FFTs are not supported");
 
-    assert(channel_ind < m_dataset_props.num_channels);
+    assert(channel_ind < m_dataset_props.m_num_channels);
 
     return m_query_ffts[channel_ind].get();
 }
@@ -183,17 +183,17 @@ const FftArray *RunSettings::get_query_ffts(MtsNumChannelsT channel_ind) const {
 void RunSettings::reset_query_ffts() {
     if (!ffts_supported()) return;
 
-    for (MtsNumChannelsT c = 0; c < m_dataset_props.num_channels; ++c) m_query_ffts[c] = nullptr;
+    for (MtsNumChannelsT c = 0; c < m_dataset_props.m_num_channels; ++c) m_query_ffts[c] = nullptr;
 }
 
 // iSAX
 
-const vec<Real> &RunSettings::get_breakpoints() { return m_isax_props.breakpoints; }
+const vec<Real> &RunSettings::get_breakpoints() { return m_isax_props.m_breakpoints; }
 
 void RunSettings::update_breakpoints() {
-    auto &breakpoint_strategy = m_isax_props.breakpoint_strategy;
-    m_isax_props.breakpoints =
-        breakpoint_strategy->get_breakpoints(static_cast<SaxSymbolT>(1 << m_isax_props.breakpoint_num_bits));
+    auto &breakpoint_strategy = m_isax_props.m_breakpoint_strategy;
+    m_isax_props.m_breakpoints =
+        breakpoint_strategy->get_breakpoints(static_cast<SaxSymbolT>(1 << m_isax_props.m_breakpoint_num_bits));
 }
 
 void RunSettings::set_isax_properties(iSaxProperties isax_props) {
@@ -213,9 +213,9 @@ const iSaxProperties &RunSettings::get_isax_props() { return m_isax_props; }
 
 // Paths
 
-str RunSettings::get_dataset_path() const { return fs::path(DATA_DIR) / m_dataset_props.file; }
+str RunSettings::get_dataset_path() const { return fs::path(DATA_DIR) / m_dataset_props.m_file; }
 
-str RunSettings::get_query_path() const { return fs::path(DATA_DIR) / m_query_properties.file; }
+str RunSettings::get_query_path() const { return fs::path(DATA_DIR) / m_query_properties.m_file; }
 
 str RunSettings::get_index_path() const { return m_index_file.empty() ? "" : fs::path(DATA_DIR) / m_index_file; }
 

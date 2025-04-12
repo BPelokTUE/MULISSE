@@ -21,9 +21,9 @@ struct EntrySaxSymbol {
 };
 
 struct PaaSaxSymbol : EntrySaxSymbol {
-    SaxSymbolT symbol;
+    SaxSymbolT m_symbol;
 
-    PaaSaxSymbol(SaxSymbolT symbol) : symbol(symbol) {};
+    PaaSaxSymbol(SaxSymbolT symbol) : m_symbol(symbol) {};
 
     PaaSaxSymbol() = default;
 
@@ -32,14 +32,15 @@ struct PaaSaxSymbol : EntrySaxSymbol {
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(symbol);
+        ar(m_symbol);
     }
 };
 
 struct EnvelopeSaxSymbol : EntrySaxSymbol {
-    SaxSymbolT min_symbol, max_symbol;
+    SaxSymbolT m_min_symbol, m_max_symbol;
 
-    EnvelopeSaxSymbol(SaxSymbolT min_symbol, SaxSymbolT max_symbol) : min_symbol(min_symbol), max_symbol(max_symbol) {};
+    EnvelopeSaxSymbol(SaxSymbolT min_symbol, SaxSymbolT max_symbol)
+        : m_min_symbol(min_symbol), m_max_symbol(max_symbol) {};
 
     EnvelopeSaxSymbol() = default;
 
@@ -48,7 +49,7 @@ struct EnvelopeSaxSymbol : EntrySaxSymbol {
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(min_symbol, max_symbol);
+        ar(m_min_symbol, m_max_symbol);
     }
 };
 
@@ -65,7 +66,7 @@ struct EntryISax {
 };
 
 struct PaaISax : EntryISax<PaaSaxSymbol> {
-    iSaxWord isax_word;
+    iSaxWord m_isax_word;
 
     PaaISax(vec<PaaSaxSymbol> paa_sax_symbol, SaxNumBitsT num_bits);
     PaaISax() = default;
@@ -75,8 +76,8 @@ struct PaaISax : EntryISax<PaaSaxSymbol> {
 };
 
 struct EnvelopeISax : EntryISax<EnvelopeSaxSymbol> {
-    iSaxWord isax_min;
-    iSaxWord isax_max;
+    iSaxWord m_isax_min;
+    iSaxWord m_isax_max;
 
     EnvelopeISax(vec<EnvelopeSaxSymbol> envelope_sax_symbol, SaxNumBitsT num_bits);
     EnvelopeISax() = default;
@@ -140,13 +141,13 @@ template <typename FTag>
 struct iSaxInternalNodeArgs {
     virtual ~iSaxInternalNodeArgs() = default;
 
-    SaxSplitIndex split_ind;
-    uptr<iSaxFinalizedNode<FTag>> left;
-    uptr<iSaxFinalizedNode<FTag>> right;
+    SaxSplitIndex m_split_ind;
+    uptr<iSaxFinalizedNode<FTag>> m_left;
+    uptr<iSaxFinalizedNode<FTag>> m_right;
 
     iSaxInternalNodeArgs(SaxSplitIndex split_ind, uptr<iSaxFinalizedNode<FTag>> left,
                          uptr<iSaxFinalizedNode<FTag>> right)
-        : split_ind(split_ind), left(std::move(left)), right(std::move(right)) {}
+        : m_split_ind(split_ind), m_left(std::move(left)), m_right(std::move(right)) {}
 
     iSaxInternalNodeArgs() = default;
 
@@ -155,19 +156,19 @@ struct iSaxInternalNodeArgs {
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(split_ind, left, right);
+        ar(m_split_ind, m_left, m_right);
     }
 };
 
 struct iSaxEnvelopeInternalNodeArgs : iSaxInternalNodeArgs<EnvelopeTag> {
-    SaxSymbolT max_symbol_left;
-    SaxSymbolT max_symbol_right;
+    SaxSymbolT m_max_symbol_left;
+    SaxSymbolT m_max_symbol_right;
 
     iSaxEnvelopeInternalNodeArgs(SaxSplitIndex split_ind, SaxSymbolT max_symbol_left, SaxSymbolT max_symbol_right,
                                  uptr<iSaxFinalizedNode<EnvelopeTag>> left, uptr<iSaxFinalizedNode<EnvelopeTag>> right)
         : iSaxInternalNodeArgs(split_ind, std::move(left), std::move(right)),
-          max_symbol_left(max_symbol_left),
-          max_symbol_right(max_symbol_right) {}
+          m_max_symbol_left(max_symbol_left),
+          m_max_symbol_right(max_symbol_right) {}
 
     iSaxEnvelopeInternalNodeArgs() = default;
 
@@ -176,7 +177,7 @@ struct iSaxEnvelopeInternalNodeArgs : iSaxInternalNodeArgs<EnvelopeTag> {
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(cereal::base_class<iSaxInternalNodeArgs<EnvelopeTag>>(this), max_symbol_left, max_symbol_right);
+        ar(cereal::base_class<iSaxInternalNodeArgs<EnvelopeTag>>(this), m_max_symbol_left, m_max_symbol_right);
     }
 };
 
@@ -197,10 +198,10 @@ class iSaxFinalizedInternal : public iSaxFinalizedNode<FTag> {
     iSaxFinalizedInternal(uptr<iSaxInternalNodeArgs<FTag>> args) : m_args(std::move(args)) {};
 
     virtual pair<const iSaxFinalizedNode<FTag> *, const iSaxFinalizedNode<FTag> *> get_children() const override {
-        return {m_args->left.get(), m_args->right.get()};
+        return {m_args->m_left.get(), m_args->m_right.get()};
     }
 
-    virtual SaxSplitIndex get_split_ind() const override { return m_args->split_ind; }
+    virtual SaxSplitIndex get_split_ind() const override { return m_args->m_split_ind; }
 
     virtual vec<SubsequenceInfo> get_subsequence_infos() const override { return {}; }
 

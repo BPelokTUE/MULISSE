@@ -35,13 +35,13 @@ template <typename T>
     requires DerivedFromEntryData<T>
 struct IndexEntry {
     /** @brief Position within the dataset and length of the subsequence summarized in the entry */
-    SubsequenceInfo subsequence_info;
+    SubsequenceInfo m_subs_info;
     /** @brief Multivariate time series summary */
-    vec<T> mts_summary;
+    vec<T> m_mts_summary;
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(subsequence_info, mts_summary);
+        ar(m_subs_info, m_mts_summary);
     }
 };
 

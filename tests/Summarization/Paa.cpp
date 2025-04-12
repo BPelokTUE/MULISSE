@@ -44,13 +44,13 @@ TEST_CASE("get_paa_entries_normalized works") {
 
     REQUIRE(entries.size() == expected.size());
     for (size_t i = 0; i < entries.size(); ++i) {
-        REQUIRE(entries[i].subsequence_info == expected[i].subsequence_info);
-        REQUIRE(entries[i].mts_summary.size() == expected[i].mts_summary.size());
-        for (size_t j = 0; j < entries[i].mts_summary.size(); ++j) {
-            REQUIRE(entries[i].mts_summary[j].size() == expected[i].mts_summary[j].size());
-            for (size_t k = 0; k < entries[i].mts_summary[j].size(); ++k) {
-                REQUIRE_EQ(entries[i].mts_summary[j].paa_values[k],
-                           doctest::Approx(expected[i].mts_summary[j].paa_values[k]).epsilon(1e-5));
+        REQUIRE(entries[i].m_subs_info == expected[i].m_subs_info);
+        REQUIRE(entries[i].m_mts_summary.size() == expected[i].m_mts_summary.size());
+        for (size_t j = 0; j < entries[i].m_mts_summary.size(); ++j) {
+            REQUIRE(entries[i].m_mts_summary[j].size() == expected[i].m_mts_summary[j].size());
+            for (size_t k = 0; k < entries[i].m_mts_summary[j].size(); ++k) {
+                REQUIRE_EQ(entries[i].m_mts_summary[j].m_paa_values[k],
+                           doctest::Approx(expected[i].m_mts_summary[j].m_paa_values[k]).epsilon(1e-5));
             }
         }
     }

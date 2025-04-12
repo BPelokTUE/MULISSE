@@ -65,5 +65,5 @@ std::optional<Real> iSaxWord::get_mid_breakpoint(SaxSegIndT segment_ind, const v
     // `* (alphabet_size_ratio >> 1)` goes to the lowest portion of the upper interval
     // (i.e. just above the mid breakpoint) in the desired resolution
     // `-1` adjusts for the fact that the breakpoints have an implicit -inf at the beginning
-    return breakpoints.at((symbol * 2 + 1) * (alphabet_ratio >> 1) - 1);
+    return breakpoints.at((symbol * 2 + 1u) * (alphabet_ratio >> 1) - 1);
 }

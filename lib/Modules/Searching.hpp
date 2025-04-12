@@ -39,25 +39,27 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
     vec<uptr<IFinalizedIndex<FTag>>> group_indexes(num_len_groups);
     vec<uptr<ISearchMethod<S, D, QS>>> search_methods(num_len_groups);
 
-    if (opts.l_per_group > 0) {
+    if (opts.m_l_per_group > 0) {
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {
             group_indexes[l_ind] = finalized_index_factory();
         }
-        index = std::make_unique<LengthGroupingFinalizedIndex<FTag>>(std::move(group_indexes), opts.l_min, opts.l_max);
+        index =
+            std::make_unique<LengthGroupingFinalizedIndex<FTag>>(std::move(group_indexes), opts.m_l_min, opts.m_l_max);
     } else {
         index = finalized_index_factory();
     }
 
-    index->load(index_path, opts.index_format);
+    index->load(index_path, opts.m_index_format);
 
-    if (opts.l_per_group > 0) {
+    if (opts.m_l_per_group > 0) {
         auto grouping_index = uptr<LengthGroupingFinalizedIndex<FTag>>(
             static_cast<LengthGroupingFinalizedIndex<FTag> *>(index.release()));
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {
             search_methods[l_ind] =
                 search_method_factory(uptr<IFinalizedIndex<FTag>>(grouping_index->release_index(l_ind)));
         }
-        return std::make_unique<LengthGroupingIndexSearch<S, D, QS>>(std::move(search_methods), opts.l_min, opts.l_max);
+        return std::make_unique<LengthGroupingIndexSearch<S, D, QS>>(std::move(search_methods), opts.m_l_min,
+                                                                     opts.m_l_max);
     } else {
         return search_method_factory(std::move(index));
     }
@@ -73,7 +75,7 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
  */
 template <SearchType S, DistanceType D, bool QS>
 uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
-    switch (opts.search_method_type) {
+    switch (opts.m_search_method_type) {
         case ISAX_ENVELOPE:
             return load_index_based_method<EnvelopeTag, S, D, QS>(
                 []() { return std::make_unique<iSaxFinalizedIndex<EnvelopeTag>>(); },
@@ -120,7 +122,7 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
                 [opts](uptr<IFinalizedIndex<EnvelopeTag>> index) {
                     return std::make_unique<FlatEnvelopeIndexSearch<S, D, QS>>(
                         uptr<FlatEnvelopeIndex>(static_cast<FlatEnvelopeIndex *>(index.release())),
-                        opts.use_priority_queue);
+                        opts.m_use_priority_queue);
                 },
                 opts);
         case SEQUENTIAL_SCAN:
@@ -149,11 +151,11 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
     QueryLogger::initialize(opts);
     auto &logger = QueryLogger::get_instance();
 
-    MtsNumChannelsT num_channels = RunSettings::get_instance().get_dataset_props().num_channels;
+    MtsNumChannelsT num_channels = RunSettings::get_instance().get_dataset_props().m_num_channels;
     vec<vec<Real>> query(num_channels);
 
     size_t query_count = 0, query_len = 0;
-    for (MtsNumChannelsT c = 0; !query_ifs.eof(); c = (c + 1) % num_channels) {
+    for (MtsNumChannelsT c = 0; !query_ifs.eof(); ++c) {
         str line;
         std::getline(query_ifs, line);
         std::istringstream iss(line);
@@ -167,7 +169,7 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
         }
         if (!query[c].empty()) {
             query_len = query[c].size();
-            if (opts.normalized) {
+            if (opts.m_normalized) {
                 auto [mu, sigma] = calculate_mu_and_sigma(sum, sq_sum, static_cast<uint>(query[c].size()));
                 for (size_t i = 0; i < query[c].size(); ++i) query[c][i] = (query[c][i] - mu) / sigma;
             }
@@ -218,6 +220,9 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
             logger.stop_timer(QC::TOTAL_TIME_S);
             logger.log_results(results);
             logger.write_entry();
+
+            // Reset the query channel index
+            c = 0;
         }
     }
     return 0;

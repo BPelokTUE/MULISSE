@@ -123,7 +123,7 @@ class LengthGroupingIndex : public IIndex<T> {
     uint m_l_min, m_l_max;
 
     inline uint get_entry_length_group(const IndexEntry<T> &entry) const {
-        return get_length_group(entry.subsequence_info.length, m_l_min, m_l_max, static_cast<uint>(m_indexes.size()));
+        return get_length_group(entry.m_subs_info.m_length, m_l_min, m_l_max, static_cast<uint>(m_indexes.size()));
     }
 };
 

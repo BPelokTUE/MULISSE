@@ -24,9 +24,9 @@ struct IIndexParams {
 };
 struct PaaIndexParams : virtual IIndexParams {
     /** @brief Length of the segments */
-    uint segment_len;
+    uint m_segment_len;
 
-    PaaIndexParams(uint segment_len) : segment_len(segment_len) {}
+    PaaIndexParams(uint segment_len) : m_segment_len(segment_len) {}
 };
 
 /** @brief Parameters for indexes that use envelopes */
@@ -34,27 +34,27 @@ struct EnvelopeIndexParams : virtual PaaIndexParams {
     SearchMethodType get_type() const override { return ENVELOPE; }
 
     /** @brief Size of the starting position groups */
-    uint pos_per_env;
+    uint m_pos_per_env;
 
     /**
      * @brief Constructor
      * @param pos_per_env Size of the starting position groups
      * @param segment_len Length of the segments
      */
-    EnvelopeIndexParams(uint pos_per_env, uint segment_len) : PaaIndexParams(segment_len), pos_per_env(pos_per_env) {}
+    EnvelopeIndexParams(uint pos_per_env, uint segment_len) : PaaIndexParams(segment_len), m_pos_per_env(pos_per_env) {}
 };
 
 /** @brief Parameters for indexes that use SAX */
 struct SaxIndexParams : virtual PaaIndexParams {
     /** @brief Number of symbols to use for the SAX representations */
-    SaxNumBitsT num_bits;
+    SaxNumBitsT m_num_bits;
     /** @brief Strategy for getting the breakpoints of the symbol intervals */
-    iSaxBreakpointStrategyType breakpoint_strategy_type;
+    iSaxBreakpointStrategyType m_breakpoint_strategy_type;
     /** @brief Only used for EntropyMaximizingStrategy: whether to select the segment with the min number of bits in
      * case of a tie */
-    bool min_num_bits_on_tie;
+    bool m_min_num_bits_on_tie;
     /** @brief Only used for FixedBreakpointStrategy: path to the plain text file to load the fixed breakpoints from */
-    str breakpoints_file;
+    str m_breakpoints_file;
 
     /**
      * @brief Constructor
@@ -68,10 +68,10 @@ struct SaxIndexParams : virtual PaaIndexParams {
     SaxIndexParams(uint segment_len, SaxNumBitsT num_bits, iSaxBreakpointStrategyType breakpoint_strategy_type,
                    bool min_num_bits_on_tie, const str &breakpoints_file)
         : PaaIndexParams(segment_len),
-          num_bits(num_bits),
-          breakpoint_strategy_type(breakpoint_strategy_type),
-          min_num_bits_on_tie(min_num_bits_on_tie),
-          breakpoints_file(breakpoints_file) {}
+          m_num_bits(num_bits),
+          m_breakpoint_strategy_type(breakpoint_strategy_type),
+          m_min_num_bits_on_tie(min_num_bits_on_tie),
+          m_breakpoints_file(breakpoints_file) {}
 };
 
 /** @brief Parameters for SAX Envelope indexes */
@@ -105,11 +105,11 @@ struct iSaxIndexParams : virtual PaaIndexParams, virtual SaxIndexParams {
     SearchMethodType get_type() const override { return ISAX; }
 
     /** @brief Maximum number of entries in a leaf */
-    size_t leaf_capacity;
+    size_t m_leaf_capacity;
     /** @brief Strategy for choosing the index to split on */
-    iSaxSplitStrategyType split_strategy_type;
+    iSaxSplitStrategyType m_split_strategy_type;
     /** @brief Maximum number of bits per segment */
-    SaxNumBitsT num_bits_limit;
+    SaxNumBitsT m_num_bits_limit;
 
     /**
      * @brief Constructor
@@ -130,9 +130,9 @@ struct iSaxIndexParams : virtual PaaIndexParams, virtual SaxIndexParams {
         : PaaIndexParams(segment_len),
           SaxIndexParams(segment_len, first_layer_num_bits, breakpoint_strategy_type, min_num_bits_on_tie,
                          breakpoints_file),
-          leaf_capacity(leaf_capacity),
-          split_strategy_type(split_strategy_type),
-          num_bits_limit(num_bits_limit) {}
+          m_leaf_capacity(leaf_capacity),
+          m_split_strategy_type(split_strategy_type),
+          m_num_bits_limit(num_bits_limit) {}
 };
 
 /** @brief Parameters for an iSAX envelope (ULISSE) index */
@@ -199,31 +199,31 @@ inline str add_archive_extension(const str &file_name, ArchiveType ar_type) {
 /** @brief Options for creating an index */
 struct IndexOptions {
     /** @brief Whether to Z-normalize the subsequences */
-    bool normalized;
+    bool m_normalized;
     /** @brief Whether to adapt the index properties to the dataset entries */
-    bool adapt;
+    bool m_adapt;
     /** @brief The type of the index method to use */
-    SearchMethodType index_method;
+    SearchMethodType m_index_method;
     /** @brief Format to save the index in */
-    ArchiveType index_format;
+    ArchiveType m_index_format;
     /** @brief Type of inserter to use */
-    EntryInserterType inserter_type;
+    EntryInserterType m_inserter_type;
     /** @brief Number of channels of each series */
-    MtsNumChannelsT num_channels;
+    MtsNumChannelsT m_num_channels;
     /** @brief Minimum accepted query length */
-    uint l_min;
+    uint m_l_min;
     /** @brief Maximum accepted query length */
-    uint l_max;
+    uint m_l_max;
     /** @brief Length time series in the dataset */
-    uint series_len;
+    uint m_series_len;
     /** @brief Lengths per group */
-    uint l_per_group;
+    uint m_l_per_group;
     /** @brief Unique pointer to the index parameters */
-    std::unique_ptr<IIndexParams> index_params;
+    std::unique_ptr<IIndexParams> m_index_params;
 
     /** @brief Get the number of lengths per length group */
     uint get_num_len_groups() const {
-        return l_per_group > 0 ? ((l_max - l_min + 1) + l_per_group - 1) / l_per_group : 1;
+        return m_l_per_group > 0 ? ((m_l_max - m_l_min + 1) + m_l_per_group - 1) / m_l_per_group : 1;
     }
 };
 

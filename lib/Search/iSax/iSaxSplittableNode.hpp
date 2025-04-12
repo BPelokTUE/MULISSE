@@ -15,17 +15,18 @@ struct FinalizationResult {
 };
 
 struct PaaFinalizationResult : public FinalizationResult {
-    uptr<iSaxFinalizedNode<PaaTag>> finalized_node;
+    uptr<iSaxFinalizedNode<PaaTag>> m_finalized_node;
 
-    PaaFinalizationResult(uptr<iSaxFinalizedNode<PaaTag>> finalized_node) : finalized_node(std::move(finalized_node)) {}
+    PaaFinalizationResult(uptr<iSaxFinalizedNode<PaaTag>> finalized_node)
+        : m_finalized_node(std::move(finalized_node)) {}
 };
 
 struct EnvelopeFinalizationResult : public FinalizationResult {
-    uptr<iSaxFinalizedNode<EnvelopeTag>> finalized_node;
-    vec<iSaxWord> isax_max;
+    uptr<iSaxFinalizedNode<EnvelopeTag>> m_finalized_node;
+    vec<iSaxWord> m_isax_max;
 
     EnvelopeFinalizationResult(uptr<iSaxFinalizedNode<EnvelopeTag>> finalized_node, vec<iSaxWord> isax_max)
-        : finalized_node(std::move(finalized_node)), isax_max(isax_max) {}
+        : m_finalized_node(std::move(finalized_node)), m_isax_max(isax_max) {}
 };
 
 /**

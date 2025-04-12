@@ -28,8 +28,8 @@ using SymbolTypePaa = typename SaxTraits<FTagPaa>::SymbolType;
 
 std::pair<uptr<iSaxFinalizedNode<FTagPaa>>, vec<vec<SymbolTypePaa>>> iSaxPaaIndex::finalize_first_layer_node(
     vec<vec<SaxSymbolT>> key_symbols, uptr<iSaxSplittableNode<Paa>> &node, iSaxWordSettings &isax_word_settings) {
-    MtsNumChannelsT num_channels = m_series_isax_prop->num_channels;
-    SaxSegIndT num_seg_per_channel = m_series_isax_prop->num_seg_per_channel;
+    MtsNumChannelsT num_channels = m_series_isax_prop->m_num_channels;
+    SaxSegIndT num_seg_per_channel = m_series_isax_prop->m_num_seg_per_channel;
 
     vec<vec<SymbolTypePaa>> symbols(num_channels, vec<SymbolTypePaa>(num_seg_per_channel));
     for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
@@ -52,8 +52,8 @@ std::pair<uptr<iSaxFinalizedNode<FTagEnv>>, vec<vec<SymbolTypeEnv>>> iSaxEnvelop
     vec<vec<SaxSymbolT>> key_symbols, uptr<iSaxSplittableNode<Envelope>> &node, iSaxWordSettings &isax_word_settings) {
     auto [finalized_node, isax_max] = get_envelope_node_finalization_result(node, isax_word_settings);
 
-    MtsNumChannelsT num_channels = m_series_isax_prop->num_channels;
-    SaxSegIndT num_seg_per_channel = m_series_isax_prop->num_seg_per_channel;
+    MtsNumChannelsT num_channels = m_series_isax_prop->m_num_channels;
+    SaxSegIndT num_seg_per_channel = m_series_isax_prop->m_num_seg_per_channel;
 
     vec<vec<SymbolTypeEnv>> symbols(num_channels, vec<SymbolTypeEnv>(num_seg_per_channel));
     SaxNumBitsT shift = m_alphabet_num_bits - m_first_layer_num_bits;

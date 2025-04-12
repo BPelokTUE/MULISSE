@@ -10,9 +10,9 @@ void check_envelope_equality(const vec<vec<Envelope>> &expected, const vec<vec<E
     for (size_t i = 0; i < expected.size(); i++) {
         REQUIRE(expected[i].size() == actual[i].size());
         for (size_t j = 0; j < expected[i].size(); j++) {
-            for (size_t k = 0; k < expected[i][j].lower.size(); k++) {
-                REQUIRE(expected[i][j].lower[k] == doctest::Approx(actual[i][j].lower[k]));
-                REQUIRE(expected[i][j].upper[k] == doctest::Approx(actual[i][j].upper[k]));
+            for (size_t k = 0; k < expected[i][j].m_lower.size(); k++) {
+                REQUIRE(expected[i][j].m_lower[k] == doctest::Approx(actual[i][j].m_lower[k]));
+                REQUIRE(expected[i][j].m_upper[k] == doctest::Approx(actual[i][j].m_upper[k]));
             }
         }
     }
@@ -26,7 +26,7 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
     SaxNumBitsT breakpoint_num_bits = 2;
     iSaxProperties isax_props = {33, 3, nullptr, breakpoints, breakpoint_num_bits};
 
-    auto series_isax_prop = std::make_unique<SeriesISaxEnvelopeProperties>(isax_props.segment_len, 100, 1, 3, 11);
+    auto series_isax_prop = std::make_unique<SeriesISaxEnvelopeProperties>(isax_props.m_segment_len, 100, 1, 3, 11);
     SaxSplitIndex split1{0, 0}, split2{1, 0}, split3{0, 0};
 
     fakeit::When(Method(run_settings_mock, get_isax_props)).AlwaysReturn(isax_props);
@@ -282,7 +282,7 @@ TEST_CASE("iSaxIndex insert MTS envelope works") {
     vec<Real> breakpoints = {-2.0, 0.0, 2.0};
     SaxNumBitsT breakpoint_num_bits = 2;
     iSaxProperties isax_props = {33, 3, nullptr, breakpoints, breakpoint_num_bits};
-    auto series_isax_prop = std::make_unique<SeriesISaxEnvelopeProperties>(isax_props.segment_len, 100, 3, 2, 11);
+    auto series_isax_prop = std::make_unique<SeriesISaxEnvelopeProperties>(isax_props.m_segment_len, 100, 3, 2, 11);
     SaxSplitIndex split1{0, 1}, split2{1, 2};
 
     fakeit::When(Method(run_settings_mock, get_isax_props)).AlwaysReturn(isax_props);

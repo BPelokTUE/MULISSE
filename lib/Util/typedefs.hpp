@@ -60,38 +60,41 @@ using fftwr_plan = fftwf_plan;
 #endif
 
 struct SaxSplitIndex {
-    SaxSegIndT seg_ind;
-    MtsNumChannelsT channel;
+    SaxSegIndT m_seg_ind;
+    MtsNumChannelsT m_channel;
 
-    bool operator==(const SaxSplitIndex &other) const { return seg_ind == other.seg_ind && channel == other.channel; }
+    bool operator==(const SaxSplitIndex &other) const {
+        return m_seg_ind == other.m_seg_ind && m_channel == other.m_channel;
+    }
 
     // Required for Cereal (de)serialization
     friend class cereal::access;
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(seg_ind, channel);
+        ar(m_seg_ind, m_channel);
     }
 };
 
 struct SubsequenceInfo {
     /** @brief Index of the series within the file */
-    uint series_ind;
+    uint m_series_ind;
     /** @brief Index of the start position of the subsequence within the series */
-    uint start_pos;
+    uint m_start_pos;
     /** @brief Length of the subsequence */
-    uint length;
+    uint m_length;
 
     bool operator<(const SubsequenceInfo &other) const {
-        return series_ind < other.series_ind || (series_ind == other.series_ind && start_pos < other.start_pos);
+        return m_series_ind < other.m_series_ind ||
+               (m_series_ind == other.m_series_ind && m_start_pos < other.m_start_pos);
     }
 
     bool operator==(const SubsequenceInfo &other) const {
-        return series_ind == other.series_ind && start_pos == other.start_pos;
+        return m_series_ind == other.m_series_ind && m_start_pos == other.m_start_pos;
     }
 
     std::streampos get_file_pos(uint series_len, MtsNumChannelsT num_channels, MtsNumChannelsT channel = 0) const {
-        return ((series_ind * num_channels + channel) * series_len + start_pos) * sizeof(Real);
+        return ((m_series_ind * num_channels + channel) * series_len + m_start_pos) * sizeof(Real);
     }
 
     // Required for Cereal (de)serialization
@@ -99,7 +102,7 @@ struct SubsequenceInfo {
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(series_ind, start_pos, length);
+        ar(m_series_ind, m_start_pos, m_length);
     }
 };
 

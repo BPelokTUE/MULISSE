@@ -46,13 +46,13 @@ void Logger::file_setup(const str &file_path, const vec<str> &header) {
 }
 
 // DatasetLogger
-RandomWalkLogAttributes::RandomWalkLogAttributes(Real noise, int seed) : noise(noise), seed(seed) {}
+RandomWalkLogAttributes::RandomWalkLogAttributes(Real noise, int seed) : m_noise(noise), m_seed(seed) {}
 
 DatasetType RandomWalkLogAttributes::get_type() { return RANDOM_WALK; }
 
 CsvDatasetLogAttributes::CsvDatasetLogAttributes(const vec<str> &source_csvs, uint series_generated, uint l_min,
                                                  uint l_max, int seed)
-    : source_csvs(source_csvs), series_generated(series_generated), l_min(l_min), l_max(l_max), seed(seed) {}
+    : m_source_csvs(source_csvs), m_series_generated(series_generated), m_l_min(l_min), m_l_max(l_max), m_seed(seed) {}
 
 DatasetType CsvDatasetLogAttributes::get_type() { return CSV; }
 
@@ -73,22 +73,22 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
     switch (attributes->get_type()) {
         case RANDOM_WALK: {
             auto *rw_attributes = static_cast<RandomWalkLogAttributes *>(attributes.get());
-            sd_str = to_string(rw_attributes->noise);
-            seed_str = to_string(rw_attributes->seed);
+            sd_str = to_string(rw_attributes->m_noise);
+            seed_str = to_string(rw_attributes->m_seed);
             break;
         }
         case CSV: {
             auto *csv_attributes = static_cast<CsvDatasetLogAttributes *>(attributes.get());
-            num_series = csv_attributes->series_generated;
-            const vec<str> &source_csvs = csv_attributes->source_csvs;
+            num_series = csv_attributes->m_series_generated;
+            const vec<str> &source_csvs = csv_attributes->m_source_csvs;
             num_channels = static_cast<MtsNumChannelsT>(source_csvs.size());
             for (uint i = 0; i < source_csvs.size(); ++i) {
                 source_csv_str += source_csvs[i];
                 if (i < source_csvs.size() - 1) source_csv_str += instance.ITEM_SEP;
             }
-            l_min_str = to_string(csv_attributes->l_min);
-            l_max_str = to_string(csv_attributes->l_max);
-            seed_str = to_string(csv_attributes->seed);
+            l_min_str = to_string(csv_attributes->m_l_min);
+            l_max_str = to_string(csv_attributes->m_l_max);
+            seed_str = to_string(csv_attributes->m_seed);
             break;
         }
     }
@@ -125,16 +125,16 @@ void QuerySetLogger::write_entry(QuerySetOptions &opts) {
     instance.write_row(query_settings_path,
                        {
                            {QSC::ID, to_string(instance.determine_index(query_settings_path))},
-                           {QSC::DATASET_FILE, RS.get_dataset_props().file},
-                           {QSC::QUERY_FILE, RS.get_query_props().file},
-                           {QSC::NUM_QUERIES, to_string(opts.num_queries)},
-                           {QSC::L_MIN, format_num_param(opts.l_min)},
-                           {QSC::L_MAX, format_num_param(opts.l_max)},
-                           {QSC::EXACT_LENGTHS, instance.get_num_vec_str(opts.exact_lengths)},
-                           {QSC::USED_CHANNELS, format_num_param(opts.used_channels)},
-                           {QSC::CHANNEL_MASK, instance.get_num_vec_str(opts.channel_mask)},
-                           {QSC::NOISE, to_string(opts.noise)},
-                           {QSC::SEED, to_string(opts.seed)},
+                           {QSC::DATASET_FILE, RS.get_dataset_props().m_file},
+                           {QSC::QUERY_FILE, RS.get_query_props().m_file},
+                           {QSC::NUM_QUERIES, to_string(opts.m_num_queries)},
+                           {QSC::L_MIN, format_num_param(opts.m_l_min)},
+                           {QSC::L_MAX, format_num_param(opts.m_l_max)},
+                           {QSC::EXACT_LENGTHS, instance.get_num_vec_str(opts.m_exact_lengths)},
+                           {QSC::USED_CHANNELS, format_num_param(opts.m_used_channels)},
+                           {QSC::CHANNEL_MASK, instance.get_num_vec_str(opts.m_channel_mask)},
+                           {QSC::NOISE, to_string(opts.m_noise)},
+                           {QSC::SEED, to_string(opts.m_seed)},
                        },
                        QUERY_SET_SETTINGS_COL_ENUMS);
 #endif  // DISABLE_LOGGING
@@ -160,46 +160,46 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
     size_t leaf_capacity = 0;
     str brs_str = "", sps_str = "", min_num_bits_on_tie_str = "", method_type_str = "";
 
-    if (index_options.index_params) {
-        auto method_type = index_options.index_params->get_type();
+    if (index_options.m_index_params) {
+        auto method_type = index_options.m_index_params->get_type();
         method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(method_type);
 
-        auto *paa_params = dynamic_cast<PaaIndexParams *>(index_options.index_params.get());
-        segment_len = paa_params->segment_len;
+        auto *paa_params = dynamic_cast<PaaIndexParams *>(index_options.m_index_params.get());
+        segment_len = paa_params->m_segment_len;
 
         if (std::find(METHODS_W_SAX.begin(), METHODS_W_SAX.end(), method_type) != METHODS_W_SAX.end()) {
-            auto *sax_params = dynamic_cast<SaxIndexParams *>(index_options.index_params.get());
-            first_layer_num_bits = sax_params->num_bits;
-            brs_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(sax_params->breakpoint_strategy_type);
+            auto *sax_params = dynamic_cast<SaxIndexParams *>(index_options.m_index_params.get());
+            first_layer_num_bits = sax_params->m_num_bits;
+            brs_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(sax_params->m_breakpoint_strategy_type);
 
             if (std::find(METHODS_W_ISAX.begin(), METHODS_W_ISAX.end(), method_type) != METHODS_W_ISAX.end()) {
-                auto *isax_params = dynamic_cast<iSaxIndexParams *>(index_options.index_params.get());
-                leaf_capacity = isax_params->leaf_capacity;
+                auto *isax_params = dynamic_cast<iSaxIndexParams *>(index_options.m_index_params.get());
+                leaf_capacity = isax_params->m_leaf_capacity;
 
-                auto split_strategy = isax_params->split_strategy_type;
+                auto split_strategy = isax_params->m_split_strategy_type;
                 sps_str = ISAX_SPLIT_STRATEGY_TO_STR.at(split_strategy);
 
                 if (split_strategy == ENTROPY_MAXIMIZING)
-                    min_num_bits_on_tie_str = to_string(isax_params->min_num_bits_on_tie);
-                num_bits_limit = isax_params->num_bits_limit;
+                    min_num_bits_on_tie_str = to_string(isax_params->m_min_num_bits_on_tie);
+                num_bits_limit = isax_params->m_num_bits_limit;
             }
         }
         if (std::find(METHODS_W_ENVELOPE.begin(), METHODS_W_ENVELOPE.end(), method_type) != METHODS_W_ENVELOPE.end()) {
-            auto *env_params = dynamic_cast<EnvelopeIndexParams *>(index_options.index_params.get());
-            segment_len = env_params->segment_len;
-            pos_per_env = env_params->pos_per_env;
+            auto *env_params = dynamic_cast<EnvelopeIndexParams *>(index_options.m_index_params.get());
+            segment_len = env_params->m_segment_len;
+            pos_per_env = env_params->m_pos_per_env;
         }
     }
 
     instance.m_columns = {
         {ISC::ID, to_string(instance.determine_index(instance.m_index_settings_path))},
-        {ISC::DATASET_FILE, RS.m_dataset_props.file},
+        {ISC::DATASET_FILE, RS.m_dataset_props.m_file},
         {ISC::INDEX_FILE, RS.m_index_file},
         {ISC::FFTS_FILE, RS.m_ffts_file},
-        {ISC::L_MIN, format_num_param(index_options.l_min)},
-        {ISC::L_MAX, format_num_param(index_options.l_max)},
-        {ISC::L_PER_GROUP, format_num_param(index_options.l_per_group)},
-        {ISC::NORMALIZED, to_string(index_options.normalized)},
+        {ISC::L_MIN, format_num_param(index_options.m_l_min)},
+        {ISC::L_MAX, format_num_param(index_options.m_l_max)},
+        {ISC::L_PER_GROUP, format_num_param(index_options.m_l_per_group)},
+        {ISC::NORMALIZED, to_string(index_options.m_normalized)},
         {ISC::INDEX_TYPE, method_type_str},
         {ISC::SEGMENT_LENGTH, format_num_param(segment_len)},
         {ISC::POS_PER_ENV, format_num_param(pos_per_env)},
@@ -209,8 +209,8 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         {ISC::SPLIT_STRATEGY, sps_str},
         {ISC::MIN_NUM_BITS_ON_TIE, min_num_bits_on_tie_str},
         {ISC::NUM_BITS_LIMIT, format_num_param(num_bits_limit)},
-        {ISC::ADAPT_TO_DATASET, to_string(index_options.adapt)},
-        {ISC::INSERTER_TYPE, ENTRY_INSERTER_TYPE_TO_STR.at(index_options.inserter_type)},
+        {ISC::ADAPT_TO_DATASET, to_string(index_options.m_adapt)},
+        {ISC::INSERTER_TYPE, ENTRY_INSERTER_TYPE_TO_STR.at(index_options.m_inserter_type)},
     };
     for (const auto &col : INDEX_COUNT_COLUMNS) instance.m_count_cols[col] = 0;
     for (const auto &col : INDEX_TIME_COLUMNS) instance.m_time_cols_duration[col] = 0;
@@ -247,39 +247,39 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
         std::ifstream query_stream_read(RS.get_query_path());
         str line;
         for (; !query_stream_read.eof(); ++num_queries) std::getline(query_stream_read, line);
-        num_queries /= RS.m_dataset_props.num_channels;
+        num_queries /= RS.m_dataset_props.m_num_channels;
     }
     // Determine query params (r or k)
-    Real r_range_r = search_options.search_type == SearchType::R_RANGE ? search_options.r_range_r : 0;
-    uint knn_k = search_options.search_type == SearchType::KNN ? search_options.knn_k : 0;
+    Real r_range_r = search_options.m_search_type == SearchType::R_RANGE ? search_options.m_r_range_r : 0;
+    uint knn_k = search_options.m_search_type == SearchType::KNN ? search_options.m_knn_k : 0;
 
     str early_abandon_str = "";
-    if (search_options.distance_type == DistanceType::ED)
-        early_abandon_str = to_string(search_options.use_early_abandoning);
+    if (search_options.m_distance_type == DistanceType::ED)
+        early_abandon_str = to_string(search_options.m_use_early_abandoning);
 
     str sort_query_str = "";
-    if (search_options.distance_type == DistanceType::ED) sort_query_str = to_string(search_options.sort_queries);
+    if (search_options.m_distance_type == DistanceType::ED) sort_query_str = to_string(search_options.m_sort_queries);
 
     str use_priority_queue_str = "";
-    if (search_options.search_method_type == ENVELOPE || search_options.search_method_type == SAX_ENVELOPE)
-        use_priority_queue_str = to_string(search_options.use_priority_queue);
+    if (search_options.m_search_method_type == ENVELOPE || search_options.m_search_method_type == SAX_ENVELOPE)
+        use_priority_queue_str = to_string(search_options.m_use_priority_queue);
 
     instance.write_row(search_settings_path,
                        {
                            {SSC::ID, instance.m_search_settings_id_str},
                            {SSC::INDEX_FILE, RS.m_index_file},
-                           {SSC::DATASET_FILE, RS.m_dataset_props.file},
+                           {SSC::DATASET_FILE, RS.m_dataset_props.m_file},
                            {SSC::FFTS_FILE, RS.m_ffts_file},
-                           {SSC::QUERY_FILE, RS.m_query_properties.file},
+                           {SSC::QUERY_FILE, RS.m_query_properties.m_file},
                            {SSC::NUM_QUERIES, to_string(num_queries)},
-                           {SSC::QUERY_TYPE, SEARCH_TYPE_TO_STR.at(search_options.search_type)},
+                           {SSC::QUERY_TYPE, SEARCH_TYPE_TO_STR.at(search_options.m_search_type)},
                            {SSC::R_RANGE_R, format_num_param(r_range_r)},
                            {SSC::KNN_K, format_num_param(knn_k)},
-                           {SSC::EXACT, to_string(search_options.exact)},
-                           {SSC::MAX_LEAVES_TO_VISIT, format_num_param(search_options.max_leaves_to_visit)},
-                           {SSC::NORMALIZED, to_string(search_options.normalized)},
-                           {SSC::SEARCH_METHOD, SEARCH_METHOD_TYPE_TO_STR.at(search_options.search_method_type)},
-                           {SSC::DISTANCE_MEASURE, DISTANCE_TYPE_TO_STR.at(search_options.distance_type)},
+                           {SSC::EXACT, to_string(search_options.m_exact)},
+                           {SSC::MAX_LEAVES_TO_VISIT, format_num_param(search_options.m_max_leaves_to_visit)},
+                           {SSC::NORMALIZED, to_string(search_options.m_normalized)},
+                           {SSC::SEARCH_METHOD, SEARCH_METHOD_TYPE_TO_STR.at(search_options.m_search_method_type)},
+                           {SSC::DISTANCE_MEASURE, DISTANCE_TYPE_TO_STR.at(search_options.m_distance_type)},
                            {SSC::EARLY_ABANDONING, early_abandon_str},
                            {SSC::SORT_QUERY, sort_query_str},
                            {SSC::USE_PRIORITY_QUEUE, use_priority_queue_str},
@@ -316,13 +316,13 @@ void QueryLogger::log_query(const vec<vec<Real>> &query) {
 }
 
 void QueryLogger::log_results(const SearchResults &results) {
-    for (auto result : results.results) {
-        auto [ts_index, ts_position, ts_length] = result.subs_info;
+    for (auto result : results.m_results) {
+        auto [ts_index, ts_position, ts_length] = result.m_subs_info;
         instance.m_collection_cols[QC::RESULT_SET_TS_INDICES].push_back(to_string(ts_index));
         instance.m_collection_cols[QC::RESULT_SET_TS_POSITIONS].push_back(to_string(ts_position));
-        instance.m_collection_cols[QC::RESULT_SET_DISTANCES].push_back(to_string(std::sqrt(result.distance)));
+        instance.m_collection_cols[QC::RESULT_SET_DISTANCES].push_back(to_string(std::sqrt(result.m_distance)));
     }
-    instance.m_settable_cols[QC::EXACT_RESULTS] = to_string(results.exact);
+    instance.m_settable_cols[QC::EXACT_RESULTS] = to_string(results.m_exact);
 }
 
 str QueryLogger::get_collection_str(QC col) {
@@ -358,71 +358,71 @@ void QueryLogger::write_entry() {
 // Stats
 
 AttributeStats::AttributeStats() {
-    min = INF;
-    max = sum = sum_sq = 0;
+    m_min = INF;
+    m_max = m_sum = m_sum_sq = 0;
 }
 
 void AttributeStats::update(Real value) {
-    min = std::min(min, value);
-    max = std::max(max, value);
-    sum += value;
-    sum_sq += value * value;
+    m_min = std::min(m_min, value);
+    m_max = std::max(m_max, value);
+    m_sum += value;
+    m_sum_sq += value * value;
 }
 
 void AttributeStats::update(Real value, size_t count) {
-    min = std::min(min, value);
-    max = std::max(max, value);
-    sum += value * R(count);
-    sum_sq += value * value * R(count);
+    m_min = std::min(m_min, value);
+    m_max = std::max(m_max, value);
+    m_sum += value * R(count);
+    m_sum_sq += value * value * R(count);
 }
 
 void AttributeStats::calculate(uint count) {
-    auto mu_and_sigma = calculate_mu_and_sigma(sum, sum_sq, count);
-    mean = mu_and_sigma.first;
-    st_dev = mu_and_sigma.second;
+    auto mu_and_sigma = calculate_mu_and_sigma(m_sum, m_sum_sq, count);
+    m_mean = mu_and_sigma.first;
+    m_st_dev = mu_and_sigma.second;
 }
 
 void QueryStats::calculate() {
-    dist_stats.calculate(static_cast<uint>(subs_count));
-    rc_using_max = (dist_stats.max - dist_stats.min) / dist_stats.min;
-    rc_using_mean = dist_stats.mean / dist_stats.min;
+    m_dist_stats.calculate(static_cast<uint>(m_subs_count));
+    m_rc_using_max = (m_dist_stats.m_max - m_dist_stats.m_min) / m_dist_stats.m_min;
+    m_rc_using_mean = m_dist_stats.m_mean / m_dist_stats.m_min;
 }
 
 void IndexStats::update_leaf_stats(size_t num_entries, size_t height) {
-    leaf_size_stats.update(R(num_entries));
-    leaf_height_stats.update(R(height));
-    ++leaf_count;
+    m_leaf_size_stats.update(R(num_entries));
+    m_leaf_height_stats.update(R(height));
+    ++m_leaf_count;
 }
 
 void IndexStats::update_seg_stats(Real lower, Real upper, size_t count) {
     if (count == 0) return;
 
     bool lower_inf = lower == -INF, upper_inf = upper == INF;
-    num_inf_lower += lower_inf;
-    num_inf_upper += upper_inf;
+    m_num_inf_lower += lower_inf;
+    m_num_inf_upper += upper_inf;
     if (lower_inf || upper_inf) return;
 
-    seg_lower_stats.update(lower, count);
-    seg_upper_stats.update(upper, count);
-    seg_range_stats.update(upper - lower, count);
-    seg_count += count;
+    m_seg_lower_stats.update(lower, count);
+    m_seg_upper_stats.update(upper, count);
+    m_seg_range_stats.update(upper - lower, count);
+    m_seg_count += count;
 }
 
 void IndexStats::calculate() {
-    vec<AttributeStats *> leaf_type_stats = {&leaf_size_stats, &leaf_height_stats},
-                          seg_type_stats = {&seg_range_stats, &seg_lower_stats, &seg_upper_stats};
-    for (AttributeStats *leaf_stats : leaf_type_stats) leaf_stats->calculate(static_cast<uint>(leaf_count));
-    for (AttributeStats *seg_stats : seg_type_stats) seg_stats->calculate(static_cast<uint>(seg_count));
+    vec<AttributeStats *> leaf_type_stats = {&m_leaf_size_stats, &m_leaf_height_stats},
+                          seg_type_stats = {&m_seg_range_stats, &m_seg_lower_stats, &m_seg_upper_stats};
+    for (AttributeStats *leaf_stats : leaf_type_stats) leaf_stats->calculate(static_cast<uint>(m_leaf_count));
+    for (AttributeStats *seg_stats : seg_type_stats) seg_stats->calculate(static_cast<uint>(m_seg_count));
 }
 
 // QueryStatsLogger
 
 // clang-format off
 #define ADD_STATS_TO_ROW(ENUM, SUFFIX, stats)       \
-    {ENUM::MIN_##SUFFIX, to_string(stats.min)},   \
-    {ENUM::MAX_##SUFFIX, to_string(stats.max)},   \
-    {ENUM::MEAN_##SUFFIX, to_string(stats.mean)}, \
-    {ENUM::STD_##SUFFIX, to_string(stats.st_dev)}
+    {ENUM::MIN_##SUFFIX, to_string(stats.m_min)},   \
+    {ENUM::MAX_##SUFFIX, to_string(stats.m_max)},   \
+    {ENUM::MEAN_##SUFFIX, to_string(stats.m_mean)}, \
+    {ENUM::STD_##SUFFIX, to_string(stats.m_st_dev)}
 // clang-format on
 
 using QSTC = QueryStatsColumn;
@@ -432,8 +432,8 @@ void QueryStatsLogger::write_entry(uint query_id, const vec<vec<Real>> &query, Q
     QueryStatsLogger instance;
     auto &RS = RunSettings::get_instance();
 
-    str dataset_file = RS.m_dataset_props.file;
-    str query_file = RS.m_query_properties.file;
+    str dataset_file = RS.m_dataset_props.m_file;
+    str query_file = RS.m_query_properties.m_file;
 
     size_t query_len = 0;
     str query_channels_str = "";
@@ -453,9 +453,9 @@ void QueryStatsLogger::write_entry(uint query_id, const vec<vec<Real>> &query, Q
                            {QSTC::QUERY_FILE, query_file},
                            {QSTC::QUERY_LENGTH, query_len_str},
                            {QSTC::QUERY_CHANNELS, query_channels_str},
-                           ADD_STATS_TO_ROW(QSTC, DIST, stats.dist_stats),
-                           {QSTC::RC_USING_MAX, to_string(stats.rc_using_max)},
-                           {QSTC::RC_USING_MEAN, to_string(stats.rc_using_mean)},
+                           ADD_STATS_TO_ROW(QSTC, DIST, stats.m_dist_stats),
+                           {QSTC::RC_USING_MAX, to_string(stats.m_rc_using_max)},
+                           {QSTC::RC_USING_MEAN, to_string(stats.m_rc_using_mean)},
                            {QSTC::NORMALIZED, to_string(normalized)},
                        },
                        QUERY_STATS_COL_ENUMS);
@@ -477,13 +477,13 @@ void IndexStatsLogger::write_entry(const IndexStats &stats) {
     instance.write_row(index_stats_path,
                        {
                            {ISTC::INDEX_FILE, index_file},
-                           ADD_STATS_TO_ROW(ISTC, LEAF_SIZE, stats.leaf_size_stats),
-                           ADD_STATS_TO_ROW(ISTC, LEAF_HEIGHT, stats.leaf_height_stats),
-                           ADD_STATS_TO_ROW(ISTC, SEG_RANGE, stats.seg_range_stats),
-                           ADD_STATS_TO_ROW(ISTC, SEG_LOWER, stats.seg_lower_stats),
-                           ADD_STATS_TO_ROW(ISTC, SEG_UPPER, stats.seg_upper_stats),
-                           {ISTC::NUM_INF_LOWER, to_string(stats.num_inf_lower)},
-                           {ISTC::NUM_INF_UPPER, to_string(stats.num_inf_upper)},
+                           ADD_STATS_TO_ROW(ISTC, LEAF_SIZE, stats.m_leaf_size_stats),
+                           ADD_STATS_TO_ROW(ISTC, LEAF_HEIGHT, stats.m_leaf_height_stats),
+                           ADD_STATS_TO_ROW(ISTC, SEG_RANGE, stats.m_seg_range_stats),
+                           ADD_STATS_TO_ROW(ISTC, SEG_LOWER, stats.m_seg_lower_stats),
+                           ADD_STATS_TO_ROW(ISTC, SEG_UPPER, stats.m_seg_upper_stats),
+                           {ISTC::NUM_INF_LOWER, to_string(stats.m_num_inf_lower)},
+                           {ISTC::NUM_INF_UPPER, to_string(stats.m_num_inf_upper)},
                        },
                        INDEX_STATS_COL_ENUMS);
 #endif  // DISABLE_LOGGING

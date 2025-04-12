@@ -12,9 +12,9 @@ DEFINE_ENUM_CONSTS_NO_EXTRA(SearchType, SEARCH_TYPE, false);
 /** @brief Search result */
 struct SearchResult {
     /** @brief Position within the dataset and length of the result */
-    SubsequenceInfo subs_info;
+    SubsequenceInfo m_subs_info;
     /** @brief Distance of the result to the query */
-    Real distance;
+    Real m_distance;
 
     /**
      * @brief Less than operator
@@ -23,16 +23,16 @@ struct SearchResult {
      * @return `true` if the distance of this result is less than the distance of the other result
      */
     bool operator<(const SearchResult &other) const {
-        return distance < other.distance || (distance == other.distance && subs_info < other.subs_info);
+        return m_distance < other.m_distance || (m_distance == other.m_distance && m_subs_info < other.m_subs_info);
     }
 };
 
 /** @brief List of search results and whether they are known to be exact */
 struct SearchResults {
     /** @brief List of search results */
-    vec<SearchResult> results;
+    vec<SearchResult> m_results;
     /** @brief Whether the results are known to be exact */
-    bool exact = false;
+    bool m_exact = false;
 };
 
 #endif  // SEARCH_TYPE_HPP

@@ -267,8 +267,8 @@ struct RandomWalkLogAttributes : IDatasetLogAttributes {
 
     DatasetType get_type() override;
 
-    Real noise;
-    int seed;
+    Real m_noise;
+    int m_seed;
 };
 
 struct CsvDatasetLogAttributes : IDatasetLogAttributes {
@@ -276,9 +276,9 @@ struct CsvDatasetLogAttributes : IDatasetLogAttributes {
 
     DatasetType get_type() override;
 
-    vec<str> source_csvs;
-    uint series_generated, l_min, l_max;
-    int seed;
+    vec<str> m_source_csvs;
+    uint m_series_generated, m_l_min, m_l_max;
+    int m_seed;
 };
 
 /** @brief Class for logging dataset settings */
@@ -479,7 +479,7 @@ class QueryLogger : public Logger {
 // Statistics
 
 struct AttributeStats {
-    Real min, max, mean, st_dev, sum, sum_sq;
+    Real m_min, m_max, m_mean, m_st_dev, m_sum, m_sum_sq;
 
     AttributeStats();
 
@@ -491,9 +491,9 @@ struct AttributeStats {
 };
 
 struct QueryStats {
-    AttributeStats dist_stats;
-    size_t subs_count = 0;
-    Real rc_using_max, rc_using_mean;
+    AttributeStats m_dist_stats;
+    size_t m_subs_count = 0;
+    Real m_rc_using_max, m_rc_using_mean;
 
     QueryStats() = default;
 
@@ -501,14 +501,14 @@ struct QueryStats {
 };
 
 struct IndexStats {
-    AttributeStats leaf_size_stats;
-    AttributeStats leaf_height_stats;
-    AttributeStats seg_range_stats;
-    AttributeStats seg_lower_stats;
-    AttributeStats seg_upper_stats;
+    AttributeStats m_leaf_size_stats;
+    AttributeStats m_leaf_height_stats;
+    AttributeStats m_seg_range_stats;
+    AttributeStats m_seg_lower_stats;
+    AttributeStats m_seg_upper_stats;
 
-    size_t leaf_count = 0, seg_count = 0;
-    size_t num_inf_lower = 0, num_inf_upper = 0;
+    size_t m_leaf_count = 0, m_seg_count = 0;
+    size_t m_num_inf_lower = 0, m_num_inf_upper = 0;
 
     IndexStats() = default;
 

@@ -32,15 +32,15 @@ void IndexAnalyzer<FlatEnvelopeIndex, EnvelopeTag>::analyze() {
     if (!index) throw std::runtime_error("Could not cast index to FlatEnvelopeIndex");
 
     auto &RS = RunSettings::get_instance();
-    MtsNumChannelsT num_channels = RS.get_dataset_props().num_channels;
+    MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
 
     IndexStats stats;
     for (const IndexEntry<Envelope> &entry : index->get_entries()) {
         stats.update_leaf_stats(1, 1);
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-            auto &summary = entry.mts_summary[c];
-            for (SaxSegIndT s = 0; s < summary.lower.size(); ++s) {
-                Real lower = summary.lower[s], upper = summary.upper[s];
+            auto &summary = entry.m_mts_summary[c];
+            for (SaxSegIndT s = 0; s < summary.m_lower.size(); ++s) {
+                Real lower = summary.m_lower[s], upper = summary.m_upper[s];
                 stats.update_seg_stats(lower, upper);
             }
         }

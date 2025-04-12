@@ -41,8 +41,8 @@ TEST_CASE("raw envelope happy-flow works") {
     for (size_t e = 0; e < envelopes.size(); ++e) {
         REQUIRE(envelopes[e].size() == expected[e].size());
         for (size_t i = 0; i < envelopes[e].size(); ++i) {
-            REQUIRE(envelopes[e].lower[i] == doctest::Approx(expected[e].lower[i]));
-            REQUIRE(envelopes[e].upper[i] == doctest::Approx(expected[e].upper[i]));
+            REQUIRE(envelopes[e].m_lower[i] == doctest::Approx(expected[e].m_lower[i]));
+            REQUIRE(envelopes[e].m_upper[i] == doctest::Approx(expected[e].m_upper[i]));
         }
     }
 }
@@ -76,8 +76,8 @@ TEST_CASE("normalized envelope happy-flow works") {
     for (size_t e = 0; e < envelopes.size(); ++e) {
         REQUIRE(envelopes[e].size() == expected[e].size());
         for (size_t i = 0; i < envelopes[e].size(); ++i) {
-            REQUIRE(envelopes[e].lower[i] == doctest::Approx(expected[e].lower[i]));
-            REQUIRE(envelopes[e].upper[i] == doctest::Approx(expected[e].upper[i]));
+            REQUIRE(envelopes[e].m_lower[i] == doctest::Approx(expected[e].m_lower[i]));
+            REQUIRE(envelopes[e].m_upper[i] == doctest::Approx(expected[e].m_upper[i]));
         }
     }
 }

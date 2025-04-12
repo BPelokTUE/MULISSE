@@ -7,24 +7,25 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/memory.hpp>
 
+#include "Util/typedefs.hpp"
+#include "Util/utilities.hpp"
+#include "Util/Logger.hpp"
 #include "Search/Options/SearchOptions.hpp"
 #include "Search/ResultSet.hpp"
 #include "Search/Index.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
 #include "Summarization/Paa.hpp"
-#include "Util/typedefs.hpp"
-#include "Util/Logger.hpp"
 
 /** @brief Properties of time series for iSAX indexes */
 struct SeriesISaxProperties {
     /** @brief Length of the segments */
-    uint segment_len;
+    uint m_segment_len;
     /** @brief Length of the time series in the dataset */
-    uint series_len;
+    uint m_series_len;
     /** @brief Number of channels of each series */
-    MtsNumChannelsT num_channels;
+    MtsNumChannelsT m_num_channels;
     /** @brief Number of segments per channel */
-    SaxSegIndT num_seg_per_channel;
+    SaxSegIndT m_num_seg_per_channel;
 
     virtual ~SeriesISaxProperties() = default;
 
@@ -38,14 +39,14 @@ struct SeriesISaxProperties {
 
     template <class Archive>
     void serialize(Archive& ar) {
-        ar(segment_len, series_len, num_channels, num_seg_per_channel);
+        ar(m_segment_len, m_series_len, m_num_channels, m_num_seg_per_channel);
     }
 };
 
 /** @brief Properties of time series for iSAX envelope indexes */
 struct SeriesISaxEnvelopeProperties : SeriesISaxProperties {
     /** @brief Size of starting position groups */
-    uint pos_per_env;
+    uint m_pos_per_env;
 
     SeriesISaxEnvelopeProperties(uint segment_len, uint series_len, MtsNumChannelsT num_channels,
                                  SaxSegIndT num_seg_per_channel, uint pos_per_env);
@@ -57,7 +58,7 @@ struct SeriesISaxEnvelopeProperties : SeriesISaxProperties {
 
     template <class Archive>
     void serialize(Archive& ar) {
-        ar(cereal::base_class<SeriesISaxProperties>(this), pos_per_env);
+        ar(cereal::base_class<SeriesISaxProperties>(this), m_pos_per_env);
     }
 };
 
@@ -70,11 +71,11 @@ template <typename FTag>
 struct PQueueISaxEntry {
     using iSaxType = typename SaxTraits<FTag>::iSaxType;
 
-    Real min_dist_squared;
-    vec<iSaxType> isax_words;
-    const iSaxFinalizedNode<FTag>* node;
+    Real m_min_dist_squared;
+    vec<iSaxType> m_isax_words;
+    const iSaxFinalizedNode<FTag>* m_node;
 
-    bool operator<(const PQueueISaxEntry& other) const { return min_dist_squared > other.min_dist_squared; }
+    bool operator<(const PQueueISaxEntry& other) const { return m_min_dist_squared > other.m_min_dist_squared; }
 };
 
 /**
@@ -110,7 +111,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
           m_first_layer_num_bits(first_layer_num_bits),
           m_alphabet_num_bits(alphabet_num_bits),
           m_breakpoints(std::move(breakpoints)) {
-        assert(m_series_isax_prop->segment_len > 0);
+        assert(m_series_isax_prop->m_segment_len > 0);
         assert(m_first_layer_symbols.size() > 0);
     }
 
@@ -174,9 +175,10 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
                          const DistanceMeasure<S, D, QS>& distance_measure, std::ifstream& dataset_ifs,
                          const vec<uint>* real_query_inds) const override {
         auto* series_isax_prop = m_index->get_series_isax_prop();
-        uint series_len = series_isax_prop->series_len;
-        uint segment_len = series_isax_prop->segment_len;
-        MtsNumChannelsT num_channels = series_isax_prop->num_channels;
+        uint series_len = series_isax_prop->m_series_len;
+        uint segment_len = series_isax_prop->m_segment_len;
+        Real segment_len_r = R(segment_len);
+        MtsNumChannelsT num_channels = series_isax_prop->m_num_channels;
         SaxNumBitsT first_layer_num_bits = m_index->get_first_layer_num_bits();
         auto& first_layer_symbols = m_index->get_first_layer_symbols();
 
@@ -202,7 +204,7 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
                 }
                 isax_words[c] = iSaxType(first_layer_symbols[i][c], first_layer_num_bits);
             }
-            pq.push({min_dist_squared * segment_len, isax_words, m_index->get_first_layer_node(i)});
+            pq.push({min_dist_squared * segment_len_r, isax_words, m_index->get_first_layer_node(i)});
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
 
@@ -236,12 +238,12 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
                     // Left child
                     limits = m_index->get_segment_limits(num_bits, left_isax_words[c].symbol_no_shift(s));
                     Real dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second);
-                    pq.push({min_dist_squared + segment_len * (dist - prev_dist), left_isax_words, left});
+                    pq.push({min_dist_squared + segment_len_r * (dist - prev_dist), left_isax_words, left});
 
                     // Right child
                     limits = m_index->get_segment_limits(num_bits, right_isax_words[c].symbol_no_shift(s));
                     dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second);
-                    pq.push({min_dist_squared + segment_len * (dist - prev_dist), right_isax_words, right});
+                    pq.push({min_dist_squared + segment_len_r * (dist - prev_dist), right_isax_words, right});
                 }
             } else {
                 bool updated = false;
@@ -250,7 +252,7 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
                 for (SubsequenceInfo subs_info : subsequence_infos) {
                     if (skip_entry(query_len, series_len, subs_info)) continue;
 
-                    size_t data_to_read = subs_info.length;
+                    size_t data_to_read = subs_info.m_length;
                     vec<vec<Real>> subsequence(num_channels);
                     logger.start_timer(QC::IO_TIME_S);
                     for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
@@ -271,7 +273,7 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
                 logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED, static_cast<uint>(subsequence_infos.size()));
                 logger.increment_count_col(QC::NUM_LEAVES_VISITED);
 
-                if (!opts.exact && (++leaves_visited >= opts.max_leaves_to_visit || !updated)) break;
+                if (!opts.m_exact && (++leaves_visited >= opts.m_max_leaves_to_visit || !updated)) break;
             }
             logger.increment_count_col(QC::NUM_NODES_VISITED);
         }
@@ -286,9 +288,9 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
 
     bool skip_entry(uint query_len, uint series_len, const SubsequenceInfo& subs_info) const {
         if constexpr (std::is_same_v<FTag, PaaTag>) {
-            return subs_info.length != query_len;
+            return subs_info.m_length != query_len;
         } else if constexpr (std::is_same_v<FTag, EnvelopeTag>) {
-            return series_len - subs_info.start_pos < query_len;
+            return series_len - subs_info.m_start_pos < query_len;
         }
         return false;
     }

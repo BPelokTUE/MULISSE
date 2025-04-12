@@ -31,7 +31,7 @@ class ResultSet {
      * @brief Construct a new ResultSet object
      * @param param The parameter of the result set (either k for kNN or r for r-range)
      */
-    ResultSet(ParamType param) : param(param) {};
+    ResultSet(ParamType param) : c_param(param) {};
 
     /**
      * @brief Get the type of the result set
@@ -47,9 +47,9 @@ class ResultSet {
         if constexpr (S == KNN) {
             auto it = std::lower_bound(m_results.begin(), m_results.end(), result);
             m_results.insert(it, result);
-            if (m_results.size() > param) m_results.pop_back();
+            if (m_results.size() > c_param) m_results.pop_back();
         } else {  // R_RANGE
-            if (result.distance <= param) m_results.push_back(result);
+            if (result.m_distance <= c_param) m_results.push_back(result);
         }
     }
 
@@ -59,9 +59,9 @@ class ResultSet {
      */
     inline Real get_distance_lb() const {
         if constexpr (S == KNN) {
-            return m_results.size() < param ? INF : m_results[param - 1].distance;
+            return m_results.size() < c_param ? INF : m_results[c_param - 1].m_distance;
         } else {  // R_RANGE
-            return param;
+            return c_param;
         }
     }
 
@@ -74,7 +74,7 @@ class ResultSet {
     /** @brief Clear the result set */
     void clear() { m_results.clear(); }
 
-    const ParamType param;
+    const ParamType c_param;
 
    private:
     vec<SearchResult> m_results;

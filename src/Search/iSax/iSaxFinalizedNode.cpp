@@ -7,16 +7,16 @@
 PaaISax::PaaISax(vec<PaaSaxSymbol> paa_sax_symbol, SaxNumBitsT num_bits) {
     vec<SaxSymbolT> symbols(paa_sax_symbol.size());
     for (size_t i = 0; i < symbols.size(); ++i) {
-        symbols[i] = paa_sax_symbol[i].symbol;
+        symbols[i] = paa_sax_symbol[i].m_symbol;
     }
-    isax_word = iSaxWord(symbols, num_bits);
+    m_isax_word = iSaxWord(symbols, num_bits);
 };
 
-const vec<SaxNumBitsT> &PaaISax::get_num_bits() const { return isax_word.get_num_bits(); }
+const vec<SaxNumBitsT> &PaaISax::get_num_bits() const { return m_isax_word.get_num_bits(); }
 
-PaaSaxSymbol PaaISax::symbol_no_shift(SaxSegIndT index) const { return {isax_word.symbol_no_shift(index)}; }
+PaaSaxSymbol PaaISax::symbol_no_shift(SaxSegIndT index) const { return {m_isax_word.symbol_no_shift(index)}; }
 
-size_t PaaISax::size() const { return isax_word.size(); }
+size_t PaaISax::size() const { return m_isax_word.size(); }
 
 template <>
 pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedInternal<PaaTag>::get_children_max_symbols(
@@ -36,27 +36,27 @@ EnvelopeISax::EnvelopeISax(vec<EnvelopeSaxSymbol> envelope_sax_symbol, SaxNumBit
     vec<SaxSymbolT> min_symbols(envelope_sax_symbol.size()), max_symbols(envelope_sax_symbol.size());
 
     for (size_t i = 0; i < min_symbols.size(); ++i) {
-        min_symbols[i] = envelope_sax_symbol[i].min_symbol;
-        max_symbols[i] = envelope_sax_symbol[i].max_symbol;
+        min_symbols[i] = envelope_sax_symbol[i].m_min_symbol;
+        max_symbols[i] = envelope_sax_symbol[i].m_max_symbol;
     }
-    isax_min = iSaxWord(min_symbols, num_bits);
-    isax_max = iSaxWord(max_symbols, num_bits);
+    m_isax_min = iSaxWord(min_symbols, num_bits);
+    m_isax_max = iSaxWord(max_symbols, num_bits);
 };
 
-const vec<SaxNumBitsT> &EnvelopeISax::get_num_bits() const { return isax_min.get_num_bits(); }
+const vec<SaxNumBitsT> &EnvelopeISax::get_num_bits() const { return m_isax_min.get_num_bits(); }
 
 EnvelopeSaxSymbol EnvelopeISax::symbol_no_shift(SaxSegIndT index) const {
-    return {isax_min.symbol_no_shift(index), isax_max.symbol_no_shift(index)};
+    return {m_isax_min.symbol_no_shift(index), m_isax_max.symbol_no_shift(index)};
 }
 
-size_t EnvelopeISax::size() const { return isax_min.size(); }
+size_t EnvelopeISax::size() const { return m_isax_min.size(); }
 
 template <>
 pair<SaxSymbolT, SaxSymbolT> iSaxFinalizedInternal<EnvelopeTag>::get_children_max_symbols(
     SaxNumBitsT split_num_bits, SaxNumBitsT symbol_num_bits) const {
-    SaxNumBitsT shift = symbol_num_bits - split_num_bits - 1;
+    SaxNumBitsT shift = static_cast<SaxNumBitsT>(symbol_num_bits - split_num_bits - 1);
     auto envelope_args = static_cast<iSaxEnvelopeInternalNodeArgs *>(m_args.get());
-    return {envelope_args->max_symbol_left >> shift, envelope_args->max_symbol_right >> shift};
+    return {envelope_args->m_max_symbol_left >> shift, envelope_args->m_max_symbol_right >> shift};
 }
 
 template <>

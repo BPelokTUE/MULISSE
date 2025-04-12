@@ -47,7 +47,7 @@ class DistanceMeasure<S, ED, QS> {
      * @param use_early_abandoning Whether to use early abandoning
      */
     DistanceMeasure(bool normalized, bool use_early_abandoning = true)
-        : normalized(normalized), use_early_abandoning(use_early_abandoning) {}
+        : c_normalized(normalized), c_use_early_abandoning(use_early_abandoning) {}
 
     /**
      * @brief Calculate the minimum distance squared between a PAA value and a segment
@@ -85,7 +85,7 @@ class DistanceMeasure<S, ED, QS> {
             }
         }
 
-        if (normalized) {
+        if (c_normalized) {
             vec<Real> sums(query.size()), sq_sums(query.size());
             for (MtsNumChannelsT c : present_channels) {
                 for (size_t i = 0; i < query_len; ++i) {
@@ -107,7 +107,7 @@ class DistanceMeasure<S, ED, QS> {
 
                         Real diff = (mts[c][start_pos + real_ind] - mu) / sigma - query[c][query_ind];
                         dist_squared += diff * diff;
-                        if (use_early_abandoning && dist_squared >= result_set.get_distance_lb()) {
+                        if (c_use_early_abandoning && dist_squared >= result_set.get_distance_lb()) {
                             points_examined += query_ind + 1;
                             point_in_entry += query_len;
                             goto start_pos_it_end;
@@ -117,7 +117,7 @@ class DistanceMeasure<S, ED, QS> {
                     point_in_entry += query_len;
                 }
                 result_set.insert(
-                    {{subs_info.series_ind, subs_info.start_pos + start_pos, subs_info.length - start_pos},
+                    {{subs_info.m_series_ind, subs_info.m_start_pos + start_pos, subs_info.m_length - start_pos},
                      dist_squared});
                 updated = true;
             start_pos_it_end:;
@@ -138,8 +138,8 @@ class DistanceMeasure<S, ED, QS> {
         return updated;
     }
 
-    const bool normalized;
-    const bool use_early_abandoning;
+    const bool c_normalized;
+    const bool c_use_early_abandoning;
 };
 
 template <SearchType S>
@@ -149,7 +149,7 @@ class DistanceMeasure<S, MASS> {
      * @brief Constructor
      * @param normalized Whether the time series are normalized
      */
-    DistanceMeasure(bool normalized) : normalized(normalized) {}
+    DistanceMeasure(bool normalized) : c_normalized(normalized) {}
 
     /**
      * @brief Calculate the minimum distance squared between a PAA value and a segment
@@ -200,7 +200,7 @@ class DistanceMeasure<S, MASS> {
 
             vec<Real> dot_products = calculate_dot_products(q_channel, mts_channel, subs_info, c);
 
-            if (normalized) {
+            if (c_normalized) {
                 for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
                     Real dot = dot_products[query_len - 1 + start_pos],
                          subs_sum = mts_sums[query_len + start_pos] - mts_sums[start_pos],
@@ -222,7 +222,7 @@ class DistanceMeasure<S, MASS> {
 
         for (uint start_pos = 0; start_pos < squared_dists.size(); ++start_pos) {
             if (squared_dists[start_pos] < result_set.get_distance_lb()) {
-                SubsequenceInfo result_pos = {subs_info.series_ind, subs_info.start_pos + start_pos};
+                SubsequenceInfo result_pos = {subs_info.m_series_ind, subs_info.m_start_pos + start_pos};
                 result_set.insert({result_pos, squared_dists[start_pos]});
                 updated = true;
             }
@@ -231,7 +231,7 @@ class DistanceMeasure<S, MASS> {
         return updated;
     }
 
-    const bool normalized;
+    const bool c_normalized;
 
    private:
     inline vec<Real> calculate_dot_products(const vec<Real> &q_channel, const vec<Real> &mts_channel,

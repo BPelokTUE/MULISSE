@@ -17,8 +17,8 @@ TEST_CASE("iSAX leaf finalization works") {
 
     auto finalization_result_ptr = leaf.finalize(isax_word_settings);
     auto finalization_result = static_cast<EnvelopeFinalizationResult *>(finalization_result_ptr.get());
-    auto finalized = std::move(finalization_result->finalized_node);
-    auto isax_max = std::move(finalization_result->isax_max);
+    auto finalized = std::move(finalization_result->m_finalized_node);
+    auto isax_max = std::move(finalization_result->m_isax_max);
 
     REQUIRE(finalized->is_leaf());
     REQUIRE(finalized->get_subsequence_infos() == subsequence_positions);
@@ -52,8 +52,8 @@ TEST_CASE("iSAX internal finalization works") {
 
     auto finalization_result_ptr = internal.finalize(isax_word_settings);
     auto finalization_result = static_cast<EnvelopeFinalizationResult *>(finalization_result_ptr.get());
-    auto finalized = std::move(finalization_result->finalized_node);
-    auto isax_max = std::move(finalization_result->isax_max);
+    auto finalized = std::move(finalization_result->m_finalized_node);
+    auto isax_max = std::move(finalization_result->m_isax_max);
 
     REQUIRE(finalized->get_split_ind() == split_ind);
     REQUIRE(!finalized->is_leaf());

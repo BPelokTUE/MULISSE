@@ -5,19 +5,19 @@
 
 int calculate_ffts(bool normalized) {
     auto &RS = RunSettings::get_instance();
-    uint series_len = RS.get_dataset_props().series_len;
-    MtsNumChannelsT num_channels = RS.get_dataset_props().num_channels;
+    uint series_len = RS.get_dataset_props().m_series_len;
+    MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
 
     IndexLogger::initialize({
-        .normalized = normalized,
-        .adapt = false,
-        .index_format = ArchiveType::NONE,
-        .num_channels = num_channels,
-        .l_min = 0,
-        .l_max = 0,
-        .series_len = series_len,
-        .l_per_group = 0,
-        .index_params = nullptr,
+        .m_normalized = normalized,
+        .m_adapt = false,
+        .m_index_format = ArchiveType::NONE,
+        .m_num_channels = num_channels,
+        .m_l_min = 0,
+        .m_l_max = 0,
+        .m_series_len = series_len,
+        .m_l_per_group = 0,
+        .m_index_params = nullptr,
     });
     auto &logger = IndexLogger::get_instance();
 

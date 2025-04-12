@@ -445,17 +445,17 @@ int main(int argc, char **argv) {
                     return 1;
             }
             IndexOptions index_options{
-                .normalized = !unnormalized,
-                .adapt = adapt_index,
-                .index_method = method_type,
-                .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
-                .inserter_type = STR_TO_ENTRY_INSERTER_TYPE.at(inserter_type_str),
-                .num_channels = num_channels,
-                .l_min = l_min,
-                .l_max = l_max,
-                .series_len = series_len,
-                .l_per_group = l_per_group,
-                .index_params = std::unique_ptr<IIndexParams>(index_params),
+                .m_normalized = !unnormalized,
+                .m_adapt = adapt_index,
+                .m_index_method = method_type,
+                .m_index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
+                .m_inserter_type = STR_TO_ENTRY_INSERTER_TYPE.at(inserter_type_str),
+                .m_num_channels = num_channels,
+                .m_l_min = l_min,
+                .m_l_max = l_max,
+                .m_series_len = series_len,
+                .m_l_per_group = l_per_group,
+                .m_index_params = std::unique_ptr<IIndexParams>(index_params),
             };
             return create_index(index_options);
         }
@@ -470,21 +470,21 @@ int main(int argc, char **argv) {
             DistanceType distance_type = STR_TO_DISTANCE_TYPE.at(distance_measure_str);
 
             SearchOptions search_options = {
-                .exact = !approximate,
-                .normalized = !unnormalized,
-                .use_early_abandoning = early_abandon,
-                .sort_queries = sort_query,
-                .use_priority_queue = !no_use_pq,
-                .search_method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str),
-                .index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
-                .search_type = search_type,
-                .distance_type = distance_type,
-                .l_min = l_min,
-                .l_max = l_max,
-                .l_per_group = l_per_group,
-                .knn_k = knn_k,
-                .r_range_r = r_range_r,
-                .max_leaves_to_visit = max_leaves_to_visit,
+                .m_exact = !approximate,
+                .m_normalized = !unnormalized,
+                .m_use_early_abandoning = early_abandon,
+                .m_sort_queries = sort_query,
+                .m_use_priority_queue = !no_use_pq,
+                .m_search_method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str),
+                .m_index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
+                .m_search_type = search_type,
+                .m_distance_type = distance_type,
+                .m_l_min = l_min,
+                .m_l_max = l_max,
+                .m_l_per_group = l_per_group,
+                .m_knn_k = knn_k,
+                .m_r_range_r = r_range_r,
+                .m_max_leaves_to_visit = max_leaves_to_visit,
             };
 
             switch (distance_type) {

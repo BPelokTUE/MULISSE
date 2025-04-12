@@ -27,13 +27,13 @@ vec<Real> paa(const vec<Real> &ts, uint segment_len);
  * @param l_max The maximum length of a subsequence
  */
 struct iSaxPaaParams {
-    uint segment_len;
-    uint l_min;
-    uint l_max;
+    uint m_segment_len;
+    uint m_l_min;
+    uint m_l_max;
 };
 
 struct Paa : EntryData {
-    vec<Real> paa_values;
+    vec<Real> m_paa_values;
 
     Paa(const vec<Real> &paa_values);
 
@@ -47,7 +47,7 @@ struct Paa : EntryData {
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(paa_values);
+        ar(m_paa_values);
     }
 };
 

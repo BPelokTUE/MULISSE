@@ -122,11 +122,11 @@ class ChainSearch : public ISearchMethod<S, D, QS> {
                          const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
                          const vec<uint> *real_query_inds) const override {
         auto opts_approx = opts;
-        opts_approx.exact = false;
+        opts_approx.m_exact = false;
         for (auto &method : m_approx_methods) {
             auto search_results =
                 method->search(query, opts_approx, result_set, distance_measure, dataset_ifs, real_query_inds);
-            if (search_results.exact) return search_results;
+            if (search_results.m_exact) return search_results;
         }
         return m_exact_method->search(query, opts, result_set, distance_measure, dataset_ifs, real_query_inds);
     }

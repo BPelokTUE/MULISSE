@@ -55,7 +55,7 @@ class IndexAnalyzer {
         if (!index) throw std::runtime_error("Could not cast index to iSaxFinalizedIndex");
 
         auto &RS = RunSettings::get_instance();
-        MtsNumChannelsT num_channels = RS.get_dataset_props().num_channels;
+        MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
 
         IndexStats stats;
 

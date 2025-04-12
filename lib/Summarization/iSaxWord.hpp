@@ -10,11 +10,11 @@
 /** @brief iSAX word settings */
 struct iSaxWordSettings {
     /** @brief The number of bits to use for each segment */
-    vec<SaxNumBitsT> num_bits;
+    vec<SaxNumBitsT> m_num_bits;
     /** @brief The maximum number of bits in the alphabet */
-    SaxNumBitsT alphabet_num_bits;
+    SaxNumBitsT m_alphabet_num_bits;
     /** @brief The vector of breakpoints for the symbol intervals */
-    vec<Real> breakpoints;
+    vec<Real> m_breakpoints;
 };
 
 /** @brief indexable Symbolic Aggregate approXimation (iSAX) word */
@@ -29,9 +29,9 @@ class iSaxWord : public SaxWord {
      *        of bits for the alphabet and the breakpoints
      */
     inline iSaxWord(const vec<Real> &paa, const iSaxWordSettings &settings)
-        : SaxWord(paa, settings.alphabet_num_bits, settings.breakpoints), m_num_bits(settings.num_bits) {
-        assert(paa.size() == settings.num_bits.size());
-        assert(m_alphabet_num_bits >= *std::max_element(settings.num_bits.begin(), settings.num_bits.end()));
+        : SaxWord(paa, settings.m_alphabet_num_bits, settings.m_breakpoints), m_num_bits(settings.m_num_bits) {
+        assert(paa.size() == settings.m_num_bits.size());
+        assert(m_alphabet_num_bits >= *std::max_element(settings.m_num_bits.begin(), settings.m_num_bits.end()));
     }
 
     iSaxWord() = default;
@@ -64,7 +64,7 @@ class iSaxWord : public SaxWord {
      * @return The symbol at the given index
      */
     inline SaxSymbolT operator[](SaxSegIndT index) const override {
-        return m_symbols[index] >> (m_alphabet_num_bits - m_num_bits[index]);
+        return static_cast<SaxSymbolT>(m_symbols[index] >> (m_alphabet_num_bits - m_num_bits[index]));
     }
 
     /**

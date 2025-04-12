@@ -34,7 +34,7 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
 
     auto &RS = RunSettings::get_instance();
     MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(csv_paths.size());
-    uint series_len = RS.get_dataset_props().series_len;
+    uint series_len = RS.get_dataset_props().m_series_len;
     str dataset_path = RS.get_dataset_path();
 
     std::filesystem::create_directories(std::filesystem::path(dataset_path).parent_path());

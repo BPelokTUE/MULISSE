@@ -1,5 +1,6 @@
 DELETE_BUILD_DIR=false
 IGNORE_TESTS="ON"
+WARNINGS="ON"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -8,6 +9,9 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         -t|--tests)
             IGNORE_TESTS="OFF"
+            ;;
+        -n|--no-warn)
+            WARNINGS="OFF"
             ;;
         *)
             echo "Usage: $0 [-c|--clean] [-t|--tests]"
@@ -25,5 +29,5 @@ fi
 
 mkdir build
 cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DIGNORE_TESTS=${IGNORE_TESTS} -G Ninja ..
+cmake -DCMAKE_BUILD_TYPE=Release -DIGNORE_TESTS=${IGNORE_TESTS} -DWARN=${WARNINGS} -G Ninja ..
 cmake --build .

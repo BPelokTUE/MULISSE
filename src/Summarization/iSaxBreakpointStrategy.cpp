@@ -51,7 +51,7 @@ vec<Real> FixedBreakpointStrategy::get_breakpoints(SaxSymbolT alphabet_size) con
     vec<Real> breakpoints(alphabet_size - 1);
     SaxSymbolT alphabet_ratio = static_cast<SaxSymbolT>((m_breakpoints.size() + 1) / alphabet_size);
     for (SaxSymbolT i = 1; i < alphabet_size; ++i) {
-        breakpoints[i] = m_breakpoints[i * alphabet_ratio - 1];
+        breakpoints[i] = m_breakpoints[static_cast<SaxSymbolT>(i * alphabet_ratio - 1)];
     }
     return breakpoints;
 }

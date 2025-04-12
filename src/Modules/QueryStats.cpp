@@ -39,8 +39,8 @@ void update_query_stats(QueryStats &stats, const vec<vec<Real>> &query, const ve
                 }
             }
             Real dist = std::sqrt(dist_squared);
-            stats.dist_stats.update(dist);
-            stats.subs_count++;
+            stats.m_dist_stats.update(dist);
+            stats.m_subs_count++;
 
             uint end_pos = start_pos + query_len;
             if (end_pos < mts_len) {
@@ -66,7 +66,7 @@ int calculate_query_stats(bool normalized) {
     vec<vec<Real>> query(num_channels);
 
     uint query_count = 0;
-    for (MtsNumChannelsT c = 0; !query_ifs.eof(); c = (c + 1) % num_channels) {
+    for (MtsNumChannelsT c = 0; !query_ifs.eof(); c = static_cast<MtsNumChannelsT>((c + 1) % num_channels)) {
         str line;
         std::getline(query_ifs, line);
         std::istringstream iss(line);
@@ -99,9 +99,9 @@ int calculate_query_stats(bool normalized) {
                 update_query_stats(stats, query, mts, normalized);
             }
 
-            stats.dist_stats.calculate(static_cast<uint>(stats.subs_count));
-            stats.rc_using_max = (stats.dist_stats.max - stats.dist_stats.min) / stats.dist_stats.min;
-            stats.rc_using_mean = stats.dist_stats.mean / stats.dist_stats.min;
+            stats.m_dist_stats.calculate(static_cast<uint>(stats.m_subs_count));
+            stats.m_rc_using_max = (stats.m_dist_stats.m_max - stats.m_dist_stats.m_min) / stats.m_dist_stats.m_min;
+            stats.m_rc_using_mean = stats.m_dist_stats.m_mean / stats.m_dist_stats.m_min;
 
             QueryStatsLogger::write_entry(query_count++, query, stats, normalized);
         }
