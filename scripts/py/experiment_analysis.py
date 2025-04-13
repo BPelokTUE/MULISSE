@@ -17,6 +17,7 @@ This script contains the necessary classes and functions to analyze the results 
 
 # %%
 
+import math
 import os
 import re
 from enum import Enum, auto
@@ -555,7 +556,7 @@ METHOD_LABELS = {
     "isax_env_w_sax_env-mass": "iSAX+SAX Env (MASS, no pre.)",
     "isax_env_w_sax_env-mass-ffts": "iSAX+SAX Env (MASS)",
 }
-DATASET_ORDER = [
+ORDERED_DATASETS = [
     "weather",
     "stocks",
     "random_walk",
@@ -686,25 +687,13 @@ TIME_LABELS = ["Search time", "Prep. time"]
 PREP_TIME_HATCH = "/////"
 TOTAL_TIME_Y_LABEL = "Total time (S)"
 PRUNING_RATIO_Y_LABEL = "Pruning ratio"
+ABANDONING_RATE_Y_LABEL = "Abandoning rate"
 
-
-def simplify_method_name(reduction_result: ReductionResult, method_name_ind: int) -> ReductionResult:
-    result = {}
-    for group, target_values in reduction_result.items():
-        method_name = group[method_name_ind]
-        group_list = list(group)
-
-        method_max_len = 0
-        method_name = group_list[method_name_ind]
-        simple_method_name = ""
-        for method in METHOD_LABELS:
-            if method in method_name and len(method) > method_max_len:
-                method_max_len = len(method)
-                simple_method_name = method
-
-        group_list[method_name_ind] = simple_method_name
-        result[tuple(group_list)] = target_values
-    return result
+Y_LABELS = {
+    str(QC.TOTAL_TIME_S): TOTAL_TIME_Y_LABEL,
+    str(QC.ABANDONING_RATE): ABANDONING_RATE_Y_LABEL,
+    str(QC.PRUNING_RATIO): PRUNING_RATIO_Y_LABEL,
+}
 
 
 def sort_dict(d: dict, key_func: callable) -> dict:
@@ -776,7 +765,6 @@ def experiment_num_channels_and_dataset(
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
     groups = dict_to_tuples(groups_dict)
     mean_values = execute_reduction([few_channels_results, many_channels_results], targets, groups)
-    mean_values = simplify_method_name(mean_values, 2)
 
     methods_to_show = [
         "sequential_scan-ed",
@@ -794,7 +782,7 @@ def experiment_num_channels_and_dataset(
         for (num_channels, dataset, _), _ in mean_values_to_show.items()
     }
     mean_values_to_show = sort_dict(
-        mean_values_to_show, lambda x: (DATASET_ORDER.index(x[0][1]), x[0][0], methods_to_show.index(x[0][2]))
+        mean_values_to_show, lambda x: (ORDERED_DATASETS.index(x[0][1]), x[0][0], methods_to_show.index(x[0][2]))
     )
 
     plot_bars(
@@ -840,7 +828,6 @@ def experiment_envelope_parametrization(
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
     groups = dict_to_tuples(group_dict)
     mean_values = execute_reduction([parametrization_results], targets, groups)
-    mean_values = simplify_method_name(mean_values, 3)
     mean_values = {group: values for group, values in mean_values.items() if re.match(method_name_re, group[3])}
 
     mean_values = {(*group[:4], group[4].rsplit("/")[0]): values for group, values in mean_values.items()}
@@ -905,7 +892,6 @@ def experiment_relative_contrast(
     y_label: str,
     query_noise_levels=list(NOISE_LABELS.keys()),
     y_scale: str = "linear",
-    target_labels: list[str] = None,
     logs_dir="EXPERIMENT_LOGS/relative_contrast/LOGS_relative_contrast_config",
     remove_top=0.00,
     datasets_to_show=["weather", "synthetic"],
@@ -938,7 +924,7 @@ def experiment_relative_contrast(
     if datasets_to_show is not None:
         mean_values = {group: values for group, values in mean_values.items() if group[0] in datasets_to_show}
 
-    mean_values = sort_dict(mean_values, lambda x: (x[0][1], DATASET_ORDER.index(x[0][0]), x[0][2]))
+    mean_values = sort_dict(mean_values, lambda x: (x[0][1], ORDERED_DATASETS.index(x[0][0]), x[0][2]))
     x_labels = {
         (dataset, num_channels, sd): f"{dataset}\nC={num_channels}\nStep={sd}"
         for dataset, num_channels, sd, _ in mean_values
@@ -975,85 +961,16 @@ experiment_relative_contrast(
 
 # %%[markdown]
 """
-Experiment: Comparison of different methods
+### Experiment: Univariate parametrization
 """
 
 
 # %%
-def experiment_compare_methods(
-    target_cols: str | list[str],
-    y_label,
-    y_lim=None,
-    y_scale="log",
-    target_labels: list[str] = None,
-    logs_dirs=["LOGS"],
-):
-    if isinstance(target_cols, str):
-        target_cols = [target_cols]
-    group_dict = {
-        ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
-        ERD.QUERY_SETS_COLS: [str(QSC.L_MIN), str(QSC.L_MAX)],
-        ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
-        ERD.INDEXES_COLS: [str(ISC.POS_PER_ENV), str(ISC.FIRST_LAYER_NUM_BITS)],
-    }
-    columns = {**group_dict, ERD.RUNS_COLS: target_cols}
-    results_list = [ExperimentResults.load(logs_dir=logs_dir, cols=columns) for logs_dir in logs_dirs]
-    targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
-    groups = dict_to_tuples(group_dict)
-    mean_values = execute_reduction(results_list, targets, groups)
-    mean_values = simplify_method_name(mean_values, 3)
-
-    def get_label(key: list[str]) -> str:
-        dataset, _, pos_per_env, first_layer_num_bits = key
-        ppe_str = f"PPE={int(pos_per_env)}" if pos_per_env is not None and pos_per_env > 0 else ""
-        bits_str = (
-            f"Bits={int(first_layer_num_bits)}" if first_layer_num_bits is not None and first_layer_num_bits > 0 else ""
-        )
-        return f"{dataset}\n{ppe_str}\n{bits_str}"
-
-    l_ranges = {(key[1], key[2]) for key in mean_values}
-    for l_min, l_max in l_ranges:
-        mean_values_l_range = {
-            (key[0], *key[3:]): val for key, val in mean_values.items() if (key[1], key[2]) == (l_min, l_max)
-        }
-        mean_values_l_range = {(key[0].split("/", 1)[0], *key[1:]): value for key, value in mean_values_l_range.items()}
-        mean_values_l_range = sort_dict(mean_values_l_range, lambda x: (DATASET_ORDER.index(x[0][0]), *x[0][1:]))
-
-        x_labels = {(key[0], *key[2:]): get_label(key) for key in mean_values_l_range}
-        plot_bars(
-            mean_values_l_range,
-            1,
-            x_labels=x_labels,
-            y_label=y_label,
-            y_lim=y_lim,
-            scale=y_scale,
-            title=f"l_min={l_min}, l_max={l_max}",
-            legend_max_cols=3,
-            hatches=["", PREP_TIME_HATCH] if target_labels is not None else None,
-            hatch_labels=target_labels,
-        )
-
-
-# %%
-pure_isax_logs = ["EXPERIMENT_LOGS/pure/LOGS_pure_isax"]
-pure_envelope_logs = ["EXPERIMENT_LOGS/pure/LOGS_pure_envelope"]
-
-for logs_dirs in [pure_isax_logs, pure_envelope_logs]:
-    # experiment_compare_methods(
-    #     TIME_TARGETS, TOTAL_TIME_Y_LABEL, target_labels=TIME_LABELS, logs_dirs=logs_dirs, y_scale="log"
-    # )
-    experiment_compare_methods(str(QC.TOTAL_TIME_S), TOTAL_TIME_Y_LABEL, logs_dirs=logs_dirs, y_scale="log")
-    experiment_compare_methods(
-        str(QC.PRUNING_RATIO), PRUNING_RATIO_Y_LABEL, logs_dirs=logs_dirs, y_lim=(0, 1), y_scale="linear"
-    )
-
-
-# %%
-def merge_univariate_datasets(mean_values):
+def merge_univariate_datasets(mean_values, ds_index: int = 0):
     merged_mean_values = {}
     for group, values in mean_values.items():
-        dataset = group[0].split("/", 1)[0]
-        merged_group = (dataset, *group[1:])
+        dataset = group[ds_index].split("/", 1)[0]
+        merged_group = (*group[:ds_index], dataset, *group[ds_index + 1 :])
         if merged_group not in merged_mean_values:
             merged_mean_values[merged_group] = [[] for _ in range(len(values))]
         for i, value in enumerate(values):
@@ -1071,7 +988,7 @@ def experiment_univariate_parametrization(
     y_label: str,
     use_adapt_to_dataset: bool = False,
     y_scale: str = "log",
-    merge_dataset: bool = True,
+    merge_datasets: bool = True,
     hatches=None,
     hatch_labels=None,
     datasets_to_show=None,
@@ -1098,12 +1015,11 @@ def experiment_univariate_parametrization(
     groups = dict_to_tuples(groups_dict)
     mean_values = execute_reduction(results_list, targets, groups)
     method_name_ind = get_col_index(str(SSC.METHOD_NAME), groups)
-    mean_values = simplify_method_name(mean_values, method_name_ind)
 
-    dataset_order = [key[0] for key in mean_values]
-    if merge_dataset:
+    ordered_datasets = {key[0] for key in mean_values}
+    if merge_datasets:
         mean_values = merge_univariate_datasets(mean_values)
-        dataset_order = DATASET_ORDER
+        ordered_datasets = ORDERED_DATASETS
 
     def get_x_label(key: tuple):
         if use_adapt_to_dataset:
@@ -1133,7 +1049,7 @@ def experiment_univariate_parametrization(
             mean_values_ds = {
                 group: values for group, values in mean_values.items() if group[0] == dataset and group[1:3] == l_range
             }
-            mean_values_ds = sort_dict(mean_values_ds, lambda x: (dataset_order.index(x[0][0]), *x[0][1:]))
+            mean_values_ds = sort_dict(mean_values_ds, lambda x: (ordered_datasets.index(x[0][0]), *x[0][1:]))
             x_labels = {(*key[:3], *key[4:]): get_x_label(key) for key in mean_values_ds}
 
             plot_bars(
@@ -1187,7 +1103,7 @@ for key, reducer in reducers.items():
         f"{key} {TOTAL_TIME_Y_LABEL}",
         hatches=hatches,
         hatch_labels=hatch_labels,
-        merge_dataset=merge_datasets,
+        merge_datasets=merge_datasets,
         use_adapt_to_dataset=use_adapt_to_dataset,
         l_ranges_to_show=l_ranges_to_show,
         datasets_to_show=datasets_to_show,
@@ -1203,7 +1119,7 @@ for col in [QC.PRUNING_RATIO, QC.NUM_ENTRIES_EXAMINED]:
         logs_dirs,
         str(col).replace("_", " ").capitalize(),
         y_scale="linear" if col == QC.PRUNING_RATIO else "log",
-        merge_dataset=merge_datasets,
+        merge_datasets=merge_datasets,
         use_adapt_to_dataset=use_adapt_to_dataset,
         l_ranges_to_show=l_ranges_to_show,
         datasets_to_show=datasets_to_show,
@@ -1218,19 +1134,23 @@ for istc_col in [ISTC.LEAF_HEIGHT_STATS]:
             {ERD.INDEX_STATS_COLS: [get_stats_col(istc_col, stat)]},
             logs_dirs,
             f"{y_label_prefix} {str(stat)}",
-            merge_dataset=merge_datasets,
+            merge_datasets=merge_datasets,
             use_adapt_to_dataset=use_adapt_to_dataset,
             y_scale="linear",
             l_ranges_to_show=l_ranges_to_show,
             datasets_to_show=datasets_to_show,
         )
 
+# %%[markdown]
+"""
+### Experiment: ULISSE comparison
+"""
+
+
 # %%
-
-
 def experiment_ulisse_comparison(
+    target_col: str = str(QC.TOTAL_TIME_S),
     logs_dir: str = "EXPERIMENT_LOGS/base_compare/LOGS_base_compare_final",
-    target_col: QC = QC.TOTAL_TIME_S,
     reducer: Reducer = MeanReducer(),
     max_ulisse_pruning_ratio: float = 1.0,
     only_important: bool = False,
@@ -1252,7 +1172,7 @@ def experiment_ulisse_comparison(
     if bars_by_query_length:
         groups_dict[ERD.RUNS_COLS].append(str(QC.QUERY_LENGTH))
 
-    targets_dict = {ERD.RUNS_COLS: [str(target_col)]}
+    targets_dict = {ERD.RUNS_COLS: [target_col]}
     columns = groups_dict.copy()
     columns[ERD.RUNS_COLS] += targets_dict[ERD.RUNS_COLS]
 
@@ -1274,7 +1194,6 @@ def experiment_ulisse_comparison(
     targets = [(ERD.RUNS_COLS, target_col, reducer) for target_col in targets_dict[ERD.RUNS_COLS]]
     groups = dict_to_tuples(groups_dict)
     reduced_values = execute_reduction([results], targets, groups)
-    reduced_values = simplify_method_name(reduced_values, 0)
 
     if only_important:
         important_run_keys = [
@@ -1320,17 +1239,11 @@ def experiment_ulisse_comparison(
         return label
 
     x_labels = {(*key[1:],): get_x_label(key) for key in reduced_values}
-    y_labels = {
-        QC.TOTAL_TIME_S: TOTAL_TIME_Y_LABEL,
-        QC.ABANDONING_RATE: "Abandoning rate",
-        QC.PRUNING_RATIO: PRUNING_RATIO_Y_LABEL,
-    }
-
     plot_bars(
         reduced_values,
         0,
         x_labels=x_labels,
-        y_label=y_labels[target_col],
+        y_label=Y_LABELS[target_col],
         scale="linear",
     )
 
@@ -1338,7 +1251,7 @@ def experiment_ulisse_comparison(
 # %%
 
 experiment_ulisse_comparison(
-    target_col=QC.PRUNING_RATIO,
+    target_col=str(QC.PRUNING_RATIO),
     logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_5M",
     # max_ulisse_pruning_ratio=0.0,
     bars_by_query_length=True,
@@ -1347,7 +1260,86 @@ experiment_ulisse_comparison(
 
 # %%
 experiment_ulisse_comparison(
-    target_col=QC.TOTAL_TIME_S,
+    target_col=str(QC.TOTAL_TIME_S),
     logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_100K",
     only_important=True,
+)
+
+# %%[markdown]
+"""
+### Experiment: Length-based grouping results
+"""
+
+# %%
+
+
+def experiment_length_based_grouping(
+    target_cols: list[str] = [str(QC.TOTAL_TIME_S)],
+    logs_dir: str = "EXPERIMENT_LOGS/length_grouping/LOGS_univariate_edea",
+    reducer: Reducer = MeanReducer(),
+    merge_csv_datasets: bool = False,
+    hatches=None,
+    hatch_labels=None,
+):
+    groups_dict = {
+        ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
+        ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
+        ERD.INDEXES_COLS: [str(ISC.L_PER_GROUP), str(ISC.L_MIN), str(ISC.L_MAX)],
+    }
+    ds_index = 1
+    targets_dict = {ERD.RUNS_COLS: target_cols}
+    columns = groups_dict.copy()
+    columns[ERD.RUNS_COLS] = targets_dict[ERD.RUNS_COLS]
+
+    results = ExperimentResults.load(logs_dir=logs_dir, cols=columns)
+    targets = [(ERD.RUNS_COLS, target_col, reducer) for target_col in targets_dict[ERD.RUNS_COLS]]
+    groups = dict_to_tuples(groups_dict)
+    reduced_values = execute_reduction([results], targets, groups)
+
+    ordered_datasets = {key[ds_index] for key in reduced_values}
+    if merge_csv_datasets:
+        reduced_values = merge_univariate_datasets(reduced_values, ds_index)
+        datasets = {key[ds_index] for key in reduced_values}
+        ordered_datasets = sorted(datasets, key=lambda x: ORDERED_DATASETS.index(x))
+
+    def get_x_label(key: tuple) -> str:
+        _, _, l_per_group, l_min, l_max = key
+        if l_per_group is None or l_per_group <= 0:
+            return ""
+
+        num_l_groups = int(np.ceil((l_max - l_min + 1) / l_per_group))
+        return f"#LG={num_l_groups}"
+
+    for dataset in ordered_datasets:
+        reduced_values_ds = {key: values for key, values in reduced_values.items() if key[1] == dataset}
+        method_keys_list = list(METHOD_LABELS.keys())
+        reduced_values_ds = sort_dict(reduced_values_ds, lambda x: method_keys_list.index(x[0][0]))
+
+        plot_bars(
+            reduced_values_ds,
+            0,
+            x_labels={key[1:]: get_x_label(key) for key in reduced_values_ds},
+            y_label=Y_LABELS[target_cols[0]],
+            title=dataset.rsplit("/", 1)[0],
+            hatches=hatches,
+            hatch_labels=hatch_labels,
+        )
+
+
+# %%
+
+experiment_length_based_grouping(
+    target_cols=TIME_TARGETS,
+    logs_dir="EXPERIMENT_LOGS/length_grouping/LOGS_univariate_edea",
+    hatches=["", PREP_TIME_HATCH],
+    hatch_labels=TIME_LABELS,
+    merge_csv_datasets=True,
+)
+
+# %%
+
+experiment_length_based_grouping(
+    target_cols=[str(QC.PRUNING_RATIO)],
+    logs_dir="EXPERIMENT_LOGS/length_grouping/LOGS_univariate_edea",
+    merge_csv_datasets=True,
 )

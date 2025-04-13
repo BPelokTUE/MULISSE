@@ -70,7 +70,11 @@ class FlatEnvelopeIndex : public IIndex<Envelope>,
         return uptr<IFinalizedIndex<EnvelopeTag>>(finalized);
     }
 
-    inline uint get_segment_len() { return m_segment_len; }
+    inline uint get_segment_len() const { return m_segment_len; }
+
+    inline SaxSegIndT get_num_seg_per_channel() const {
+        return static_cast<SaxSegIndT>(m_entries[0].m_mts_summary[0].m_lower.size());
+    }
 
     const vec<IndexEntry<Envelope>> &get_entries() const { return m_entries; }
 

@@ -27,6 +27,7 @@ class IndexSettingsColumn(Enum):
     FFTS_FILE = auto()
     L_MIN = auto()
     L_MAX = auto()
+    L_PER_GROUP = auto()
     NORMALIZED = auto()
     INDEX_TYPE = auto()
     SEGMENT_LENGTH = auto()

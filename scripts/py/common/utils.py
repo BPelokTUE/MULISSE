@@ -12,7 +12,7 @@ COLS_FOR_METHOD_NAME = [
 ]
 
 
-def get_method_name(df: pd.DataFrame, settings_id: int) -> str:
+def get_method_name(df: pd.DataFrame, settings_id: int, include_index: bool = False) -> str:
     setting = df[df[str(SSC.ID)] == settings_id].iloc[0]
     parts = [setting[str(SSC.SEARCH_METHOD)], setting[str(SSC.DISTANCE_MEASURE)]]
     if pd.notna(setting[str(SSC.FFTS_FILE)]) and setting[str(SSC.FFTS_FILE)] != "":
@@ -21,7 +21,7 @@ def get_method_name(df: pd.DataFrame, settings_id: int) -> str:
         uses_early_abandon = bool(setting[str(SSC.EARLY_ABANDONING)])
         if uses_early_abandon:
             parts.append("early")
-    if pd.notna(setting[str(SSC.INDEX_FILE)]) and setting[str(SSC.INDEX_FILE)] != "":
+    if include_index and pd.notna(setting[str(SSC.INDEX_FILE)]) and setting[str(SSC.INDEX_FILE)] != "":
         index_name = setting[str(SSC.INDEX_FILE)].split("/")[-1].split(".")[0]
         parts.append(index_name)
     return "-".join(parts)

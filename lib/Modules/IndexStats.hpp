@@ -16,12 +16,14 @@ template <typename IndexType, typename FTag>
     requires ValidIndexType<IndexType, FTag>
 class IndexAnalyzer {
    public:
-    IndexAnalyzer(uptr<IndexType> index) : m_index(std::move(index)) {};
+    IndexAnalyzer(uptr<IndexType> index, uint sub_index_id = 0)
+        : m_index(std::move(index)), m_sub_index_id(sub_index_id) {};
 
     void analyze();
 
    private:
     uptr<IndexType> m_index;
+    uint m_sub_index_id;
 
     // iSAX
 
@@ -38,7 +40,7 @@ class IndexAnalyzer {
                 for (SaxSegIndT s = 0; s < isax_words[c].size(); ++s) {
                     auto [lower, upper] =
                         index->get_segment_limits(channel_num_bits[s], isax_words[c].symbol_no_shift(s));
-                    stats.update_seg_stats(lower, upper, num_entries);
+                    stats.update_seg_stats(lower, upper, c, s, num_entries);
                 }
             }
         } else {
@@ -56,8 +58,9 @@ class IndexAnalyzer {
 
         auto &RS = RunSettings::get_instance();
         MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
+        SaxSegIndT num_segments = index->get_series_isax_prop()->m_num_seg_per_channel;
 
-        IndexStats stats;
+        IndexStats stats(num_channels, num_segments);
 
         const auto &first_layer_symbols = index->get_first_layer_symbols();
         for (size_t i = 0; i < first_layer_symbols.size(); ++i) {
@@ -68,7 +71,7 @@ class IndexAnalyzer {
             analyze_isax_node(index, index->get_first_layer_node(i), isax_words, stats, 1);
         }
         stats.calculate();
-        IndexStatsLogger::write_entry(stats);
+        IndexStatsLogger::write_entry(stats, m_sub_index_id);
     }
 };
 

@@ -68,5 +68,6 @@
     "search_approx": [false],
     "search_raw": [false],
     "dataset_seeds": [123],
-    "query_set_seeds": [1234]
+    "query_set_seeds": [1234],
+    "calculate_index_stats": true
 }
