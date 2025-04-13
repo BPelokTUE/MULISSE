@@ -738,10 +738,12 @@ if __name__ == "__main__":
 
                         l_range = l_max - l_min + 1
                         lens_per_group = 0
+                        num_l_groups = 0
                         if RK_LENS_PER_GROUP in index_setting_copy:
                             lens_per_group = int(math.ceil(l_range * index_setting_copy.pop(RK_LENS_PER_GROUP)))
                             if lens_per_group > 0:
                                 args += ["-g", str(lens_per_group)]
+                                num_l_groups = (l_range + lens_per_group - 1) // lens_per_group
                         if RK_NUM_SEGMENTS in index_setting_copy:
                             args += ["-s", str(series_len // index_setting_copy.pop(RK_NUM_SEGMENTS))]
                         pos_per_env = 1
@@ -776,7 +778,12 @@ if __name__ == "__main__":
 
                         if run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout):
                             if calculate_index_stats:
-                                args = [SUB_CALC_I_STATS, "-i", index_file, "-c", str(num_channels), "-t", index_method]
+                                # fmt: off
+                                args = [
+                                    SUB_CALC_I_STATS, "-i", index_file, "-c", str(num_channels), "-t", index_method,
+                                    "-g", str(num_l_groups)
+                                ]
+                                # fmt: on
                                 run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
 
                             if queries_created:

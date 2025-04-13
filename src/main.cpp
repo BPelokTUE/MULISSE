@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
     Real step_sd = R(1.0), noise = R(0.1);
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env = 0, l_per_group = 0,
-         knn_k = 1, seed = 0;
+         num_l_groups = 0, knn_k = 1, seed = 0;
     Real r_range_r = 1.0;
     size_t leaf_capacity = 0, max_leaves_to_visit = 0;
     vec<uint> exact_lengths = {};
@@ -225,6 +225,12 @@ int main(int argc, char **argv) {
     i_stats_subcommand->add_option("-t,--index_type", search_method_type_str, "Index type")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_SEARCH_METHOD_TYPE_STRS));
+    i_stats_subcommand
+        ->add_option("-g,--num_l_groups", num_l_groups,
+                     "Number of length groups, defaults to 0, indicating no "
+                     "length-based grouping")
+        ->capture_default_str()
+        ->check(positive_int);
     i_stats_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Options for calculating FFTs
@@ -460,7 +466,7 @@ int main(int argc, char **argv) {
             return create_index(index_options);
         }
         case CALC_I_STATS: {
-            return calculate_index_stats(method_type, STR_TO_ARCHIVE_TYPE.at(index_format_str));
+            return calculate_index_stats(method_type, num_l_groups, STR_TO_ARCHIVE_TYPE.at(index_format_str));
         }
         case CALC_FFTS: {
             return calculate_ffts(!unnormalized);

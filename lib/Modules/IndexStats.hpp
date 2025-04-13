@@ -5,6 +5,7 @@
 #include "Search/Options/IndexOptions.hpp"
 #include "Search/Index.hpp"
 #include "Search/iSax/iSaxFinalizedIndex.hpp"
+#include "Search/LengthGroupingIndex.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/Logger.hpp"
 #include "Util/RunSettings.hpp"
@@ -19,17 +20,75 @@ class IndexAnalyzer {
     IndexAnalyzer(uptr<IndexType> index, uint sub_index_id = 0)
         : m_index(std::move(index)), m_sub_index_id(sub_index_id) {};
 
-    void analyze();
+    /**
+     * @brief Analyze the index, write the results into the log file
+     * @param length_group_id The ID of the length group within the index (0 for non-length-grouped indexes)
+     */
+    void analyze(uint length_group_id = 0);
+
+    /**
+     * @brief Analyze the index of the current run, write the results into the log file
+     * @param index_format The format of the index
+     * @param num_l_groups The number of length groups to use (0 for non-length-grouped indexes)
+     */
+    static void analyze_run_index(ArchiveType index_format, uint num_l_groups = 0) {
+        if (num_l_groups > 0) {
+            vec<uptr<IFinalizedIndex<FTag>>> group_indexes(num_l_groups);
+            for (uint l_ind = 0; l_ind < num_l_groups; l_ind++) group_indexes[l_ind] = create_index();
+            auto index = std::make_unique<LengthGroupingFinalizedIndex<FTag>>(std::move(group_indexes), 1, 1);
+            IndexAnalyzer<LengthGroupingFinalizedIndex<FTag>, FTag>::load_index(index, index_format);
+
+            for (uint l_ind = 0; l_ind < num_l_groups; l_ind++) {
+                auto sub_index = uptr<IndexType>(static_cast<IndexType *>(index->release_index(l_ind)));
+                IndexAnalyzer<IndexType, FTag>(std::move(sub_index)).analyze(l_ind);
+            }
+        } else {
+            auto index = create_index();
+            load_index(index, index_format);
+            IndexAnalyzer<IndexType, FTag>(std::move(index)).analyze();
+        }
+    }
+
+    /**
+     * @brief Load the index
+     * @param index The index to load
+     * @param index_format The format of the index
+     */
+    static void load_index(uptr<IndexType> &index, ArchiveType index_format) {
+        auto &RS = RunSettings::get_instance();
+        try {
+            auto index_file = RS.get_index_path();
+            index->load(index_file, index_format);
+        } catch (const std::exception &e) {
+            throw std::runtime_error("Error loading index" + std::string(e.what()) + '\n');
+        }
+    }
 
    private:
     uptr<IndexType> m_index;
     uint m_sub_index_id;
+
+    // Index creation
+
+    /**
+     * @brief Create an index to analyze (with default parameters)
+     * @return A unique pointer to the new index
+     */
+    static uptr<IndexType> create_index() { return std::make_unique<IndexType>(); }
 
     // iSAX
 
     using iSaxType = typename SaxTraits<FTag>::iSaxType;
     using SymbolType = typename SaxTraits<FTag>::SymbolType;
 
+    /**
+     * @brief Analyze a node of the iSAX index
+     * @param index The iSAX index
+     * @param node The node to analyze
+     * @param isax_words The iSAX words of the node
+     * @param stats The statistics to update
+     * @param height The height of the node in the index
+     */
     void analyze_isax_node(const iSaxFinalizedIndex<FTag> *index, const iSaxFinalizedNode<FTag> *node,
                            const vec<iSaxType> &isax_words, IndexStats &stats, size_t height) {
         if (node->is_leaf()) {
@@ -52,7 +111,11 @@ class IndexAnalyzer {
         }
     }
 
-    void analyze_isax() {
+    /**
+     * @brief Analyze the iSAX index
+     * @param length_group_id The ID of the length group within the index (0 for non-length-grouped indexes)
+     * */
+    void analyze_isax(uint length_group_id = 0) {
         const iSaxFinalizedIndex<FTag> *index = dynamic_cast<iSaxFinalizedIndex<FTag> *>(m_index.get());
         if (!index) throw std::runtime_error("Could not cast index to iSaxFinalizedIndex");
 
@@ -71,10 +134,16 @@ class IndexAnalyzer {
             analyze_isax_node(index, index->get_first_layer_node(i), isax_words, stats, 1);
         }
         stats.calculate();
-        IndexStatsLogger::write_entry(stats, m_sub_index_id);
+        IndexStatsLogger::write_entry(stats, length_group_id, m_sub_index_id);
     }
 };
 
-int calculate_index_stats(SearchMethodType method_type, ArchiveType index_format);
+/**
+ * @brief Calculate index statistics
+ * @param method_type The type of index to use
+ * @param num_l_groups The number of length groups to use
+ * @param index_format The format of the index
+ */
+int calculate_index_stats(SearchMethodType method_type, uint num_l_groups, ArchiveType index_format);
 
 #endif  // INDEX_STATS_HPP

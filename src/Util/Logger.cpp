@@ -515,7 +515,7 @@ struct FlatStatsList {
 
 using ISTC = IndexStatsColumn;
 
-void IndexStatsLogger::write_entry(const IndexStats &stats, uint sub_index_id) {
+void IndexStatsLogger::write_entry(const IndexStats &stats, uint length_group_id, uint sub_index_id) {
 #ifndef DISABLE_LOGGING
     IndexStatsLogger instance;
     auto &RS = RunSettings::get_instance();
@@ -523,10 +523,16 @@ void IndexStatsLogger::write_entry(const IndexStats &stats, uint sub_index_id) {
     str index_file = RS.m_index_file;
     str index_stats_path = fs::path(RS.get_logs_path()) / instance.INDEX_STATS_FILE;
 
+    vec<size_t> flat_seg_count_list(stats.m_seg_count_list.size() * stats.m_seg_count_list[0].size());
+    for (MtsNumChannelsT c = 0; c < stats.m_seg_count_list.size(); ++c)
+        for (SaxSegIndT s = 0; s < stats.m_seg_count_list[c].size(); ++s)
+            flat_seg_count_list[c * stats.m_seg_count_list[0].size() + s] = stats.m_seg_count_list[c][s];
+
     instance.file_setup(index_stats_path, INDEX_STATS_COL_STRS);
     instance.write_row(index_stats_path,
                        {
                            {ISTC::INDEX_FILE, index_file},
+                           {ISTC::LENGTH_GROUP_ID, to_string(length_group_id)},
                            {ISTC::SUB_INDEX_ID, to_string(sub_index_id)},
                            ADD_STATS_TO_ROW(ISTC, LEAF_SIZE, stats.m_leaf_size_stats),
                            ADD_STATS_TO_ROW(ISTC, LEAF_HEIGHT, stats.m_leaf_height_stats),
@@ -538,6 +544,7 @@ void IndexStatsLogger::write_entry(const IndexStats &stats, uint sub_index_id) {
                            ADD_STATS_LIST_TO_ROW(ISTC, SEG_LOWER_LIST, FlatStatsList(stats.m_seg_lower_list_stats)),
                            ADD_STATS_LIST_TO_ROW(ISTC, SEG_UPPER_LIST, FlatStatsList(stats.m_seg_upper_list_stats)),
                            ADD_STATS_LIST_TO_ROW(ISTC, SEG_RANGE_LIST, FlatStatsList(stats.m_seg_range_list_stats)),
+                           {ISTC::SEGMENT_COUNT_LIST, instance.get_collection_str(flat_seg_count_list)},
                        },
                        INDEX_STATS_COL_ENUMS);
 #endif  // DISABLE_LOGGING

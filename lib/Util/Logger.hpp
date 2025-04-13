@@ -169,6 +169,7 @@ DEFINE_ENUM_CONSTS_NO_EXTRA(QueryStatsColumn, QUERY_STATS_COL, false);
 /** @brief Enum of the columns of the index statistics log file */
 enum class IndexStatsColumn {
     INDEX_FILE,                           // Name of the index file / directory
+    LENGTH_GROUP_ID,                      // ID of the length group within the index (0 if no length grouping is used)
     SUB_INDEX_ID,                         // ID of the sub-index within the index
     DEFINE_STAT_COLUMNS(LEAF_SIZE),       // Statistics of the sizes of the leaves / # entries in the leaves
     DEFINE_STAT_COLUMNS(LEAF_HEIGHT),     // Statistics of the height of the leaves
@@ -554,9 +555,10 @@ class IndexStatsLogger : public Logger {
     /**
      * @brief Write an index statistics entry
      * @param stats The statistics of the index
+     * @param length_group_id The ID of the length group within the index
      * @param sub_index_id The ID of the sub-index within the index
      */
-    static void write_entry(const IndexStats &stats, uint sub_index_id = 0);
+    static void write_entry(const IndexStats &stats, uint length_group_id = 0, uint sub_index_id = 0);
 
    private:
     IndexStatsLogger() = default;

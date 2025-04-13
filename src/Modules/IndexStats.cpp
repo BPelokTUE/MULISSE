@@ -14,21 +14,21 @@
 // iSAX
 
 template <>
-void IndexAnalyzer<iSaxFinalizedIndex<PaaTag>, PaaTag>::analyze() {
-    analyze_isax();
+void IndexAnalyzer<iSaxFinalizedIndex<PaaTag>, PaaTag>::analyze(uint length_group_id) {
+    analyze_isax(length_group_id);
 }
 
 // iSAX + envelope
 
 template <>
-void IndexAnalyzer<iSaxFinalizedIndex<EnvelopeTag>, EnvelopeTag>::analyze() {
-    analyze_isax();
+void IndexAnalyzer<iSaxFinalizedIndex<EnvelopeTag>, EnvelopeTag>::analyze(uint length_group_id) {
+    analyze_isax(length_group_id);
 }
 
-// Envelope, SAX envelope
+// Envelope / SAX envelope
 
 template <>
-void IndexAnalyzer<FlatEnvelopeIndex, EnvelopeTag>::analyze() {
+void IndexAnalyzer<FlatEnvelopeIndex, EnvelopeTag>::analyze(uint length_group_id) {
     const FlatEnvelopeIndex *index = dynamic_cast<FlatEnvelopeIndex *>(m_index.get());
     if (!index) throw std::runtime_error("Could not cast index to FlatEnvelopeIndex");
 
@@ -48,61 +48,49 @@ void IndexAnalyzer<FlatEnvelopeIndex, EnvelopeTag>::analyze() {
         }
     }
     stats.calculate();
-    IndexStatsLogger::write_entry(stats, m_sub_index_id);
+    IndexStatsLogger::write_entry(stats, length_group_id, m_sub_index_id);
+}
+
+// iSAX + envelope / SAX envelope
+
+template <>
+uptr<ChainFinalizedIndex<EnvelopeTag>> IndexAnalyzer<ChainFinalizedIndex<EnvelopeTag>, EnvelopeTag>::create_index() {
+    vec<uptr<IFinalizedIndex<EnvelopeTag>>> approx_indexes(1);
+    approx_indexes[0] = std::make_unique<iSaxFinalizedIndex<EnvelopeTag>>();
+    auto exact_index = uptr<IFinalizedIndex<EnvelopeTag>>(new FlatEnvelopeIndex());
+    return std::make_unique<ChainFinalizedIndex<EnvelopeTag>>(std::move(approx_indexes), std::move(exact_index));
+}
+
+template <>
+void IndexAnalyzer<ChainFinalizedIndex<EnvelopeTag>, EnvelopeTag>::analyze(uint length_group_id) {
+    auto approx_index = uptr<iSaxFinalizedIndex<EnvelopeTag>>(
+        static_cast<iSaxFinalizedIndex<EnvelopeTag> *>(m_index->release_approx_index(0)));
+    IndexAnalyzer<iSaxFinalizedIndex<EnvelopeTag>, EnvelopeTag>(std::move(approx_index), 0u).analyze(length_group_id);
+
+    auto exact_index = uptr<FlatEnvelopeIndex>(static_cast<FlatEnvelopeIndex *>(m_index->release_exact_index()));
+    IndexAnalyzer<FlatEnvelopeIndex, EnvelopeTag>(std::move(exact_index), 1u).analyze(length_group_id);
 }
 
 // Main
 
-int calculate_index_stats(SearchMethodType method_type, ArchiveType index_format) {
-    auto &RS = RunSettings::get_instance();
-
-#define LOAD_INDEX                                                    \
-    try {                                                             \
-        auto index_file = RS.get_index_path();                        \
-        index_file = add_archive_extension(index_file, index_format); \
-        index->load(index_file, index_format);                        \
-    } catch (const std::exception &e) {                               \
-        std::cerr << "Error loading index: " << e.what() << '\n';     \
-        return 1;                                                     \
-    }
-
-#define ANALYZE_SIMPLE_INDEX(INDEX_TYPE, F_TAG)  \
-    auto index = std::make_unique<INDEX_TYPE>(); \
-    LOAD_INDEX;                                  \
-    IndexAnalyzer<INDEX_TYPE, F_TAG>(std::move(index)).analyze();
-
+int calculate_index_stats(SearchMethodType method_type, uint num_l_groups, ArchiveType index_format) {
     switch (method_type) {
         case ISAX: {
-            ANALYZE_SIMPLE_INDEX(iSaxFinalizedIndex<PaaTag>, PaaTag);
+            IndexAnalyzer<iSaxFinalizedIndex<PaaTag>, PaaTag>::analyze_run_index(index_format, num_l_groups);
             break;
         }
         case ISAX_ENVELOPE: {
-            ANALYZE_SIMPLE_INDEX(iSaxFinalizedIndex<EnvelopeTag>, EnvelopeTag);
+            IndexAnalyzer<iSaxFinalizedIndex<EnvelopeTag>, EnvelopeTag>::analyze_run_index(index_format, num_l_groups);
             break;
         }
         case ENVELOPE:
         case SAX_ENVELOPE: {
-            ANALYZE_SIMPLE_INDEX(FlatEnvelopeIndex, EnvelopeTag);
+            IndexAnalyzer<FlatEnvelopeIndex, EnvelopeTag>::analyze_run_index(index_format, num_l_groups);
             break;
         }
         case ISAX_ENV_W_ENV:
         case ISAX_ENV_W_SAX_ENV: {
-            uptr<ChainFinalizedIndex<EnvelopeTag>> index;
-            {
-                vec<uptr<IFinalizedIndex<EnvelopeTag>>> approx_indexes(1);
-                approx_indexes[0] = std::make_unique<iSaxFinalizedIndex<EnvelopeTag>>();
-                auto exact_index = uptr<IFinalizedIndex<EnvelopeTag>>(new FlatEnvelopeIndex());
-                index = std::make_unique<ChainFinalizedIndex<EnvelopeTag>>(std::move(approx_indexes),
-                                                                           std::move(exact_index));
-            }
-            LOAD_INDEX;
-
-            auto approx_index = uptr<iSaxFinalizedIndex<EnvelopeTag>>(
-                static_cast<iSaxFinalizedIndex<EnvelopeTag> *>(index->release_approx_index(0)));
-            IndexAnalyzer<iSaxFinalizedIndex<EnvelopeTag>, EnvelopeTag>(std::move(approx_index), 0u).analyze();
-
-            auto exact_index = uptr<FlatEnvelopeIndex>(static_cast<FlatEnvelopeIndex *>(index->release_exact_index()));
-            IndexAnalyzer<FlatEnvelopeIndex, EnvelopeTag>(std::move(exact_index), 1u).analyze();
+            IndexAnalyzer<ChainFinalizedIndex<EnvelopeTag>, EnvelopeTag>::analyze_run_index(index_format, num_l_groups);
             break;
         }
         default:
