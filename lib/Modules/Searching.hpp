@@ -155,7 +155,7 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
     vec<vec<Real>> query(num_channels);
 
     size_t query_count = 0, query_len = 0;
-    for (MtsNumChannelsT c = 0; !query_ifs.eof(); ++c) {
+    for (MtsNumChannelsT c = 0; !query_ifs.eof();) {
         str line;
         std::getline(query_ifs, line);
         std::istringstream iss(line);
@@ -223,6 +223,8 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
 
             // Reset the query channel index
             c = 0;
+        } else {
+            ++c;
         }
     }
     return 0;

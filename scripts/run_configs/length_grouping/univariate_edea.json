@@ -4,7 +4,7 @@
     "series_lengths": [2048],
     "syn_num_channels": [1],
     "syn_step_stdevs": [1.0],
-    "query_set_sizes": [10],
+    "query_set_sizes": [50],
     "l_range_ratios": [[0.25, 1.0]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],

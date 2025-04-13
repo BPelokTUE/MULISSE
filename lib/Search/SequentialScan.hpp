@@ -46,7 +46,7 @@ class SequentialScan : public ISearchMethod<S, D, QS> {
 
             logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED);
         }
-        return { result_set.get_results(), true };
+        return {result_set.get_results(), true};
     }
 };
 
