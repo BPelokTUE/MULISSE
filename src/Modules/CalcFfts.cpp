@@ -1,7 +1,7 @@
 #include "Modules/CalcFfts.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
-#include "Util/Logger.hpp"
+#include "Util/Logging/IndexLogger.hpp"
 
 int calculate_ffts(bool normalized) {
     auto &RS = RunSettings::get_instance();

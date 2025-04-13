@@ -7,7 +7,7 @@
 #include "Search/iSax/iSaxFinalizedIndex.hpp"
 #include "Search/LengthGroupingIndex.hpp"
 #include "Util/typedefs.hpp"
-#include "Util/Logger.hpp"
+#include "Util/Logging/IndexStatsLogger.hpp"
 #include "Util/RunSettings.hpp"
 
 template <typename IndexType, typename FTag>

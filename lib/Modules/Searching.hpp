@@ -3,7 +3,7 @@
 
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
-#include "Util/Logger.hpp"
+#include "Util/Logging/QueryLogger.hpp"
 #include "Serialization/SerializationRegistration.hpp"
 #include "Search/LengthGroupingIndex.hpp"
 #include "Search/Options/SearchOptions.hpp"

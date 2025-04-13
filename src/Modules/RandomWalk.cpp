@@ -6,7 +6,7 @@
 
 #include "Modules/RandomWalk.hpp"
 #include "Util/typedefs.hpp"
-#include "Util/Logger.hpp"
+#include "Util/Logging/DatasetLogger.hpp"
 #include "Util/RunSettings.hpp"
 
 int create_random_walks(Real step_sigma, bool zero_start, uint seed) {

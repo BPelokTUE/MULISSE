@@ -9,7 +9,7 @@
 
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
-#include "Util/Logger.hpp"
+#include "Util/Logging/IndexLogger.hpp"
 #include "Search/Options/SearchOptions.hpp"
 #include "Search/ResultSet.hpp"
 #include "Search/Index.hpp"

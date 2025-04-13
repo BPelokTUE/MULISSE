@@ -5,7 +5,7 @@
 
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
-#include "Util/Logger.hpp"
+#include "Util/Logging/QueryLogger.hpp"
 #include "Search/SearchMethod.hpp"
 #include "Search/ResultSet.hpp"
 #include "Search/Options/SearchOptions.hpp"

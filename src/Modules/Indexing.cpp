@@ -14,7 +14,7 @@
 #include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
-#include "Util/Logger.hpp"
+#include "Util/Logging/IndexLogger.hpp"
 
 uptr<IiSaxBreakpointStrategy> get_breakpoint_strategy(const SaxIndexParams *params) {
     switch (params->m_breakpoint_strategy_type) {

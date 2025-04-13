@@ -7,7 +7,7 @@
 #include "Modules/QueryGen.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
-#include "Util/Logger.hpp"
+#include "Util/Logging/QuerySetLogger.hpp"
 #include "Util/RunSettings.hpp"
 
 struct QueryDescriptor {

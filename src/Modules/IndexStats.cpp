@@ -1,6 +1,6 @@
 #include "Modules/IndexStats.hpp"
 #include "Util/typedefs.hpp"
-#include "Util/Logger.hpp"
+#include "Util/Logging/IndexStatsLogger.hpp"
 #include "Util/RunSettings.hpp"
 #include "Search/Index.hpp"
 #include "Search/iSax/iSaxFinalizedIndex.hpp"

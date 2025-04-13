@@ -12,7 +12,7 @@
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 #include "Util/RunSettings.hpp"
-#include "Util/Logger.hpp"
+#include "Util/Logging/DatasetLogger.hpp"
 
 int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, uint seed,
                             char col_sep) {

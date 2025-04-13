@@ -8,7 +8,7 @@
 #include "Summarization/iSaxBreakpointStrategy.hpp"
 #include "Summarization/Paa.hpp"
 #include "Util/typedefs.hpp"
-#include "Util/Logger.hpp"
+#include "Util/Logging/IndexLogger.hpp"
 #include "Util/RunSettings.hpp"
 
 size_t SaxSymbolsHash::operator()(const vec<vec<SaxSymbolT>> &symbols) const {

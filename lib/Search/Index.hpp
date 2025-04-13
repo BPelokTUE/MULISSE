@@ -14,7 +14,7 @@
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/Paa.hpp"
 #include "Util/typedefs.hpp"
-#include "Util/Logger.hpp"
+#include "Util/Logging/IndexLogger.hpp"
 
 template <typename T>
 struct IndexTraits;

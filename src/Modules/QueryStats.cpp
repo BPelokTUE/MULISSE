@@ -5,7 +5,7 @@
 #include "Util/constants.hpp"
 #include "Util/utilities.hpp"
 #include "Util/typedefs.hpp"
-#include "Util/Logger.hpp"
+#include "Util/Logging/QueryStatsLogger.hpp"
 #include "Util/RunSettings.hpp"
 
 void update_query_stats(QueryStats &stats, const vec<vec<Real>> &query, const vec<vec<Real>> &mts, bool normalized) {

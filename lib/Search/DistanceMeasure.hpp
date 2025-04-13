@@ -5,7 +5,7 @@
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 #include "Util/FftArray.hpp"
-#include "Util/Logger.hpp"
+#include "Util/Logging/QueryLogger.hpp"
 #include "Util/RunSettings.hpp"
 #include "Search/Options/DistanceType.hpp"
 #include "Search/Options/SearchType.hpp"
