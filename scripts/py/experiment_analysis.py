@@ -17,7 +17,6 @@ This script contains the necessary classes and functions to analyze the results 
 
 # %%
 
-import math
 import os
 import re
 from enum import Enum, auto
@@ -492,7 +491,7 @@ def execute_reduction(
 METHOD_COLORS = {
     "sequential_scan-ed": PALETTE["Yellows"][2],
     "base_ed-ed": PALETTE["Yellows"][3],
-    "sequential_scan-ed-early": PALETTE["Yellows"][4],
+    "sequential_scan-ed-early": PALETTE["Yellows"][5],
     "sequential_scan-mass": PALETTE["Oranges"][0],
     "base_mass-mass": PALETTE["Oranges"][1],
     "sequential_scan-mass-ffts": PALETTE["Oranges"][2],
@@ -1284,7 +1283,8 @@ def experiment_length_based_grouping(
     groups_dict = {
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
         ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
-        ERD.INDEXES_COLS: [str(ISC.L_PER_GROUP), str(ISC.L_MIN), str(ISC.L_MAX)],
+        ERD.QUERY_SETS_COLS: [str(QSC.L_MIN), str(QSC.L_MAX)],
+        ERD.INDEXES_COLS: [str(ISC.L_PER_GROUP)],
     }
     ds_index = 1
     targets_dict = {ERD.RUNS_COLS: target_cols}
@@ -1302,8 +1302,10 @@ def experiment_length_based_grouping(
         datasets = {key[ds_index] for key in reduced_values}
         ordered_datasets = sorted(datasets, key=lambda x: ORDERED_DATASETS.index(x))
 
+    l_ranges = {(key[2], key[3]) for key in reduced_values}
+
     def get_x_label(key: tuple) -> str:
-        _, _, l_per_group, l_min, l_max = key
+        _, _, l_min, l_max, l_per_group = key
         if l_per_group is None or l_per_group <= 0:
             return ""
 
@@ -1311,35 +1313,38 @@ def experiment_length_based_grouping(
         return f"#LG={num_l_groups}"
 
     for dataset in ordered_datasets:
-        reduced_values_ds = {key: values for key, values in reduced_values.items() if key[1] == dataset}
-        method_keys_list = list(METHOD_LABELS.keys())
-        reduced_values_ds = sort_dict(reduced_values_ds, lambda x: method_keys_list.index(x[0][0]))
+        for l_range in l_ranges:
+            reduced_values_ds = {
+                key: values for key, values in reduced_values.items() if key[1] == dataset and key[2:4] == l_range
+            }
+            method_keys_list = list(METHOD_LABELS.keys())
+            reduced_values_ds = sort_dict(reduced_values_ds, lambda x: method_keys_list.index(x[0][0]))
 
-        plot_bars(
-            reduced_values_ds,
-            0,
-            x_labels={key[1:]: get_x_label(key) for key in reduced_values_ds},
-            y_label=Y_LABELS[target_cols[0]],
-            title=dataset.rsplit("/", 1)[0],
-            hatches=hatches,
-            hatch_labels=hatch_labels,
-        )
+            plot_bars(
+                reduced_values_ds,
+                0,
+                x_labels={key[1:]: get_x_label(key) for key in reduced_values_ds},
+                y_label=Y_LABELS[target_cols[0]],
+                title=f"{dataset.rsplit('/', 1)[0]} l in [{l_range[0]}, {l_range[1]}]",
+                hatches=hatches,
+                hatch_labels=hatch_labels,
+            )
 
 
 # %%
 
+logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_univariate"
+
 experiment_length_based_grouping(
     target_cols=TIME_TARGETS,
-    logs_dir="EXPERIMENT_LOGS/length_grouping/LOGS_univariate_edea",
+    logs_dir=logs_dir,
     hatches=["", PREP_TIME_HATCH],
     hatch_labels=TIME_LABELS,
     merge_csv_datasets=True,
 )
 
-# %%
-
 experiment_length_based_grouping(
     target_cols=[str(QC.PRUNING_RATIO)],
-    logs_dir="EXPERIMENT_LOGS/length_grouping/LOGS_univariate_edea",
+    logs_dir=logs_dir,
     merge_csv_datasets=True,
 )
