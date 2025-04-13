@@ -20,12 +20,11 @@ namespace fs = std::filesystem;
  * @return The size of the dataset
  */
 inline size_t get_dataset_size(const str dataset_path) {
-    std::ifstream data_stream(dataset_path, std::ios::binary | std::ios::ate);
-    auto pos = data_stream.tellg();
-    if (pos == -1) {
-        throw std::runtime_error("Failed to determine dataset size");
+    try {
+        return static_cast<size_t>(fs::file_size(dataset_path));
+    } catch (const fs::filesystem_error& e) {
+        throw std::runtime_error("Failed to get file size: " + std::string(e.what()));
     }
-    return static_cast<size_t>(pos);
 }
 
 /**

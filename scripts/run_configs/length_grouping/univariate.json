@@ -22,7 +22,7 @@
         "hier": [1]
     },
     "max_leaves_to_visit": [5],
-    "num_segments": [8],
+    "num_segments": [16],
     "envelope_size_ratios": [1.0],
     "length_group_size_ratios": [0.05, 0.2, 1.0],
     "distance_measures": ["ed", "mass"],
@@ -35,5 +35,6 @@
     "search_rs": [1.0],
     "search_approx": [false],
     "search_raw": [false],
-    "separate_csv_datasets": true
+    "separate_csv_datasets": true,
+    "calculate_index_stats": true
 }
