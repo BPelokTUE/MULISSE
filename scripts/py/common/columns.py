@@ -116,6 +116,7 @@ class QueryColumn(Enum):
     NUM_TS_EXAMINED = auto()  # For backward compatibility
     NUM_ENTRIES_EXAMINED = auto()
     ABANDONING_RATE = auto()
+    KEEP_RATE = auto()
     TOTAL_TIME_S = auto()
     FIRST_LAYER_TIME_S = auto()
     TREE_TRAVERSAL_TIME_S = auto()

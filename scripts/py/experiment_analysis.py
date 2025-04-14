@@ -266,6 +266,11 @@ class ExperimentResults(BaseModel):
         if len(leaf_fill_cols) > 0:
             extra_cols[ERD.INDEXES_COLS].append(str(ISC.LEAF_CAPACITY))
 
+        # Handle keep rate column
+        if str(QC.KEEP_RATE) in cols[ERD.RUNS_COLS]:
+            extra_cols[ERD.RUNS_COLS].append(str(QC.ABANDONING_RATE))
+            act_cols[ERD.RUNS_COLS].remove(str(QC.KEEP_RATE))
+
         extra_cols = {erd: list(set(extra_cols[erd]) - set(act_cols[erd])) for erd in ERD}
         cols_to_load = {erd: act_cols[erd] + extra_cols[erd] for erd in ERD}
         csv_paths = {erd: os.path.join(logs_dir, CSV_FILES[erd]) for erd in ERD}
@@ -284,23 +289,23 @@ class ExperimentResults(BaseModel):
 
         # Add method name column
         if str(SSC.METHOD_NAME) in cols[ERD.METHODS_COLS]:
-            act_cols[ERD.METHODS_COLS].append(str(SSC.METHOD_NAME))
             results.methods_df = define_method_name_col(results.methods_df)
 
         # Add pruning ratio column
         if str(QC.PRUNING_RATIO) in cols[ERD.RUNS_COLS]:
-            act_cols[ERD.RUNS_COLS].append(str(QC.PRUNING_RATIO))
             results.add_pruning_ratio_column()
 
         # Add amortized prep time column
         if str(QC.AMORTIZED_PREP_TIME_S) in cols[ERD.RUNS_COLS]:
-            act_cols[ERD.RUNS_COLS].append(str(QC.AMORTIZED_PREP_TIME_S))
             results.add_amortized_prep_time_column()
 
         # Add leaf fill columns
         if len(leaf_fill_cols) > 0:
-            act_cols[ERD.INDEX_STATS_COLS] += leaf_fill_cols
             results.add_leaf_fill_columns(leaf_fill_cols)
+
+        # Add keep rate column
+        if str(QC.KEEP_RATE) in cols[ERD.RUNS_COLS]:
+            results.runs_df[str(QC.KEEP_RATE)] = 1 - results.runs_df[str(QC.ABANDONING_RATE)]
 
         # Drop extra columns
         results.datasets_df = results.datasets_df.drop(columns=extra_cols[ERD.DATASETS_COLS])
@@ -314,7 +319,7 @@ class ExperimentResults(BaseModel):
         cols = original_cols
         return results
 
-    def get_merged_df(self):
+    def get_merged_df(self, combine_index_stats: bool = True) -> pd.DataFrame:
         dsc_dataset_file = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.DATASET_FILE))
 
         columns_to_drop = []
@@ -346,12 +351,18 @@ class ExperimentResults(BaseModel):
                 isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
                 isc_dataset_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.DATASET_FILE))
 
-                merged_df = merged_df.merge(
+                has_index = merged_df[ssc_index_file].notna()
+                merged_df_w_index = merged_df[has_index]
+                merged_df_no_index = merged_df[~has_index]
+
+                merged_df_w_index = merged_df_w_index.merge(
                     rename_df_columns(self.indexes_df, ERD.INDEXES_COLS),
                     left_on=ssc_index_file,
                     right_on=isc_index_file,
-                    how="outer",
+                    how="left",
                 )
+                merged_df = pd.concat([merged_df_no_index, merged_df_w_index], ignore_index=True)
+
                 columns_to_drop.extend([ssc_index_file, isc_dataset_file])
 
                 if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEX_STATS_COLS])):
@@ -364,7 +375,6 @@ class ExperimentResults(BaseModel):
                         right_on=istc_index_file,
                         how="left",
                     )
-                    columns_to_drop.append(istc_index_file)
 
             if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.RUNS_COLS])):
                 qc_settings_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.SETTINGS_ID))
@@ -389,6 +399,7 @@ class ExperimentResults(BaseModel):
             )
             columns_to_drop.append(qstc_dataset_file)
 
+        print("Size of merged DF:", len(merged_df))
         return merged_df.drop(columns=columns_to_drop)
 
 
@@ -687,11 +698,13 @@ PREP_TIME_HATCH = "/////"
 TOTAL_TIME_Y_LABEL = "Total time (S)"
 PRUNING_RATIO_Y_LABEL = "Pruning ratio"
 ABANDONING_RATE_Y_LABEL = "Abandoning rate"
+KEEP_RATE_Y_LABEL = "Keep rate (1 - abandoning rate)"
 
 Y_LABELS = {
     str(QC.TOTAL_TIME_S): TOTAL_TIME_Y_LABEL,
     str(QC.ABANDONING_RATE): ABANDONING_RATE_Y_LABEL,
     str(QC.PRUNING_RATIO): PRUNING_RATIO_Y_LABEL,
+    str(QC.KEEP_RATE): KEEP_RATE_Y_LABEL,
 }
 
 
@@ -712,6 +725,22 @@ def get_col_index(col: str, tuples: list[tuple[ERD, str]]) -> int:
         if col_name == col:
             return i
     return -1
+
+
+def merge_univariate_datasets(mean_values, ds_index: int = 0):
+    merged_mean_values = {}
+    for group, values in mean_values.items():
+        dataset = group[ds_index].split("/", 1)[0]
+        merged_group = (*group[:ds_index], dataset, *group[ds_index + 1 :])
+        if merged_group not in merged_mean_values:
+            merged_mean_values[merged_group] = [[] for _ in range(len(values))]
+        for i, value in enumerate(values):
+            merged_mean_values[merged_group][i].append(value)
+
+    for group, values_lists in merged_mean_values.items():
+        merged_mean_values[group] = [np.mean(values) for values in values_lists]
+
+    return merged_mean_values
 
 
 # %%[markdown]
@@ -965,20 +994,6 @@ experiment_relative_contrast(
 
 
 # %%
-def merge_univariate_datasets(mean_values, ds_index: int = 0):
-    merged_mean_values = {}
-    for group, values in mean_values.items():
-        dataset = group[ds_index].split("/", 1)[0]
-        merged_group = (*group[:ds_index], dataset, *group[ds_index + 1 :])
-        if merged_group not in merged_mean_values:
-            merged_mean_values[merged_group] = [[] for _ in range(len(values))]
-        for i, value in enumerate(values):
-            merged_mean_values[merged_group][i].append(value)
-
-    for group, values_lists in merged_mean_values.items():
-        merged_mean_values[group] = [np.mean(values) for values in values_lists]
-
-    return merged_mean_values
 
 
 def experiment_univariate_parametrization(
@@ -1296,6 +1311,9 @@ def experiment_length_based_grouping(
     groups = dict_to_tuples(groups_dict)
     reduced_values = execute_reduction([results], targets, groups)
 
+    if target_cols[0] == str(QC.KEEP_RATE):
+        reduced_values = {key: value for key, value in reduced_values.items() if "mass" not in key[0]}
+
     ordered_datasets = {key[ds_index] for key in reduced_values}
     if merge_csv_datasets:
         reduced_values = merge_univariate_datasets(reduced_values, ds_index)
@@ -1333,18 +1351,31 @@ def experiment_length_based_grouping(
 
 # %%
 
-logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_univariate_d"
+logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_univariate"
+
+# %%
 
 experiment_length_based_grouping(
-    target_cols=TIME_TARGETS,
     logs_dir=logs_dir,
-    hatches=["", PREP_TIME_HATCH],
-    hatch_labels=TIME_LABELS,
+    target_cols=[str(QC.TOTAL_TIME_S)],
+    # target_cols=TIME_TARGETS,
+    # hatches=["", PREP_TIME_HATCH],
+    # hatch_labels=TIME_LABELS,
     merge_csv_datasets=True,
 )
 
+# %%
+
 experiment_length_based_grouping(
     target_cols=[str(QC.PRUNING_RATIO)],
+    logs_dir=logs_dir,
+    merge_csv_datasets=True,
+)
+
+# %%
+
+experiment_length_based_grouping(
+    target_cols=[str(QC.KEEP_RATE)],
     logs_dir=logs_dir,
     merge_csv_datasets=True,
 )
