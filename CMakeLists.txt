@@ -83,7 +83,7 @@ function(set_up_target target)
 
     if (USE_DOUBLE)
         target_compile_definitions(${target} PRIVATE USE_DOUBLE)
-        target_link_libraries(${target} fftw3l m)
+        target_link_libraries(${target} fftw3 m)
     else()
         target_link_libraries(${target} fftw3f m)
     endif()

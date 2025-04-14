@@ -37,15 +37,15 @@ using MtsNumChannelsT = uint16_t;
 
 #ifdef USE_DOUBLE
 using Real = double;
-using fftwr_complex = fftwl_complex;
-using fftwr_plan = fftwl_plan;
-#define fftwr_malloc fftwl_malloc
-#define fftwr_free fftwl_free
-#define fftwr_execute fftwl_execute
-#define fftwr_destroy_plan fftwl_destroy_plan
-#define fftwr_plan_dft_1d fftwl_plan_dft_1d
-#define fftwr_cleanup fftwl_cleanup
-#define fftwr_forget_wisdom fftwl_forget_wisdom
+using fftwr_complex = fftw_complex;
+using fftwr_plan = fftw_plan;
+#define fftwr_malloc fftw_malloc
+#define fftwr_free fftw_free
+#define fftwr_execute fftw_execute
+#define fftwr_destroy_plan fftw_destroy_plan
+#define fftwr_plan_dft_1d fftw_plan_dft_1d
+#define fftwr_cleanup fftw_cleanup
+#define fftwr_forget_wisdom fftw_forget_wisdom
 #else
 using Real = float;
 using fftwr_complex = fftwf_complex;
