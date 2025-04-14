@@ -228,14 +228,16 @@ umap<V, K> get_inverse_map(const umap<K, V> map) {
 
 /**
  * @brief Calculate the mean and standard deviation from the sum, sum of squares and count
+ * @tparam T Type of the values
  * @param sum Sum of the values
  * @param sum_sq Sum of the squares of the values
  * @param count Number of values
  */
-inline std::pair<Real, Real> calculate_mu_and_sigma(Real sum, Real sum_sq, uint count) {
-    Real count_r = R(count);
-    Real mu = sum / count_r;
-    Real sigma = std::sqrt(std::max(sum_sq / count_r - mu * mu, EPS_F));
+template <typename T>
+inline std::pair<T, T> calculate_mu_and_sigma(T sum, T sum_sq, uint count) {
+    T count_t = static_cast<T>(count);
+    T mu = sum / count_t;
+    T sigma = std::sqrt(std::max(sum_sq / count_t - mu * mu, static_cast<T>(EPS)));
     return {mu, sigma};
 }
 

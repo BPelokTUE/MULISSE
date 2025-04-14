@@ -91,11 +91,11 @@ class RunSettings {
     /**
      * @brief Calculate and store the FFTs for the provided query
      *
-     * @param q_channel Channel of theQuery to calculate FFTs for
+     * @param q_channel Channel of the query to calculate FFTs for
      * @param channel_ind Index of the channel in the query
      * @param num_components Number of FFT components to load
      */
-    void calculate_query_ffts(const vec<Real>& q_channel, MtsNumChannelsT channel_ind, uint num_components);
+    void calculate_query_ffts(const vec<MassT>& q_channel, MtsNumChannelsT channel_ind, uint num_components);
 
     /**
      * @brief Get the FFTs of the last query they were calculated for

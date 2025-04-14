@@ -83,9 +83,16 @@ function(set_up_target target)
 
     if (USE_DOUBLE)
         target_compile_definitions(${target} PRIVATE USE_DOUBLE)
+        target_compile_definitions(${target} PRIVATE USE_DOUBLE_FFT_PRE)
         target_link_libraries(${target} fftw3 m)
-    else()
+    elseif (USE_DOUBLE_FFT_PRE)
+        target_compile_definitions(${target} PRIVATE USE_DOUBLE_FFT_PRE)
+        target_link_libraries(${target} fftw3 m)
+    elseif (USE_SINGLE_MASS)
+        target_compile_definitions(${target} PRIVATE USE_SINGLE_MASS)
         target_link_libraries(${target} fftw3f m)
+    else()
+        target_link_libraries(${target} fftw3 m)
     endif()
 
     # Link OpenMP

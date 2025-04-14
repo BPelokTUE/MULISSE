@@ -121,7 +121,7 @@ void RunSettings::calculate_ffts() const {
 
         uint fft_len = 2 * m_dataset_props.m_series_len;
         FftArray channel_complex(fft_len), channel_ffts(fft_len);
-        for (uint j = 0; j < m_dataset_props.m_series_len; ++j) channel_complex[j][0] = channel[j];
+        for (uint j = 0; j < m_dataset_props.m_series_len; ++j) channel_complex[j][0] = static_cast<MassT>(channel[j]);
 
         plan = fftwr_plan_dft_1d(static_cast<int>(fft_len), channel_complex.data(), channel_ffts.data(), FFTW_FORWARD,
                                  FFTW_ESTIMATE);
@@ -131,8 +131,9 @@ void RunSettings::calculate_ffts() const {
 
         for (uint j = 0; j < fft_len; ++j) {
             auto &fft = channel_ffts[j];
-            ofs.write(reinterpret_cast<const char *>(&fft[0]), sizeof(Real));
-            ofs.write(reinterpret_cast<const char *>(&fft[1]), sizeof(Real));
+            FftPrecT real = static_cast<FftPrecT>(fft[0]), imag = static_cast<FftPrecT>(fft[1]);
+            ofs.write(reinterpret_cast<const char *>(&real), sizeof(FftPrecT));
+            ofs.write(reinterpret_cast<const char *>(&imag), sizeof(FftPrecT));
         }
     }
 }
@@ -142,20 +143,32 @@ FftArray RunSettings::get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channe
 
     // (*2) for real and imaginary parts
     // (*2) for extra components at the end
-    uint file_size_ratio = 4;
+    // Potentially (*2) depending on the size of FftPrecT compared to Real
+    constexpr uint file_size_ratio = 4 * sizeof(FftPrecT) / sizeof(Real);
     size_t data_file_pos = static_cast<size_t>(
         subs_info.get_file_pos(m_dataset_props.m_series_len, m_dataset_props.m_num_channels, channel_ind));
     m_ffts_ifs.seekg(static_cast<std::streamsize>(file_size_ratio * data_file_pos));
 
     FftArray ffts(2 * num_component);
-    m_ffts_ifs.read(reinterpret_cast<char *>(ffts.data()), file_size_ratio * num_component * sizeof(Real));
+    std::streamsize data_to_read = static_cast<std::streamsize>(file_size_ratio * num_component * sizeof(FftPrecT));
+
+    if constexpr (std::is_same_v<FftPrecT, MassT>) {
+        m_ffts_ifs.read(reinterpret_cast<char *>(ffts.data()), data_to_read);
+    } else {
+        vec<FftPrecT> fft_prec(4 * num_component);
+        m_ffts_ifs.read(reinterpret_cast<char *>(fft_prec.data()), data_to_read);
+        for (uint i = 0; i < 2 * num_component; ++i) {
+            ffts[i][0] = static_cast<MassT>(fft_prec[2 * i]);
+            ffts[i][1] = static_cast<MassT>(fft_prec[2 * i + 1]);
+        }
+    }
 
     return ffts;
 }
 
 bool RunSettings::ffts_supported() const { return m_ffts_supported; }
 
-void RunSettings::calculate_query_ffts(const vec<Real> &q_channel, MtsNumChannelsT channel_ind, uint num_components) {
+void RunSettings::calculate_query_ffts(const vec<MassT> &q_channel, MtsNumChannelsT channel_ind, uint num_components) {
     if (!ffts_supported()) return;
 
     assert(channel_ind < m_dataset_props.m_num_channels);

@@ -1333,7 +1333,7 @@ def experiment_length_based_grouping(
 
 # %%
 
-logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_univariate"
+logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_univariate_d"
 
 experiment_length_based_grouping(
     target_cols=TIME_TARGETS,

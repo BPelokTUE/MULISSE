@@ -168,12 +168,12 @@ class DistanceMeasure<S, MASS> {
         bool updated = false;
 
         uint mts_len = 0, query_len = 0;
-        Real query_len_r = 0.0;
+        MassT query_len_mt = 0.0;
         for (MtsNumChannelsT c = 0; c < mts.size(); ++c) {
             if (!query[c].empty()) {
                 mts_len = static_cast<uint>(mts[c].size());
                 query_len = static_cast<uint>(query[c].size());
-                query_len_r = R(query_len);
+                query_len_mt = static_cast<MassT>(query_len);
                 break;
             }
         }
@@ -182,40 +182,41 @@ class DistanceMeasure<S, MASS> {
         for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
             if (query[c].empty()) continue;
 
-            vec<Real> q_channel(query_len), mts_channel(mts_len);
-            for (uint i = 0; i < query_len; ++i) q_channel[i] = query[c][i];
+            vec<MassT> q_channel(query_len), mts_channel(mts_len);
+            for (uint i = 0; i < query_len; ++i) q_channel[i] = static_cast<MassT>(query[c][i]);
 
-            vec<Real> mts_sums(mts_len + 1, 0), mts_sum_sqs(mts_len + 1, 0);
+            vec<MassT> mts_sums(mts_len + 1, 0), mts_sum_sqs(mts_len + 1, 0);
             for (uint i = 1; i <= mts_len; ++i) {
-                mts_channel[i - 1] = mts[c][i - 1];
+                mts_channel[i - 1] = static_cast<MassT>(mts[c][i - 1]);
                 mts_sums[i] = mts_sums[i - 1] + mts_channel[i - 1];
                 mts_sum_sqs[i] = mts_sum_sqs[i - 1] + mts_channel[i - 1] * mts_channel[i - 1];
             }
-            Real query_sum = 0, query_sum_sq = 0;
+            MassT query_sum = 0, query_sum_sq = 0;
             for (uint i = 0; i < query_len; ++i) {
                 query_sum += q_channel[i];
                 query_sum_sq += q_channel[i] * q_channel[i];
             }
-            auto [query_mu, query_sigma] = calculate_mu_and_sigma(query_sum, query_sum_sq, query_len);
+            auto [query_mu, query_sigma] = calculate_mu_and_sigma<MassT>(query_sum, query_sum_sq, query_len);
 
-            vec<Real> dot_products = calculate_dot_products(q_channel, mts_channel, subs_info, c);
+            vec<MassT> dot_products = calculate_dot_products(q_channel, mts_channel, subs_info, c);
 
             if (c_normalized) {
                 for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
-                    Real dot = dot_products[query_len - 1 + start_pos],
-                         subs_sum = mts_sums[query_len + start_pos] - mts_sums[start_pos],
-                         subs_sum_sq = mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos];
-                    auto [subs_mu, subs_sigma] = calculate_mu_and_sigma(subs_sum, subs_sum_sq, query_len);
+                    MassT dot = dot_products[query_len - 1 + start_pos],
+                          subs_sum = mts_sums[query_len + start_pos] - mts_sums[start_pos],
+                          subs_sum_sq = mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos];
+                    auto [subs_mu, subs_sigma] = calculate_mu_and_sigma<MassT>(subs_sum, subs_sum_sq, query_len);
 
                     // TODO: Assuming that the query is already normalized ==> query_mu = 0, query_sigma = 1
-                    Real corr = (dot - query_len_r * query_mu * subs_mu) / (query_len_r * query_sigma * subs_sigma);
-                    squared_dists[start_pos] += std::max(R(0.0), 2 * query_len_r * (1 - corr));
+                    Real corr =
+                        R((dot - query_len_mt * query_mu * subs_mu) / (query_len_mt * query_sigma * subs_sigma));
+                    squared_dists[start_pos] += std::max(R(0.0), R(2 * query_len_mt * (1 - corr)));
                 }
             } else {
                 for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
-                    Real dot = dot_products[query_len - 1 + start_pos];
+                    Real dot = R(dot_products[query_len - 1 + start_pos]);
                     squared_dists[start_pos] += std::max(
-                        R(0.0), query_sum_sq + (mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos]) + dot);
+                        R(0.0), R(query_sum_sq + (mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos]) + dot));
                 }
             }
         }
@@ -234,8 +235,8 @@ class DistanceMeasure<S, MASS> {
     const bool c_normalized;
 
    private:
-    inline vec<Real> calculate_dot_products(const vec<Real> &q_channel, const vec<Real> &mts_channel,
-                                            SubsequenceInfo subs_info, MtsNumChannelsT channel_ind) const {
+    inline vec<MassT> calculate_dot_products(const vec<MassT> &q_channel, const vec<MassT> &mts_channel,
+                                             SubsequenceInfo subs_info, MtsNumChannelsT channel_ind) const {
         uint mts_len = static_cast<uint>(mts_channel.size()), query_len = static_cast<uint>(q_channel.size());
         uint fft_size = 2 * mts_len;
         int fft_size_i = static_cast<int>(fft_size);
@@ -281,8 +282,8 @@ class DistanceMeasure<S, MASS> {
         fftwr_execute(plan);
         fftwr_destroy_plan(plan);
 
-        vec<Real> dot_products_real(mts_len);
-        for (uint i = 0; i < mts_len; ++i) dot_products_real[i] = dot_products[i][0] / R(fft_size);
+        vec<MassT> dot_products_real(mts_len);
+        for (uint i = 0; i < mts_len; ++i) dot_products_real[i] = dot_products[i][0] / static_cast<MassT>(fft_size);
 
         return dot_products_real;
     }
