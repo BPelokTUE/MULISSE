@@ -3,12 +3,7 @@
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 
-Envelope::Envelope(vec<Real> lower, vec<Real> upper) {
-    this->m_lower = std::move(lower);
-    this->m_upper = std::move(upper);
-}
-
-size_t Envelope::size() const { return m_lower.size(); }
+Envelope::Envelope(vec<Real> lower, vec<Real> upper) : m_lower(std::move(lower)), m_upper(std::move(upper)) {}
 
 void Envelope::resize(size_t new_size) {
     m_lower.resize(new_size);

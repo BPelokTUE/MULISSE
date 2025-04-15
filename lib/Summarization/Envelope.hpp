@@ -15,11 +15,16 @@ struct Envelope : EntryData {
     /** @brief Upper bounds of the envelope */
     vec<Real> m_upper;
 
-    Envelope(vec<Real> lower, vec<Real> upper);
-
     Envelope() = default;
 
-    size_t size() const override;
+    /**
+     * @brief Construct a new Envelope object
+     * @param lower Lower bounds of the envelope
+     * @param upper Upper bounds of the envelope
+     */
+    Envelope(vec<Real> lower, vec<Real> upper);
+
+    inline size_t size() const override { return m_lower.size(); }
 
     void resize(size_t new_size) override;
 
@@ -91,9 +96,7 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
 
         uint segments_per_env = l_max / segment_len;
         uint num_env = static_cast<uint>((ts.size() - l_min + pos_per_env) / pos_per_env);
-        vec<vec<Envelope>> envelope_groups(
-            m_num_len_groups,
-            vec<Envelope>(num_env, {vec<Real>(segments_per_env, INF), vec<Real>(segments_per_env, -INF)}));
+        vec<vec<Envelope>> envelope_groups = get_envelope_groups(num_env, l_min, l_max, segment_len);
 
         Real paa_acc = 0.0, segment_len_r = R(segment_len);
 
@@ -108,12 +111,16 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
             for (uint seg_ind = 0; seg_ind < segments_in_subs; ++seg_ind) {
                 uint first_ind = last_ind + 1 - (seg_ind + 1) * segment_len;
                 if (ts.size() - first_ind >= l_min) {
-                    auto &envelope = envelope_groups[0][first_ind / pos_per_env];
+                    auto &envelope = envelope_groups[m_num_len_groups - 1][first_ind / pos_per_env];
                     envelope.m_lower[seg_ind] = std::min(envelope.m_lower[seg_ind], paa_val);
                     envelope.m_upper[seg_ind] = std::max(envelope.m_upper[seg_ind], paa_val);
                 }
             }
         }
+
+        for (uint lg_ind = 0; lg_ind < m_num_len_groups - 1; ++lg_ind)
+            for (uint seg_ind = 0; seg_ind < envelope_groups[lg_ind].size(); ++seg_ind)
+                envelope_groups[lg_ind][seg_ind] = envelope_groups[m_num_len_groups - 1][seg_ind];
 
         flip_env_infinities(envelope_groups);
         return envelope_groups;
@@ -133,8 +140,8 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
 
         uint segments_per_env = l_max / segment_len;
         uint num_env = static_cast<uint>((ts.size() - l_min + pos_per_env) / pos_per_env);
-        vec<vec<Envelope>> envelopes(m_num_len_groups, vec<Envelope>(num_env, {vec<Real>(segments_per_env, INF),
-                                                                               vec<Real>(segments_per_env, -INF)}));
+
+        vec<vec<Envelope>> envelope_groups = get_envelope_groups(num_env, l_min, l_max, segment_len);
 
         vec<Real> sum_accs(ts.size() + 1, 0.0), sq_sum_accs(ts.size() + 1, 0.0);
 
@@ -158,24 +165,46 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
                         R(segment_len);
                     paa_val = (paa_val - mu) / sigma;
 
-                    auto &envelope = envelopes[length_group][start / pos_per_env];
+                    auto &envelope = envelope_groups[length_group][start / pos_per_env];
                     envelope.m_lower[seg_ind] = std::min(envelope.m_lower[seg_ind], paa_val);
                     envelope.m_upper[seg_ind] = std::max(envelope.m_upper[seg_ind], paa_val);
                 }
             }
         }
-        flip_env_infinities(envelopes);
-        return envelopes;
+        flip_env_infinities(envelope_groups);
+        return envelope_groups;
+    }
+
+    /**
+     * @brief Declare the envelope groups with optimal size
+     * @param num_env Number of envelopes per time series
+     * @param l_min Minimum length of a query
+     * @param l_max Maximum length of a query
+     * @param segment_len Length of each segment
+     */
+    vec<vec<Envelope>> get_envelope_groups(const uint num_env, const uint l_min, const uint l_max,
+                                           const uint segment_len) {
+        vec<vec<Envelope>> envelope_groups(m_num_len_groups);
+        for (uint lg_ind = 0; lg_ind < m_num_len_groups; ++lg_ind) {
+            uint lg_l_max = l_min + (l_max - l_min) * (lg_ind + 1) / m_num_len_groups;
+            SaxSegIndT segments_per_env_lg = static_cast<SaxSegIndT>((lg_l_max + segment_len - 1) / segment_len);
+
+            envelope_groups[lg_ind].reserve(num_env);
+            for (uint env_ind = 0; env_ind < num_env; ++env_ind)
+                envelope_groups[lg_ind].emplace_back(vec<Real>(segments_per_env_lg, INF),
+                                                     vec<Real>(segments_per_env_lg, -INF));
+        }
+        return envelope_groups;
     }
 
     /**
      * @brief Helper function to flip the values of envelope segments without data
      * @param envelope_groups Vector of envelope groups
      */
-    void flip_env_infinities(vec<vec<Envelope>> &envelope_groups) {
+    inline void flip_env_infinities(vec<vec<Envelope>> &envelope_groups) {
         for (auto &envelope_group : envelope_groups) {
             for (auto &envelope : envelope_group) {
-                for (SaxSegIndT s = 0; s < envelope.size(); ++s) {
+                for (SaxSegIndT s = 0; s < envelope.m_lower.size(); ++s) {
                     if (envelope.m_lower[s] > envelope.m_upper[s]) {
                         envelope.m_lower[s] = -INF;
                         envelope.m_upper[s] = INF;

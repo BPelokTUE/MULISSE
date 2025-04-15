@@ -174,7 +174,7 @@ class IIndex {
         if (entry_groups.size() != 1) {
             throw std::runtime_error("This index does not support multiple entry groups");
         }
-        insert_entries(entry_groups[0], inserter_type);
+        insert_entries(entry_groups.back(), inserter_type);
     };
 
     /**

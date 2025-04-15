@@ -319,7 +319,7 @@ class ExperimentResults(BaseModel):
         cols = original_cols
         return results
 
-    def get_merged_df(self, combine_index_stats: bool = True) -> pd.DataFrame:
+    def get_merged_df(self, add_index_stats: bool = True) -> pd.DataFrame:
         dsc_dataset_file = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.DATASET_FILE))
 
         columns_to_drop = []
@@ -346,7 +346,7 @@ class ExperimentResults(BaseModel):
             )
             columns_to_drop.append(ssc_dataset_file)
 
-            if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEXES_COLS])):
+            if add_index_stats and os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEXES_COLS])):
                 ssc_index_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.INDEX_FILE))
                 isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
                 isc_dataset_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.DATASET_FILE))
