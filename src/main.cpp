@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
     auto positive_int = CLI::Validator(
         [](str &input) {
             try {
-                uint value = static_cast<uint>(std::stoul(input));
+                uint value = U(std::stoul(input));
                 if (value > 0) {
                     return "";
                 } else {

@@ -89,7 +89,7 @@ class LengthGroupingIndex : public IIndex<T> {
 
     void insert_entry_groups(vec<vec<IndexEntry<T>>> &entry_groups, EntryInserterType inserter_type) override {
         OMP_PRAGMA(omp parallel for)
-        for (uint l_ind = 0; l_ind < static_cast<uint>(entry_groups.size()); ++l_ind) {
+        for (uint l_ind = 0; l_ind < U(entry_groups.size()); ++l_ind) {
             auto &entry_group = entry_groups[l_ind];
             m_indexes[l_ind]->insert_entries(entry_group, inserter_type);
         }
@@ -123,7 +123,7 @@ class LengthGroupingIndex : public IIndex<T> {
     uint m_l_min, m_l_max;
 
     inline uint get_entry_length_group(const IndexEntry<T> &entry) const {
-        return get_length_group(entry.m_subs_info.m_length, m_l_min, m_l_max, static_cast<uint>(m_indexes.size()));
+        return get_length_group(entry.m_subs_info.m_length, m_l_min, m_l_max, U(m_indexes.size()));
     }
 };
 
@@ -155,11 +155,11 @@ class LengthGroupingIndexSearch : public ISearchMethod<S, D, QS> {
         uint query_len;
         for (auto &channel : query) {
             if (!channel.empty()) {
-                query_len = static_cast<uint>(channel.size());
+                query_len = U(channel.size());
                 break;
             }
         }
-        uint length_group = get_length_group(query_len, m_l_min, m_l_max, static_cast<uint>(m_search_methods.size()));
+        uint length_group = get_length_group(query_len, m_l_min, m_l_max, U(m_search_methods.size()));
         return m_search_methods[length_group]->search(query, opts, result_set, distance_measure, dataset_ifs,
                                                       real_query_inds);
     }

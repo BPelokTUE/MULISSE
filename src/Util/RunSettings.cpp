@@ -37,8 +37,8 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     instance->m_dataset_props = dataset_props;
     if (dataset_props.m_num_series == 0 && !dataset_props.m_file.empty()) {
         size_t dataset_size = get_dataset_size(instance->get_dataset_path());
-        instance->m_dataset_props.m_num_series = static_cast<uint>(
-            dataset_size / (dataset_props.m_series_len * dataset_props.m_num_channels * sizeof(Real)));
+        instance->m_dataset_props.m_num_series =
+            U(dataset_size / (dataset_props.m_series_len * dataset_props.m_num_channels * sizeof(Real)));
     }
 
     instance->m_query_properties = query_props;
@@ -173,7 +173,7 @@ void RunSettings::calculate_query_ffts(const vec<MassT> &q_channel, MtsNumChanne
 
     assert(channel_ind < m_dataset_props.m_num_channels);
 
-    uint fft_len = 2 * num_components, query_len = static_cast<uint>(q_channel.size());
+    uint fft_len = 2 * num_components, query_len = U(q_channel.size());
     FftArray q_complex(fft_len);
     for (uint i = 0; i < query_len; ++i) q_complex[i][0] = q_channel[query_len - 1 - i];
 

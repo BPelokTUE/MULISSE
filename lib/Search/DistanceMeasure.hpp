@@ -77,10 +77,10 @@ class DistanceMeasure<S, ED, QS> {
 
         for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
             if (!(query[c].empty())) {
-                query_len = static_cast<uint>(query[c].size());
-                mts_len = static_cast<uint>(mts[c].size());
+                query_len = U(query[c].size());
+                mts_len = U(mts[c].size());
                 assert(mts_len >= query_len);
-                num_start_pos = static_cast<uint>(mts_len - query_len + 1);
+                num_start_pos = U(mts_len - query_len + 1);
                 present_channels.push_back(c);
             }
         }
@@ -171,8 +171,8 @@ class DistanceMeasure<S, MASS> {
         MassT query_len_mt = 0.0;
         for (MtsNumChannelsT c = 0; c < mts.size(); ++c) {
             if (!query[c].empty()) {
-                mts_len = static_cast<uint>(mts[c].size());
-                query_len = static_cast<uint>(query[c].size());
+                mts_len = U(mts[c].size());
+                query_len = U(query[c].size());
                 query_len_mt = static_cast<MassT>(query_len);
                 break;
             }
@@ -237,7 +237,7 @@ class DistanceMeasure<S, MASS> {
    private:
     inline vec<MassT> calculate_dot_products(const vec<MassT> &q_channel, const vec<MassT> &mts_channel,
                                              SubsequenceInfo subs_info, MtsNumChannelsT channel_ind) const {
-        uint mts_len = static_cast<uint>(mts_channel.size()), query_len = static_cast<uint>(q_channel.size());
+        uint mts_len = U(mts_channel.size()), query_len = U(q_channel.size());
         uint fft_size = 2 * mts_len;
         int fft_size_i = static_cast<int>(fft_size);
 

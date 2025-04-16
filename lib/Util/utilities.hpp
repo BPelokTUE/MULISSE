@@ -65,6 +65,11 @@ constexpr Real R(T value) {
     return static_cast<Real>(value);
 }
 
+template <typename T>
+constexpr uint U(T value) {
+    return static_cast<uint>(value);
+}
+
 // Enums
 
 /**

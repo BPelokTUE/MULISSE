@@ -2,6 +2,8 @@
 
 #include <doctest/doctest.h>
 
+#include "Util/typedefs.hpp"
+#include "Util/utilities.hpp"
 #include "Summarization/Paa.hpp"
 
 TEST_CASE("PAA happy-flow works") {

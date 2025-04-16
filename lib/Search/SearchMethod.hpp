@@ -33,6 +33,13 @@ class ISearchMethod {
                                  const vec<uint> *real_query_inds = nullptr) const = 0;
 
    protected:
+    /**
+     * @brief Get the Paa values and the length of the query
+     * @param query The multivariate query
+     * @param segment_len The length of the segments
+     * @param real_query_inds Real indices of the query points (to support sorted queries for early abandoning)
+     * @return A pair containing the Paa values and the length of the query
+     */
     inline std::pair<vec<vec<Real>>, uint> get_query_paa_and_len(const vec<vec<Real>> &query, uint segment_len,
                                                                  const vec<uint> *real_query_inds = nullptr) const {
         vec<vec<Real>> query_paa(query.size());

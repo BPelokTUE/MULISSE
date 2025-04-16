@@ -78,7 +78,7 @@ class IEntryGenerator {
  * @param num_length_groups Number of length groups
  */
 inline uint get_length_group(const uint subs_length, const uint l_min, const uint l_max, const uint num_length_groups) {
-    return static_cast<uint>(R(subs_length - l_min) / R(l_max - l_min + 1) * R(num_length_groups));
+    return U(R(subs_length - l_min) / R(l_max - l_min + 1) * R(num_length_groups));
 }
 
 #endif  // INDEX_ENTRY_HPP

@@ -5,7 +5,7 @@
 #include "Modules/Indexing.hpp"
 #include "Search/Options/IndexOptions.hpp"
 #include "Search/Index.hpp"
-#include "Search/Envelope/EnvelopeIndex.hpp"
+#include "Search/Envelope/FlatEnvelopeIndex.hpp"
 #include "Search/iSax/iSaxIndex.hpp"
 #include "Search/ChainIndex.hpp"
 #include "Search/LengthGroupingIndex.hpp"

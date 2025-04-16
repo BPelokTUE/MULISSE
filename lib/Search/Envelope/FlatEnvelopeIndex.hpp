@@ -3,22 +3,36 @@
 
 #include <queue>
 
+#include "Util/typedefs.hpp"
 #include "Search/Index.hpp"
+#include "Search/SearchMethod.hpp"
 #include "Search/TopDownInserter.hpp"
 #include "Search/Options/IndexOptions.hpp"
-#include "Util/typedefs.hpp"
 
-struct PQueueEnvelopeEntry {
-    Real m_min_dist_squared;
-    SubsequenceInfo m_subs_info;
+class FinalizedFlatEnvelopeIndex : public IFinalizedIndex<EnvelopeTag> {
+   public:
+    FinalizedFlatEnvelopeIndex() = default;
 
-    bool operator<(const PQueueEnvelopeEntry &other) const { return m_min_dist_squared > other.m_min_dist_squared; }
+    FinalizedFlatEnvelopeIndex(vec<IndexEntry<Envelope>> entries)
+        : m_entries(std::move(entries)), m_segment_len(U(m_entries[0].m_mts_summary.size())) {}
+
+    const vec<IndexEntry<Envelope>> &get_entries() const { return m_entries; }
+
+    inline uint get_segment_len() const { return m_segment_len; }
+
+    inline SaxSegIndT get_num_seg_per_channel() const {
+        return static_cast<SaxSegIndT>(m_entries[0].m_mts_summary[0].m_lower.size());
+    }
+
+   private:
+    vec<IndexEntry<Envelope>> m_entries;
+    uint m_segment_len;
+
+    MAKE_SERIALIZABLE((m_segment_len, m_pos_per_env, m_entries));
 };
 
 /** @brief Flat envelope index */
-class FlatEnvelopeIndex : public IIndex<Envelope>,
-                          public IFinalizedIndex<EnvelopeTag>,
-                          public std::enable_shared_from_this<FlatEnvelopeIndex> {
+class FlatEnvelopeIndex : public IIndex<Envelope>, public std::enable_shared_from_this<FlatEnvelopeIndex> {
    public:
     /**
      * @brief Construct a new FlatEnvelopeIndex instance
@@ -65,25 +79,45 @@ class FlatEnvelopeIndex : public IIndex<Envelope>,
     };
 
     uptr<IFinalizedIndex<EnvelopeTag>> finalize() override {
-        auto finalized = new FlatEnvelopeIndex(m_segment_len, m_pos_per_env);
-        finalized->m_entries = std::move(m_entries);
-        return uptr<IFinalizedIndex<EnvelopeTag>>(finalized);
-    }
-
-    inline uint get_segment_len() const { return m_segment_len; }
-
-    inline SaxSegIndT get_num_seg_per_channel() const {
-        return static_cast<SaxSegIndT>(m_entries[0].m_mts_summary[0].m_lower.size());
+        return std::make_unique<FinalizedFlatEnvelopeIndex>(std::move(m_entries));
     }
 
     const vec<IndexEntry<Envelope>> &get_entries() const { return m_entries; }
 
-   private:
+   protected:
     vec<IndexEntry<Envelope>> m_entries;
     uint m_segment_len, m_pos_per_env;
     SaxNumBitsT m_num_bits;
+};
 
-    MAKE_SERIALIZABLE((m_segment_len, m_pos_per_env, m_entries));
+/** @brief Abstract class for envelope-index-based search methods */
+template <SearchType S, DistanceType D, bool QS = false>
+class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, QS> {
+   protected:
+    /**
+     * @brief Get the minimum bounding distance squared between the given query and envelope
+     * @param envelope The multivariate envelope
+     * @param query_paa The query paa
+     * @param distance_measure The distance measure to use
+     * @return The minimum bounding distance squared
+     */
+    inline Real get_min_dist_squared(const vec<Envelope> &envelope, const vec<vec<Real>> &query_paa,
+                                     const DistanceMeasure<S, D, QS> &distance_measure) const {
+        Real min_dist_squared = 0;
+        for (MtsNumChannelsT c = 0; c < query_paa.size(); ++c)
+            for (uint s = 0; s < query_paa[c].size(); ++s)
+                min_dist_squared +=
+                    distance_measure.min_dist_squared(query_paa[c][s], envelope[c].m_lower[s], envelope[c].m_upper[s]);
+        return min_dist_squared;
+    }
+};
+
+/** @brief Priority queue entry for searching with FlatEnvelopeIndexSearch */
+struct PQueueEnvelopeEntry {
+    Real m_min_dist_squared;
+    SubsequenceInfo m_subs_info;
+
+    bool operator<(const PQueueEnvelopeEntry &other) const { return m_min_dist_squared > other.m_min_dist_squared; }
 };
 
 /**
@@ -93,9 +127,9 @@ class FlatEnvelopeIndex : public IIndex<Envelope>,
  * @tparam QS Whether the query is sorted or not
  */
 template <SearchType S, DistanceType D, bool QS = false>
-class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
+class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
    public:
-    FlatEnvelopeIndexSearch(uptr<FlatEnvelopeIndex> index, bool use_priority_queue = true)
+    FlatEnvelopeIndexSearch(uptr<FinalizedFlatEnvelopeIndex> index, bool use_priority_queue = true)
         : m_index(std::move(index)), m_use_priority_queue(use_priority_queue) {}
 
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
@@ -124,9 +158,9 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
 
         logger.start_timer(QC::FIRST_LAYER_TIME_S);
         for (auto entry : m_index->get_entries()) {
-            if (entry.m_subs_info.m_length < query_len) continue;
+            if (this->skip_entry(query_len, m_index->get_segment_len(), entry.m_subs_info)) continue;
 
-            Real min_dist_squared = get_min_dist_squared(entry, query_paa, result_set, distance_measure);
+            Real min_dist_squared = this->get_min_dist_squared(entry.m_mts_summary, query_paa, distance_measure);
             pq.push({min_dist_squared * R(m_index->get_segment_len()), entry.m_subs_info});
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
@@ -152,9 +186,9 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
 
         logger.start_timer(QC::TREE_TRAVERSAL_TIME_S);
         for (auto entry : m_index->get_entries()) {
-            if (entry.m_subs_info.m_length < query_len) continue;
+            if (this->skip_entry(query_len, m_index->get_segment_len(), entry.m_subs_info)) continue;
 
-            Real min_dist_squared = get_min_dist_squared(entry, query_paa, result_set, distance_measure);
+            Real min_dist_squared = this->get_min_dist_squared(entry.m_mts_summary, query_paa, distance_measure);
             if (min_dist_squared >= result_set.get_distance_lb()) continue;
 
             update_result_set(entry.m_subs_info, query, result_set, distance_measure, dataset_ifs, real_query_inds);
@@ -162,17 +196,6 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
         logger.stop_timer(QC::TREE_TRAVERSAL_TIME_S);
 
         return {result_set.get_results(), true};
-    }
-
-    inline Real get_min_dist_squared(const IndexEntry<Envelope> &entry, const vec<vec<Real>> &query_paa,
-                                     ResultSet<S> &result_set,
-                                     const DistanceMeasure<S, D, QS> &distance_measure) const {
-        Real min_dist_squared = 0;
-        for (MtsNumChannelsT c = 0; c < query_paa.size(); ++c)
-            for (uint s = 0; s < query_paa[c].size(); ++s)
-                min_dist_squared += distance_measure.min_dist_squared(
-                    query_paa[c][s], entry.m_mts_summary[c].m_lower[s], entry.m_mts_summary[c].m_upper[s]);
-        return min_dist_squared;
     }
 
     inline void update_result_set(const SubsequenceInfo &subs_info, const vec<vec<Real>> &query,
@@ -202,7 +225,7 @@ class FlatEnvelopeIndexSearch : public ISearchMethod<S, D, QS> {
         logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED);
     }
 
-    uptr<FlatEnvelopeIndex> m_index;
+    uptr<FinalizedFlatEnvelopeIndex> m_index;
     bool m_use_priority_queue;
 };
 

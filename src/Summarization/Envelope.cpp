@@ -23,7 +23,7 @@ EnvelopeEntryGenerator::EnvelopeEntryGenerator(MtsNumChannelsT num_channels, boo
 }
 
 vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec<Real>>& mts, uint series_ind) {
-    uint series_len = static_cast<uint>(mts[0].size());
+    uint series_len = U(mts[0].size());
     uint num_env = (series_len - m_env_params.m_l_min + m_env_params.m_pos_per_env) / m_env_params.m_pos_per_env;
     vec<vec<IndexEntry<Envelope>>> entries(m_num_len_groups, vec<IndexEntry<Envelope>>(num_env));
 

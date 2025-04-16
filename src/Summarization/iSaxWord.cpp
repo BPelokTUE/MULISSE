@@ -1,6 +1,7 @@
+#include "Util/typedefs.hpp"
+#include "Util/utilities.hpp"
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/SaxWord.hpp"
-#include "Util/typedefs.hpp"
 
 iSaxWord::iSaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT alphabet_num_bits)
     : SaxWord(symbols, alphabet_num_bits), m_num_bits(symbols.size(), alphabet_num_bits) {}
@@ -56,7 +57,7 @@ void iSaxWord::select_max_symbols(const iSaxWord &other) {
 }
 
 std::optional<Real> iSaxWord::get_mid_breakpoint(SaxSegIndT segment_ind, const vec<Real> &breakpoints) const {
-    uint alphabet_ratio = static_cast<uint>(breakpoints.size() + 1) / (1 << m_num_bits[segment_ind]);
+    uint alphabet_ratio = U(breakpoints.size() + 1) / (1 << m_num_bits[segment_ind]);
     // If this segment already has the maximum allowed cardinality ==> cannot be split further
     if (alphabet_ratio <= 1) return std::nullopt;
 

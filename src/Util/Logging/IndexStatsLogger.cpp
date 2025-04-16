@@ -73,15 +73,15 @@ void IndexStats::update_seg_stats(Real lower, Real upper, MtsNumChannelsT channe
 void IndexStats::calculate() {
     vec<AttributeStats *> leaf_type_stats = {&m_leaf_size_stats, &m_leaf_height_stats},
                           seg_type_stats = {&m_seg_range_stats, &m_seg_lower_stats, &m_seg_upper_stats};
-    for (AttributeStats *leaf_stats : leaf_type_stats) leaf_stats->calculate(static_cast<uint>(m_leaf_count));
-    for (AttributeStats *seg_stats : seg_type_stats) seg_stats->calculate(static_cast<uint>(m_seg_count));
+    for (AttributeStats *leaf_stats : leaf_type_stats) leaf_stats->calculate(U(m_leaf_count));
+    for (AttributeStats *seg_stats : seg_type_stats) seg_stats->calculate(U(m_seg_count));
 
     vec<vec<vec<AttributeStats>> *> seg_list_type_stats = {&m_seg_range_list_stats, &m_seg_lower_list_stats,
                                                            &m_seg_upper_list_stats};
     for (auto seg_list_stats : seg_list_type_stats)
         for (MtsNumChannelsT c = 0; c < seg_list_stats->size(); ++c)
             for (SaxSegIndT s = 0; s < (*seg_list_stats)[c].size(); ++s)
-                (*seg_list_stats)[c][s].calculate(static_cast<uint>(m_seg_count_list[c][s]));
+                (*seg_list_stats)[c][s].calculate(U(m_seg_count_list[c][s]));
 }
 
 void IndexStatsLogger::write_entry(const IndexStats &stats, uint length_group_id, uint sub_index_id) {

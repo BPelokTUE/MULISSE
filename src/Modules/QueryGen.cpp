@@ -54,7 +54,7 @@ int create_queries(QuerySetOptions opts) {
     std::default_random_engine rng(opts.m_seed);
     std::normal_distribution<Real> noise_normal_dist(0.0, opts.m_noise);
 
-    uint num_series = static_cast<uint>(get_dataset_size(dataset_path) / (num_channels * series_len * sizeof(Real)));
+    uint num_series = U(get_dataset_size(dataset_path) / (num_channels * series_len * sizeof(Real)));
     std::uniform_int_distribution<uint> series_uniform_dist(0, num_series - 1), channel_uniform_dist(1, num_channels),
         length_uniform_dist(opts.m_l_min, opts.m_l_max);
 
@@ -62,8 +62,7 @@ int create_queries(QuerySetOptions opts) {
     std::ofstream query_file(query_path);
 
     bool random_lengths = (opts.m_l_min > 0 && opts.m_l_max >= opts.m_l_min);
-    uint total_num_queries =
-        random_lengths ? opts.m_num_queries : opts.m_num_queries * static_cast<uint>(opts.m_exact_lengths.size());
+    uint total_num_queries = random_lengths ? opts.m_num_queries : opts.m_num_queries * U(opts.m_exact_lengths.size());
     vec<QueryDescriptor> query_descriptors(total_num_queries);
 
     auto generate_query_descriptor = [&](uint length) -> QueryDescriptor {

@@ -314,7 +314,7 @@ class iSaxParallelInserter : public IEntryInserter<iSaxIndex<T>> {
         SaxSegIndT num_seg_per_channel = m_index->m_series_isax_prop->m_num_seg_per_channel;
 
         OMP_PRAGMA(omp parallel for)
-        for (uint e_ind = 0; e_ind < static_cast<uint>(entries.size()); ++e_ind) {
+        for (uint e_ind = 0; e_ind < U(entries.size()); ++e_ind) {
             vec<vec<SaxSymbolT>> symbols(num_channels, vec<SaxSymbolT>(num_seg_per_channel));
             m_index->calculate_first_layer_symbols(entries[e_ind], symbols);
 

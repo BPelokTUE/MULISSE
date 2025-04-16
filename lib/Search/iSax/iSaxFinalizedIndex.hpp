@@ -121,8 +121,8 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
         uint num_shift = m_alphabet_num_bits - num_bits;
         auto [lower_ind, upper_ind] = get_limit_breakpoint_indexes(symbol, num_shift);
         return {
-            lower_ind == -1 ? -INF : m_breakpoints[static_cast<uint>(lower_ind)],
-            upper_ind == m_breakpoints.size() ? INF : m_breakpoints[static_cast<uint>(upper_ind)],
+            lower_ind == -1 ? -INF : m_breakpoints[U(lower_ind)],
+            upper_ind == m_breakpoints.size() ? INF : m_breakpoints[U(upper_ind)],
         };
     }
 
@@ -160,7 +160,7 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
  */
 template <typename FTag, SearchType S, DistanceType D, bool QS = false>
     requires ValidEntryTraitsTag<FTag>
-class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
+class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
     using iSaxType = typename SaxTraits<FTag>::iSaxType;
     using SymbolType = typename SaxTraits<FTag>::SymbolType;
 
@@ -251,7 +251,7 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
                 vec<SubsequenceInfo> subsequence_infos = node->get_subsequence_infos();
                 uint entries_checked = 0;
                 for (SubsequenceInfo subs_info : subsequence_infos) {
-                    if (skip_entry(query_len, series_len, subs_info)) continue;
+                    if (this->skip_entry(query_len, series_len, subs_info)) continue;
 
                     size_t data_to_read = subs_info.m_length;
                     vec<vec<Real>> subsequence(num_channels);
@@ -288,15 +288,6 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
 
    private:
     uptr<iSaxFinalizedIndex<FTag>> m_index;
-
-    bool skip_entry(uint query_len, uint series_len, const SubsequenceInfo& subs_info) const {
-        if constexpr (std::is_same_v<FTag, PaaTag>) {
-            return subs_info.m_length != query_len;
-        } else if constexpr (std::is_same_v<FTag, EnvelopeTag>) {
-            return series_len - subs_info.m_start_pos < query_len;
-        }
-        return false;
-    }
 };
 
 #endif  // ISAX_FINALIZED_INDEX_HPP

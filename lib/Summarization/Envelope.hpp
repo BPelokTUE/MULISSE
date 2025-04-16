@@ -2,6 +2,7 @@
 #define ENVELOPE_HPP
 
 #include "Util/typedefs.hpp"
+#include "Util/utilities.hpp"
 #include "Summarization/IndexEntry.hpp"
 
 /**
@@ -25,6 +26,13 @@ struct Envelope : EntryData {
     Envelope(vec<Real> lower, vec<Real> upper);
 
     inline size_t size() const override { return m_lower.size(); }
+
+    inline void merge(const Envelope &other) {
+        for (size_t i = 0; i < m_lower.size(); ++i) {
+            m_lower[i] = std::min(m_lower[i], other.m_lower[i]);
+            m_upper[i] = std::max(m_upper[i], other.m_upper[i]);
+        }
+    }
 
     void resize(size_t new_size) override;
 
@@ -94,7 +102,7 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
     inline vec<vec<Envelope>> get_raw_envelopes(const vec<Real> &ts) {
         auto [pos_per_env, segment_len, l_min, l_max] = m_env_params;
 
-        uint num_env = static_cast<uint>((ts.size() - l_min + pos_per_env) / pos_per_env);
+        uint num_env = U((ts.size() - l_min + pos_per_env) / pos_per_env);
         vec<vec<Envelope>> envelope_groups = get_envelope_groups(num_env, l_min, l_max, segment_len);
 
         Real paa_acc = 0.0, segment_len_r = R(segment_len);
@@ -137,7 +145,7 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
     inline vec<vec<Envelope>> get_normalized_envelopes(const vec<Real> &ts) {
         auto [pos_per_env, segment_len, l_min, l_max] = m_env_params;
 
-        uint num_env = static_cast<uint>((ts.size() - l_min + pos_per_env) / pos_per_env);
+        uint num_env = U((ts.size() - l_min + pos_per_env) / pos_per_env);
 
         vec<vec<Envelope>> envelope_groups = get_envelope_groups(num_env, l_min, l_max, segment_len);
 
@@ -147,7 +155,7 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
             sum_accs[last_ind + 1] = sum_accs[last_ind] + ts[last_ind];
             sq_sum_accs[last_ind + 1] = sq_sum_accs[last_ind] + ts[last_ind] * ts[last_ind];
 
-            uint start_min = static_cast<uint>(std::max(0, static_cast<int>(last_ind + 1 - l_max)));
+            uint start_min = U(std::max(0, static_cast<int>(last_ind + 1 - l_max)));
             int start_max = static_cast<int>(last_ind + 1 - l_min);
 
             for (uint start = start_min; static_cast<int>(start) <= start_max; ++start) {

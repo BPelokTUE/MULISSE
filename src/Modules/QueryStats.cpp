@@ -16,8 +16,8 @@ void update_query_stats(QueryStats &stats, const vec<vec<Real>> &query, const ve
         vec<Real> sums(query.size()), sq_sums(query.size());
         for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
             if (!(query[c].empty())) {
-                query_len = static_cast<uint>(query[c].size());
-                mts_len = static_cast<uint>(mts[c].size());
+                query_len = U(query[c].size());
+                mts_len = U(mts[c].size());
                 num_start_pos = static_cast<int>(mts[c].size() - query_len + 1);
 
                 for (size_t i = 0; i < query_len; ++i) {
@@ -32,7 +32,7 @@ void update_query_stats(QueryStats &stats, const vec<vec<Real>> &query, const ve
             for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
                 if (query[c].empty()) continue;
 
-                auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], static_cast<uint>(query_len));
+                auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], U(query_len));
                 for (uint i = 0; i < query_len; ++i) {
                     Real diff = (mts[c][start_pos + i] - mu) / sigma - query[c][i];
                     dist_squared += diff * diff;
@@ -79,7 +79,7 @@ int calculate_query_stats(bool normalized) {
             sq_sum += value * value;
         }
         if (normalized && query[c].size() > 0) {
-            auto [mu, sigma] = calculate_mu_and_sigma(sum, sq_sum, static_cast<uint>(query[c].size()));
+            auto [mu, sigma] = calculate_mu_and_sigma(sum, sq_sum, U(query[c].size()));
             for (size_t i = 0; i < query[c].size(); ++i) query[c][i] = (query[c][i] - mu) / sigma;
         }
 
@@ -99,7 +99,7 @@ int calculate_query_stats(bool normalized) {
                 update_query_stats(stats, query, mts, normalized);
             }
 
-            stats.m_dist_stats.calculate(static_cast<uint>(stats.m_subs_count));
+            stats.m_dist_stats.calculate(U(stats.m_subs_count));
             stats.m_rc_using_max = (stats.m_dist_stats.m_max - stats.m_dist_stats.m_min) / stats.m_dist_stats.m_min;
             stats.m_rc_using_mean = stats.m_dist_stats.m_mean / stats.m_dist_stats.m_min;
 

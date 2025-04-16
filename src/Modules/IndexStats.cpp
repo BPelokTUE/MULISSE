@@ -4,7 +4,7 @@
 #include "Util/RunSettings.hpp"
 #include "Search/Index.hpp"
 #include "Search/iSax/iSaxFinalizedIndex.hpp"
-#include "Search/Envelope/EnvelopeIndex.hpp"
+#include "Search/Envelope/FlatEnvelopeIndex.hpp"
 #include "Search/ChainIndex.hpp"
 #include "Summarization/Envelope.hpp"
 #include "Summarization/Paa.hpp"
@@ -28,9 +28,9 @@ void IndexAnalyzer<iSaxFinalizedIndex<EnvelopeTag>, EnvelopeTag>::analyze(uint l
 // Envelope / SAX envelope
 
 template <>
-void IndexAnalyzer<FlatEnvelopeIndex, EnvelopeTag>::analyze(uint length_group_id) {
-    const FlatEnvelopeIndex *index = dynamic_cast<FlatEnvelopeIndex *>(m_index.get());
-    if (!index) throw std::runtime_error("Could not cast index to FlatEnvelopeIndex");
+void IndexAnalyzer<FinalizedFlatEnvelopeIndex, EnvelopeTag>::analyze(uint length_group_id) {
+    const FinalizedFlatEnvelopeIndex *index = dynamic_cast<FinalizedFlatEnvelopeIndex *>(m_index.get());
+    if (!index) throw std::runtime_error("Could not cast index to FinalizedFlatEnvelopeIndex");
 
     auto &RS = RunSettings::get_instance();
     MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
@@ -57,7 +57,7 @@ template <>
 uptr<ChainFinalizedIndex<EnvelopeTag>> IndexAnalyzer<ChainFinalizedIndex<EnvelopeTag>, EnvelopeTag>::create_index() {
     vec<uptr<IFinalizedIndex<EnvelopeTag>>> approx_indexes(1);
     approx_indexes[0] = std::make_unique<iSaxFinalizedIndex<EnvelopeTag>>();
-    auto exact_index = uptr<IFinalizedIndex<EnvelopeTag>>(new FlatEnvelopeIndex());
+    auto exact_index = uptr<IFinalizedIndex<EnvelopeTag>>(new FinalizedFlatEnvelopeIndex());
     return std::make_unique<ChainFinalizedIndex<EnvelopeTag>>(std::move(approx_indexes), std::move(exact_index));
 }
 
@@ -67,8 +67,9 @@ void IndexAnalyzer<ChainFinalizedIndex<EnvelopeTag>, EnvelopeTag>::analyze(uint 
         static_cast<iSaxFinalizedIndex<EnvelopeTag> *>(m_index->release_approx_index(0)));
     IndexAnalyzer<iSaxFinalizedIndex<EnvelopeTag>, EnvelopeTag>(std::move(approx_index), 0u).analyze(length_group_id);
 
-    auto exact_index = uptr<FlatEnvelopeIndex>(static_cast<FlatEnvelopeIndex *>(m_index->release_exact_index()));
-    IndexAnalyzer<FlatEnvelopeIndex, EnvelopeTag>(std::move(exact_index), 1u).analyze(length_group_id);
+    auto exact_index =
+        uptr<FinalizedFlatEnvelopeIndex>(static_cast<FinalizedFlatEnvelopeIndex *>(m_index->release_exact_index()));
+    IndexAnalyzer<FinalizedFlatEnvelopeIndex, EnvelopeTag>(std::move(exact_index), 1u).analyze(length_group_id);
 }
 
 // Main
@@ -85,7 +86,7 @@ int calculate_index_stats(SearchMethodType method_type, uint num_l_groups, Archi
         }
         case ENVELOPE:
         case SAX_ENVELOPE: {
-            IndexAnalyzer<FlatEnvelopeIndex, EnvelopeTag>::analyze_run_index(index_format, num_l_groups);
+            IndexAnalyzer<FinalizedFlatEnvelopeIndex, EnvelopeTag>::analyze_run_index(index_format, num_l_groups);
             break;
         }
         case ISAX_ENV_W_ENV:

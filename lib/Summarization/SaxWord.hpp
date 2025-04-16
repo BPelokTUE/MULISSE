@@ -6,6 +6,7 @@
 #include <boost/functional/hash.hpp>
 
 #include "Util/typedefs.hpp"
+#include "Util/utilities.hpp"
 
 /** @brief Symbolic Aggregate approXimation (SAX) word */
 class SaxWord {
@@ -23,7 +24,7 @@ class SaxWord {
         assert(breakpoints.size() == (1 << num_bits) - 1);
 
         m_alphabet_num_bits = num_bits;
-        uint paa_len = static_cast<uint>(paa.size());
+        uint paa_len = U(paa.size());
         m_symbols.resize(paa_len);
 
         for (uint i = 0; i < paa_len; ++i) {

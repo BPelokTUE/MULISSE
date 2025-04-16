@@ -6,6 +6,7 @@ apt-get install -y --no-install-recommends \
     libboost-all-dev \
     libfftw3-dev \
     libomp-dev \
+    libtbb-dev \
     cmake \
     ninja-build \
 

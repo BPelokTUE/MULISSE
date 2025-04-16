@@ -1,0 +1,4 @@
+#ifndef ENTRY_MERGER_HPP
+#define ENTRY_MERGER_HPP
+
+#endif  // ENVELOPE_GROUPER_HPP
