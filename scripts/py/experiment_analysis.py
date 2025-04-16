@@ -137,7 +137,7 @@ class ExperimentResults(BaseModel):
 
         if str(QC.NUM_ENTRIES_EXAMINED) in self.runs_df.columns:
             qc_query_length = get_merged_col_name(ERD.RUNS_COLS, str(QC.QUERY_LENGTH))
-            merged_df["num_relevant_entries"] = np.where(
+            merged_df["num_relevant_entries"] = merged_df[dsc_num_series] * np.where(
                 merged_df[ssc_search_method].str.contains("env"),
                 (merged_df[dsc_series_length] - merged_df[qc_query_length] + merged_df[isc_pos_per_env])
                 // merged_df[isc_pos_per_env],
@@ -147,13 +147,13 @@ class ExperimentResults(BaseModel):
                     1,
                 ),
             )
-            merged_df["num_relevant_entries"] *= merged_df[dsc_num_series]
             qc_num_entries_examined = get_merged_col_name(ERD.RUNS_COLS, str(QC.NUM_ENTRIES_EXAMINED))
             qc_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.ID))
 
             merged_df[str(QC.PRUNING_RATIO)] = np.clip(
                 1.0 - merged_df[qc_num_entries_examined] / merged_df["num_relevant_entries"], 0.0, 1.0
             )
+
         else:  # Handle case for backward compatibility
             isc_l_min = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MIN))
             isc_l_max = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MAX))
@@ -703,13 +703,22 @@ Misc. helpers
 TIME_TARGETS = [str(QC.TOTAL_TIME_S), str(QC.AMORTIZED_PREP_TIME_S)]
 TIME_LABELS = ["Search time", "Prep. time"]
 PREP_TIME_HATCH = "/////"
+
+PQ_TIME_TARGETS = [str(QC.TS_EXAMINATION_TIME_S), str(QC.FIRST_LAYER_TIME_S)]
+PQ_TIME_LABELS = ["TS examination time", "First layer time"]
+FIRST_LAYER_TIME_HATCH = "+++"
+
 TOTAL_TIME_Y_LABEL = "Total time (S)"
+TS_EXAMINATION_TIME_Y_LABEL = "Time for TS examination (S)"
+FIRST_LAYER_TIME_S_Y_LABEL = "Time for first layer (S)"
 PRUNING_RATIO_Y_LABEL = "Pruning ratio"
 ABANDONING_RATE_Y_LABEL = "Abandoning rate"
 KEEP_RATE_Y_LABEL = "Keep rate (1 - abandoning rate)"
 
 Y_LABELS = {
     str(QC.TOTAL_TIME_S): TOTAL_TIME_Y_LABEL,
+    str(QC.TS_EXAMINATION_TIME_S): TS_EXAMINATION_TIME_Y_LABEL,
+    str(QC.FIRST_LAYER_TIME_S): FIRST_LAYER_TIME_S_Y_LABEL,
     str(QC.ABANDONING_RATE): ABANDONING_RATE_Y_LABEL,
     str(QC.PRUNING_RATIO): PRUNING_RATIO_Y_LABEL,
     str(QC.KEEP_RATE): KEEP_RATE_Y_LABEL,
@@ -1056,7 +1065,7 @@ def experiment_univariate_parametrization(
         bits_str = f"Bits={int(first_layer_bits)}" if first_layer_bits is not None and first_layer_bits > 0 else ""
         ppe_str = f"PPE={int(pos_per_env)}" if pos_per_env is not None and pos_per_env > 0 else ""
         leaf_str = (
-            f"C={int(leaf_capacity) if leaf_capacity < 10000 else str(int(leaf_capacity / 1000)) + 'K'}"
+            f"C={int(leaf_capacity) if leaf_capacity < 10000 else f'{int(leaf_capacity / 1000)}K' if leaf_capacity < 1e6 else f'{round(leaf_capacity / 1e6, 2)}M'}"
             if leaf_capacity is not None and leaf_capacity > 0
             else ""
         )
@@ -1094,15 +1103,15 @@ def experiment_univariate_parametrization(
 
 # %%
 
-# logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_2"]
 logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_3"]
+# logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_3"]
 # logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ppe"]
 # logs_dirs = ["EXPERIMENT_LOGS/univariate_param/LOGS_univariate_param_ie_lc"]
 # logs_dirs = ["EXPERIMENT_LOGS/adapting/LOGS_adapting_index_2"]
 
 merge_datasets = True
 use_adapt_to_dataset = False
-show_indexing_time = True
+show_indexing_time = False
 datasets_to_show = None  # ["weather"]
 l_ranges_to_show = None  # [(256, 1024)]
 
@@ -1135,17 +1144,18 @@ for key, reducer in reducers.items():
         l_ranges_to_show=l_ranges_to_show,
         datasets_to_show=datasets_to_show,
         reducer=reducer,
-        y_scale="log" if show_indexing_time else "linear",
+        # y_scale="log" if show_indexing_time else "linear",
+        y_scale="log",
     )
 
 # %%
 
-for col in [QC.PRUNING_RATIO, QC.NUM_ENTRIES_EXAMINED]:
+for col in [QC.NUM_LEAVES_VISITED]:
     experiment_univariate_parametrization(
         {ERD.RUNS_COLS: [str(col)]},
         logs_dirs,
         str(col).replace("_", " ").capitalize(),
-        y_scale="linear" if col == QC.PRUNING_RATIO else "log",
+        y_scale="log" if col == QC.NUM_ENTRIES_EXAMINED else "linear",
         merge_datasets=merge_datasets,
         use_adapt_to_dataset=use_adapt_to_dataset,
         l_ranges_to_show=l_ranges_to_show,
@@ -1154,7 +1164,7 @@ for col in [QC.PRUNING_RATIO, QC.NUM_ENTRIES_EXAMINED]:
 
 # %%
 
-for istc_col in [ISTC.LEAF_HEIGHT_STATS]:
+for istc_col in [ISTC.LEAF_HEIGHT_STATS, ISTC.LEAF_FILL_STATS]:
     y_label_prefix = str(istc_col).replace("_", " ").capitalize()
     for stat in [SCP.MEAN, SCP.STD]:
         experiment_univariate_parametrization(
@@ -1278,7 +1288,7 @@ def experiment_ulisse_comparison(
 # %%
 
 experiment_ulisse_comparison(
-    target_col=str(QC.PRUNING_RATIO),
+    target_col=str(QC.TOTAL_TIME_S),
     logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_5M",
     # max_ulisse_pruning_ratio=0.0,
     bars_by_query_length=True,
@@ -1326,7 +1336,7 @@ def experiment_length_based_grouping(
     reduced_values = execute_reduction([results], targets, groups)
 
     if target_cols[0] == str(QC.KEEP_RATE):
-        reduced_values = {key: value for key, value in reduced_values.items() if "mass" not in key[0]}
+        reduced_values = {key: value for key, value in reduced_values.items() if value[0] < 1.0}
 
     ordered_datasets = {key[ds_index] for key in reduced_values}
     if merge_csv_datasets:
@@ -1366,18 +1376,23 @@ def experiment_length_based_grouping(
 
 # %%
 
-logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_univariate_488"
+logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_univariate_888"
 
 # %%
 
 experiment_length_based_grouping(
     logs_dir=logs_dir,
-    # target_cols=[str(QC.TOTAL_TIME_S)],
-    target_cols=TIME_TARGETS,
-    hatches=["", PREP_TIME_HATCH],
-    hatch_labels=TIME_LABELS,
     merge_csv_datasets=True,
-    # y_scale="log",
+    ## TIME
+    # target_cols=[str(QC.TOTAL_TIME_S)],
+    ## INDEX TIME
+    # target_cols=TIME_TARGETS,
+    # hatches=["", PREP_TIME_HATCH],
+    # hatch_labels=TIME_LABELS,
+    ## PQ TIME
+    target_cols=PQ_TIME_TARGETS,
+    hatches=["", FIRST_LAYER_TIME_HATCH],
+    hatch_labels=PQ_TIME_LABELS,
 )
 
 # %%

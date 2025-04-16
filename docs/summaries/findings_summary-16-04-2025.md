@@ -1,4 +1,4 @@
-# Summary of Findings (10-04-2024)
+# Summary of Findings (16-04-2024)
 
 ## 1. ULISSE 2018 performance
 
@@ -52,6 +52,8 @@ Additionally, even with parallelization, 16 cores, and 128GB memory capacity, **
 Length-based grouping leads to **consistent but modest performance gains**. The effect is very similar, regardless of dataset or query range, with the optimal number of length groups being roughly 32. On the weather dataset with $l\in[128,2048]$ we see the following results:
 
 ![Length-based grouping results](images/LG_weather_128-2048.png)
+
+![Length-based grouping PR](images/LG_weather_128-2048_PR.png)
 
 Indexing time is largely unaffected by length-based grouping, since most of the preparation time is taken up by envelope calculation not insertion into the index(es):
 

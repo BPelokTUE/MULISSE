@@ -249,6 +249,7 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
                 bool updated = false;
 
                 vec<SubsequenceInfo> subsequence_infos = node->get_subsequence_infos();
+                uint entries_checked = 0;
                 for (SubsequenceInfo subs_info : subsequence_infos) {
                     if (skip_entry(query_len, series_len, subs_info)) continue;
 
@@ -269,8 +270,10 @@ class iSaxIndexSearch : public ISearchMethod<S, D, QS> {
                     updated |=
                         distance_measure.update_result_set(result_set, subs_info, query, subsequence, real_query_inds);
                     logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
+
+                    ++entries_checked;
                 }
-                logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED, static_cast<uint>(subsequence_infos.size()));
+                logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED, entries_checked);
                 logger.increment_count_col(QC::NUM_LEAVES_VISITED);
 
                 if (!opts.m_exact && (++leaves_visited >= opts.m_max_leaves_to_visit || !updated)) break;

@@ -87,9 +87,28 @@ The following may be inferred from this investigation:
         - Compare to pure iSAX as well
 - Optimize one-phase approach
     - The pre-filter should get back subsequences grouped by time series (or just time series). Ideally keep envelopes at a time series level (or even multi-time-series-level) to increase the potency of MASS.
-
 - TODO:
-    - **Main task**: Create table of statements (similar to the ones above) supported by plots
-    - Figure out how to group
-    - Tradeoff between memory footprint and pruning power
-    - Grouping into envelopes could be (partially) done after insertion
+    - [x] **Main task**: Create table of statements (similar to the ones above) supported by plots
+    - [~] Figure out how to group
+    - [~] Tradeoff between memory footprint and pruning power
+    - [~] Grouping into envelopes could be (partially) done after insertion
+
+
+## 16-04-2025
+
+- Length-based grouping leads to **consistent but modest performance gains** independent of the dataset or query range.
+- TODO:
+    - [ ] Find the bottleneck in the best working solution, figure out how to improve on it 
+        - Total time is dominated by TS examination time, therefore pruning ratio should be optimized. It is not clear why an iSAX trie would properly group together envelopes based solely on their discretized lower bounds. An invSAX based approach should work better for this.
+    - [ ] Figure out why iSAX does not work properly
+        - The pruning ratio was incorrectly calculated, however this does not affect performance, pure iSAX is still slow
+        - iSAX recalculates distances for overlapping subsequences. This could be optimized, presumably making iSAX faster. However, **index construction time still makes pure iSAX unusable for even moderately large datasets**, therefore I will not implement these optimizations for now, as they will not lead to a worthwhile method.
+
+- TODO analysis:
+    - [ ] Analyze the index statistics of length-grouped indexes (the data is already collected)
+    - [ ] Figure out when ED is better than MASS (depending on query range, time series length, maybe number of time series but probably not)
+- TODO implementation: 
+    - [ ] Implement invSAX and combine it with envelopes. Upgrade into a UB-tree (Coconut) once this is done and works.
+    - [ ] Implement way to use precomputed FFTs for more than one envelop per time series (probably calculate FFT for whole time series anyways, then mark the time series once MASS has been run on it to avoid future recomputations)
+    - [ ] Use different (dynamically set) index properties (e.g. different # envelope per time series) for the different length-group indexes (e.g. short query range indexes could use more envelopes per time series)
+
