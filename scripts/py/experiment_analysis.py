@@ -104,6 +104,8 @@ class ExperimentResults(BaseModel):
     runs_df: pd.DataFrame
     index_stats_df: pd.DataFrame
     query_stats_df: pd.DataFrame
+    add_runs: bool = True
+    add_index_stats: bool = False
 
     class Config:
         arbitrary_types_allowed = True
@@ -234,6 +236,8 @@ class ExperimentResults(BaseModel):
         cls,
         logs_dir: str,
         cols: dict[ERD, list[str]],
+        add_runs: bool = True,
+        add_index_stats: bool = False,
     ):  # -> ExperimentResults:
         original_cols = cols.copy()
         cols = {erd: cols[erd] if erd in cols else [] for erd in ERD}
@@ -285,6 +289,8 @@ class ExperimentResults(BaseModel):
             runs_df=dfs[ERD.RUNS_COLS],
             index_stats_df=dfs[ERD.INDEX_STATS_COLS],
             query_stats_df=dfs[ERD.QUERY_STATS_COLS],
+            add_runs=add_runs,
+            add_index_stats=add_index_stats,
         )
 
         # Add method name column
@@ -319,7 +325,7 @@ class ExperimentResults(BaseModel):
         cols = original_cols
         return results
 
-    def get_merged_df(self, add_index_stats: bool = True) -> pd.DataFrame:
+    def get_merged_df(self) -> pd.DataFrame:
         dsc_dataset_file = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.DATASET_FILE))
 
         columns_to_drop = []
@@ -346,7 +352,7 @@ class ExperimentResults(BaseModel):
             )
             columns_to_drop.append(ssc_dataset_file)
 
-            if add_index_stats and os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEXES_COLS])):
+            if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEXES_COLS])):
                 ssc_index_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.INDEX_FILE))
                 isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
                 isc_dataset_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.DATASET_FILE))
@@ -365,7 +371,9 @@ class ExperimentResults(BaseModel):
 
                 columns_to_drop.extend([ssc_index_file, isc_dataset_file])
 
-                if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEX_STATS_COLS])):
+                if self.add_index_stats and os.path.exists(
+                    os.path.join(self.logs_dir, CSV_FILES[ERD.INDEX_STATS_COLS])
+                ):
                     isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
                     istc_index_file = get_merged_col_name(ERD.INDEX_STATS_COLS, str(ISTC.INDEX_FILE))
 
@@ -376,7 +384,7 @@ class ExperimentResults(BaseModel):
                         how="left",
                     )
 
-            if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.RUNS_COLS])):
+            if self.add_runs and os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.RUNS_COLS])):
                 qc_settings_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.SETTINGS_ID))
                 ssc_id = get_merged_col_name(ERD.METHODS_COLS, str(SSC.ID))
 
@@ -928,7 +936,7 @@ def experiment_relative_contrast(
         ERD.DATASETS_COLS: [str(DSC.DATASET_FILE), str(DSC.NUM_CHANNELS), str(DSC.SD)],
         ERD.QUERY_STATS_COLS: [str(QSTC.QUERY_NOISE), target_col],
     }
-    rc_results = ExperimentResults.load(logs_dir=logs_dir, cols=columns)
+    rc_results = ExperimentResults.load(logs_dir=logs_dir, cols=columns, add_runs=False, add_index_stats=True)
 
     targets = [(ERD.QUERY_STATS_COLS, target_col, MeanReducer())]
     if remove_top > 0:
@@ -1023,7 +1031,12 @@ def experiment_univariate_parametrization(
         groups_dict[ERD.INDEXES_COLS].append(str(ISC.ADAPT_TO_DATASET))
 
     columns = {**groups_dict, **targets_dict}
-    results_list = [ExperimentResults.load(logs_dir=logs_dir, cols=columns) for logs_dir in logs_dirs]
+    add_runs = ERD.RUNS_COLS in targets_dict
+    add_index_stats = ERD.INDEX_STATS_COLS in targets_dict
+    results_list = [
+        ExperimentResults.load(logs_dir=logs_dir, cols=columns, add_runs=add_runs, add_index_stats=add_index_stats)
+        for logs_dir in logs_dirs
+    ]
 
     targets = [(csv, target, reducer) for csv, target in dict_to_tuples(targets_dict)]
     groups = dict_to_tuples(groups_dict)
@@ -1294,6 +1307,7 @@ def experiment_length_based_grouping(
     merge_csv_datasets: bool = False,
     hatches=None,
     hatch_labels=None,
+    y_scale: str = "linear",
 ):
     groups_dict = {
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
@@ -1346,22 +1360,24 @@ def experiment_length_based_grouping(
                 title=f"{dataset.rsplit('/', 1)[0]} l in [{l_range[0]}, {l_range[1]}]",
                 hatches=hatches,
                 hatch_labels=hatch_labels,
+                scale=y_scale,
             )
 
 
 # %%
 
-logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_univariate"
+logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_univariate_488"
 
 # %%
 
 experiment_length_based_grouping(
     logs_dir=logs_dir,
-    target_cols=[str(QC.TOTAL_TIME_S)],
-    # target_cols=TIME_TARGETS,
-    # hatches=["", PREP_TIME_HATCH],
-    # hatch_labels=TIME_LABELS,
+    # target_cols=[str(QC.TOTAL_TIME_S)],
+    target_cols=TIME_TARGETS,
+    hatches=["", PREP_TIME_HATCH],
+    hatch_labels=TIME_LABELS,
     merge_csv_datasets=True,
+    # y_scale="log",
 )
 
 # %%

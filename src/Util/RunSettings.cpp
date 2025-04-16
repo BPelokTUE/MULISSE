@@ -150,7 +150,7 @@ FftArray RunSettings::get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channe
     m_ffts_ifs.seekg(static_cast<std::streamsize>(file_size_ratio * data_file_pos));
 
     FftArray ffts(2 * num_component);
-    std::streamsize data_to_read = static_cast<std::streamsize>(file_size_ratio * num_component * sizeof(FftPrecT));
+    std::streamsize data_to_read = static_cast<std::streamsize>(file_size_ratio * num_component * sizeof(Real));
 
     if constexpr (std::is_same_v<FftPrecT, MassT>) {
         m_ffts_ifs.read(reinterpret_cast<char *>(ffts.data()), data_to_read);

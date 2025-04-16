@@ -740,7 +740,7 @@ if __name__ == "__main__":
                         lens_per_group = 0
                         num_l_groups = 0
                         if RK_LENS_PER_GROUP in index_setting_copy:
-                            lens_per_group = int(math.ceil(l_range * index_setting_copy.pop(RK_LENS_PER_GROUP)))
+                            lens_per_group = int(round(l_range * index_setting_copy.pop(RK_LENS_PER_GROUP)))
                             if lens_per_group > 0:
                                 args += ["-g", str(lens_per_group)]
                                 num_l_groups = (l_range + lens_per_group - 1) // lens_per_group

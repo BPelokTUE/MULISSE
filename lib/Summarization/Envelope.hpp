@@ -94,7 +94,6 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
     inline vec<vec<Envelope>> get_raw_envelopes(const vec<Real> &ts) {
         auto [pos_per_env, segment_len, l_min, l_max] = m_env_params;
 
-        uint segments_per_env = l_max / segment_len;
         uint num_env = static_cast<uint>((ts.size() - l_min + pos_per_env) / pos_per_env);
         vec<vec<Envelope>> envelope_groups = get_envelope_groups(num_env, l_min, l_max, segment_len);
 
@@ -138,7 +137,6 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
     inline vec<vec<Envelope>> get_normalized_envelopes(const vec<Real> &ts) {
         auto [pos_per_env, segment_len, l_min, l_max] = m_env_params;
 
-        uint segments_per_env = l_max / segment_len;
         uint num_env = static_cast<uint>((ts.size() - l_min + pos_per_env) / pos_per_env);
 
         vec<vec<Envelope>> envelope_groups = get_envelope_groups(num_env, l_min, l_max, segment_len);

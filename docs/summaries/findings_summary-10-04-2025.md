@@ -2,7 +2,7 @@
 
 ## 1. ULISSE 2018 performance
 
-### 1.1 Parallelization
+### 1.1 ULISSE's performance is highly dependent on parallelized execution
 
 **ULISSE 2018 performs below expectations**. The unmodified version does not reach the promised speed, and it was found that this version is parallelized. **After making it sequential, ULISSE performs only marginally better than MASS** on a synthetic dataset with $n=5*10^6, m=4096$.
 
@@ -19,7 +19,7 @@ Inspecting queries by length, we can see that the **pruning power increases subs
 
 ## 2. MASS vs Euclidean distance with early abandoning
 
-Across a wide range of methods run on synthetic data with $n=10^5, m=4096$, **MASS was found to be faster than ED w EA**, even without precomputed FFTs. Although there could be some cases where ED w EA is preferred, future methods should take advantage of MASS when possible.
+Across a wide range of methods run on synthetic data with $n=10^5, m=4096$, **MASS was found to be faster than ED w EA**, even without precomputed FFTs. In general, *MASS scales more favorably with the length of time series*, so taking a hybrid approach, i.e. picking between ED and MASS based on time series and query characteristics, looks promising.
 
 ![ED w EA vs MASS](images/EDEA_vs_MASS.png) 
 
@@ -47,6 +47,16 @@ Additionally, even with parallelization, 16 cores, and 128GB memory capacity, **
 - **Grouping subsequences by similarity** (possibly after inserting all data into the index): leveraging the grouping of an index, subsequences (or small envelopes) could be combined after insertion into the index
     - *Note 1*: some summarization before insertion is required, due to the volume of subsequences even in a small dataset (based on the speed of creating a pure iSAX index)
 
-## 5. Length based grouping
+## 5. Length-based grouping
 
-TODO
+Length-based grouping leads to **consistent but modest performance gains**. The effect is very similar, regardless of dataset or query range, with the optimal number of length groups being roughly 32. On the weather dataset with $l\in[128,2048]$ we see the following results:
+
+![Length-based grouping results](images/LG_weather_128-2048.png)
+
+Indexing time is largely unaffected by length-based grouping, since most of the preparation time is taken up by envelope calculation not insertion into the index(es):
+
+![Length-based grouping results w prep time](images/LG_weather_128-2048_prep_time.png)
+
+*Note*: on shorter length ranges envelope indexes perform better than sequential scans, even with preparation time factored in:
+
+![Length-based grouping results w prep time, short range](images/LG_weather_1024-2048_prep_time.png)
