@@ -225,6 +225,19 @@ class ExperimentResults(BaseModel):
         merged_df = merged_df[columns]
         self.index_stats_df = self.index_stats_df.merge(merged_df, left_on=str(ISC.INDEX_FILE), right_on=isc_index_name)
 
+    def add_query_length_group_column(self, num_query_length_groups: int):
+        merged_df = self.get_merged_df()
+        qc_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.ID))
+        qc_query_length = get_merged_col_name(ERD.RUNS_COLS, str(QC.QUERY_LENGTH))
+        qsc_l_min = get_merged_col_name(ERD.QUERY_SETS_COLS, str(QSC.L_MIN))
+        qsc_l_max = get_merged_col_name(ERD.QUERY_SETS_COLS, str(QSC.L_MAX))
+
+        merged_df[str(QC.QUERY_LENGTH_GROUP)] = (merged_df[qc_query_length] - merged_df[qsc_l_min]) // np.ceil(
+            (merged_df[qsc_l_max] - merged_df[qsc_l_min] + 1) / num_query_length_groups
+        ).astype(int)
+        merged_df = merged_df[[str(QC.QUERY_LENGTH_GROUP), qc_id]]
+        self.runs_df = self.runs_df.merge(merged_df, left_on=str(QC.ID), right_on=qc_id)
+
     @classmethod
     def load_csv_if_exists(cls, path: str, cols: list[str]) -> pd.DataFrame:
         if os.path.exists(path):
@@ -238,6 +251,7 @@ class ExperimentResults(BaseModel):
         cols: dict[ERD, list[str]],
         add_runs: bool = True,
         add_index_stats: bool = False,
+        num_query_len_groups: int = 1,
     ):  # -> ExperimentResults:
         original_cols = cols.copy()
         cols = {erd: cols[erd] if erd in cols else [] for erd in ERD}
@@ -274,6 +288,12 @@ class ExperimentResults(BaseModel):
         if str(QC.KEEP_RATE) in cols[ERD.RUNS_COLS]:
             extra_cols[ERD.RUNS_COLS].append(str(QC.ABANDONING_RATE))
             act_cols[ERD.RUNS_COLS].remove(str(QC.KEEP_RATE))
+
+        # Handle query length group column
+        if str(QC.QUERY_LENGTH_GROUP) in cols[ERD.RUNS_COLS] and num_query_len_groups > 1:
+            extra_cols[ERD.RUNS_COLS] += [str(QC.QUERY_LENGTH), str(QC.ID)]
+            extra_cols[ERD.QUERY_SETS_COLS] += [str(QSC.L_MIN), str(QSC.L_MAX)]
+            act_cols[ERD.RUNS_COLS].remove(str(QC.QUERY_LENGTH_GROUP))
 
         extra_cols = {erd: list(set(extra_cols[erd]) - set(act_cols[erd])) for erd in ERD}
         cols_to_load = {erd: act_cols[erd] + extra_cols[erd] for erd in ERD}
@@ -312,6 +332,10 @@ class ExperimentResults(BaseModel):
         # Add keep rate column
         if str(QC.KEEP_RATE) in cols[ERD.RUNS_COLS]:
             results.runs_df[str(QC.KEEP_RATE)] = 1 - results.runs_df[str(QC.ABANDONING_RATE)]
+
+        # Add query length group column
+        if str(QC.QUERY_LENGTH_GROUP) in cols[ERD.RUNS_COLS] and num_query_len_groups > 1:
+            results.add_query_length_group_column(num_query_len_groups)
 
         # Drop extra columns
         results.datasets_df = results.datasets_df.drop(columns=extra_cols[ERD.DATASETS_COLS])
@@ -1318,6 +1342,7 @@ def experiment_length_based_grouping(
     hatches=None,
     hatch_labels=None,
     y_scale: str = "linear",
+    num_query_len_groups: int = 1,
 ):
     groups_dict = {
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
@@ -1325,15 +1350,22 @@ def experiment_length_based_grouping(
         ERD.QUERY_SETS_COLS: [str(QSC.L_MIN), str(QSC.L_MAX)],
         ERD.INDEXES_COLS: [str(ISC.L_PER_GROUP)],
     }
+    if num_query_len_groups > 1:
+        groups_dict[ERD.RUNS_COLS] = [str(QC.QUERY_LENGTH_GROUP)]
     ds_index = 1
     targets_dict = {ERD.RUNS_COLS: target_cols}
     columns = groups_dict.copy()
-    columns[ERD.RUNS_COLS] = targets_dict[ERD.RUNS_COLS]
+    columns[ERD.RUNS_COLS] = (
+        targets_dict[ERD.RUNS_COLS] + groups_dict[ERD.RUNS_COLS] if ERD.RUNS_COLS in groups_dict else []
+    )
 
-    results = ExperimentResults.load(logs_dir=logs_dir, cols=columns)
+    results = ExperimentResults.load(logs_dir=logs_dir, cols=columns, num_query_len_groups=num_query_len_groups)
+
     targets = [(ERD.RUNS_COLS, target_col, reducer) for target_col in targets_dict[ERD.RUNS_COLS]]
     groups = dict_to_tuples(groups_dict)
     reduced_values = execute_reduction([results], targets, groups)
+
+    print(f"Reduced values: {reduced_values}")
 
     if target_cols[0] == str(QC.KEEP_RATE):
         reduced_values = {key: value for key, value in reduced_values.items() if value[0] < 1.0}
@@ -1347,12 +1379,20 @@ def experiment_length_based_grouping(
     l_ranges = {(key[2], key[3]) for key in reduced_values}
 
     def get_x_label(key: tuple) -> str:
-        _, _, l_min, l_max, l_per_group = key
+        if num_query_len_groups > 1:
+            _, _, l_min, l_max, l_per_group, query_len_group = key
+            query_len_group_size = int(np.ceil((l_max - l_min + 1) / num_query_len_groups))
+            low_len = l_min + query_len_group * query_len_group_size
+            high_len = min(l_min + (query_len_group + 1) * query_len_group_size, l_max + 1)
+            query_len_label = f"\n{low_len}≤|Q|<{high_len}"
+        else:
+            _, _, l_min, l_max, l_per_group = key
+            query_len_label = ""
         if l_per_group is None or l_per_group <= 0:
             return ""
 
         num_l_groups = int(np.ceil((l_max - l_min + 1) / l_per_group))
-        return f"#LG={num_l_groups}"
+        return f"#LG={num_l_groups}{query_len_label}"
 
     for dataset in ordered_datasets:
         for l_range in l_ranges:

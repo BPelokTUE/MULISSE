@@ -107,6 +107,7 @@ class QueryColumn(Enum):
     SETTINGS_ID = auto()
     QUERY_ID = auto()
     QUERY_LENGTH = auto()
+    QUERY_LENGTH_GROUP = auto()
     QUERY_CHANNELS = auto()
     RESULT_SET_TS_INDICES = auto()
     RESULT_SET_TS_POSITIONS = auto()
