@@ -21,7 +21,7 @@ COPY ./docker_settings.json ./local_settings.json
 
 # Build the project
 RUN chmod +x ./scripts/sh/build.sh && \
-    ./scripts/sh/build.sh
+    ./scripts/sh/build.sh --use_double
 
 # Copy the rest of the files
 COPY . .

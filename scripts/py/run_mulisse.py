@@ -781,9 +781,10 @@ if __name__ == "__main__":
                                 # fmt: off
                                 args = [
                                     SUB_CALC_I_STATS, "-i", index_file, "-c", str(num_channels), "-t", index_method,
-                                    "-g", str(num_l_groups)
                                 ]
                                 # fmt: on
+                                if num_l_groups > 0:
+                                    args += ["-g", str(num_l_groups)]
                                 run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
 
                             if queries_created:

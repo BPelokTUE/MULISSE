@@ -744,20 +744,20 @@ def get_col_index(col: str, tuples: list[tuple[ERD, str]]) -> int:
     return -1
 
 
-def merge_univariate_datasets(mean_values, ds_index: int = 0):
-    merged_mean_values = {}
-    for group, values in mean_values.items():
+def merge_univariate_datasets(reduced_values, ds_index: int = 0):
+    merged_reduced_values = {}
+    for group, values in reduced_values.items():
         dataset = group[ds_index].split("/", 1)[0]
         merged_group = (*group[:ds_index], dataset, *group[ds_index + 1 :])
-        if merged_group not in merged_mean_values:
-            merged_mean_values[merged_group] = [[] for _ in range(len(values))]
+        if merged_group not in merged_reduced_values:
+            merged_reduced_values[merged_group] = [[] for _ in range(len(values))]
         for i, value in enumerate(values):
-            merged_mean_values[merged_group][i].append(value)
+            merged_reduced_values[merged_group][i].append(value)
 
-    for group, values_lists in merged_mean_values.items():
-        merged_mean_values[group] = [np.mean(values) for values in values_lists]
+    for group, values_lists in merged_reduced_values.items():
+        merged_reduced_values[group] = [np.mean(values) for values in values_lists]
 
-    return merged_mean_values
+    return merged_reduced_values
 
 
 # %%[markdown]
@@ -1357,7 +1357,9 @@ def experiment_length_based_grouping(
     for dataset in ordered_datasets:
         for l_range in l_ranges:
             reduced_values_ds = {
-                key: values for key, values in reduced_values.items() if key[1] == dataset and key[2:4] == l_range
+                key: values
+                for key, values in reduced_values.items()
+                if key[1] == dataset and key[2] == l_range[0] and key[3] == l_range[1]
             }
             method_keys_list = list(METHOD_LABELS.keys())
             reduced_values_ds = sort_dict(reduced_values_ds, lambda x: method_keys_list.index(x[0][0]))
@@ -1376,7 +1378,7 @@ def experiment_length_based_grouping(
 
 # %%
 
-logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_univariate_888"
+logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_multivariate"
 
 # %%
 
@@ -1384,15 +1386,15 @@ experiment_length_based_grouping(
     logs_dir=logs_dir,
     merge_csv_datasets=True,
     ## TIME
-    # target_cols=[str(QC.TOTAL_TIME_S)],
+    target_cols=[str(QC.TOTAL_TIME_S)],
     ## INDEX TIME
     # target_cols=TIME_TARGETS,
     # hatches=["", PREP_TIME_HATCH],
     # hatch_labels=TIME_LABELS,
     ## PQ TIME
-    target_cols=PQ_TIME_TARGETS,
-    hatches=["", FIRST_LAYER_TIME_HATCH],
-    hatch_labels=PQ_TIME_LABELS,
+    # target_cols=PQ_TIME_TARGETS,
+    # hatches=["", FIRST_LAYER_TIME_HATCH],
+    # hatch_labels=PQ_TIME_LABELS,
 )
 
 # %%
