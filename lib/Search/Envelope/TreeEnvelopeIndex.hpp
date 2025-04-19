@@ -7,32 +7,69 @@
 #endif
 #include <queue>
 
+#include "Util/typedefs.hpp"
+#include "Util/Logging/QueryLogger.hpp"
 #include "Search/Index.hpp"
+#include "Search/Envelope/EnvelopeIndex.hpp"
 #include "Search/Envelope/FlatEnvelopeIndex.hpp"
 #include "Search/Envelope/EnvelopeGrouper.hpp"
 #include "Search/Envelope/EnvelopeNode.hpp"
 #include "Summarization/Envelope.hpp"
+#include "Summarization/FinalizedTraits.hpp"
 #include "Summarization/InvSax.hpp"
 
-class FinalizedTreeEnvelopeIndex : public FinalizedFlatEnvelopeIndex {
+class FinalizedTreeEnvelopeIndex : public FinalizedEnvelopeIndex {
    public:
+    FinalizedTreeEnvelopeIndex() = default;
+
     /**
      * @brief Construct a new FinalizedTreeEnvelopeIndex instance
+     * @param segment_len The length of Paa the segments
+     * @param pos_per_env The number of positions per envelope
      * @param nodes The envelope nodes in the first layer of the tree
      */
-    FinalizedTreeEnvelopeIndex(vec<uptr<EnvelopeNode>> nodes) : m_nodes(std::move(nodes)) {}
+    FinalizedTreeEnvelopeIndex(const uint segment_len, const uint pos_per_env, vec<uptr<EnvelopeNode>> &&nodes)
+        : FinalizedEnvelopeIndex(segment_len, pos_per_env), m_first_layer_nodes(std::move(nodes)) {}
+
+    /**
+     * @brief Get the first layer nodes of the tree
+     * @return The first layer nodes of the tree
+     */
+    const vec<const EnvelopeNode *> get_first_layer_nodes() const {
+        vec<const EnvelopeNode *> nodes(m_first_layer_nodes.size());
+        for (size_t i = 0; i < nodes.size(); ++i) nodes[i] = m_first_layer_nodes[i].get();
+        return nodes;
+    }
 
    private:
-    vec<uptr<EnvelopeNode>> m_nodes;
+    vec<uptr<EnvelopeNode>> m_first_layer_nodes;
+
+    MAKE_SERIALIZABLE((m_segment_len, m_pos_per_env, m_first_layer_nodes));
 };
 
-class TreeEnvelopeIndex : public FlatEnvelopeIndex {
+class TreeEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_this<TreeEnvelopeIndex> {
    public:
     /**
      * @brief Construct a new TreeEnvelopeIndex instance
+     * @param segment_len Length of the segments
+     * @param pos_per_env Number of positions per envelope
      * @param grouper The EnvelopeGrouper to use for grouping envelope entries
      */
-    TreeEnvelopeIndex(uptr<IEnvelopeGrouper> grouper) : m_grouper(std::move(grouper)) {}
+    TreeEnvelopeIndex(const uint segment_len, const uint pos_per_env, uptr<IEnvelopeGrouper> grouper)
+        : EnvelopeIndex(segment_len, pos_per_env), m_grouper(std::move(grouper)) {}
+
+    void insert_entries(vec<IndexEntry<Envelope>> &entries, EntryInserterType inserter_type) override {
+        uptr<IEntryInserter<TreeEnvelopeIndex>> inserter;
+        switch (inserter_type) {
+            case ISAX_PARALLEL:  // Temporary solution to support two-stage indexes
+            case TOP_DOWN:
+                inserter = std::make_unique<TopDownInserter<TreeEnvelopeIndex>>(this->shared_from_this());
+                break;
+            default:
+                throw std::invalid_argument("Invalid inserter type");
+        }
+        inserter->insert_entries(entries);
+    };
 
     uptr<IFinalizedIndex<EnvelopeTag>> finalize() override {
         // 1. Group entries
@@ -41,7 +78,8 @@ class TreeEnvelopeIndex : public FlatEnvelopeIndex {
         // 2. Merge entries in leaves of the tree
 
         // 3. Return the finalized index (this)
-        return std::make_unique<FinalizedTreeEnvelopeIndex>(std::move(m_first_layer_nodes));
+        return std::make_unique<FinalizedTreeEnvelopeIndex>(m_segment_len, m_pos_per_env,
+                                                            std::move(m_first_layer_nodes));
     }
 
    private:
@@ -57,19 +95,29 @@ struct PQueueEnvelopeNodeEntry {
     bool operator<(const PQueueEnvelopeNodeEntry &other) const { return m_min_dist_squared > other.m_min_dist_squared; }
 };
 
-template <typename S, typename D, bool QS = false>
+template <SearchType S, DistanceType D, bool QS = false>
 class TreeEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
    public:
+    TreeEnvelopeIndexSearch(uptr<FinalizedTreeEnvelopeIndex> index) : m_index(std::move(index)) {}
+
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
                          const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
                          const vec<uint> *real_query_inds) const override {
+        auto &logger = QueryLogger::get_instance();
+
+        uint series_len = RunSettings::get_instance().get_dataset_props().m_series_len;
         auto [query_paa, query_len] = this->get_query_paa_and_len(query, m_index->get_segment_len(), real_query_inds);
 
         std::priority_queue<PQueueEnvelopeNodeEntry> pq;
-        for (auto &node : m_index->m_nodes) {
-            Real min_dist_squared = get_min_dist_squared(node->get_envelopes(), query_paa, distance_measure);
-            pq.push({min_dist_squared, node.get()});
+        Real segment_len_r = R(m_index->get_segment_len());
+
+        logger.start_timer(QC::FIRST_LAYER_TIME_S);
+        for (auto &node : m_index->get_first_layer_nodes()) {
+            Real min_dist_squared =
+                this->get_min_dist_squared(node->get_envelopes(), query_paa, distance_measure) * segment_len_r;
+            pq.push({min_dist_squared, node});
         }
+        logger.stop_timer(QC::FIRST_LAYER_TIME_S);
 
         while (!pq.empty()) {
             auto entry = pq.top();
@@ -80,17 +128,19 @@ class TreeEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
 
             if (!entry.m_node->is_leaf()) {
                 for (auto &child : entry.m_node->get_children()) {
-                    Real min_dist_squared = get_min_dist_squared(child->get_envelopes(), query_paa, distance_measure);
-                    if (min_dist_squared < lb) pq.push({min_dist_squared, child.get()});
+                    Real min_dist_squared =
+                        this->get_min_dist_squared(child->get_envelopes(), query_paa, distance_measure) * segment_len_r;
+                    if (min_dist_squared < lb) pq.push({min_dist_squared, child});
                 }
             } else {
                 for (auto subs_info : *(entry.m_node->get_subsequence_infos())) {
-                    if (this->skip_entry(query_len, m_index->get_segment_len(), subs_info)) continue;
-                    update_result_set(subs_info, query, result_set, distance_measure, dataset_ifs, real_query_inds);
+                    if (this->skip_entry(query_len, series_len, subs_info)) continue;
+                    this->update_result_set(subs_info, m_index->get_pos_per_env(), query, query_len, result_set,
+                                            distance_measure, dataset_ifs, real_query_inds);
                 }
             }
         }
-        return result_set.get_results();
+        return {result_set.get_results(), true};
     }
 
    private:

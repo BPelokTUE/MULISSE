@@ -177,6 +177,11 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
         auto* series_isax_prop = m_index->get_series_isax_prop();
         uint series_len = series_isax_prop->m_series_len;
         uint segment_len = series_isax_prop->m_segment_len;
+        uint pos_per_env;
+        if constexpr (std::is_same_v<FTag, EnvelopeTag>) {
+            pos_per_env = static_cast<const SeriesISaxEnvelopeProperties*>(series_isax_prop)->m_pos_per_env;
+        }
+
         Real segment_len_r = R(segment_len);
         MtsNumChannelsT num_channels = series_isax_prop->m_num_channels;
         SaxNumBitsT first_layer_num_bits = m_index->get_first_layer_num_bits();
@@ -253,7 +258,13 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
                 for (SubsequenceInfo subs_info : subsequence_infos) {
                     if (this->skip_entry(query_len, series_len, subs_info)) continue;
 
-                    size_t data_to_read = subs_info.m_length;
+                    size_t data_to_read;
+                    if constexpr (std::is_same_v<FTag, EnvelopeTag>) {
+                        data_to_read = std::min(subs_info.m_length, query_len + pos_per_env - 1);
+                    } else {
+                        data_to_read = subs_info.m_length;
+                    }
+
                     vec<vec<Real>> subsequence(num_channels);
                     logger.start_timer(QC::IO_TIME_S);
                     for (MtsNumChannelsT c = 0; c < num_channels; ++c) {

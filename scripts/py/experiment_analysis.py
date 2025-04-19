@@ -880,7 +880,8 @@ def experiment_envelope_parametrization(
     target_cols: list[str] | str,
     y_label: str,
     y_scale: str = "log",
-    target_labels: list[str] = None,
+    hatches=None,
+    hatch_labels=None,
     logs_dir="EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size_param",
     method_name_re: str = r".*",
 ):
@@ -918,8 +919,8 @@ def experiment_envelope_parametrization(
             y_label=y_label,
             scale=y_scale,
             title=dataset,
-            hatches=["", PREP_TIME_HATCH] if target_labels is not None else None,
-            hatch_labels=target_labels,
+            hatches=hatches,
+            hatch_labels=hatch_labels,
         )
 
 
@@ -930,7 +931,11 @@ for i in range(3, 4):
     exp_logs_dir = "EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size" + (f"_{i}" if i > 1 else "")
     print("Total time:")
     experiment_envelope_parametrization(
-        TIME_TARGETS, TOTAL_TIME_Y_LABEL, target_labels=TIME_LABELS, logs_dir=exp_logs_dir
+        PQ_TIME_TARGETS,
+        TOTAL_TIME_Y_LABEL,
+        logs_dir=exp_logs_dir,
+        hatches=["", FIRST_LAYER_TIME_HATCH],
+        hatch_labels=PQ_TIME_LABELS,
     )
     print("Pruning ratio:")
     experiment_envelope_parametrization(
@@ -1313,7 +1318,8 @@ def experiment_ulisse_comparison(
 
 experiment_ulisse_comparison(
     target_col=str(QC.TOTAL_TIME_S),
-    logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_5M",
+    # logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_5M",
+    logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_5M_node",
     # max_ulisse_pruning_ratio=0.0,
     bars_by_query_length=True,
     # reducer=MaxReducer(),

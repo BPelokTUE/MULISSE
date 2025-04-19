@@ -6,6 +6,8 @@
 #include "Search/Options/IndexOptions.hpp"
 #include "Search/Index.hpp"
 #include "Search/Envelope/FlatEnvelopeIndex.hpp"
+#include "Search/Envelope/TreeEnvelopeIndex.hpp"
+#include "Search/Envelope/EnvelopeGrouper.hpp"
 #include "Search/iSax/iSaxIndex.hpp"
 #include "Search/ChainIndex.hpp"
 #include "Search/LengthGroupingIndex.hpp"
@@ -83,7 +85,7 @@ void calculate_sax_breakpoints(const SaxIndexParams *params, SaxNumBitsT num_bit
 
 struct IndexFactoryParams {
     bool m_discretize_flat_index = false;
-    uint m_l_max;
+    SaxSegIndT m_num_seg_per_channel;
     const IndexOptions &m_opts;
 };
 
@@ -91,32 +93,39 @@ template <typename T>
     requires DerivedFromEntryData<T>
 sptr<IIndex<T>> get_isax_index(const IndexFactoryParams &factory_params) {
     const IndexOptions &opts = factory_params.m_opts;
-
     auto *params = dynamic_cast<iSaxIndexParams *>(opts.m_index_params.get());
-    SaxSegIndT num_seg_per_channel = static_cast<SaxSegIndT>(factory_params.m_l_max / params->m_segment_len);
 
-    calculate_sax_breakpoints(params, params->m_num_bits_limit, num_seg_per_channel);
-    auto split_strategy = get_split_strategy<T>(params, num_seg_per_channel, opts.m_num_channels);
+    calculate_sax_breakpoints(params, params->m_num_bits_limit, factory_params.m_num_seg_per_channel);
+    auto split_strategy = get_split_strategy<T>(params, factory_params.m_num_seg_per_channel, opts.m_num_channels);
 
-    return get_isax_index<T>(opts, params, num_seg_per_channel, std::move(split_strategy));
+    return get_isax_index<T>(opts, params, factory_params.m_num_seg_per_channel, std::move(split_strategy));
 }
 
 sptr<IIndex<Envelope>> get_envelope_index(const IndexFactoryParams &factory_params) {
     bool discretize_flat_index = factory_params.m_discretize_flat_index;
     const IndexOptions &opts = factory_params.m_opts;
-
     auto *params = dynamic_cast<EnvelopeIndexParams *>(opts.m_index_params.get());
-    SaxSegIndT num_seg_per_channel = static_cast<SaxSegIndT>(factory_params.m_l_max / params->m_segment_len);
 
     auto sax_params = dynamic_cast<SaxIndexParams *>(opts.m_index_params.get());
     if (discretize_flat_index && sax_params && sax_params->m_num_bits > 0) {
-        calculate_sax_breakpoints(sax_params, sax_params->m_num_bits, num_seg_per_channel);
+        calculate_sax_breakpoints(sax_params, sax_params->m_num_bits, factory_params.m_num_seg_per_channel);
         auto *index = new FlatEnvelopeIndex(params->m_segment_len, params->m_pos_per_env, sax_params->m_num_bits);
         return sptr<IIndex<Envelope>>(index);
     } else {
         auto *index = new FlatEnvelopeIndex(params->m_segment_len, params->m_pos_per_env);
         return sptr<IIndex<Envelope>>(index);
     }
+}
+
+sptr<IIndex<Envelope>> get_envelope_tree_index(const IndexFactoryParams &factory_params) {
+    const IndexOptions &opts = factory_params.m_opts;
+    auto *params = dynamic_cast<TreeEnvelopeIndexParams *>(opts.m_index_params.get());
+
+    calculate_sax_breakpoints(params, params->m_num_bits, factory_params.m_num_seg_per_channel);
+
+    auto grouper = new InvSaxSortingBucketingEnvelopeGrouper(params->m_num_bits, params->m_bucket_size);
+    auto *index = new TreeEnvelopeIndex(params->m_segment_len, params->m_pos_per_env, uptr<IEnvelopeGrouper>(grouper));
+    return sptr<IIndex<Envelope>>(index);
 }
 
 sptr<IIndex<Envelope>> get_two_stage_isax_envelope_index(const IndexFactoryParams &factory_params) {
@@ -170,17 +179,20 @@ void construct_index(std::function<sptr<IIndex<T>>(const IndexFactoryParams &)> 
     auto &logger = IndexLogger::get_instance();
     auto &opts = factory_params.m_opts;
 
+    uint segment_len = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get())->m_segment_len;
+
     sptr<IIndex<T>> index;
     if (opts.m_l_per_group > 0) {
         uint num_len_groups = opts.get_num_len_groups();
         vec<sptr<IIndex<T>>> group_indexes(num_len_groups);
         for (uint lg_ind = 0; lg_ind < num_len_groups; lg_ind++) {
-            factory_params.m_l_max = opts.m_l_min + (opts.m_l_max - opts.m_l_min) * (lg_ind + 1) / num_len_groups;
+            uint l_max = opts.m_l_min + (opts.m_l_max - opts.m_l_min) * (lg_ind + 1) / num_len_groups;
+            factory_params.m_num_seg_per_channel = static_cast<SaxSegIndT>(l_max / segment_len);
             group_indexes[lg_ind] = index_factory(factory_params);
         }
         index = std::make_shared<LengthGroupingIndex<T>>(std::move(group_indexes), opts.m_l_min, opts.m_l_max);
     } else {
-        factory_params.m_l_max = opts.m_l_max;
+        factory_params.m_num_seg_per_channel = static_cast<SaxSegIndT>(opts.m_l_max / segment_len);
         index = index_factory(factory_params);
     }
 
@@ -232,6 +244,9 @@ int create_index(const IndexOptions &opts) {
             factory_params.m_discretize_flat_index = true;
         case ENVELOPE:
             CONSTRUCT_INDEX(Envelope, get_envelope_index, get_envelope_generator(opts));
+            break;
+        case TREE_ENVELOPE:
+            CONSTRUCT_INDEX(Envelope, get_envelope_tree_index, get_envelope_generator(opts));
             break;
         default:
             break;

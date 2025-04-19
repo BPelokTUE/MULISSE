@@ -45,42 +45,43 @@ void InvSaxSortingEnvelopeGrouper::sort_envelope_entries(vec<IndexEntry<Envelope
 
 // BucketingEnvelopeGrouper
 
-BucketingEnvelopeGrouper::BucketingEnvelopeGrouper(uint bucket_size) : m_bucket_size(bucket_size) {}
+BucketingEnvelopeGrouper::BucketingEnvelopeGrouper(size_t bucket_size) : m_bucket_size(bucket_size) {}
 
 vec<uptr<EnvelopeNode>> BucketingEnvelopeGrouper::group_envelope_entries(vec<IndexEntry<Envelope>> &envelope_entries) {
     size_t bucket_size = std::min(static_cast<size_t>(m_bucket_size), envelope_entries.size());
     size_t num_buckets = (envelope_entries.size() + bucket_size - 1) / bucket_size;
     vec<vec<uptr<EnvelopeNode>>> buckets(num_buckets), act_layer_nodes;
 
-    OMP_PRAGMA(omp parallel) {
-        OMP_PRAGMA(omp for)
-        for (size_t b_ind = 0; b_ind < num_buckets; ++b_ind) {
-            size_t act_bucket_size = get_bucket_size(b_ind, num_buckets, envelope_entries.size());
-            buckets[b_ind].resize(act_bucket_size);
+    OMP_PRAGMA(omp parallel for)
+    for (size_t b_ind = 0; b_ind < num_buckets; ++b_ind) {
+        size_t act_bucket_size = get_bucket_size(b_ind, num_buckets, envelope_entries.size());
+        buckets[b_ind].resize(act_bucket_size);
+        for (size_t i = 0; i < act_bucket_size; ++i) {
+            size_t entry_ind = bucket_size * b_ind + i;
+            buckets[b_ind][i] = std::make_unique<EnvelopeLeaf>(envelope_entries[entry_ind]);
+        }
+    }
+
+    envelope_entries.resize(0);
+
+    // Create hierarchy
+    do {
+        size_t layer_num_buckets = (num_buckets + bucket_size - 1) / bucket_size;
+        act_layer_nodes = vec<vec<uptr<EnvelopeNode>>>(layer_num_buckets);
+
+        OMP_PRAGMA(omp parallel for)
+        for (size_t layer_b_ind = 0; layer_b_ind < layer_num_buckets; ++layer_b_ind) {
+            size_t act_bucket_size = get_bucket_size(layer_b_ind, layer_num_buckets, num_buckets);
+            act_layer_nodes[layer_b_ind].resize(act_bucket_size);
             for (size_t i = 0; i < act_bucket_size; ++i) {
-                size_t entry_ind = bucket_size * b_ind + i;
-                buckets[b_ind][i] = std::make_unique<EnvelopeLeaf>(envelope_entries[entry_ind]);
+                size_t b_ind = bucket_size * layer_b_ind + i;
+                act_layer_nodes[layer_b_ind][i] = std::make_unique<EnvelopeInternal>(std::move(buckets[b_ind]));
             }
         }
+        buckets = std::move(act_layer_nodes);
+        num_buckets = layer_num_buckets;
+    } while (num_buckets > 1);
 
-        // Create hierarchy
-        do {
-            size_t layer_num_buckets = (num_buckets + bucket_size - 1) / bucket_size;
-            act_layer_nodes = vec<vec<uptr<EnvelopeNode>>>(layer_num_buckets);
-
-            OMP_PRAGMA(omp for)
-            for (size_t layer_b_ind = 0; layer_b_ind < layer_num_buckets; ++layer_b_ind) {
-                size_t act_bucket_size = get_bucket_size(layer_b_ind, layer_num_buckets, num_buckets);
-                act_layer_nodes[layer_b_ind].resize(act_bucket_size);
-                for (size_t i = 0; i < act_bucket_size; ++i) {
-                    size_t b_ind = bucket_size * layer_b_ind + i;
-                    act_layer_nodes[layer_b_ind][i] = std::make_unique<EnvelopeInternal>(std::move(buckets[b_ind]));
-                }
-            }
-            buckets = std::move(act_layer_nodes);
-            num_buckets = layer_num_buckets;
-        } while (num_buckets > 1);
-    }
     return std::move(buckets[0]);
 }
 

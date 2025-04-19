@@ -9,6 +9,7 @@
 #include "Search/LengthGroupingIndex.hpp"
 #include "Search/Options/SearchOptions.hpp"
 #include "Search/Envelope/FlatEnvelopeIndex.hpp"
+#include "Search/Envelope/TreeEnvelopeIndex.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
 #include "Search/iSax/iSaxFinalizedIndex.hpp"
 #include "Search/ChainIndex.hpp"
@@ -125,6 +126,14 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
                     return std::make_unique<FlatEnvelopeIndexSearch<S, D, QS>>(
                         uptr<FinalizedFlatEnvelopeIndex>(static_cast<FinalizedFlatEnvelopeIndex *>(index.release())),
                         opts.m_use_priority_queue);
+                },
+                opts);
+        case TREE_ENVELOPE:
+            return load_index_based_method<EnvelopeTag, S, D, QS>(
+                []() { return std::make_unique<FinalizedTreeEnvelopeIndex>(); },
+                [](uptr<IFinalizedIndex<EnvelopeTag>> index) {
+                    return std::make_unique<TreeEnvelopeIndexSearch<S, D, QS>>(
+                        uptr<FinalizedTreeEnvelopeIndex>(static_cast<FinalizedTreeEnvelopeIndex *>(index.release())));
                 },
                 opts);
         case SEQUENTIAL_SCAN:

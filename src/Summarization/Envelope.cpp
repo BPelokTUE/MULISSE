@@ -24,8 +24,7 @@ EnvelopeEntryGenerator::EnvelopeEntryGenerator(MtsNumChannelsT num_channels, boo
 
 vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec<Real>>& mts, uint series_ind) {
     uint series_len = U(mts[0].size());
-    uint num_env = (series_len - m_env_params.m_l_min + m_env_params.m_pos_per_env) / m_env_params.m_pos_per_env;
-    vec<vec<IndexEntry<Envelope>>> entries(m_num_len_groups, vec<IndexEntry<Envelope>>(num_env));
+    vec<vec<IndexEntry<Envelope>>> entries(m_num_len_groups);
 
     for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
         auto channel_envs_groups = m_normalized ? get_normalized_envelopes(mts[c]) : get_raw_envelopes(mts[c]);
@@ -36,6 +35,7 @@ vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec
                 uint length = std::min(series_len + m_env_params.m_pos_per_env - 1, series_len - start_pos);
 
                 if (c == 0) {
+                    entries[l].resize(channel_envs.size());
                     entries[l][i].m_subs_info = {series_ind, start_pos, length};
                     entries[l][i].m_mts_summary.resize(m_num_channels);
                 }

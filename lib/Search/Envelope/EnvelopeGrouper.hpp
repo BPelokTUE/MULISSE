@@ -20,7 +20,7 @@ class IEnvelopeGrouper {
 };
 
 /** @brief Abstract class for enveloper groupers that use invSAX-based sorting */
-class InvSaxSortingEnvelopeGrouper : public IEnvelopeGrouper {
+class InvSaxSortingEnvelopeGrouper : virtual public IEnvelopeGrouper {
    public:
     /**
      * @brief Construct a new InvSaxSortingEnvelopeGrouper instance
@@ -40,18 +40,18 @@ class InvSaxSortingEnvelopeGrouper : public IEnvelopeGrouper {
 };
 
 /** @brief Grouper that creates a balanced index by recursively grouping together buckets of entries */
-class BucketingEnvelopeGrouper : public IEnvelopeGrouper {
+class BucketingEnvelopeGrouper : virtual public IEnvelopeGrouper {
    public:
     /**
      * @brief Construct a new BucketingEnvelopeGrouper instance
      * @param bucket_size Size of the buckets
      */
-    BucketingEnvelopeGrouper(uint bucket_size);
+    BucketingEnvelopeGrouper(size_t bucket_size);
 
     vec<uptr<EnvelopeNode>> group_envelope_entries(vec<IndexEntry<Envelope>> &envelope_entries) override;
 
    private:
-    uint m_bucket_size;
+    size_t m_bucket_size;
 
     inline size_t get_bucket_size(const size_t b_ind, const size_t num_buckets, const size_t num_items) const {
         if (b_ind == num_buckets - 1) {
@@ -63,14 +63,15 @@ class BucketingEnvelopeGrouper : public IEnvelopeGrouper {
 };
 
 /** @brief Combination of BucketingEnvelopeGrouper and InvSaxSortingEnvelopeGrouper */
-class InvSaxSortingBucketingEnvelopeGrouper : public InvSaxSortingEnvelopeGrouper, public BucketingEnvelopeGrouper {
+class InvSaxSortingBucketingEnvelopeGrouper : virtual public InvSaxSortingEnvelopeGrouper,
+                                              virtual public BucketingEnvelopeGrouper {
    public:
     /**
      * @brief Construct a new InvSaxSortingBucketingEnvelopeGrouper instance
      * @param num_bits Number of bits for the iSAX representation
      * @param bucket_size Size of the buckets
      */
-    InvSaxSortingBucketingEnvelopeGrouper(SaxNumBitsT num_bits, uint bucket_size)
+    InvSaxSortingBucketingEnvelopeGrouper(SaxNumBitsT num_bits, size_t bucket_size)
         : InvSaxSortingEnvelopeGrouper(num_bits), BucketingEnvelopeGrouper(bucket_size) {}
 
     vec<uptr<EnvelopeNode>> group_envelope_entries(vec<IndexEntry<Envelope>> &envelope_entries) override;

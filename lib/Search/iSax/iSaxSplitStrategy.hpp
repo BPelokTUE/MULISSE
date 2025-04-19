@@ -99,7 +99,7 @@ class EntropyMaximizingStrategy : public IiSaxSplitStrategy<T> {
                     if (summaries[i][c].get_isax_input()[s] < mid_breakpoint) ++count_lower;
 
                 Real prob_lower = R(count_lower) / R(summaries.size()), prob_upper = R(1.0) - prob_lower;
-                score = -prob_lower * log(prob_lower) - prob_upper * log(prob_upper);
+                score = -prob_lower * R(log(prob_lower)) - prob_upper * R(log(prob_upper));
                 score *= calculate_mu_and_sigma(sum, sum_sq, U(summaries.size())).second;
 
                 if (score > max_score ||

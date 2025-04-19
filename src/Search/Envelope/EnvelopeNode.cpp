@@ -3,7 +3,7 @@
 
 // EnvelopeInternal
 
-EnvelopeInternal::EnvelopeInternal(vec<uptr<EnvelopeNode>> children) : m_children(std::move(children)) {
+EnvelopeInternal::EnvelopeInternal(vec<uptr<EnvelopeNode>> &&children) : m_children(std::move(children)) {
     assert(!m_children.empty());
 
     m_envelopes = m_children[0]->get_envelopes();

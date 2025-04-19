@@ -78,7 +78,7 @@ function(set_up_target target)
     endif()
 
     if(DISABLE_PARALLELISM)
-        target_compile_definitions(${target} DISABLE_PARALLELISM)
+        target_compile_definitions(${target} PRIVATE DISABLE_PARALLELISM)
     else()
         find_package(TBB REQUIRED)
         target_link_libraries(${target} PRIVATE TBB::tbb)

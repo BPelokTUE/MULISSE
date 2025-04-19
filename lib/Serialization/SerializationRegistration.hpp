@@ -11,6 +11,8 @@
 #include "Summarization/Envelope.hpp"
 #include "Summarization/IndexEntry.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
+#include "Search/iSax/iSaxFinalizedIndex.hpp"
+#include "Search/Envelope/EnvelopeNode.hpp"
 
 // Register archive types
 CEREAL_REGISTER_ARCHIVE(cereal::BinaryInputArchive)
@@ -46,5 +48,12 @@ CEREAL_REGISTER_TYPE(iSaxFinalizedLeaf<PaaTag>)
 CEREAL_REGISTER_TYPE(iSaxFinalizedLeaf<EnvelopeTag>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<PaaTag>, iSaxFinalizedLeaf<PaaTag>)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<EnvelopeTag>, iSaxFinalizedLeaf<EnvelopeTag>)
+
+// Register envelope node types
+CEREAL_REGISTER_TYPE(EnvelopeInternal)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(EnvelopeNode, EnvelopeInternal)
+
+CEREAL_REGISTER_TYPE(EnvelopeLeaf)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(EnvelopeNode, EnvelopeLeaf)
 
 #endif  // SERIALIZATION_REGISTRATION_HPP

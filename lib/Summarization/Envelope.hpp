@@ -102,8 +102,8 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
     inline vec<vec<Envelope>> get_raw_envelopes(const vec<Real> &ts) {
         auto [pos_per_env, segment_len, l_min, l_max] = m_env_params;
 
-        uint num_env = U((ts.size() - l_min + pos_per_env) / pos_per_env);
-        vec<vec<Envelope>> envelope_groups = get_envelope_groups(num_env, l_min, l_max, segment_len);
+        // uint num_env = U((ts.size() - l_min + pos_per_env) / pos_per_env);
+        vec<vec<Envelope>> envelope_groups = get_envelope_groups(U(ts.size()), pos_per_env, l_min, l_max, segment_len);
 
         Real paa_acc = 0.0, segment_len_r = R(segment_len);
 
@@ -145,9 +145,8 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
     inline vec<vec<Envelope>> get_normalized_envelopes(const vec<Real> &ts) {
         auto [pos_per_env, segment_len, l_min, l_max] = m_env_params;
 
-        uint num_env = U((ts.size() - l_min + pos_per_env) / pos_per_env);
-
-        vec<vec<Envelope>> envelope_groups = get_envelope_groups(num_env, l_min, l_max, segment_len);
+        // uint num_env = U((ts.size() - l_min + pos_per_env) / pos_per_env);
+        vec<vec<Envelope>> envelope_groups = get_envelope_groups(U(ts.size()), pos_per_env, l_min, l_max, segment_len);
 
         vec<Real> sum_accs(ts.size() + 1, 0.0), sq_sum_accs(ts.size() + 1, 0.0);
 
@@ -188,11 +187,14 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
      * @param l_max Maximum length of a query
      * @param segment_len Length of each segment
      */
-    vec<vec<Envelope>> get_envelope_groups(const uint num_env, const uint l_min, const uint l_max,
-                                           const uint segment_len) {
+    vec<vec<Envelope>> get_envelope_groups(const uint series_len, const uint pos_per_env, const uint l_min,
+                                           const uint l_max, const uint segment_len) {
         vec<vec<Envelope>> envelope_groups(m_num_len_groups);
         for (uint lg_ind = 0; lg_ind < m_num_len_groups; ++lg_ind) {
-            uint lg_l_max = l_min + (l_max - l_min) * (lg_ind + 1) / m_num_len_groups;
+            uint lg_l_min = l_min + (l_max - l_min) * lg_ind / m_num_len_groups;
+            uint lg_l_max =
+                l_min + (l_max - l_min) * (lg_ind + 1) / m_num_len_groups - (lg_ind != (m_num_len_groups - 1) ? 1 : 0);
+            uint num_env = U((series_len - lg_l_min + pos_per_env) / pos_per_env);
             SaxSegIndT segments_per_env_lg = static_cast<SaxSegIndT>((lg_l_max + segment_len - 1) / segment_len);
 
             envelope_groups[lg_ind].reserve(num_env);

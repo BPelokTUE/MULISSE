@@ -1,6 +1,8 @@
 #ifndef ENVELOPE_NODE_HPP
 #define ENVELOPE_NODE_HPP
 
+#include <cereal/types/memory.hpp>
+
 #include "Util/typedefs.hpp"
 #include "Summarization/Envelope.hpp"
 
@@ -42,7 +44,7 @@ class EnvelopeInternal : public EnvelopeNode {
    public:
     EnvelopeInternal() = default;
 
-    EnvelopeInternal(vec<uptr<EnvelopeNode>> children);
+    EnvelopeInternal(vec<uptr<EnvelopeNode>> &&children);
 
     bool is_leaf() const override;
 
@@ -54,6 +56,14 @@ class EnvelopeInternal : public EnvelopeNode {
 
    private:
     vec<uptr<EnvelopeNode>> m_children;
+
+    // Required for Cereal (de)serialization
+    friend class cereal::access;
+
+    template <class Archive>
+    void serialize(Archive &ar) {
+        ar(m_envelopes, m_children);
+    }
 };
 
 /** @brief Class representing envelope leaf nodes */
@@ -75,6 +85,14 @@ class EnvelopeLeaf : public EnvelopeNode {
 
    private:
     vec<SubsequenceInfo> m_subs_infos;
+
+    // Required for Cereal (de)serialization
+    friend class cereal::access;
+
+    template <class Archive>
+    void serialize(Archive &ar) {
+        ar(m_envelopes, m_subs_infos);
+    }
 };
 
 #endif  // ENVELOPE_NODE_HPP

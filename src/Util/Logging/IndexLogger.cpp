@@ -42,6 +42,9 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
                 if (split_strategy == ENTROPY_MAXIMIZING)
                     min_num_bits_on_tie_str = to_string(isax_params->m_min_num_bits_on_tie);
                 num_bits_limit = isax_params->m_num_bits_limit;
+            } else if (method_type == TREE_ENVELOPE) {
+                auto *tree_env_params = dynamic_cast<TreeEnvelopeIndexParams *>(index_options.m_index_params.get());
+                leaf_capacity = tree_env_params->m_bucket_size;
             }
         }
         if (std::find(METHODS_W_ENVELOPE.begin(), METHODS_W_ENVELOPE.end(), method_type) != METHODS_W_ENVELOPE.end()) {

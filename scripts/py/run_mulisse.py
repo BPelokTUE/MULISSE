@@ -3,7 +3,6 @@
 import argparse
 import itertools
 import json
-import math
 import os
 import shutil
 import subprocess
@@ -111,6 +110,7 @@ METHOD_ISAX = "isax"
 METHOD_ISAX_ENVELOPE = "isax_envelope"
 METHOD_SAX_ENVELOPE = "sax_envelope"
 METHOD_ENVELOPE = "envelope"
+METHOD_TREE_ENVELOPE = "tree_envelope"
 METHOD_ISAX_ENV_W_ENV = "isax_env_w_env"
 METHOD_ISAX_ENV_W_SAX_ENV = "isax_env_w_sax_env"
 
@@ -120,6 +120,7 @@ ENVELOPE_METHODS = [
     METHOD_ENVELOPE,
     METHOD_ISAX_ENV_W_ENV,
     METHOD_ISAX_ENV_W_SAX_ENV,
+    METHOD_TREE_ENVELOPE,
 ]
 METHODS_W_FLAT_INDEX = [
     METHOD_SAX_ENVELOPE,
@@ -127,7 +128,6 @@ METHODS_W_FLAT_INDEX = [
     METHOD_ENVELOPE,
     METHOD_ISAX_ENV_W_ENV,
 ]
-METHODS_W_TRIE_INDEX = [METHOD_ISAX, METHOD_ISAX_ENVELOPE, METHOD_ISAX_ENV_W_ENV, METHOD_ISAX_ENV_W_SAX_ENV]
 
 
 # Search types
@@ -302,6 +302,11 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
                 RK_ISAX_NUM_BITS_LIMIT: config.get(CK_ISAX_NUM_BITS_LIMITS, [0]),
             }
             envelope_settings = {**common_settings, RK_POS_PER_ENV: config.get(CK_ENVELOPE_SIZE_RATIOS, [])}
+            tree_envelope_settings = {
+                **envelope_settings,
+                **sax_settings,
+                RK_LEAF_CAPACITY: config.get(CK_ISAX_LEAF_CAP_RATIOS, []),
+            }
             isax_envelope_settings = {**isax_settings, **envelope_settings}
 
             index_settings = []
@@ -313,6 +318,8 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
                 index_settings.append({RK_INDEX_TYPE: METHOD_SAX_ENVELOPE, **sax_settings, **envelope_settings})
             if METHOD_ENVELOPE in config[CK_SEARCH_METHODS]:
                 index_settings.append({RK_INDEX_TYPE: METHOD_ENVELOPE, **envelope_settings})
+            if METHOD_TREE_ENVELOPE in config[CK_SEARCH_METHODS]:
+                index_settings.append({RK_INDEX_TYPE: METHOD_TREE_ENVELOPE, **tree_envelope_settings})
             if METHOD_ISAX_ENV_W_ENV in config[CK_SEARCH_METHODS]:
                 index_settings.append({RK_INDEX_TYPE: METHOD_ISAX_ENV_W_ENV, **isax_envelope_settings})
             if METHOD_ISAX_ENV_W_SAX_ENV in config[CK_SEARCH_METHODS]:
@@ -755,7 +762,7 @@ if __name__ == "__main__":
                             num_entries = num_series
                             if index_method == METHOD_ISAX:
                                 num_entries = l_range * ((series_len - l_max + 1) + (l_range - 1) / 2) * num_series
-                            elif index_method in METHODS_W_TRIE_INDEX:
+                            elif index_method in ENVELOPE_METHODS:
                                 num_entries = ((series_len - l_min + pos_per_env) // pos_per_env) * num_series
                             leaf_capacity = int(index_setting_copy.pop(RK_LEAF_CAPACITY) * num_entries)
                             leaf_capacity = max(1, leaf_capacity)

@@ -60,7 +60,7 @@ class IFinalizedIndex {
     uint get_series_len() const { return m_series_len; }
 
    protected:
-    uint m_series_len, m_pos_per_env;
+    uint m_series_len;
     MtsNumChannelsT m_num_channels;
 };
 
@@ -213,21 +213,23 @@ class IIndex {
         logger.start_timer(ISC::SUMMARIZATION_TIME_S);
         OMP_PRAGMA(omp parallel) {
             std::ifstream data_stream(dataset_path, std::ios::binary);
-        OMP_PRAGMA(omp for)
-        for (size_t i = 0; i < num_series; ++i) {
-            vec<vec<Real>> mts(num_channels, vec<Real>(series_len));
-            data_stream.seekg(static_cast<std::streamsize>(i * series_size));
-            for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-                data_stream.read(reinterpret_cast<char *>(mts[c].data()), static_cast<std::streamsize>(channel_size));
-            }
-            auto mts_entries = generator->get_entries(mts, U(i));
-            OMP_PRAGMA(omp critical) {
-                for (uint l = 0; l < num_length_groups; ++l) {
-                    dataset_entry_groups[l].insert(dataset_entry_groups[l].end(), mts_entries[l].begin(),
-                                                   mts_entries[l].end());
+
+            OMP_PRAGMA(omp for)
+            for (size_t i = 0; i < num_series; ++i) {
+                vec<vec<Real>> mts(num_channels, vec<Real>(series_len));
+                data_stream.seekg(static_cast<std::streamsize>(i * series_size));
+                for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+                    data_stream.read(reinterpret_cast<char *>(mts[c].data()),
+                                     static_cast<std::streamsize>(channel_size));
+                }
+                auto mts_entries = generator->get_entries(mts, U(i));
+                OMP_PRAGMA(omp critical) {
+                    for (uint l = 0; l < num_length_groups; ++l) {
+                        dataset_entry_groups[l].insert(dataset_entry_groups[l].end(), mts_entries[l].begin(),
+                                                       mts_entries[l].end());
+                    }
                 }
             }
-        }
         }
         logger.stop_timer(ISC::SUMMARIZATION_TIME_S);
 
@@ -287,7 +289,7 @@ class IndexSearchMethod : public ISearchMethod<S, D, QS> {
      * @param subs_info Information about the subsequence in the dataset
      * @return `true` if the entry can be skipped, `false` otherwise
      */
-    inline bool skip_entry(uint query_len, uint series_len, const SubsequenceInfo &subs_info) const {
+    inline bool skip_entry(const uint query_len, const uint series_len, const SubsequenceInfo &subs_info) const {
         if constexpr (std::is_same_v<FTag, PaaTag>) {
             return subs_info.m_length != query_len;
         } else if constexpr (std::is_same_v<FTag, EnvelopeTag>) {

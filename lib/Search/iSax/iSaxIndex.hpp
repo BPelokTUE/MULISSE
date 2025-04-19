@@ -119,6 +119,7 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
                 node.reset();
             }
         }
+
         return std::make_unique<iSaxFinalizedIndex<FTag>>(std::move(m_series_isax_prop), std::move(first_layer_symbols),
                                                           std::move(finalized_nodes), m_first_layer_num_bits,
                                                           m_alphabet_num_bits, *m_breakpoints);

@@ -1,6 +1,6 @@
 {
     "csv_data_dirs": ["weather"],
-    "dataset_sizes": [10000],
+    "dataset_sizes": [1000],
     "series_lengths": [1024],
     "syn_num_channels": [],
     "syn_step_stdevs": [1.0],
@@ -9,6 +9,8 @@
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {
+        "scan": ["scan"],
+        "hier": ["isax_envelope", "isax_env_w_env"],
         "flat": ["envelope"]
     },
     "isax_split_strategies": ["em"],
@@ -16,13 +18,14 @@
     "isax_num_bits_limits": [15],
     "isax_leaf_cap_ratios": [0.0128],
     "isax_start_bit_numbers": {
+        "hier": [1],
         "flat": [15]
     },
     "max_leaves_to_visit": [5],
     "num_segments": [8],
     "envelope_size_ratios": [1.0],
-    "length_group_size_ratios": [0.05, 0.2, 1.0],
-    "distance_measures": ["mass"],
+    "length_group_size_ratios": [0.05, 1.0],
+    "distance_measures": ["ed", "mass"],
     "early_abandon": [true],
     "precalculate_ffts": [true],
     "adapt_index": [false],
