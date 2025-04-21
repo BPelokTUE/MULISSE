@@ -213,8 +213,10 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
 
+        logger.increment_count_col(QC::NUM_MIN_DIST_CALCULATED, U(pq.size()));
+
         logger.start_timer(QC::TREE_TRAVERSAL_TIME_S);
-        size_t leaves_visited = 0;
+        size_t leaves_visited = 0, min_dist_seg_updates = 0;
         bool exact_results_found = false;
         while (!pq.empty()) {
             auto [min_dist_squared, isax_words, node] = pq.top();
@@ -244,11 +246,13 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
                     limits = m_index->get_segment_limits(num_bits, left_isax_words[c].symbol_no_shift(s));
                     Real dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second);
                     pq.push({min_dist_squared + segment_len_r * (dist - prev_dist), left_isax_words, left});
+                    ++min_dist_seg_updates;
 
                     // Right child
                     limits = m_index->get_segment_limits(num_bits, right_isax_words[c].symbol_no_shift(s));
                     dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second);
                     pq.push({min_dist_squared + segment_len_r * (dist - prev_dist), right_isax_words, right});
+                    ++min_dist_seg_updates;
                 }
             } else {
                 bool updated = false;
@@ -292,6 +296,8 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
             logger.increment_count_col(QC::NUM_NODES_VISITED);
         }
         logger.stop_timer(QC::TREE_TRAVERSAL_TIME_S);
+
+        logger.increment_count_col(QC::NUM_MIN_DIST_CALCULATED, U(min_dist_seg_updates / (num_channels * segment_len)));
 
         exact_results_found |= pq.empty();
         return {result_set.get_results(), exact_results_found};

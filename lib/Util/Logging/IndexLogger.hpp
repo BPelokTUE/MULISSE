@@ -34,6 +34,7 @@ enum class IndexSettingsColumn {
     SUMMARIZATION_TIME_S,  // Time taken to summarize the subsequences in the dataset in seconds
     INSERTION_TIME_S,      // Time taken to insert the subsequence summaries into the index in seconds
     FFT_CALC_TIME_S,       // Time taken to calculate the FFTs in seconds
+    SIZE_ON_DISK_B,        // Size of the index on disk in bytes
 };
 
 using ISC = IndexSettingsColumn;
@@ -41,7 +42,7 @@ using ISC = IndexSettingsColumn;
 const vec<ISC> INDEX_TIME_COLUMNS = {ISC::INDEXING_TIME_S, ISC::SUMMARIZATION_TIME_S, ISC::INSERTION_TIME_S,
                                      ISC::FFT_CALC_TIME_S};
 
-const vec<ISC> INDEX_COUNT_COLUMNS = {ISC::NUM_LEAVES, ISC::NUM_NODES, ISC::NUM_ENTRIES};
+const vec<ISC> INDEX_COUNT_COLUMNS = {ISC::NUM_LEAVES, ISC::NUM_NODES, ISC::NUM_ENTRIES, ISC::SIZE_ON_DISK_B};
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(IndexSettingsColumn, INDEX_SETTINGS_COL, false);
 
@@ -64,7 +65,7 @@ class IndexLogger : public Logger {
      * @param col The column to increment, expected to be a value from INDEX_COUNT_COLUMNS
      * @param amount The amount to increment by
      */
-    inline void increment_count_col(ISC col, uint amount = 1) {
+    inline void increment_count_col(ISC col, size_t amount = 1) {
         assert(vec_contains(INDEX_COUNT_COLUMNS, col));
         instance.m_count_cols[col] += amount;
     }
@@ -90,7 +91,7 @@ class IndexLogger : public Logger {
 
    private:
     umap<ISC, str> m_columns;
-    umap<ISC, std::atomic<uint>> m_count_cols;
+    umap<ISC, std::atomic<size_t>> m_count_cols;
     umap<ISC, TimePoint> m_time_cols_start;
     umap<ISC, double> m_time_cols_duration;
     str m_index_settings_path;

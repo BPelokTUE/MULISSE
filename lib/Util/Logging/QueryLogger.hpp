@@ -43,6 +43,7 @@ enum class QueryColumn {
     NUM_LEAVES_VISITED,       // Number of leaves visited during the search
     NUM_NODES_VISITED,        // Number of nodes visited during the search
     NUM_ENTRIES_EXAMINED,     // Number of index entries examined during the search
+    NUM_MIN_DIST_CALCULATED,  // Number of minimum distance calculations performed during the search
     ABANDONING_RATE,          // The rate of early abandoning during the search
     TOTAL_TIME_S,             // Total time taken by the search in seconds
     FIRST_LAYER_TIME_S,       // Time taken to process the first layer in the search in seconds
@@ -57,7 +58,8 @@ using QC = QueryColumn;
 
 const vec<QC> QUERY_TIME_COLUMNS = {QC::TOTAL_TIME_S, QC::FIRST_LAYER_TIME_S, QC::TREE_TRAVERSAL_TIME_S, QC::IO_TIME_S,
                                     QC::TS_EXAMINATION_TIME_S},
-              QUERY_COUNT_COLUMNS = {QC::NUM_LEAVES_VISITED, QC::NUM_NODES_VISITED, QC::NUM_ENTRIES_EXAMINED},
+              QUERY_COUNT_COLUMNS = {QC::NUM_LEAVES_VISITED, QC::NUM_NODES_VISITED, QC::NUM_ENTRIES_EXAMINED,
+                                     QC::NUM_MIN_DIST_CALCULATED},
               QUERY_COLLECTION_COLUMNS = {QC::RESULT_SET_TS_INDICES, QC::RESULT_SET_TS_POSITIONS,
                                           QC::RESULT_SET_DISTANCES, QC::QUERY_CHANNELS},
               QUERY_NUMBER_COLUMNS = {QC::QUERY_ID, QC::QUERY_LENGTH};

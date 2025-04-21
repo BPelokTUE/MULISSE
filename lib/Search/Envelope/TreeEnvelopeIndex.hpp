@@ -119,6 +119,8 @@ class TreeEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
 
+        logger.increment_count_col(QC::NUM_MIN_DIST_CALCULATED, U(pq.size()));
+
         while (!pq.empty()) {
             auto entry = pq.top();
             pq.pop();
@@ -130,6 +132,7 @@ class TreeEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
                 for (auto &child : entry.m_node->get_children()) {
                     Real min_dist_squared =
                         this->get_min_dist_squared(child->get_envelopes(), query_paa, distance_measure) * segment_len_r;
+                    logger.increment_count_col(QC::NUM_MIN_DIST_CALCULATED);
                     if (min_dist_squared < lb) pq.push({min_dist_squared, child});
                 }
             } else {

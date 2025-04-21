@@ -2,6 +2,7 @@
 #define INDEX_HPP
 
 #include <fstream>
+#include <filesystem>
 
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
@@ -52,6 +53,17 @@ class IFinalizedIndex {
      * @param ar_type Archive type
      */
     virtual void load(const str &in_file, ArchiveType ar_type) = 0;
+
+    /**
+     * @brief Get the size on disk in bytes of the saved index
+     * @param index_file Path to the index file
+     * @param ar_type Archive type
+     * @return The size on disk in bytes
+     */
+    virtual size_t get_size_on_disk(const str &index_file, const ArchiveType ar_type = BINARY) const {
+        str index_file_w_ext = add_archive_extension(index_file, ar_type);
+        return std::filesystem::exists(index_file_w_ext) ? std::filesystem::file_size(index_file_w_ext) : 0;
+    }
 
     /**
      * @brief Get the length of the series in the index
@@ -234,7 +246,7 @@ class IIndex {
         logger.stop_timer(ISC::SUMMARIZATION_TIME_S);
 
         // TODO: Reconsider if this is a valid approach
-        logger.increment_count_col(ISC::NUM_ENTRIES, U(dataset_entry_groups[0].size()));
+        logger.increment_count_col(ISC::NUM_ENTRIES, dataset_entry_groups[0].size());
 
         if (adapt) adapt_to_dataset_groups(dataset_entry_groups);
 

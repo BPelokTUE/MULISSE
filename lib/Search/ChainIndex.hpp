@@ -31,6 +31,15 @@ class ChainFinalizedIndex : public IFinalizedIndex<FTag> {
         m_exact_index->load(get_index_file_path(in_file, true, ar_type), ar_type);
     }
 
+    size_t get_size_on_disk(const str &index_file, const ArchiveType ar_type) const override {
+        size_t size = 0;
+        for (uint approx_ind = 0; approx_ind < m_approx_indexes.size(); ++approx_ind)
+            size += m_approx_indexes[approx_ind]->get_size_on_disk(
+                get_index_file_path(index_file, false, ar_type, approx_ind));
+        size += m_exact_index->get_size_on_disk(get_index_file_path(index_file, true, ar_type));
+        return size;
+    }
+
     IFinalizedIndex<FTag> *release_approx_index(uint index) {
         assert(index < m_approx_indexes.size());
         return m_approx_indexes[index].release();

@@ -199,6 +199,10 @@ void RunSettings::reset_query_ffts() {
     for (MtsNumChannelsT c = 0; c < m_dataset_props.m_num_channels; ++c) m_query_ffts[c] = nullptr;
 }
 
+size_t RunSettings::get_ffts_size_on_disk() {
+    return ffts_supported() ? static_cast<size_t>(fs::file_size(get_ffts_path())) : 0;
+}
+
 // iSAX
 
 const vec<Real> &RunSettings::get_breakpoints() { return m_isax_props.m_breakpoints; }

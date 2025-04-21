@@ -146,6 +146,8 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
 
+        logger.increment_count_col(QC::NUM_MIN_DIST_CALCULATED, U(pq.size()));
+
         logger.start_timer(QC::TREE_TRAVERSAL_TIME_S);
         while (!pq.empty()) {
             auto [min_dist_squared, subs_info] = pq.top();
@@ -172,6 +174,7 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
             if (this->skip_entry(query_len, series_len, entry.m_subs_info)) continue;
 
             Real min_dist_squared = this->get_min_dist_squared(entry.m_mts_summary, query_paa, distance_measure);
+            logger.increment_count_col(QC::NUM_MIN_DIST_CALCULATED);
             if (min_dist_squared >= result_set.get_distance_lb()) continue;
 
             this->update_result_set(entry.m_subs_info, m_index->get_pos_per_env(), query, query_len, result_set,

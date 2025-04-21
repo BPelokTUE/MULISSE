@@ -108,6 +108,9 @@ class RunSettings {
     /** @brief Resets the FFTs of the query */
     void reset_query_ffts();
 
+    /** @brief Get the size of the FFTs on disk */
+    size_t get_ffts_size_on_disk();
+
     // iSAX
 
     /**

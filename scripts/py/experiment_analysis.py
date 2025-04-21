@@ -884,67 +884,107 @@ def experiment_envelope_parametrization(
     hatch_labels=None,
     logs_dir="EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size_param",
     method_name_re: str = r".*",
+    num_query_len_groups: int = 1,
+    bar_width_inches: float = 0.4,
 ):
     if isinstance(target_cols, str):
         target_cols = [target_cols]
-    group_dict = {
+    groups_dict = {
         ERD.INDEXES_COLS: [str(ISC.L_MIN), str(ISC.L_MAX), str(ISC.POS_PER_ENV)],
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
         ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
     }
-    columns = {**group_dict, ERD.RUNS_COLS: target_cols}
-    parametrization_results = ExperimentResults.load(logs_dir=logs_dir, cols=columns)
+    if num_query_len_groups > 1:
+        groups_dict[ERD.RUNS_COLS] = [str(QC.QUERY_LENGTH_GROUP)]
+    columns = {**groups_dict, ERD.RUNS_COLS: target_cols + groups_dict.get(ERD.RUNS_COLS, [])}
+    print(columns)
+    parametrization_results = ExperimentResults.load(
+        logs_dir=logs_dir, cols=columns, num_query_len_groups=num_query_len_groups
+    )
 
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
-    groups = dict_to_tuples(group_dict)
-    mean_values = execute_reduction([parametrization_results], targets, groups)
-    mean_values = {group: values for group, values in mean_values.items() if re.match(method_name_re, group[3])}
+    groups = dict_to_tuples(groups_dict)
+    reduced_values = execute_reduction([parametrization_results], targets, groups)
+    reduced_values = {group: values for group, values in reduced_values.items() if re.match(method_name_re, group[3])}
 
-    mean_values = {(*group[:4], group[4].rsplit("/")[0]): values for group, values in mean_values.items()}
+    ds_ind = 4
+    reduced_values = {
+        (*group[:ds_ind], group[ds_ind].rsplit("/")[0], *group[ds_ind + 1 :]): values
+        for group, values in reduced_values.items()
+    }
 
     def get_x_label(key: tuple):
-        l_min, l_max, pos_per_env, _, _ = key
-        return f"l_min={l_min}\nl_max={l_max}\nPPE={pos_per_env}"
+        if num_query_len_groups == 1:
+            l_min, l_max, pos_per_env, _, _ = key
+            query_len_label = ""
+        else:
+            l_min, l_max, pos_per_env, _, _, query_len_group = key
+            query_len_group_size = int(np.ceil((l_max - l_min + 1) / num_query_len_groups))
+            low_len = l_min + query_len_group * query_len_group_size
+            high_len = min(l_min + (query_len_group + 1) * query_len_group_size, l_max + 1)
+            query_len_label = f"\n{int(low_len)}≤|Q|<{int(high_len)}"
+        return f"l_min={int(l_min)}\nl_max={int(l_max)}\nPPE={int(pos_per_env)}{query_len_label}"
 
-    datasets = {group[4] for group in mean_values}
+    datasets = {group[4] for group in reduced_values}
     for dataset in datasets:
-        mean_values_ds = {group: values for group, values in mean_values.items() if group[4] == dataset}
-        mean_values_ds = sort_dict(mean_values_ds, lambda x: (x[0][4], *x[0][:3], x[0][3]))
-        x_labels = {(*group[:3], group[4]): get_x_label(group) for group in mean_values_ds}
+        l_ranges = {group[:2] for group in reduced_values}
+        for l_range in l_ranges:
+            reduced_values_ds = {
+                group: values
+                for group, values in reduced_values.items()
+                if group[4] == dataset and group[:2] == l_range
+            }
+            reduced_values_ds = sort_dict(reduced_values_ds, lambda x: (x[0][4], *x[0][:3], x[0][3]))
+            x_labels = {(*group[:3], *group[4:]): get_x_label(group) for group in reduced_values_ds}
 
-        plot_bars(
-            mean_values_ds,
-            3,
-            x_labels=x_labels,
-            y_label=y_label,
-            scale=y_scale,
-            title=dataset,
-            hatches=hatches,
-            hatch_labels=hatch_labels,
-        )
+            plot_bars(
+                reduced_values_ds,
+                3,
+                x_labels=x_labels,
+                y_label=y_label,
+                scale=y_scale,
+                title=dataset,
+                hatches=hatches,
+                hatch_labels=hatch_labels,
+                bar_width_inches=bar_width_inches,
+            )
 
 
 # %%
 
-for i in range(3, 4):
-    print(f"Experiment {i}:")
-    exp_logs_dir = "EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size" + (f"_{i}" if i > 1 else "")
-    print("Total time:")
-    experiment_envelope_parametrization(
-        PQ_TIME_TARGETS,
-        TOTAL_TIME_Y_LABEL,
-        logs_dir=exp_logs_dir,
-        hatches=["", FIRST_LAYER_TIME_HATCH],
-        hatch_labels=PQ_TIME_LABELS,
-    )
-    print("Pruning ratio:")
-    experiment_envelope_parametrization(
-        str(QC.PRUNING_RATIO),
-        PRUNING_RATIO_Y_LABEL,
-        y_scale="linear",
-        logs_dir=exp_logs_dir,
-        method_name_re=r".*mass.*",
-    )
+logs_dir = "EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size_3"
+method_name_re = r"^(?!.*isax).*ed.*$"
+num_query_len_groups = 1
+bar_width_inches = 0.8
+
+# %%
+
+print("Total time:")
+experiment_envelope_parametrization(
+    # PQ_TIME_TARGETS,
+    str(QC.TOTAL_TIME_S),
+    TOTAL_TIME_Y_LABEL,
+    y_scale="linear",
+    logs_dir=logs_dir,
+    # hatches=["", FIRST_LAYER_TIME_HATCH],
+    # hatch_labels=PQ_TIME_LABELS,
+    method_name_re=method_name_re,
+    num_query_len_groups=num_query_len_groups,
+    bar_width_inches=bar_width_inches,
+)
+
+# %%
+
+print("Pruning ratio:")
+experiment_envelope_parametrization(
+    str(QC.PRUNING_RATIO),
+    PRUNING_RATIO_Y_LABEL,
+    y_scale="linear",
+    logs_dir=logs_dir,
+    method_name_re=method_name_re,
+    num_query_len_groups=num_query_len_groups,
+    bar_width_inches=bar_width_inches,
+)
 
 # %%[markdown]
 """
@@ -1349,21 +1389,21 @@ def experiment_length_based_grouping(
     hatch_labels=None,
     y_scale: str = "linear",
     num_query_len_groups: int = 1,
+    datasets_to_show: list[str] | None = None,
+    l_ranges_to_show: list[tuple[int, int]] | None = None,
 ):
     groups_dict = {
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
         ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
         ERD.QUERY_SETS_COLS: [str(QSC.L_MIN), str(QSC.L_MAX)],
-        ERD.INDEXES_COLS: [str(ISC.L_PER_GROUP)],
+        ERD.INDEXES_COLS: [str(ISC.POS_PER_ENV), str(ISC.L_PER_GROUP)],
     }
     if num_query_len_groups > 1:
         groups_dict[ERD.RUNS_COLS] = [str(QC.QUERY_LENGTH_GROUP)]
     ds_index = 1
     targets_dict = {ERD.RUNS_COLS: target_cols}
     columns = groups_dict.copy()
-    columns[ERD.RUNS_COLS] = (
-        targets_dict[ERD.RUNS_COLS] + groups_dict[ERD.RUNS_COLS] if ERD.RUNS_COLS in groups_dict else []
-    )
+    columns[ERD.RUNS_COLS] = targets_dict[ERD.RUNS_COLS] + groups_dict.get(ERD.RUNS_COLS, [])
 
     results = ExperimentResults.load(logs_dir=logs_dir, cols=columns, num_query_len_groups=num_query_len_groups)
 
@@ -1382,26 +1422,32 @@ def experiment_length_based_grouping(
         datasets = {key[ds_index] for key in reduced_values}
         ordered_datasets = sorted(datasets, key=lambda x: ORDERED_DATASETS.index(x))
 
-    l_ranges = {(key[2], key[3]) for key in reduced_values}
+    l_ranges = {(int(key[2]), int(key[3])) for key in reduced_values}
 
     def get_x_label(key: tuple) -> str:
         if num_query_len_groups > 1:
-            _, _, l_min, l_max, l_per_group, query_len_group = key
+            _, _, l_min, l_max, pos_per_env, l_per_group, query_len_group = key
             query_len_group_size = int(np.ceil((l_max - l_min + 1) / num_query_len_groups))
             low_len = l_min + query_len_group * query_len_group_size
             high_len = min(l_min + (query_len_group + 1) * query_len_group_size, l_max + 1)
             query_len_label = f"\n{low_len}≤|Q|<{high_len}"
         else:
-            _, _, l_min, l_max, l_per_group = key
+            _, _, l_min, l_max, pos_per_env, l_per_group = key
             query_len_label = ""
         if l_per_group is None or l_per_group <= 0:
             return ""
 
         num_l_groups = int(np.ceil((l_max - l_min + 1) / l_per_group))
-        return f"#LG={num_l_groups}{query_len_label}"
+        ppe_str = f"\nPPE={int(pos_per_env)}" if pos_per_env is not None and pos_per_env > 0 else ""
+        return f"#LG={num_l_groups}{ppe_str}{query_len_label}"
 
     for dataset in ordered_datasets:
+        if datasets_to_show is not None and dataset not in datasets_to_show:
+            continue
         for l_range in l_ranges:
+            if l_ranges_to_show is not None and l_range not in l_ranges_to_show:
+                continue
+
             reduced_values_ds = {
                 key: values
                 for key, values in reduced_values.items()
@@ -1424,19 +1470,26 @@ def experiment_length_based_grouping(
 
 # %%
 
-logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_multivariate"
+logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_env_size_param"
+merge_csv_datasets = True
+num_query_len_groups = 1
+datasets_to_show = None
+l_ranges_to_show = [(128, 2048)]
 
 # %%
 
 experiment_length_based_grouping(
     logs_dir=logs_dir,
-    merge_csv_datasets=True,
+    merge_csv_datasets=merge_csv_datasets,
+    num_query_len_groups=num_query_len_groups,
+    datasets_to_show=datasets_to_show,
+    l_ranges_to_show=l_ranges_to_show,
     ## TIME
-    target_cols=[str(QC.TOTAL_TIME_S)],
+    # target_cols=[str(QC.TOTAL_TIME_S)],
     ## INDEX TIME
-    # target_cols=TIME_TARGETS,
-    # hatches=["", PREP_TIME_HATCH],
-    # hatch_labels=TIME_LABELS,
+    target_cols=TIME_TARGETS,
+    hatches=["", PREP_TIME_HATCH],
+    hatch_labels=TIME_LABELS,
     ## PQ TIME
     # target_cols=PQ_TIME_TARGETS,
     # hatches=["", FIRST_LAYER_TIME_HATCH],
@@ -1448,7 +1501,10 @@ experiment_length_based_grouping(
 experiment_length_based_grouping(
     target_cols=[str(QC.PRUNING_RATIO)],
     logs_dir=logs_dir,
-    merge_csv_datasets=True,
+    merge_csv_datasets=merge_csv_datasets,
+    num_query_len_groups=num_query_len_groups,
+    datasets_to_show=datasets_to_show,
+    l_ranges_to_show=l_ranges_to_show,
 )
 
 # %%
@@ -1456,5 +1512,8 @@ experiment_length_based_grouping(
 experiment_length_based_grouping(
     target_cols=[str(QC.KEEP_RATE)],
     logs_dir=logs_dir,
-    merge_csv_datasets=True,
+    merge_csv_datasets=merge_csv_datasets,
+    num_query_len_groups=num_query_len_groups,
+    datasets_to_show=datasets_to_show,
+    l_ranges_to_show=l_ranges_to_show,
 )

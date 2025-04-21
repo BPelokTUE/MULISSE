@@ -25,6 +25,7 @@ int calculate_ffts(bool normalized) {
         logger.start_timer(ISC::FFT_CALC_TIME_S);
         RS.calculate_ffts();
         logger.stop_timer(ISC::FFT_CALC_TIME_S);
+        logger.increment_count_col(ISC::SIZE_ON_DISK_B, RS.get_ffts_size_on_disk());
     }
 
     logger.write_entry();

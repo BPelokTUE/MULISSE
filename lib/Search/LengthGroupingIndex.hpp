@@ -37,19 +37,24 @@ class LengthGroupingFinalizedIndex : public IFinalizedIndex<FTag> {
 
         if (!fs::exists(base)) fs::create_directories(base);
 
-        for (uint l_ind = 0; l_ind < m_indexes.size(); ++l_ind) {
-            auto &index = m_indexes[l_ind];
-            index->save(fs::path(base) / get_index_file_name(l_ind), ar_type);
-        }
+        for (uint l_ind = 0; l_ind < m_indexes.size(); ++l_ind)
+            m_indexes[l_ind]->save(fs::path(base) / get_index_file_name(l_ind), ar_type);
     }
 
     void load(const str &in_file, ArchiveType ar_type) override {
         str base = get_file_base_and_extension(in_file).first;
 
-        for (uint l_ind = 0; l_ind < m_indexes.size(); ++l_ind) {
-            auto &index = m_indexes[l_ind];
-            index->load(fs::path(base) / get_index_file_name(l_ind), ar_type);
-        }
+        for (uint l_ind = 0; l_ind < m_indexes.size(); ++l_ind)
+            m_indexes[l_ind]->load(fs::path(base) / get_index_file_name(l_ind), ar_type);
+    }
+
+    size_t get_size_on_disk(const str &index_file, const ArchiveType ar_type) const override {
+        str base = get_file_base_and_extension(index_file).first;
+
+        size_t size = 0;
+        for (uint l_ind = 0; l_ind < m_indexes.size(); ++l_ind)
+            size += m_indexes[l_ind]->get_size_on_disk(fs::path(base) / get_index_file_name(l_ind), ar_type);
+        return size;
     }
 
     IFinalizedIndex<FTag> *release_index(uint length_group) {

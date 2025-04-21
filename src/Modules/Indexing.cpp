@@ -199,8 +199,11 @@ void construct_index(std::function<sptr<IIndex<T>>(const IndexFactoryParams &)> 
     logger.start_timer(ISC::INDEXING_TIME_S);
     index->construct(RS.get_dataset_path(), std::move(generator), opts.m_inserter_type, opts.m_num_channels,
                      opts.m_series_len, opts.m_adapt);
-    index->finalize()->save(RS.get_index_path(), opts.m_index_format);
+    auto finalized_index = index->finalize();
+    finalized_index->save(RS.get_index_path(), opts.m_index_format);
     logger.stop_timer(ISC::INDEXING_TIME_S);
+
+    logger.increment_count_col(ISC::SIZE_ON_DISK_B, finalized_index->get_size_on_disk(RS.get_index_path()));
 }
 
 int create_index(const IndexOptions &opts) {
@@ -256,6 +259,7 @@ int create_index(const IndexOptions &opts) {
         logger.start_timer(ISC::FFT_CALC_TIME_S);
         RS.calculate_ffts();
         logger.stop_timer(ISC::FFT_CALC_TIME_S);
+        logger.increment_count_col(ISC::SIZE_ON_DISK_B, RS.get_ffts_size_on_disk());
     }
 
     logger.write_entry();
