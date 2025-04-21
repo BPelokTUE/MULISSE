@@ -116,6 +116,9 @@ class QueryColumn(Enum):
     NUM_NODES_VISITED = auto()
     NUM_TS_EXAMINED = auto()  # For backward compatibility
     NUM_ENTRIES_EXAMINED = auto()
+    NUM_MIN_DIST_CALCULATED = auto()
+    NUM_PTS_IN_EXAMINED_ENTRIES = auto()
+    NUM_PTS_EXAMINED = auto()
     ABANDONING_RATE = auto()
     KEEP_RATE = auto()
     TOTAL_TIME_S = auto()

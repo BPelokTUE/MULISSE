@@ -44,12 +44,14 @@ enum class QueryColumn {
     NUM_NODES_VISITED,        // Number of nodes visited during the search
     NUM_ENTRIES_EXAMINED,     // Number of index entries examined during the search
     NUM_MIN_DIST_CALCULATED,  // Number of minimum distance calculations performed during the search
-    ABANDONING_RATE,          // The rate of early abandoning during the search
-    TOTAL_TIME_S,             // Total time taken by the search in seconds
-    FIRST_LAYER_TIME_S,       // Time taken to process the first layer in the search in seconds
-    TREE_TRAVERSAL_TIME_S,    // Time taken to traverse the tree in seconds
-    IO_TIME_S,                // Time taken to read the time series from the disk in seconds
-    TS_EXAMINATION_TIME_S,    // Time taken to examine the time series in seconds
+    NUM_PTS_IN_EXAMINED_ENTRIES,  // Number of points in the examined entries
+    NUM_PTS_EXAMINED,             // Number of points examined during the search
+    ABANDONING_RATE,              // The rate of early abandoning during the search
+    TOTAL_TIME_S,                 // Total time taken by the search in seconds
+    FIRST_LAYER_TIME_S,           // Time taken to process the first layer in the search in seconds
+    TREE_TRAVERSAL_TIME_S,        // Time taken to traverse the tree in seconds
+    IO_TIME_S,                    // Time taken to read the time series from the disk in seconds
+    TS_EXAMINATION_TIME_S,        // Time taken to examine the time series in seconds
 };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(QueryColumn, QUERY_COL, false);
@@ -99,13 +101,15 @@ class QueryLogger : public Logger {
      * @brief Increment the number of points in the entries examined
      * @param amount The amount to increment by
      * */
-    inline void increment_num_points_in_examined_entries(uint64_t amount) { num_points_in_examined_entries += amount; }
+    inline void increment_num_points_in_examined_entries(uint64_t amount) {
+        m_num_points_in_examined_entries += amount;
+    }
 
     /**
      * @brief Increment the number of points examined
      * @param amount The amount to increment by
      */
-    inline void increment_num_points_examined(uint64_t amount) { num_points_examined += amount; }
+    inline void increment_num_points_examined(uint64_t amount) { m_num_points_examined += amount; }
 
     /**
      * @brief Start the timer for the given column
@@ -157,7 +161,7 @@ class QueryLogger : public Logger {
     umap<QC, double> m_time_cols_duration;
     umap<QC, vec<str>> m_collection_cols;
 
-    __uint128_t num_points_in_examined_entries = 0, num_points_examined = 0;
+    __uint128_t m_num_points_in_examined_entries = 0, m_num_points_examined = 0;
 
     // Static
     static QueryLogger instance;

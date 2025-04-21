@@ -648,6 +648,9 @@ def plot_bars(
             bar_groups[bar_group_key] = []
         bar_groups[bar_group_key].append((group[color_group_ind], target_values))
         num_bars += 1
+    if len(bar_groups) == 0:
+        print(reduction_result)
+        return
 
     fig, ax = plt.subplots()
     ax.set_xlim(0.0, 1.0)
@@ -738,6 +741,8 @@ FIRST_LAYER_TIME_S_Y_LABEL = "Time for first layer (S)"
 PRUNING_RATIO_Y_LABEL = "Pruning ratio"
 ABANDONING_RATE_Y_LABEL = "Abandoning rate"
 KEEP_RATE_Y_LABEL = "Keep rate (1 - abandoning rate)"
+NUM_PTS_EXAMINED_Y_LABEL = "Number of points examined"
+NUM_PTS_IN_EXAMINED_ENTRIES_Y_LABEL = "Number of points in examined entries"
 
 Y_LABELS = {
     str(QC.TOTAL_TIME_S): TOTAL_TIME_Y_LABEL,
@@ -746,6 +751,8 @@ Y_LABELS = {
     str(QC.ABANDONING_RATE): ABANDONING_RATE_Y_LABEL,
     str(QC.PRUNING_RATIO): PRUNING_RATIO_Y_LABEL,
     str(QC.KEEP_RATE): KEEP_RATE_Y_LABEL,
+    str(QC.NUM_PTS_EXAMINED): NUM_PTS_EXAMINED_Y_LABEL,
+    str(QC.NUM_PTS_IN_EXAMINED_ENTRIES): NUM_PTS_IN_EXAMINED_ENTRIES_Y_LABEL,
 }
 
 
@@ -1411,16 +1418,19 @@ def experiment_length_based_grouping(
     groups = dict_to_tuples(groups_dict)
     reduced_values = execute_reduction([results], targets, groups)
 
-    print(f"Reduced values: {reduced_values}")
-
     if target_cols[0] == str(QC.KEEP_RATE):
         reduced_values = {key: value for key, value in reduced_values.items() if value[0] < 1.0}
 
-    ordered_datasets = {key[ds_index] for key in reduced_values}
     if merge_csv_datasets:
         reduced_values = merge_univariate_datasets(reduced_values, ds_index)
         datasets = {key[ds_index] for key in reduced_values}
         ordered_datasets = sorted(datasets, key=lambda x: ORDERED_DATASETS.index(x))
+    else:
+        reduced_values = {
+            (*key[:ds_index], key[ds_index].rsplit("/", 1)[0], *key[ds_index + 1 :]): values
+            for key, values in reduced_values.items()
+        }
+        ordered_datasets = {key[ds_index] for key in reduced_values}
 
     l_ranges = {(int(key[2]), int(key[3])) for key in reduced_values}
 
@@ -1442,7 +1452,7 @@ def experiment_length_based_grouping(
         return f"#LG={num_l_groups}{ppe_str}{query_len_label}"
 
     for dataset in ordered_datasets:
-        if datasets_to_show is not None and dataset not in datasets_to_show:
+        if datasets_to_show is not None and not any(ds in dataset for ds in datasets_to_show):
             continue
         for l_range in l_ranges:
             if l_ranges_to_show is not None and l_range not in l_ranges_to_show:
@@ -1451,7 +1461,7 @@ def experiment_length_based_grouping(
             reduced_values_ds = {
                 key: values
                 for key, values in reduced_values.items()
-                if key[1] == dataset and key[2] == l_range[0] and key[3] == l_range[1]
+                if key[1].startswith(dataset) and key[2] == l_range[0] and key[3] == l_range[1]
             }
             method_keys_list = list(METHOD_LABELS.keys())
             reduced_values_ds = sort_dict(reduced_values_ds, lambda x: method_keys_list.index(x[0][0]))
@@ -1460,8 +1470,9 @@ def experiment_length_based_grouping(
                 reduced_values_ds,
                 0,
                 x_labels={key[1:]: get_x_label(key) for key in reduced_values_ds},
-                y_label=Y_LABELS[target_cols[0]],
-                title=f"{dataset.rsplit('/', 1)[0]} l in [{l_range[0]}, {l_range[1]}]",
+                y_label=Y_LABELS.get(target_cols[0], target_cols[0]),
+                y_lim=(0, 1.05) if target_cols[0] in [str(QC.PRUNING_RATIO), str(QC.KEEP_RATE)] else None,
+                title=f"{dataset} l in [{l_range[0]}, {l_range[1]}]",
                 hatches=hatches,
                 hatch_labels=hatch_labels,
                 scale=y_scale,
@@ -1473,8 +1484,8 @@ def experiment_length_based_grouping(
 logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_env_size_param"
 merge_csv_datasets = True
 num_query_len_groups = 1
-datasets_to_show = None
-l_ranges_to_show = [(128, 2048)]
+datasets_to_show = None  # ["weather", "stocks"]
+l_ranges_to_show = None  # [(128, 2048)]
 
 # %%
 
@@ -1487,19 +1498,19 @@ experiment_length_based_grouping(
     ## TIME
     # target_cols=[str(QC.TOTAL_TIME_S)],
     ## INDEX TIME
-    target_cols=TIME_TARGETS,
-    hatches=["", PREP_TIME_HATCH],
-    hatch_labels=TIME_LABELS,
+    # target_cols=TIME_TARGETS,
+    # hatches=["", PREP_TIME_HATCH],
+    # hatch_labels=TIME_LABELS,
     ## PQ TIME
-    # target_cols=PQ_TIME_TARGETS,
-    # hatches=["", FIRST_LAYER_TIME_HATCH],
-    # hatch_labels=PQ_TIME_LABELS,
+    target_cols=PQ_TIME_TARGETS,
+    hatches=["", FIRST_LAYER_TIME_HATCH],
+    hatch_labels=PQ_TIME_LABELS,
 )
 
 # %%
 
 experiment_length_based_grouping(
-    target_cols=[str(QC.PRUNING_RATIO)],
+    target_cols=[str(QC.NUM_PTS_EXAMINED)],
     logs_dir=logs_dir,
     merge_csv_datasets=merge_csv_datasets,
     num_query_len_groups=num_query_len_groups,

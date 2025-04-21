@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include "Util/typedefs.hpp"
 #include "Util/Logging/QueryLogger.hpp"
 
@@ -103,6 +105,12 @@ void QueryLogger::log_results(const SearchResults &results) {
     instance.m_settable_cols[QC::EXACT_RESULTS] = to_string(results.m_exact);
 }
 
+str uint128_to_str(const __uint128_t &value) {
+    std::stringstream ss;
+    ss << static_cast<uint64_t>(value >> 64) << static_cast<uint64_t>(value & 0xFFFFFFFFFFFFFFFF);
+    return ss.str();
+};
+
 void QueryLogger::write_entry() {
     str run_log_path = fs::path(RunSettings::get_instance().get_logs_path()) / instance.RUN_LOG_FILE;
     umap<QC, str> columns({
@@ -117,9 +125,12 @@ void QueryLogger::write_entry() {
     for (const auto &col : QUERY_COLLECTION_COLUMNS)
         columns[col] = instance.get_collection_str(instance.m_collection_cols[col]);
 
-    bool abandoning_used = num_points_examined < num_points_in_examined_entries;
+    columns[QC::NUM_PTS_IN_EXAMINED_ENTRIES] = uint128_to_str(m_num_points_in_examined_entries);
+    columns[QC::NUM_PTS_EXAMINED] = uint128_to_str(m_num_points_examined);
+
+    bool abandoning_used = m_num_points_examined < m_num_points_in_examined_entries;
     columns[QC::ABANDONING_RATE] =
-        to_string(abandoning_used ? 1.0 - R(num_points_examined) / R(num_points_in_examined_entries) : 0.0);
+        to_string(abandoning_used ? 1.0 - R(m_num_points_examined) / R(m_num_points_in_examined_entries) : 0.0);
 
     write_row(run_log_path, columns, QUERY_COL_ENUMS);
 }

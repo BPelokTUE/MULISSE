@@ -165,6 +165,8 @@ class DistanceMeasure<S, MASS> {
 
     inline bool update_result_set(ResultSet<S> &result_set, SubsequenceInfo subs_info, const vec<vec<Real>> &query,
                                   const vec<vec<Real>> &mts, const vec<uint> *real_query_inds = nullptr) const {
+        auto &logger = QueryLogger::get_instance();
+
         bool updated = false;
 
         uint mts_len = 0, query_len = 0;
@@ -179,6 +181,7 @@ class DistanceMeasure<S, MASS> {
         }
 
         vec<Real> squared_dists(mts_len - query_len + 1, 0);
+        uint64_t points_examined = 0;
         for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
             if (query[c].empty()) continue;
 
@@ -219,6 +222,8 @@ class DistanceMeasure<S, MASS> {
                         R(0.0), R(query_sum_sq + (mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos]) + dot));
                 }
             }
+
+            points_examined += query_len;
         }
 
         for (uint start_pos = 0; start_pos < squared_dists.size(); ++start_pos) {
@@ -228,6 +233,9 @@ class DistanceMeasure<S, MASS> {
                 updated = true;
             }
         }
+
+        logger.increment_num_points_examined(points_examined);
+        logger.increment_num_points_in_examined_entries(points_examined);
 
         return updated;
     }
