@@ -13,6 +13,7 @@
 #include "Modules/Searching.hpp"
 #include "Search/DistanceMeasure.hpp"
 #include "Search/ResultSet.hpp"
+#include "Summarization/SegmentationStrategy.hpp"
 #include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
@@ -73,7 +74,8 @@ int main(int argc, char **argv) {
     vec<str> csv_paths;
     Real step_sd = R(1.0), noise = R(0.1);
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT;
-    uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, segment_len, pos_per_env = 0, l_per_group = 0,
+    SaxSegIndT num_segments;
+    uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
          num_l_groups = 0, knn_k = 1, seed = 0;
     Real r_range_r = 1.0;
     size_t leaf_capacity = 0, max_leaves_to_visit = 0;
@@ -190,7 +192,9 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-L,--l_max", l_max, "Maximum length of subsequences")
         ->required()
         ->check(positive_int);
-    index_subcommand->add_option("-s,--segment_len", segment_len, "Segment length")->required()->check(positive_int);
+    index_subcommand->add_option("-s,--num_segments", num_segments, "Number of segments")
+        ->required()
+        ->check(positive_int);
     index_subcommand->add_option("-p,--pos_per_env", pos_per_env, "Positions per envelope")
         ->capture_default_str()
         ->check(positive_int);
@@ -395,8 +399,9 @@ int main(int argc, char **argv) {
 
     // Initialize run settings
     try {
-        RunSettings::initialize(command_type, {dataset_path, num_channels, series_len, num_series},
-                                {query_path, l_min, l_max}, pos_per_env, index_path, ffts_path, method_type, logs_path);
+        RunSettings::initialize(command_type, {num_channels, series_len, num_series, dataset_path},
+                                {l_min, l_max, l_per_group, num_l_groups}, pos_per_env, index_path, ffts_path,
+                                query_path, method_type, logs_path);
     } catch (const std::exception &e) {
         std::cerr << "Error configuring run: " << e.what() << '\n';
         return 1;
@@ -421,32 +426,34 @@ int main(int argc, char **argv) {
 
             auto breakpoint_strategy_type = STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str);
             auto split_strategy_type = STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str);
+            auto segmentation_strategy_type = STR_TO_SEGMENTATION_STRATEGY_TYPE.at("uniform");
 
             switch (method_type) {
                 case ISAX_ENVELOPE:
                 case ISAX_ENV_W_ENV:
                 case ISAX_ENV_W_SAX_ENV:
-                    index_params = new iSaxEnvelopeIndexParams(
-                        segment_len, pos_per_env, first_layer_num_bits, leaf_capacity, breakpoint_strategy_type,
-                        split_strategy_type, num_bits_limit, !prefer_first_in_em, breakpoints_path);
+                    index_params = new iSaxEnvelopeIndexParams(segmentation_strategy_type, num_segments, pos_per_env,
+                                                               first_layer_num_bits, leaf_capacity,
+                                                               breakpoint_strategy_type, split_strategy_type,
+                                                               num_bits_limit, !prefer_first_in_em, breakpoints_path);
                     break;
                 case ISAX:
-                    index_params =
-                        new iSaxIndexParams(segment_len, first_layer_num_bits, leaf_capacity, breakpoint_strategy_type,
-                                            split_strategy_type, num_bits_limit, !prefer_first_in_em, breakpoints_path);
+                    index_params = new iSaxIndexParams(segmentation_strategy_type, num_segments, first_layer_num_bits,
+                                                       leaf_capacity, breakpoint_strategy_type, split_strategy_type,
+                                                       num_bits_limit, !prefer_first_in_em, breakpoints_path);
                     break;
                 case ENVELOPE:
-                    index_params = new EnvelopeIndexParams(segment_len, pos_per_env);
+                    index_params = new EnvelopeIndexParams(segmentation_strategy_type, num_segments, pos_per_env);
                     break;
                 case SAX_ENVELOPE:
-                    index_params =
-                        new SaxEnvelopeIndexParams(segment_len, pos_per_env, first_layer_num_bits,
-                                                   breakpoint_strategy_type, !prefer_first_in_em, breakpoints_path);
+                    index_params = new SaxEnvelopeIndexParams(segmentation_strategy_type, num_segments, pos_per_env,
+                                                              first_layer_num_bits, breakpoint_strategy_type,
+                                                              !prefer_first_in_em, breakpoints_path);
                     break;
                 case TREE_ENVELOPE:
-                    index_params =
-                        new TreeEnvelopeIndexParams(segment_len, pos_per_env, first_layer_num_bits, leaf_capacity,
-                                                    breakpoint_strategy_type, !prefer_first_in_em, breakpoints_path);
+                    index_params = new TreeEnvelopeIndexParams(
+                        segmentation_strategy_type, num_segments, pos_per_env, first_layer_num_bits, leaf_capacity,
+                        breakpoint_strategy_type, !prefer_first_in_em, breakpoints_path);
                     break;
                 case SEQUENTIAL_SCAN:
                     std::cerr << "Sequential scan does not require indexation\n";

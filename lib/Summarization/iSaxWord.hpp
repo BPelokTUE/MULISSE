@@ -7,16 +7,6 @@
 #include "Summarization/SaxWord.hpp"
 #include "Util/typedefs.hpp"
 
-/** @brief iSAX word settings */
-struct iSaxWordSettings {
-    /** @brief The number of bits to use for each segment */
-    vec<SaxNumBitsT> m_num_bits;
-    /** @brief The maximum number of bits in the alphabet */
-    SaxNumBitsT m_alphabet_num_bits;
-    /** @brief The vector of breakpoints for the symbol intervals */
-    vec<Real> m_breakpoints;
-};
-
 /** @brief indexable Symbolic Aggregate approXimation (iSAX) word */
 class iSaxWord : public SaxWord {
    public:
@@ -25,14 +15,25 @@ class iSaxWord : public SaxWord {
     /**
      * @brief Constructor from the PAA of a time series
      * @param paa The Piecewise Aggregate Approximation (PAA) of a time series
-     * @param settings iSAX word settings containing the number of bits per symbol, the number
-     *        of bits for the alphabet and the breakpoints
+     * @param breakpoints The breakpoints to use for the symbols
+     * @param alphabet_num_bits The number of bits used by the breakpoints
+     * @param num_bits The number of bits to use for the symbols
      */
-    inline iSaxWord(const vec<Real> &paa, const iSaxWordSettings &settings)
-        : SaxWord(paa, settings.m_alphabet_num_bits, settings.m_breakpoints), m_num_bits(settings.m_num_bits) {
-        assert(paa.size() == settings.m_num_bits.size());
-        assert(m_alphabet_num_bits >= *std::max_element(settings.m_num_bits.begin(), settings.m_num_bits.end()));
+    inline iSaxWord(const vec<Real> &paa, const vec<Real> &breakpoints, const SaxNumBitsT alphabet_num_bits,
+                    const vec<SaxNumBitsT> &num_bits)
+        : SaxWord(paa, alphabet_num_bits, breakpoints), m_num_bits(num_bits) {
+        assert(paa.size() == m_num_bits.size());
+        assert(m_alphabet_num_bits >= *std::max_element(m_num_bits.begin(), m_num_bits.end()));
     }
+
+    /**
+     * @brief Constructor from the PAA of a time series with the same number of bits for each segment
+     * @param paa The Piecewise Aggregate Approximation (PAA) of a time series
+     * @param breakpoints The breakpoints to use for the symbols
+     * @param alphabet_num_bits The number of bits to used by the breakpoints
+     */
+    inline iSaxWord(const vec<Real> &paa, const vec<Real> &breakpoints, const SaxNumBitsT alphabet_num_bits)
+        : SaxWord(paa, alphabet_num_bits, breakpoints), m_num_bits(paa.size(), alphabet_num_bits) {}
 
     iSaxWord() = default;
 
@@ -51,14 +52,6 @@ class iSaxWord : public SaxWord {
     iSaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT alphabet_num_bits);
 
     /**
-     * @brief Constructor with different number of bits per segment
-     * @param symbols The symbols of the word
-     * @param num_bits The number of bits to use for the symbols
-     * @param alphabet_num_bits The number of bits used by alphabet
-     */
-    iSaxWord(vec<SaxSymbolT> symbols, vec<SaxNumBitsT> num_bits, SaxNumBitsT alphabet_num_bits);
-
-    /**
      * @brief Get the symbol at the given index
      * @param index The index of the symbol
      * @return The symbol at the given index
@@ -74,6 +67,12 @@ class iSaxWord : public SaxWord {
      * @return The symbol at the given index without shifting
      */
     SaxSymbolT symbol_no_shift(SaxSegIndT index) const;
+
+    /**
+     * @brief Get the number of segments in the iSAX word
+     * @return The number of segments in the iSAX word
+     */
+    inline SaxSegIndT size() const { return static_cast<SaxSegIndT>(m_symbols.size()); }
 
     /**
      * @brief Get the number of bits used for the symbol at the given index

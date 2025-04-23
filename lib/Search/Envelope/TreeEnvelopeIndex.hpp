@@ -24,12 +24,13 @@ class FinalizedTreeEnvelopeIndex : public FinalizedEnvelopeIndex {
 
     /**
      * @brief Construct a new FinalizedTreeEnvelopeIndex instance
-     * @param segment_len The length of Paa the segments
+     * @param segmentation_strategy The segmentation strategy to use
      * @param pos_per_env The number of positions per envelope
      * @param nodes The envelope nodes in the first layer of the tree
      */
-    FinalizedTreeEnvelopeIndex(const uint segment_len, const uint pos_per_env, vec<uptr<EnvelopeNode>> &&nodes)
-        : FinalizedEnvelopeIndex(segment_len, pos_per_env), m_first_layer_nodes(std::move(nodes)) {}
+    FinalizedTreeEnvelopeIndex(sptr<ISegmentationStrategy> segmentation_strategy, const uint pos_per_env,
+                               vec<uptr<EnvelopeNode>> &&nodes)
+        : FinalizedEnvelopeIndex(segmentation_strategy, pos_per_env), m_first_layer_nodes(std::move(nodes)) {}
 
     /**
      * @brief Get the first layer nodes of the tree
@@ -44,19 +45,20 @@ class FinalizedTreeEnvelopeIndex : public FinalizedEnvelopeIndex {
    private:
     vec<uptr<EnvelopeNode>> m_first_layer_nodes;
 
-    MAKE_SERIALIZABLE((m_segment_len, m_pos_per_env, m_first_layer_nodes));
+    MAKE_SERIALIZABLE((m_segmentation_strategy, m_pos_per_env, m_first_layer_nodes));
 };
 
 class TreeEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_this<TreeEnvelopeIndex> {
    public:
     /**
      * @brief Construct a new TreeEnvelopeIndex instance
-     * @param segment_len Length of the segments
+     * @param segmentation_strategy The segmentation strategy to use
      * @param pos_per_env Number of positions per envelope
      * @param grouper The EnvelopeGrouper to use for grouping envelope entries
      */
-    TreeEnvelopeIndex(const uint segment_len, const uint pos_per_env, uptr<IEnvelopeGrouper> grouper)
-        : EnvelopeIndex(segment_len, pos_per_env), m_grouper(std::move(grouper)) {}
+    TreeEnvelopeIndex(sptr<ISegmentationStrategy> segmentation_strategy, const uint pos_per_env,
+                      uptr<IEnvelopeGrouper> grouper)
+        : EnvelopeIndex(segmentation_strategy, pos_per_env), m_grouper(std::move(grouper)) {}
 
     void insert_entries(vec<IndexEntry<Envelope>> &entries, EntryInserterType inserter_type) override {
         uptr<IEntryInserter<TreeEnvelopeIndex>> inserter;
@@ -78,7 +80,7 @@ class TreeEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_t
         // 2. Merge entries in leaves of the tree
 
         // 3. Return the finalized index (this)
-        return std::make_unique<FinalizedTreeEnvelopeIndex>(m_segment_len, m_pos_per_env,
+        return std::make_unique<FinalizedTreeEnvelopeIndex>(m_segmentation_strategy, m_pos_per_env,
                                                             std::move(m_first_layer_nodes));
     }
 
@@ -106,15 +108,15 @@ class TreeEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
         auto &logger = QueryLogger::get_instance();
 
         uint series_len = RunSettings::get_instance().get_dataset_props().m_series_len;
-        auto [query_paa, query_len] = this->get_query_paa_and_len(query, m_index->get_segment_len(), real_query_inds);
+        auto segmentation_strategy = m_index->get_segmentation_strategy();
+        auto [query_paa, query_len] = this->get_query_paa_and_len(query, segmentation_strategy, real_query_inds);
 
         std::priority_queue<PQueueEnvelopeNodeEntry> pq;
-        Real segment_len_r = R(m_index->get_segment_len());
 
         logger.start_timer(QC::FIRST_LAYER_TIME_S);
         for (auto &node : m_index->get_first_layer_nodes()) {
             Real min_dist_squared =
-                this->get_min_dist_squared(node->get_envelopes(), query_paa, distance_measure) * segment_len_r;
+                this->get_min_dist_squared(node->get_envelopes(), query_paa, distance_measure, segmentation_strategy);
             pq.push({min_dist_squared, node});
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
@@ -130,8 +132,8 @@ class TreeEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
 
             if (!entry.m_node->is_leaf()) {
                 for (auto &child : entry.m_node->get_children()) {
-                    Real min_dist_squared =
-                        this->get_min_dist_squared(child->get_envelopes(), query_paa, distance_measure) * segment_len_r;
+                    Real min_dist_squared = this->get_min_dist_squared(child->get_envelopes(), query_paa,
+                                                                       distance_measure, segmentation_strategy);
                     logger.increment_count_col(QC::NUM_MIN_DIST_CALCULATED);
                     if (min_dist_squared < lb) pq.push({min_dist_squared, child});
                 }

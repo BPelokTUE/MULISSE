@@ -15,7 +15,7 @@ void QueryStatsLogger::write_entry(uint query_id, const vec<vec<Real>> &query, Q
     auto &RS = RunSettings::get_instance();
 
     str dataset_file = RS.m_dataset_props.m_file;
-    str query_file = RS.m_query_properties.m_file;
+    str query_file = RS.m_query_file;
 
     size_t query_len = 0;
     str query_channels_str = "";

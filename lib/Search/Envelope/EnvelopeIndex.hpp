@@ -17,15 +17,29 @@ class FinalizedEnvelopeIndex : public IFinalizedIndex<EnvelopeTag> {
    public:
     FinalizedEnvelopeIndex() = default;
 
-    FinalizedEnvelopeIndex(const uint segment_len, const uint pos_per_env)
-        : m_segment_len(segment_len), m_pos_per_env(pos_per_env) {}
+    /**
+     * @brief Construct a new FinalizedEnvelopeIndex instance
+     * @param segmentation_strategy The segmentation strategy to use
+     * @param pos_per_env The number of positions per envelope
+     */
+    FinalizedEnvelopeIndex(sptr<ISegmentationStrategy> segmentation_strategy, const uint pos_per_env)
+        : m_segmentation_strategy(segmentation_strategy), m_pos_per_env(pos_per_env) {}
 
-    inline const uint get_segment_len() const { return m_segment_len; }
+    /**
+     * @brief Get the segmentation strategy
+     * @return The segmentation strategy
+     */
+    inline const ISegmentationStrategy *get_segmentation_strategy() const { return m_segmentation_strategy.get(); }
 
+    /**
+     * @brief Get the number of positions per envelope
+     * @return The number of positions per envelope
+     */
     inline const uint get_pos_per_env() const { return m_pos_per_env; }
 
    protected:
-    uint m_segment_len, m_pos_per_env;
+    uint m_pos_per_env;
+    sptr<ISegmentationStrategy> m_segmentation_strategy;
 };
 
 /** @brief Abstract base class for envelope-based indexes */
@@ -33,15 +47,25 @@ class EnvelopeIndex : public IIndex<Envelope> {
    public:
     EnvelopeIndex() = default;
 
-    EnvelopeIndex(const uint segment_len, const uint pos_per_env)
-        : m_segment_len(segment_len), m_pos_per_env(pos_per_env) {}
+    /**
+     * @brief Initialize the parameters of the EnvelopeIndex
+     * @param segmentation_strategy The segmentation strategy to use
+     * @param pos_per_env The number of positions per envelope
+     */
+    EnvelopeIndex(sptr<ISegmentationStrategy> segmentation_strategy, const uint pos_per_env)
+        : m_segmentation_strategy(segmentation_strategy), m_pos_per_env(pos_per_env) {}
 
     void insert(IndexEntry<Envelope> &entry) override { m_entries.push_back(entry); }
 
+    /**
+     * @brief Get the entries of the index
+     * @return The entries of the index
+     */
     const vec<IndexEntry<Envelope>> &get_entries() const { return m_entries; }
 
    protected:
-    uint m_segment_len, m_pos_per_env;
+    uint m_pos_per_env;
+    sptr<ISegmentationStrategy> m_segmentation_strategy;
     vec<IndexEntry<Envelope>> m_entries;
 };
 
@@ -54,18 +78,35 @@ class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, QS> {
      * @param envelope The multivariate envelope
      * @param query_paa The query paa
      * @param distance_measure The distance measure to use
+     * @param segmentation_strategy The segmentation strategy to use
      * @return The minimum bounding distance squared
      */
     inline Real get_min_dist_squared(const vec<Envelope> &envelope, const vec<vec<Real>> &query_paa,
-                                     const DistanceMeasure<S, D, QS> &distance_measure) const {
+                                     const DistanceMeasure<S, D, QS> &distance_measure,
+                                     const ISegmentationStrategy *segmentation_strategy) const {
         Real min_dist_squared = 0;
-        for (MtsNumChannelsT c = 0; c < query_paa.size(); ++c)
-            for (uint s = 0; s < query_paa[c].size(); ++s)
+        for (MtsNumChannelsT c = 0; c < query_paa.size(); ++c) {
+            for (SaxSegIndT s = 0; s < query_paa[c].size(); ++s) {
+                Real segment_len_r = R(segmentation_strategy->get_segment_len(s));
                 min_dist_squared +=
-                    distance_measure.min_dist_squared(query_paa[c][s], envelope[c].m_lower[s], envelope[c].m_upper[s]);
+                    distance_measure.min_dist_squared(query_paa[c][s], envelope[c].m_lower[s], envelope[c].m_upper[s]) *
+                    segment_len_r;
+            }
+        }
         return min_dist_squared;
     }
 
+    /**
+     * @brief Update the result set with the exact distances to the entries in the specified subsequence
+     * @param subs_info The subsequence information
+     * @param pos_per_env The number of positions per envelope
+     * @param query The multivariate query
+     * @param query_len The length of the query
+     * @param result_set The result set to update
+     * @param distance_measure The distance measure to use
+     * @param dataset_ifs The input file stream for the dataset
+     * @param real_query_inds Real indices of the query points (to support sorted queries for early abandoning)
+     */
     inline void update_result_set(const SubsequenceInfo &subs_info, const uint pos_per_env, const vec<vec<Real>> &query,
                                   const uint query_len, ResultSet<S> &result_set,
                                   const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,

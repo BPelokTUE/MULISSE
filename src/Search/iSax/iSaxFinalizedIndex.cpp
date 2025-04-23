@@ -5,13 +5,6 @@
 
 // iSaxFinalizedIndex<Paa>
 
-SeriesISaxProperties::SeriesISaxProperties(uint segment_len, uint series_len, MtsNumChannelsT num_channels,
-                                           SaxSegIndT num_seg_per_channel)
-    : m_segment_len(segment_len),
-      m_series_len(series_len),
-      m_num_channels(num_channels),
-      m_num_seg_per_channel(num_seg_per_channel) {}
-
 template <>
 std::pair<int, int> iSaxFinalizedIndex<PaaTag>::get_limit_breakpoint_indexes(PaaSaxSymbol symbol,
                                                                              uint num_shift) const {
@@ -30,11 +23,6 @@ std::pair<vec<PaaISax>, vec<PaaISax>> iSaxFinalizedIndex<PaaTag>::get_children_i
 }
 
 // iSaxFinalizedIndex<EnvelopeTag>
-
-SeriesISaxEnvelopeProperties::SeriesISaxEnvelopeProperties(uint segment_len, uint series_len,
-                                                           MtsNumChannelsT num_channels, SaxSegIndT num_seg_per_channel,
-                                                           uint pos_per_env)
-    : SeriesISaxProperties(segment_len, series_len, num_channels, num_seg_per_channel), m_pos_per_env(pos_per_env) {}
 
 template <>
 std::pair<int, int> iSaxFinalizedIndex<EnvelopeTag>::get_limit_breakpoint_indexes(EnvelopeSaxSymbol symbol,

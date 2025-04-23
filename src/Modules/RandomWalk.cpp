@@ -12,7 +12,7 @@
 int create_random_walks(Real step_sigma, bool zero_start, uint seed) {
     auto &RS = RunSettings::get_instance();
     str dataset_path = RS.get_dataset_path();
-    auto [file, num_channels, series_len, num_series] = RS.get_dataset_props();
+    auto [num_channels, series_len, num_series, file] = RS.get_dataset_props();
     std::filesystem::create_directories(std::filesystem::path(dataset_path).parent_path());
 
     if (std::filesystem::exists(dataset_path)) {

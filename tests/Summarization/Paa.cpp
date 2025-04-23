@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <doctest/doctest.h>
+#include <fakeit/fakeit.hpp>
 
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
@@ -8,26 +9,37 @@
 
 TEST_CASE("PAA happy-flow works") {
     vec<Real> ts = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-    uint segment_len = 2;
+    uint l_max = 10, segment_len = 2;
+    fakeit::Mock<ISegmentationStrategy> segmentation_strategy_mock;
+    fakeit::When(Method(segmentation_strategy_mock, get_num_segments)).Return(5);
+    fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).Return(segment_len);
 
-    vec<Real> actual = paa(ts, segment_len);
+    vec<Real> actual = paa(ts, l_max, &segmentation_strategy_mock.get());
     vec<Real> expected = {R(1.5), R(3.5), R(5.5), R(7.5), R(9.5)};
     CHECK_EQ(actual, expected);
 
     segment_len = 3;
-    actual = paa(ts, segment_len);
+    fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).Return(segment_len);
+
+    actual = paa(ts, l_max, &segmentation_strategy_mock.get());
     expected = {2, 5, 8};
     CHECK_EQ(actual, expected);
 
     segment_len = 11;
-    actual = paa(ts, segment_len);
+    fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).Return(segment_len);
+
+    actual = paa(ts, l_max, &segmentation_strategy_mock.get());
     expected = {};
     CHECK_EQ(actual, expected);
 }
 
 TEST_CASE("get_paa_entries_normalized works") {
     uint segment_len = 3, l_min = 4, l_max = 7;
-    iSaxPaaParams params = {segment_len, l_min, l_max};
+    fakeit::Mock<ISegmentationStrategy> segmentation_strategy_mock;
+    fakeit::When(Method(segmentation_strategy_mock, get_num_segments)).Return(2);
+    fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).Return(segment_len);
+
+    iSaxPaaParams params = {&segmentation_strategy_mock.get(), l_min, l_max};
     PaaEntryGenerator generator(1, params);
 
     vec<vec<Real>> uts = {{3, 7, R(1.2), R(3.7), R(9.1), R(-3.5), R(-1.5), 0, R(0.8)}};

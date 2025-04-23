@@ -23,7 +23,7 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
 
     // Append entry
     uint id = instance.determine_index(dataset_settings_path);
-    auto [dataset_file, num_channels, series_len, num_series] = RunSettings::get_instance().get_dataset_props();
+    auto [num_channels, series_len, num_series, dataset_file] = RunSettings::get_instance().get_dataset_props();
 
     str sd_str = "", source_csv_str = "", l_min_str = "", l_max_str = "", seed_str = "";
     switch (attributes->get_type()) {

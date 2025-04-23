@@ -128,7 +128,7 @@ class LengthGroupingIndex : public IIndex<T> {
     uint m_l_min, m_l_max;
 
     inline uint get_entry_length_group(const IndexEntry<T> &entry) const {
-        return get_length_group(entry.m_subs_info.m_length, m_l_min, m_l_max, U(m_indexes.size()));
+        return RunSettings::get_instance().get_length_group(entry.m_subs_info.m_length);
     }
 };
 
@@ -164,7 +164,7 @@ class LengthGroupingIndexSearch : public ISearchMethod<S, D, QS> {
                 break;
             }
         }
-        uint length_group = get_length_group(query_len, m_l_min, m_l_max, U(m_search_methods.size()));
+        uint length_group = RunSettings::get_instance().get_length_group(query_len);
         return m_search_methods[length_group]->search(query, opts, result_set, distance_measure, dataset_ifs,
                                                       real_query_inds);
     }

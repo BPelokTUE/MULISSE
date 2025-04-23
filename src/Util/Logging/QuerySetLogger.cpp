@@ -16,7 +16,7 @@ void QuerySetLogger::write_entry(QuerySetOptions &opts) {
                        {
                            {QSC::ID, to_string(instance.determine_index(query_settings_path))},
                            {QSC::DATASET_FILE, RS.get_dataset_props().m_file},
-                           {QSC::QUERY_FILE, RS.get_query_props().m_file},
+                           {QSC::QUERY_FILE, RS.get_query_path()},
                            {QSC::NUM_QUERIES, to_string(opts.m_num_queries)},
                            {QSC::L_MIN, format_num_param(opts.m_l_min)},
                            {QSC::L_MAX, format_num_param(opts.m_l_max)},

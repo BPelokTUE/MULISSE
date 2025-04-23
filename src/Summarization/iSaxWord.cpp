@@ -6,12 +6,6 @@
 iSaxWord::iSaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT alphabet_num_bits)
     : SaxWord(symbols, alphabet_num_bits), m_num_bits(symbols.size(), alphabet_num_bits) {}
 
-iSaxWord::iSaxWord(vec<SaxSymbolT> symbols, vec<SaxNumBitsT> num_bits, SaxNumBitsT alphabet_num_bits)
-    : SaxWord(symbols, alphabet_num_bits), m_num_bits(num_bits) {
-    assert(symbols.size() == num_bits.size());
-    assert(alphabet_num_bits >= *std::max_element(num_bits.begin(), num_bits.end()));
-}
-
 SaxSymbolT iSaxWord::symbol_no_shift(SaxSegIndT index) const { return m_symbols[index]; }
 
 const vec<SaxNumBitsT> &iSaxWord::get_num_bits() const { return m_num_bits; }

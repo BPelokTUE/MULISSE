@@ -41,11 +41,6 @@ struct SearchOptions {
     Real m_r_range_r = 0.0;
     /** @brief Maximum number of leaves to visit if approximate search is used. Defaults to 0, indicating no max. */
     size_t m_max_leaves_to_visit = 0;
-
-    /** @brief Get the number of lengths per length group */
-    uint get_num_len_groups() const {
-        return m_l_per_group > 0 ? ((m_l_max - m_l_min + 1) + m_l_per_group - 1) / m_l_per_group : 1;
-    }
 };
 
 #endif  // SEARCH_OPTIONS_HPP

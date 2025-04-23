@@ -1,21 +1,21 @@
 #include "Summarization/Paa.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
+#include "Util/RunSettings.hpp"
 
-vec<Real> paa(const vec<Real> &ts, uint segment_len) {
-    uint num_segments = U(ts.size() / segment_len);
-    vec<Real> paa(num_segments);
+vec<Real> paa(const vec<Real> &ts, const ISegmentationStrategy *segmentation_strategy) {
+    uint num_segments = segmentation_strategy->get_num_segments(U(ts.size()));
+    vec<Real> paa_values(num_segments);
 
-    Real sum, segment_len_r = R(segment_len);
-    uint ind = 0, i, j;
-    for (i = 0; i < num_segments; ++i) {
+    Real sum;
+    uint ts_ind = 0;
+    for (SaxSegIndT s = 0; s < num_segments; ++s) {
         sum = 0;
-        for (j = 0; j < segment_len; ++j, ++ind) {
-            sum += ts[ind];
-        }
-        paa[i] = sum / segment_len_r;
+        uint segment_len = segmentation_strategy->get_segment_len(s);
+        for (uint i = 0; i < segment_len; ++i, ++ts_ind) sum += ts[ts_ind];
+        paa_values[s] = sum / R(segment_len);
     }
-    return paa;
+    return paa_values;
 }
 
 Paa::Paa(const vec<Real> &paa_values) : m_paa_values(paa_values) {}
@@ -28,6 +28,8 @@ vec<Real> Paa::get_isax_input() const { return m_paa_values; }
 
 vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normalized(const vec<Real> &ts,
                                                                                     const iSaxPaaParams &paa_params) {
+    auto &RS = RunSettings::get_instance();
+
     vec<vec<std::tuple<Paa, uint, uint>>> entry_tuple_groups(m_num_len_groups);
 
     Real sum = 0, sum_sq = 0;
@@ -46,14 +48,15 @@ vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normali
 
         for (uint start_ind = min_start_ind; static_cast<int>(start_ind) <= max_start_ind; ++start_ind) {
             uint subs_len = last_ind - start_ind + 1;
-            uint length_group =
-                get_length_group(subs_len, m_paa_params.m_l_min, m_paa_params.m_l_max, m_num_len_groups);
+            uint length_group = RS.get_length_group(subs_len);
             auto [mu, sigma] = calculate_mu_and_sigma(tmp_sum, tmp_sum_sq, subs_len);
 
             vec<Real> subsequence(subs_len);
             for (uint i = 0; i < subs_len; ++i) subsequence[i] = (ts[start_ind + i] - mu) / sigma;
-            vec<Real> paa_values = paa(subsequence, paa_params.m_segment_len);
-            paa_values.resize(ts.size() / paa_params.m_segment_len, 0.0);
+            vec<Real> paa_values = paa(subsequence, paa_params.m_segmentation_strategy);
+
+            uint lg_l_max = RS.get_lg_l_max(length_group);
+            paa_values.resize(paa_params.m_segmentation_strategy->get_num_segments(lg_l_max), 0.0);
 
             entry_tuple_groups[length_group].push_back(std::make_tuple(Paa(paa_values), U(start_ind), subs_len));
 
@@ -89,5 +92,3 @@ vec<vec<IndexEntry<Paa>>> PaaEntryGenerator::get_entries(const vec<vec<Real>> &m
 
     return entry_groups;
 }
-
-uint PaaEntryGenerator::get_num_len_groups() const { return m_num_len_groups; }

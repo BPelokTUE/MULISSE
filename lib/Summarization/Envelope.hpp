@@ -3,7 +3,9 @@
 
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
+#include "Util/RunSettings.hpp"
 #include "Summarization/IndexEntry.hpp"
+#include "Summarization/SegmentationStrategy.hpp"
 
 /**
  * @brief Envelope of a multivariate time series
@@ -60,7 +62,7 @@ struct Envelope : EntryData {
  */
 struct EnvelopeParams {
     uint m_pos_per_env;
-    uint m_segment_len;
+    const ISegmentationStrategy *m_segmentation_strategy;
     uint m_l_min;
     uint m_l_max;
 };
@@ -80,8 +82,6 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
 
     vec<vec<IndexEntry<Envelope>>> get_entries(const vec<vec<Real>> &mts, uint series_ind) override;
 
-    uint get_num_len_groups() const override;
-
    private:
     bool m_normalized;
     MtsNumChannelsT m_num_channels;
@@ -99,39 +99,7 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
      * @param ts The (subsequence of the) univariate time series / channel
      * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively
      */
-    inline vec<vec<Envelope>> get_raw_envelopes(const vec<Real> &ts) {
-        auto [pos_per_env, segment_len, l_min, l_max] = m_env_params;
-
-        // uint num_env = U((ts.size() - l_min + pos_per_env) / pos_per_env);
-        vec<vec<Envelope>> envelope_groups = get_envelope_groups(U(ts.size()), pos_per_env, l_min, l_max, segment_len);
-
-        Real paa_acc = 0.0, segment_len_r = R(segment_len);
-
-        for (uint last_ind = 0; last_ind < ts.size(); ++last_ind) {
-            paa_acc += ts[last_ind];
-            uint prefix_len = last_ind + 1;
-            if (prefix_len > segment_len) paa_acc -= ts[last_ind - segment_len];
-
-            uint segments_in_subs = std::min(l_max, prefix_len) / segment_len;
-
-            Real paa_val = paa_acc / segment_len_r;
-            for (uint seg_ind = 0; seg_ind < segments_in_subs; ++seg_ind) {
-                uint first_ind = last_ind + 1 - (seg_ind + 1) * segment_len;
-                if (ts.size() - first_ind >= l_min) {
-                    auto &envelope = envelope_groups[m_num_len_groups - 1][first_ind / pos_per_env];
-                    envelope.m_lower[seg_ind] = std::min(envelope.m_lower[seg_ind], paa_val);
-                    envelope.m_upper[seg_ind] = std::max(envelope.m_upper[seg_ind], paa_val);
-                }
-            }
-        }
-
-        for (uint lg_ind = 0; lg_ind < m_num_len_groups - 1; ++lg_ind)
-            for (uint seg_ind = 0; seg_ind < envelope_groups[lg_ind].size(); ++seg_ind)
-                envelope_groups[lg_ind][seg_ind] = envelope_groups[m_num_len_groups - 1][seg_ind];
-
-        flip_env_infinities(envelope_groups);
-        return envelope_groups;
-    }
+    vec<vec<Envelope>> get_raw_envelopes(const vec<Real> &ts);
 
     /**
      * @brief Compute the ULISSE envelopes of subsequences of a time series WITH normalization
@@ -142,68 +110,17 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
      * @param ts The (subsequence of the) univariate time series / channel
      * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively
      */
-    inline vec<vec<Envelope>> get_normalized_envelopes(const vec<Real> &ts) {
-        auto [pos_per_env, segment_len, l_min, l_max] = m_env_params;
-
-        // uint num_env = U((ts.size() - l_min + pos_per_env) / pos_per_env);
-        vec<vec<Envelope>> envelope_groups = get_envelope_groups(U(ts.size()), pos_per_env, l_min, l_max, segment_len);
-
-        vec<Real> sum_accs(ts.size() + 1, 0.0), sq_sum_accs(ts.size() + 1, 0.0);
-
-        for (uint last_ind = 0; last_ind < ts.size(); ++last_ind) {
-            sum_accs[last_ind + 1] = sum_accs[last_ind] + ts[last_ind];
-            sq_sum_accs[last_ind + 1] = sq_sum_accs[last_ind] + ts[last_ind] * ts[last_ind];
-
-            uint start_min = U(std::max(0, static_cast<int>(last_ind + 1 - l_max)));
-            int start_max = static_cast<int>(last_ind + 1 - l_min);
-
-            for (uint start = start_min; static_cast<int>(start) <= start_max; ++start) {
-                uint subs_len = last_ind - start + 1;
-                auto [mu, sigma] = calculate_mu_and_sigma(sum_accs[last_ind + 1] - sum_accs[start],
-                                                          sq_sum_accs[last_ind + 1] - sq_sum_accs[start], subs_len);
-
-                uint length_group = get_length_group(subs_len, l_min, l_max, m_num_len_groups);
-                uint num_seg_in_subs = subs_len / segment_len;
-                for (uint seg_ind = 0; seg_ind < num_seg_in_subs; ++seg_ind) {
-                    Real paa_val =
-                        (sum_accs[start + (seg_ind + 1) * segment_len] - sum_accs[start + seg_ind * segment_len]) /
-                        R(segment_len);
-                    paa_val = (paa_val - mu) / sigma;
-
-                    auto &envelope = envelope_groups[length_group][start / pos_per_env];
-                    envelope.m_lower[seg_ind] = std::min(envelope.m_lower[seg_ind], paa_val);
-                    envelope.m_upper[seg_ind] = std::max(envelope.m_upper[seg_ind], paa_val);
-                }
-            }
-        }
-        flip_env_infinities(envelope_groups);
-        return envelope_groups;
-    }
+    vec<vec<Envelope>> get_normalized_envelopes(const vec<Real> &ts);
 
     /**
      * @brief Declare the envelope groups with optimal size
      * @param num_env Number of envelopes per time series
      * @param l_min Minimum length of a query
      * @param l_max Maximum length of a query
-     * @param segment_len Length of each segment
+     * @param segmentation_strategy Segmentation strategy to use
      */
     vec<vec<Envelope>> get_envelope_groups(const uint series_len, const uint pos_per_env, const uint l_min,
-                                           const uint l_max, const uint segment_len) {
-        vec<vec<Envelope>> envelope_groups(m_num_len_groups);
-        for (uint lg_ind = 0; lg_ind < m_num_len_groups; ++lg_ind) {
-            uint lg_l_min = l_min + (l_max - l_min) * lg_ind / m_num_len_groups;
-            uint lg_l_max =
-                l_min + (l_max - l_min) * (lg_ind + 1) / m_num_len_groups - (lg_ind != (m_num_len_groups - 1) ? 1 : 0);
-            uint num_env = U((series_len - lg_l_min + pos_per_env) / pos_per_env);
-            SaxSegIndT segments_per_env_lg = static_cast<SaxSegIndT>((lg_l_max + segment_len - 1) / segment_len);
-
-            envelope_groups[lg_ind].reserve(num_env);
-            for (uint env_ind = 0; env_ind < num_env; ++env_ind)
-                envelope_groups[lg_ind].emplace_back(vec<Real>(segments_per_env_lg, INF),
-                                                     vec<Real>(segments_per_env_lg, -INF));
-        }
-        return envelope_groups;
-    }
+                                           const uint l_max, const ISegmentationStrategy *segmentation_strategy);
 
     /**
      * @brief Helper function to flip the values of envelope segments without data

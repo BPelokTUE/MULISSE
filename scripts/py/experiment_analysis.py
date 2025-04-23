@@ -1230,7 +1230,7 @@ for key, reducer in reducers.items():
 
 # %%
 
-for col in [QC.NUM_LEAVES_VISITED]:
+for col in [QC.PRUNING_RATIO]:
     experiment_univariate_parametrization(
         {ERD.RUNS_COLS: [str(col)]},
         logs_dirs,
@@ -1498,11 +1498,11 @@ def experiment_length_based_grouping(
 
 # %%
 
-logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_env_size_param_ns32"
+logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_env_size_param_short_q"
 merge_csv_datasets = True
 num_query_intervals = 10
 datasets_to_show = None  # ["weather", "stocks"]
-l_ranges_to_show = [(128, 2048)]
+l_ranges_to_show = None  # [(128, 2048)]
 regex_dict = {
     # str(SSC.METHOD_NAME): r"env",
     # str(ISC.POS_PER_ENV): r"(19|96)(\.0){0,1}$",
@@ -1531,7 +1531,7 @@ experiment_length_based_grouping(
 
 # %%
 
-for target_col in [QC.PRUNING_RATIO, QC.NUM_PTS_EXAMINED]:
+for target_col in [QC.PRUNING_RATIO]:
     experiment_length_based_grouping(
         target_cols=[str(target_col)],
         logs_dir=logs_dir,

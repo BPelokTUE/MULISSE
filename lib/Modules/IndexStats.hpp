@@ -119,13 +119,20 @@ class IndexAnalyzer {
         const iSaxFinalizedIndex<FTag> *index = dynamic_cast<iSaxFinalizedIndex<FTag> *>(m_index.get());
         if (!index) throw std::runtime_error("Could not cast index to iSaxFinalizedIndex");
 
-        auto &RS = RunSettings::get_instance();
-        MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
-        SaxSegIndT num_segments = index->get_series_isax_prop()->m_num_seg_per_channel;
-
+        const auto &first_layer_symbols = index->get_first_layer_symbols();
+        if (first_layer_symbols.empty()) {
+            throw std::runtime_error("First layer symbols are empty");
+        }
+        MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(first_layer_symbols[0].size());
+        if (num_channels == 0) {
+            throw std::runtime_error("Number of channels is 0");
+        }
+        SaxSegIndT num_segments = static_cast<SaxSegIndT>(first_layer_symbols[0][0].size());
+        if (num_segments == 0) {
+            throw std::runtime_error("Number of segments is 0");
+        }
         IndexStats stats(num_channels, num_segments);
 
-        const auto &first_layer_symbols = index->get_first_layer_symbols();
         for (size_t i = 0; i < first_layer_symbols.size(); ++i) {
             vec<iSaxType> isax_words(num_channels);
             for (MtsNumChannelsT c = 0; c < num_channels; ++c) {

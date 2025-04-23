@@ -12,10 +12,7 @@ TEST_CASE("iSAX leaf finalization works") {
 
     iSaxSplittableLeaf leaf(subsequence_positions, envelopes);
 
-    vec<SaxNumBitsT> num_bits = {3, 2};
-    iSaxWordSettings isax_word_settings = {num_bits, 3, {-7, -3, -1, 1, 4, 9, 10}};
-
-    auto finalization_result_ptr = leaf.finalize(isax_word_settings);
+    auto finalization_result_ptr = leaf.finalize();
     auto finalization_result = static_cast<EnvelopeFinalizationResult *>(finalization_result_ptr.get());
     auto finalized = std::move(finalization_result->m_finalized_node);
     auto isax_max = std::move(finalization_result->m_isax_max);
@@ -23,8 +20,8 @@ TEST_CASE("iSAX leaf finalization works") {
     REQUIRE(finalized->is_leaf());
     REQUIRE(finalized->get_subsequence_infos() == subsequence_positions);
     REQUIRE(isax_max.size() == 2);
-    REQUIRE(isax_max[0] == iSaxWord({4, 6}, num_bits, 3));
-    REQUIRE(isax_max[1] == iSaxWord({2, 5}, num_bits, 3));
+    REQUIRE(isax_max[0] == iSaxWord({4, 6}, 3));
+    REQUIRE(isax_max[1] == iSaxWord({2, 5}, 3));
 }
 
 uptr<FinalizationResult> expected_finalization_result(iSaxFinalizedNode<EnvelopeTag> *fin_child,
@@ -38,9 +35,8 @@ TEST_CASE("iSAX internal finalization works") {
     fakeit::Mock<iSaxSplittableNode<Envelope>> left, right;
     fakeit::Mock<iSaxFinalizedNode<EnvelopeTag>> fin_left, fin_right;
 
-    vec<SaxNumBitsT> num_bits = {1, 2, 2};
-    vec<iSaxWord> isax_max_left = {iSaxWord({2, 2, 1}, num_bits, 2), iSaxWord({3, 1, 2}, num_bits, 2)},
-                  isax_max_right = {iSaxWord({1, 1, 3}, num_bits, 2), iSaxWord({3, 1, 3}, num_bits, 2)};
+    vec<iSaxWord> isax_max_left = {iSaxWord({2, 2, 1}, 2), iSaxWord({3, 1, 2}, 2)},
+                  isax_max_right = {iSaxWord({1, 1, 3}, 2), iSaxWord({3, 1, 3}, 2)};
 
     fakeit::When(Method(left, finalize)).Return(expected_finalization_result(&fin_left.get(), isax_max_left));
     fakeit::When(Method(right, finalize)).Return(expected_finalization_result(&fin_right.get(), isax_max_right));
@@ -48,9 +44,7 @@ TEST_CASE("iSAX internal finalization works") {
     SaxSplitIndex split_ind{1, 0};
     iSaxSplittableInternal internal(split_ind, &left.get(), &right.get());
 
-    iSaxWordSettings isax_word_settings = {num_bits, 2, {-3, 0, 3}};
-
-    auto finalization_result_ptr = internal.finalize(isax_word_settings);
+    auto finalization_result_ptr = internal.finalize();
     auto finalization_result = static_cast<EnvelopeFinalizationResult *>(finalization_result_ptr.get());
     auto finalized = std::move(finalization_result->m_finalized_node);
     auto isax_max = std::move(finalization_result->m_isax_max);
@@ -59,6 +53,6 @@ TEST_CASE("iSAX internal finalization works") {
     REQUIRE(!finalized->is_leaf());
     REQUIRE(isax_max.size() == 2);
 
-    REQUIRE(isax_max[0] == iSaxWord({2, 2, 3}, num_bits, 2));
-    REQUIRE(isax_max[1] == iSaxWord({3, 1, 3}, num_bits, 2));
+    REQUIRE(isax_max[0] == iSaxWord({2, 2, 3}, 2));
+    REQUIRE(isax_max[1] == iSaxWord({3, 1, 3}, 2));
 }

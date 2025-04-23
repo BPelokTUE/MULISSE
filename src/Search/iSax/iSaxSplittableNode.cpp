@@ -7,17 +7,17 @@
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/Paa.hpp"
 #include "Util/typedefs.hpp"
+#include "Util/RunSettings.hpp"
 
-uptr<iSaxFinalizedNode<PaaTag>> get_paa_node_finalization_result(uptr<iSaxSplittableNode<Paa>> &node,
-                                                                 const iSaxWordSettings &isax_word_settings) {
-    auto finalization_result_ptr = node->finalize(isax_word_settings);
+uptr<iSaxFinalizedNode<PaaTag>> get_paa_node_finalization_result(uptr<iSaxSplittableNode<Paa>> &node) {
+    auto finalization_result_ptr = node->finalize();
     auto finalization_result = static_cast<PaaFinalizationResult *>(finalization_result_ptr.get());
     return std::move(finalization_result->m_finalized_node);
 }
 
 std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> get_envelope_node_finalization_result(
-    uptr<iSaxSplittableNode<Envelope>> &node, const iSaxWordSettings &isax_word_settings) {
-    auto finalization_result_ptr = node->finalize(isax_word_settings);
+    uptr<iSaxSplittableNode<Envelope>> &node) {
+    auto finalization_result_ptr = node->finalize();
     auto finalization_result = static_cast<EnvelopeFinalizationResult *>(finalization_result_ptr.get());
     auto finalized_node = std::move(finalization_result->m_finalized_node);
     auto isax_max = std::move(finalization_result->m_isax_max);
@@ -27,11 +27,11 @@ std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> get_envelope_node
 // iSaxSplittableInternal<Paa>
 
 template <>
-uptr<FinalizationResult> iSaxSplittableInternal<Paa>::finalize(const iSaxWordSettings &isax_word_settings) {
+uptr<FinalizationResult> iSaxSplittableInternal<Paa>::finalize() {
     assert(m_left && m_right);
 
-    auto finalized_left = get_paa_node_finalization_result(m_left, isax_word_settings);
-    auto finalized_right = get_paa_node_finalization_result(m_right, isax_word_settings);
+    auto finalized_left = get_paa_node_finalization_result(m_left);
+    auto finalized_right = get_paa_node_finalization_result(m_right);
 
     auto args = std::make_unique<iSaxInternalNodeArgs<PaaTag>>(m_split_ind, std::move(finalized_left),
                                                                std::move(finalized_right));
@@ -41,7 +41,7 @@ uptr<FinalizationResult> iSaxSplittableInternal<Paa>::finalize(const iSaxWordSet
 }
 
 template <>
-uptr<FinalizationResult> iSaxSplittableLeaf<Paa>::finalize(const iSaxWordSettings &isax_word_settings) {
+uptr<FinalizationResult> iSaxSplittableLeaf<Paa>::finalize() {
     uptr<iSaxFinalizedLeaf<PaaTag>> finalized = std::make_unique<iSaxFinalizedLeaf<PaaTag>>(m_subsequence_infos);
     return std::make_unique<PaaFinalizationResult>(std::move(finalized));
 }
@@ -49,11 +49,11 @@ uptr<FinalizationResult> iSaxSplittableLeaf<Paa>::finalize(const iSaxWordSetting
 // iSaxSplittableInternal<Envelope>
 
 template <>
-uptr<FinalizationResult> iSaxSplittableInternal<Envelope>::finalize(const iSaxWordSettings &isax_word_settings) {
+uptr<FinalizationResult> iSaxSplittableInternal<Envelope>::finalize() {
     assert(m_left && m_right);
 
-    auto [finalized_left, isax_max_left] = get_envelope_node_finalization_result(m_left, isax_word_settings);
-    auto [finalized_right, isax_max_right] = get_envelope_node_finalization_result(m_right, isax_word_settings);
+    auto [finalized_left, isax_max_left] = get_envelope_node_finalization_result(m_left);
+    auto [finalized_right, isax_max_right] = get_envelope_node_finalization_result(m_right);
 
     bool left_empty = isax_max_left.empty(), right_empty = isax_max_right.empty();
 
@@ -84,18 +84,22 @@ uptr<FinalizationResult> iSaxSplittableInternal<Envelope>::finalize(const iSaxWo
 // iSaxSplittableLeaf<Envelope>
 
 template <>
-uptr<FinalizationResult> iSaxSplittableLeaf<Envelope>::finalize(const iSaxWordSettings &isax_word_settings) {
+uptr<FinalizationResult> iSaxSplittableLeaf<Envelope>::finalize() {
     if (m_summaries.size() > 0) {
         assert(m_summaries[0].size() > 0);
+
+        auto &breakpoint_props = RunSettings::get_instance().get_breakpoint_props();
+        auto &breakpoints = breakpoint_props.m_breakpoints;
+        auto alphabet_num_bits = breakpoint_props.m_breakpoint_num_bits;
 
         size_t num_envelopes = m_summaries.size(), num_channels = m_summaries[0].size();
 
         vec<iSaxWord> isax_max(num_channels);
 
         for (size_t c = 0; c < num_channels; ++c) {
-            isax_max[c] = iSaxWord(m_summaries[0][c].m_upper, isax_word_settings);
+            isax_max[c] = iSaxWord(m_summaries[0][c].m_upper, breakpoints, alphabet_num_bits);
             for (size_t i = 1; i < num_envelopes; ++i) {
-                isax_max[c].select_max_symbols(iSaxWord(m_summaries[i][c].m_upper, isax_word_settings));
+                isax_max[c].select_max_symbols(iSaxWord(m_summaries[i][c].m_upper, breakpoints, alphabet_num_bits));
             }
         }
         uptr<iSaxFinalizedLeaf<EnvelopeTag>> finalized =

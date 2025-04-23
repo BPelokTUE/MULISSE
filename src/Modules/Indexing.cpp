@@ -29,11 +29,10 @@ uptr<IiSaxBreakpointStrategy> get_breakpoint_strategy(const SaxIndexParams *para
 }
 
 template <typename T>
-uptr<IiSaxSplitStrategy<T>> get_split_strategy(const iSaxIndexParams *params, SaxSegIndT num_seg_per_channel,
-                                               MtsNumChannelsT num_channels) {
+uptr<IiSaxSplitStrategy<T>> get_split_strategy(const iSaxIndexParams *params, MtsNumChannelsT num_channels) {
     switch (params->m_split_strategy_type) {
         case DOUBLE_ROUND_ROBIN:
-            return std::make_unique<DoubleRoundRobinStrategy<T>>(num_seg_per_channel, num_channels);
+            return std::make_unique<DoubleRoundRobinStrategy<T>>(params->m_num_segments, num_channels);
         case ENTROPY_MAXIMIZING:
             return std::make_unique<EntropyMaximizingStrategy<T>>(params->m_min_num_bits_on_tie);
         case ULISSE_CLOSEST_TO_MEAN:
@@ -44,48 +43,50 @@ uptr<IiSaxSplitStrategy<T>> get_split_strategy(const iSaxIndexParams *params, Sa
     return nullptr;
 }
 
+sptr<ISegmentationStrategy> get_segmentation_strategy(const PaaIndexParams *params, uint l_max) {
+    switch (params->m_segmentation_strategy_type) {
+        case UNIFORM:
+            return std::make_shared<UniformSegmentationStrategy>(l_max, params->m_num_segments);
+    }
+    return nullptr;
+}
+
 template <typename T>
     requires DerivedFromEntryData<T>
-sptr<IIndex<T>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params, SaxSegIndT num_seg_per_channel,
+sptr<IIndex<T>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params,
+                               sptr<ISegmentationStrategy> segmentation_strategy,
                                uptr<IiSaxSplitStrategy<T>> split_strategy);
 
 template <>
 sptr<IIndex<Paa>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params,
-                                 SaxSegIndT num_seg_per_channel, uptr<IiSaxSplitStrategy<Paa>> split_strategy) {
-    auto series_isax_prop = std::make_unique<SeriesISaxProperties>(params->m_segment_len, opts.m_series_len,
-                                                                   opts.m_num_channels, num_seg_per_channel);
-    auto *index = new iSaxPaaIndex(std::move(series_isax_prop), params->m_num_bits, params->m_leaf_capacity,
-                                   std::move(split_strategy));
+                                 sptr<ISegmentationStrategy> segmentation_strategy,
+                                 uptr<IiSaxSplitStrategy<Paa>> split_strategy) {
+    auto *index =
+        new iSaxPaaIndex(params->m_num_bits, params->m_leaf_capacity, segmentation_strategy, std::move(split_strategy));
     return sptr<IIndex<Paa>>(index);
 }
 
 template <>
 sptr<IIndex<Envelope>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params,
-                                      SaxSegIndT num_seg_per_channel,
+                                      sptr<ISegmentationStrategy> segmentation_strategy,
                                       uptr<IiSaxSplitStrategy<Envelope>> split_strategy) {
     auto *env_params = dynamic_cast<iSaxEnvelopeIndexParams *>(opts.m_index_params.get());
-    auto series_isax_prop = std::make_unique<SeriesISaxEnvelopeProperties>(env_params->m_segment_len, opts.m_series_len,
-                                                                           opts.m_num_channels, num_seg_per_channel,
-                                                                           env_params->m_pos_per_env);
-
-    auto *index = new iSaxEnvelopeIndex(std::move(series_isax_prop), env_params->m_num_bits,
-                                        env_params->m_leaf_capacity, std::move(split_strategy));
+    auto *index = new iSaxEnvelopeIndex(env_params->m_num_bits, env_params->m_leaf_capacity, segmentation_strategy,
+                                        std::move(split_strategy), env_params->m_pos_per_env);
     return sptr<IIndex<Envelope>>(index);
 }
 
-void calculate_sax_breakpoints(const SaxIndexParams *params, SaxNumBitsT num_bits_limit,
-                               SaxSegIndT num_seg_per_channel) {
+void calculate_sax_breakpoints(const SaxIndexParams *params, SaxNumBitsT num_bits_limit) {
     auto breakpoint_strategy = get_breakpoint_strategy(params);
     auto breakpoints = breakpoint_strategy->get_breakpoints(static_cast<SaxSymbolT>(1 << num_bits_limit));
-    RunSettings::get_instance().set_isax_properties(
-        {num_seg_per_channel, params->m_segment_len, std::move(breakpoint_strategy), breakpoints, num_bits_limit});
+    RunSettings::get_instance().set_breakpoint_props({num_bits_limit, std::move(breakpoint_strategy), breakpoints});
 }
 
 // Index factory functions
 
 struct IndexFactoryParams {
     bool m_discretize_flat_index = false;
-    SaxSegIndT m_num_seg_per_channel;
+    sptr<ISegmentationStrategy> m_segmentation_strategy;
     const IndexOptions &m_opts;
 };
 
@@ -95,10 +96,10 @@ sptr<IIndex<T>> get_isax_index(const IndexFactoryParams &factory_params) {
     const IndexOptions &opts = factory_params.m_opts;
     auto *params = dynamic_cast<iSaxIndexParams *>(opts.m_index_params.get());
 
-    calculate_sax_breakpoints(params, params->m_num_bits_limit, factory_params.m_num_seg_per_channel);
-    auto split_strategy = get_split_strategy<T>(params, factory_params.m_num_seg_per_channel, opts.m_num_channels);
+    calculate_sax_breakpoints(params, params->m_num_bits_limit);
+    auto split_strategy = get_split_strategy<T>(params, opts.m_num_channels);
 
-    return get_isax_index<T>(opts, params, factory_params.m_num_seg_per_channel, std::move(split_strategy));
+    return get_isax_index<T>(opts, params, factory_params.m_segmentation_strategy, std::move(split_strategy));
 }
 
 sptr<IIndex<Envelope>> get_envelope_index(const IndexFactoryParams &factory_params) {
@@ -108,11 +109,12 @@ sptr<IIndex<Envelope>> get_envelope_index(const IndexFactoryParams &factory_para
 
     auto sax_params = dynamic_cast<SaxIndexParams *>(opts.m_index_params.get());
     if (discretize_flat_index && sax_params && sax_params->m_num_bits > 0) {
-        calculate_sax_breakpoints(sax_params, sax_params->m_num_bits, factory_params.m_num_seg_per_channel);
-        auto *index = new FlatEnvelopeIndex(params->m_segment_len, params->m_pos_per_env, sax_params->m_num_bits);
+        calculate_sax_breakpoints(sax_params, sax_params->m_num_bits);
+        auto *index = new FlatEnvelopeIndex(factory_params.m_segmentation_strategy, params->m_pos_per_env,
+                                            sax_params->m_num_bits);
         return sptr<IIndex<Envelope>>(index);
     } else {
-        auto *index = new FlatEnvelopeIndex(params->m_segment_len, params->m_pos_per_env);
+        auto *index = new FlatEnvelopeIndex(factory_params.m_segmentation_strategy, params->m_pos_per_env);
         return sptr<IIndex<Envelope>>(index);
     }
 }
@@ -121,10 +123,11 @@ sptr<IIndex<Envelope>> get_envelope_tree_index(const IndexFactoryParams &factory
     const IndexOptions &opts = factory_params.m_opts;
     auto *params = dynamic_cast<TreeEnvelopeIndexParams *>(opts.m_index_params.get());
 
-    calculate_sax_breakpoints(params, params->m_num_bits, factory_params.m_num_seg_per_channel);
+    calculate_sax_breakpoints(params, params->m_num_bits);
 
     auto grouper = new InvSaxSortingBucketingEnvelopeGrouper(params->m_num_bits, params->m_bucket_size);
-    auto *index = new TreeEnvelopeIndex(params->m_segment_len, params->m_pos_per_env, uptr<IEnvelopeGrouper>(grouper));
+    auto *index = new TreeEnvelopeIndex(factory_params.m_segmentation_strategy, params->m_pos_per_env,
+                                        uptr<IEnvelopeGrouper>(grouper));
     return sptr<IIndex<Envelope>>(index);
 }
 
@@ -146,27 +149,28 @@ sptr<IIndex<Envelope>> get_two_stage_isax_envelope_index(const IndexFactoryParam
 
 // Generator getters
 
-uptr<IEntryGenerator<Paa>> get_paa_generator(const IndexOptions &opts) {
-    auto *params = dynamic_cast<iSaxIndexParams *>(opts.m_index_params.get());
+uptr<IEntryGenerator<Paa>> get_paa_generator(const IndexOptions &opts,
+                                             const ISegmentationStrategy *segmentation_strategy) {
     iSaxPaaParams paa_params = {
-        .m_segment_len = params->m_segment_len,
+        .m_segmentation_strategy = segmentation_strategy,
         .m_l_min = opts.m_l_min,
         .m_l_max = opts.m_l_max,
     };
-    uint num_len_groups = opts.get_num_len_groups();
+    uint num_len_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
 
     return std::make_unique<PaaEntryGenerator>(opts.m_num_channels, paa_params, num_len_groups);
 }
 
-uptr<IEntryGenerator<Envelope>> get_envelope_generator(const IndexOptions &opts) {
+uptr<IEntryGenerator<Envelope>> get_envelope_generator(const IndexOptions &opts,
+                                                       const ISegmentationStrategy *segmentation_strategy) {
     auto *params = dynamic_cast<EnvelopeIndexParams *>(opts.m_index_params.get());
     EnvelopeParams env_params = {
         .m_pos_per_env = params->m_pos_per_env,
-        .m_segment_len = params->m_segment_len,
+        .m_segmentation_strategy = segmentation_strategy,
         .m_l_min = opts.m_l_min,
         .m_l_max = opts.m_l_max,
     };
-    uint num_len_groups = opts.get_num_len_groups();
+    uint num_len_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
 
     return std::make_unique<EnvelopeEntryGenerator>(opts.m_num_channels, opts.m_normalized, env_params, num_len_groups);
 }
@@ -179,20 +183,15 @@ void construct_index(std::function<sptr<IIndex<T>>(const IndexFactoryParams &)> 
     auto &logger = IndexLogger::get_instance();
     auto &opts = factory_params.m_opts;
 
-    uint segment_len = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get())->m_segment_len;
-
     sptr<IIndex<T>> index;
     if (opts.m_l_per_group > 0) {
-        uint num_len_groups = opts.get_num_len_groups();
+        uint num_len_groups = RS.get_length_props().m_num_l_groups;
         vec<sptr<IIndex<T>>> group_indexes(num_len_groups);
         for (uint lg_ind = 0; lg_ind < num_len_groups; lg_ind++) {
-            uint l_max = opts.m_l_min + (opts.m_l_max - opts.m_l_min) * (lg_ind + 1) / num_len_groups;
-            factory_params.m_num_seg_per_channel = static_cast<SaxSegIndT>(l_max / segment_len);
             group_indexes[lg_ind] = index_factory(factory_params);
         }
         index = std::make_shared<LengthGroupingIndex<T>>(std::move(group_indexes), opts.m_l_min, opts.m_l_max);
     } else {
-        factory_params.m_num_seg_per_channel = static_cast<SaxSegIndT>(opts.m_l_max / segment_len);
         index = index_factory(factory_params);
     }
 
@@ -224,32 +223,34 @@ int create_index(const IndexOptions &opts) {
         [](const IndexFactoryParams &factory_params_in) -> sptr<IIndex<Type>> { \
             return index_factory(factory_params_in);                            \
         },                                                                      \
-        generator, factory_params);
+        generator(opts, factory_params.m_segmentation_strategy.get()), factory_params);
 
     IndexFactoryParams factory_params{
         .m_discretize_flat_index = false,
+        .m_segmentation_strategy =
+            get_segmentation_strategy(dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get()), opts.m_l_max),
         .m_opts = opts,
     };
 
     switch (opts.m_index_method) {
         case ISAX_ENVELOPE:
-            CONSTRUCT_INDEX(Envelope, get_isax_index<Envelope>, get_envelope_generator(opts));
+            CONSTRUCT_INDEX(Envelope, get_isax_index<Envelope>, get_envelope_generator);
             break;
         case ISAX_ENV_W_SAX_ENV:
             factory_params.m_discretize_flat_index = true;
         case ISAX_ENV_W_ENV:
-            CONSTRUCT_INDEX(Envelope, get_two_stage_isax_envelope_index, get_envelope_generator(opts));
+            CONSTRUCT_INDEX(Envelope, get_two_stage_isax_envelope_index, get_envelope_generator);
             break;
         case ISAX:
-            CONSTRUCT_INDEX(Paa, get_isax_index<Paa>, get_paa_generator(opts));
+            CONSTRUCT_INDEX(Paa, get_isax_index<Paa>, get_paa_generator);
             break;
         case SAX_ENVELOPE:
             factory_params.m_discretize_flat_index = true;
         case ENVELOPE:
-            CONSTRUCT_INDEX(Envelope, get_envelope_index, get_envelope_generator(opts));
+            CONSTRUCT_INDEX(Envelope, get_envelope_index, get_envelope_generator);
             break;
         case TREE_ENVELOPE:
-            CONSTRUCT_INDEX(Envelope, get_envelope_tree_index, get_envelope_generator(opts));
+            CONSTRUCT_INDEX(Envelope, get_envelope_tree_index, get_envelope_generator);
             break;
         default:
             break;

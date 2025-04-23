@@ -59,7 +59,7 @@ class iSaxSplittableNode : public iSaxNode {
      * @param isax_word_settings The settings for the iSAX word
      * @return A unique pointer to the finalization result
      */
-    virtual uptr<FinalizationResult> finalize(const iSaxWordSettings &isax_word_settings) = 0;
+    virtual uptr<FinalizationResult> finalize() = 0;
 };
 
 /**
@@ -103,7 +103,7 @@ class iSaxSplittableInternal : public iSaxSplittableNode<T> {
 
     vec<vec<T>> get_summaries() const override { return {}; }
 
-    uptr<FinalizationResult> finalize(const iSaxWordSettings &isax_word_settings) override;
+    uptr<FinalizationResult> finalize() override;
 
    protected:
     SaxSplitIndex m_split_ind;
@@ -142,17 +142,16 @@ class iSaxSplittableLeaf : public iSaxSplittableNode<T> {
 
     vec<vec<T>> get_summaries() const override { return m_summaries; }
 
-    uptr<FinalizationResult> finalize(const iSaxWordSettings &isax_word_settings) override;
+    uptr<FinalizationResult> finalize() override;
 
    protected:
     vec<vec<T>> m_summaries;
     vec<SubsequenceInfo> m_subsequence_infos;
 };
 
-uptr<iSaxFinalizedNode<PaaTag>> get_paa_node_finalization_result(uptr<iSaxSplittableNode<Paa>> &node,
-                                                                 const iSaxWordSettings &isax_word_settings);
+uptr<iSaxFinalizedNode<PaaTag>> get_paa_node_finalization_result(uptr<iSaxSplittableNode<Paa>> &node);
 
 std::pair<uptr<iSaxFinalizedNode<EnvelopeTag>>, vec<iSaxWord>> get_envelope_node_finalization_result(
-    uptr<iSaxSplittableNode<Envelope>> &node, const iSaxWordSettings &isax_word_settings);
+    uptr<iSaxSplittableNode<Envelope>> &node);
 
 #endif  // ISAX_SPLITTABLE_NODE_HPP

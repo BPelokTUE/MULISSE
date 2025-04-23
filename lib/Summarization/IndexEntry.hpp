@@ -62,23 +62,6 @@ class IEntryGenerator {
      * @return Entries
      */
     virtual vec<vec<IndexEntry<T>>> get_entries(const vec<vec<Real>> &mts, uint series_ind) = 0;
-
-    /**
-     * @brief Get the number of length groups
-     * @return Number of length groups
-     */
-    virtual uint get_num_len_groups() const { return 1; }
 };
-
-/**
- * @brief Get the index of the length group for a subsequence, based on its length
- * @param subs_length Length of the subsequence
- * @param l_min Minimum query length
- * @param l_max Maximum query length
- * @param num_length_groups Number of length groups
- */
-inline uint get_length_group(const uint subs_length, const uint l_min, const uint l_max, const uint num_length_groups) {
-    return U(R(subs_length - l_min) / R(l_max - l_min + 1) * R(num_length_groups));
-}
 
 #endif  // INDEX_ENTRY_HPP

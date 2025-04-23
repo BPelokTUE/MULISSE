@@ -24,7 +24,7 @@ class SequentialScan : public ISearchMethod<S, D, QS> {
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
                          const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
                          const vec<uint> *real_query_inds) const override {
-        auto [file, num_channels, series_len, num_series] = RunSettings::get_instance().get_dataset_props();
+        auto [num_channels, series_len, num_series, file] = RunSettings::get_instance().get_dataset_props();
         auto &logger = QueryLogger::get_instance();
 
         for (uint i = 0; i < num_series; ++i) {

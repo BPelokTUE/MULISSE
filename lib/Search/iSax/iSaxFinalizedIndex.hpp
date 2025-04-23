@@ -16,52 +16,6 @@
 #include "Search/iSax/iSaxFinalizedNode.hpp"
 #include "Summarization/Paa.hpp"
 
-/** @brief Properties of time series for iSAX indexes */
-struct SeriesISaxProperties {
-    /** @brief Length of the segments */
-    uint m_segment_len;
-    /** @brief Length of the time series in the dataset */
-    uint m_series_len;
-    /** @brief Number of channels of each series */
-    MtsNumChannelsT m_num_channels;
-    /** @brief Number of segments per channel */
-    SaxSegIndT m_num_seg_per_channel;
-
-    virtual ~SeriesISaxProperties() = default;
-
-    SeriesISaxProperties(uint segment_len, uint series_len, MtsNumChannelsT num_channels,
-                         SaxSegIndT num_seg_per_channel);
-
-    SeriesISaxProperties() = default;
-
-   private:
-    friend class cereal::access;
-
-    template <class Archive>
-    void serialize(Archive& ar) {
-        ar(m_segment_len, m_series_len, m_num_channels, m_num_seg_per_channel);
-    }
-};
-
-/** @brief Properties of time series for iSAX envelope indexes */
-struct SeriesISaxEnvelopeProperties : SeriesISaxProperties {
-    /** @brief Size of starting position groups */
-    uint m_pos_per_env;
-
-    SeriesISaxEnvelopeProperties(uint segment_len, uint series_len, MtsNumChannelsT num_channels,
-                                 SaxSegIndT num_seg_per_channel, uint pos_per_env);
-
-    SeriesISaxEnvelopeProperties() = default;
-
-   private:
-    friend class cereal::access;
-
-    template <class Archive>
-    void serialize(Archive& ar) {
-        ar(cereal::base_class<SeriesISaxProperties>(this), m_pos_per_env);
-    }
-};
-
 /**
  * @brief Priority queue entry, intended to be used in iSaxFinalizedIndex
  * @tparam FTag The traits of the entries in the index
@@ -94,29 +48,36 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
     /**
      * @brief Construct a new iSaxFinalizedIndex object
      *
-     * @param series_isax_prop Properties of the time series
+     * @param segmentation_strategy The segmentation strategy to use
      * @param first_layer_symbols Symbols of the first layer
      * @param first_layer_nodes First layer nodes
      * @param first_layer_num_bits Number of bits used for symbols in the first layer
      * @param alphabet_num_bits The maximum number of bits used for any symbol in any node of the index
      * @param breakpoints Breakpoints used for the iSAX index; assumed to be `2^alphabet_num_bits-1` long;
      *        does not include `-inf` and `inf`
+     * @param pos_per_env Number of positions per envelope. 0 if not applicable.
      */
-    iSaxFinalizedIndex(uptr<SeriesISaxProperties> series_isax_prop, vec<vec<vec<SymbolType>>> first_layer_symbols,
+    iSaxFinalizedIndex(sptr<ISegmentationStrategy> segmentation_strategy, vec<vec<vec<SymbolType>>> first_layer_symbols,
                        vec<uptr<iSaxFinalizedNode<FTag>>> first_layer_nodes, SaxNumBitsT first_layer_num_bits,
-                       SaxNumBitsT alphabet_num_bits, vec<Real> breakpoints)
-        : m_series_isax_prop(std::move(series_isax_prop)),
+                       SaxNumBitsT alphabet_num_bits, vec<Real> breakpoints, uint pos_per_env = 0)
+        : m_segmentation_strategy(segmentation_strategy),
+          m_pos_per_env(pos_per_env),
           m_first_layer_symbols(std::move(first_layer_symbols)),
           m_first_layer_nodes(std::move(first_layer_nodes)),
           m_first_layer_num_bits(first_layer_num_bits),
           m_alphabet_num_bits(alphabet_num_bits),
-          m_breakpoints(std::move(breakpoints)) {
-        assert(m_series_isax_prop->m_segment_len > 0);
+          m_breakpoints(breakpoints) {  // TODO: try to remove this copy
         assert(m_first_layer_symbols.size() > 0);
     }
 
     ~iSaxFinalizedIndex() = default;
 
+    /**
+     * @brief Get the lower and upper segment limits of the given symbol
+     * @param num_bits Number of bits used for the symbol
+     * @param symbol The symbol to get the limits for
+     * @return A pair of lower and upper limits for the segment
+     */
     std::pair<Real, Real> get_segment_limits(SaxNumBitsT num_bits, SymbolType symbol) const {
         uint num_shift = m_alphabet_num_bits - num_bits;
         auto [lower_ind, upper_ind] = get_limit_breakpoint_indexes(symbol, num_shift);
@@ -126,29 +87,61 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
         };
     }
 
+    /**
+     * @brief Get the iSAX words of the left and right children after splitting on the given split index
+     * @param node The node to get the child iSAX words from
+     * @param isax_words The iSAX words of the node
+     * @param c The channel index of the split
+     * @param s The segment index of the split
+     * @return A pair of iSAX words for the left and right children
+     */
     std::pair<vec<iSaxType>, vec<iSaxType>> get_children_isax_words(const iSaxFinalizedNode<FTag>* node,
                                                                     vec<iSaxType> isax_words, MtsNumChannelsT c,
                                                                     SaxSegIndT s) const;
 
+    /**
+     * @brief Get the symbols of the nodes in the first layer of the index
+     * @return The symbols of the nodes in the first layer
+     */
     const vec<vec<vec<SymbolType>>>& get_first_layer_symbols() const { return m_first_layer_symbols; }
 
+    /**
+     * @brief Get the number of bits used by the nodes in the first layer of the index
+     * @return The number of bits used by the nodes in the first layer
+     */
     SaxNumBitsT get_first_layer_num_bits() const { return m_first_layer_num_bits; }
 
-    const SeriesISaxProperties* get_series_isax_prop() const { return m_series_isax_prop.get(); }
-
+    /**
+     * @brief Get the first layer node of the index at the given index
+     * @param ind The index of the node in teh first layer
+     * @return The first layer node at the given index
+     */
     const iSaxFinalizedNode<FTag>* get_first_layer_node(size_t ind) const { return m_first_layer_nodes[ind].get(); }
 
+    /**
+     * @brief Get the number of positions per envelope
+     * @return The number of positions per envelope
+     */
+    uint get_pos_per_env() const { return m_pos_per_env; }
+
+    /**
+     * @brief Get the segmentation strategy
+     * @return The segmentation strategy
+     */
+    const ISegmentationStrategy* get_segmentation_strategy() const { return m_segmentation_strategy.get(); }
+
    private:
+    SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
+    uint m_pos_per_env;
+    sptr<ISegmentationStrategy> m_segmentation_strategy;
     vec<vec<vec<SymbolType>>> m_first_layer_symbols;
     vec<uptr<iSaxFinalizedNode<FTag>>> m_first_layer_nodes;
-    SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
     vec<Real> m_breakpoints;
-    uptr<SeriesISaxProperties> m_series_isax_prop;
 
     std::pair<int, int> get_limit_breakpoint_indexes(SymbolType symbol, uint num_shift) const;
 
-    MAKE_SERIALIZABLE((m_series_isax_prop, m_first_layer_symbols, m_first_layer_nodes, m_first_layer_num_bits,
-                       m_alphabet_num_bits, m_breakpoints));
+    MAKE_SERIALIZABLE((m_first_layer_num_bits, m_alphabet_num_bits, m_pos_per_env, m_segmentation_strategy,
+                       m_first_layer_symbols, m_first_layer_nodes, m_breakpoints));
 };
 
 /**
@@ -174,18 +167,12 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
     SearchResults search(const vec<vec<Real>>& query, const SearchOptions& opts, ResultSet<S>& result_set,
                          const DistanceMeasure<S, D, QS>& distance_measure, std::ifstream& dataset_ifs,
                          const vec<uint>* real_query_inds) const override {
-        auto* series_isax_prop = m_index->get_series_isax_prop();
-        uint series_len = series_isax_prop->m_series_len;
-        uint segment_len = series_isax_prop->m_segment_len;
-        uint pos_per_env;
-        if constexpr (std::is_same_v<FTag, EnvelopeTag>) {
-            pos_per_env = static_cast<const SeriesISaxEnvelopeProperties*>(series_isax_prop)->m_pos_per_env;
-        }
-
-        Real segment_len_r = R(segment_len);
-        MtsNumChannelsT num_channels = series_isax_prop->m_num_channels;
+        uint series_len = RunSettings::get_instance().get_dataset_props().m_series_len;
+        MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(query.size());
         SaxNumBitsT first_layer_num_bits = m_index->get_first_layer_num_bits();
         auto& first_layer_symbols = m_index->get_first_layer_symbols();
+        auto segmentation_strategy = m_index->get_segmentation_strategy();
+        uint pos_per_env = m_index->get_pos_per_env();
 
         assert(query.size() == num_channels);
 
@@ -193,7 +180,7 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
 
         std::priority_queue<PQueueISaxEntry<FTag>> pq;
 
-        auto [query_paa, query_len] = this->get_query_paa_and_len(query, segment_len, real_query_inds);
+        auto [query_paa, query_len] = this->get_query_paa_and_len(query, segmentation_strategy, real_query_inds);
 
         // Go over first layer, calculate MINDIST and iSAX words, push to priority queue
         logger.start_timer(QC::FIRST_LAYER_TIME_S);
@@ -205,11 +192,13 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
                 for (SaxSegIndT s = 0; s < query_paa[c].size(); ++s) {
                     auto [lower, upper] =
                         m_index->get_segment_limits(first_layer_num_bits, first_layer_symbols[i][c][s]);
-                    min_dist_squared += distance_measure.min_dist_squared(query_paa[c][s], lower, upper);
+                    Real segment_len_r = R(segmentation_strategy->get_segment_len(s));
+                    min_dist_squared +=
+                        distance_measure.min_dist_squared(query_paa[c][s], lower, upper) * segment_len_r;
                 }
                 isax_words[c] = iSaxType(first_layer_symbols[i][c], first_layer_num_bits);
             }
-            pq.push({min_dist_squared * segment_len_r, isax_words, m_index->get_first_layer_node(i)});
+            pq.push({min_dist_squared, isax_words, m_index->get_first_layer_node(i)});
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
 
@@ -236,6 +225,7 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
                     pq.push({min_dist_squared, isax_words, right});
                 } else {
                     SaxNumBitsT num_bits = isax_words[c].get_num_bits()[s];
+                    Real segment_len_r = R(segmentation_strategy->get_segment_len(s));
                     auto limits = m_index->get_segment_limits(num_bits, isax_words[c].symbol_no_shift(s));
                     Real prev_dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second);
                     ++num_bits;
@@ -297,7 +287,8 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
         }
         logger.stop_timer(QC::TREE_TRAVERSAL_TIME_S);
 
-        logger.increment_count_col(QC::NUM_MIN_DIST_CALCULATED, U(min_dist_seg_updates / (num_channels * segment_len)));
+        // TODO: think of some more accurate way of measuring this if needed
+        logger.increment_count_col(QC::NUM_MIN_DIST_CALCULATED, U(min_dist_seg_updates));
 
         exact_results_found |= pq.empty();
         return {result_set.get_results(), exact_results_found};

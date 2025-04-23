@@ -5,6 +5,7 @@
 
 #include "Util/typedefs.hpp"
 #include "Summarization/IndexEntry.hpp"
+#include "Summarization/SegmentationStrategy.hpp"
 
 /**
  * @brief Piecewise Aggregate Approximation (PAA) of a time series
@@ -12,22 +13,22 @@
  * This function computes the Piecewise Aggregate Approximation (PAA) of a time series
  *
  * @param ts The time series to approximate
- * @param segment_len The length of each segment Assumed to be greater than 0
+ * @param segmentation_strategy The segmentation strategy to use
  * @return The PAA of the time series
  */
-vec<Real> paa(const vec<Real> &ts, uint segment_len);
+vec<Real> paa(const vec<Real> &ts, const ISegmentationStrategy *segmentation_strategy);
 
 /**
  * @brief Parameters for the iSAX PAA computation
  *
  * This struct contains the parameters needed to compute the PAAs of subsequences to insert into the iSAX index
  *
- * @param segment_len The length of each PAA segment
+ * @param segmentation_strategy The segmentation strategy to use
  * @param l_min The minimum length of a subsequence
  * @param l_max The maximum length of a subsequence
  */
 struct iSaxPaaParams {
-    uint m_segment_len;
+    const ISegmentationStrategy *m_segmentation_strategy;
     uint m_l_min;
     uint m_l_max;
 };
@@ -63,8 +64,6 @@ class PaaEntryGenerator : public IEntryGenerator<Paa> {
     PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params, uint num_len_groups = 1);
 
     vec<vec<IndexEntry<Paa>>> get_entries(const vec<vec<Real>> &mts, uint series_ind) override;
-
-    uint get_num_len_groups() const override;
 
    private:
     MtsNumChannelsT m_num_channels;

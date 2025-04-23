@@ -82,12 +82,14 @@ class EntropyMaximizingStrategy : public IiSaxSplitStrategy<T> {
 
         SaxSplitIndex split_ind{0, 0};
         Real max_score = -INF;
-        SaxNumBitsT min_num_bits = RS.get_isax_props().m_breakpoint_num_bits;
+        SaxNumBitsT min_num_bits = RS.get_breakpoint_props().m_breakpoint_num_bits;
 
         const vec<vec<T>> &summaries = leaf->get_summaries();
         for (MtsNumChannelsT c = 0; c < RS.get_dataset_props().m_num_channels; ++c) {
             vec<SaxNumBitsT> num_bits = isax_words[c].get_num_bits();
-            for (SaxSegIndT s = 0; s < RS.get_isax_props().m_num_segments; ++s) {
+            SaxSegIndT num_segments = static_cast<SaxSegIndT>(summaries[0][c].get_isax_input().size());
+
+            for (SaxSegIndT s = 0; s < num_segments; ++s) {
                 Real sum = 0, sum_sq = 0, score = 0;
 
                 std::optional<Real> mid_breakpoint = isax_words[c].get_mid_breakpoint(s, breakpoints);
@@ -138,8 +140,8 @@ class UlisseClosestToMeanStrategy : public IiSaxSplitStrategy<T> {
         bool split_ind_set = false;
 
         const vec<Real> &breakpoints = RS.get_breakpoints();
-        MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
-        SaxSegIndT num_segments = RS.get_isax_props().m_num_segments;
+        MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(isax_words.size());
+        SaxSegIndT num_segments = static_cast<SaxSegIndT>(isax_words[0].size());
 
         const vec<vec<T>> &summaries = leaf->get_summaries();
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
@@ -196,8 +198,8 @@ class ClosestToMeanStrategy : public IiSaxSplitStrategy<T> {
         Real min_diff = INF;
 
         const vec<Real> &breakpoints = RS.get_breakpoints();
-        MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
-        SaxSegIndT num_segments = RS.get_isax_props().m_num_segments;
+        MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(isax_words.size());
+        SaxSegIndT num_segments = static_cast<SaxSegIndT>(isax_words[0].size());
 
         const vec<vec<T>> &summaries = leaf->get_summaries();
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {

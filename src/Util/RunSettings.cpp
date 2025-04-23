@@ -20,8 +20,8 @@ void check_path_exists(str path, str name) {
     }
 }
 
-void RunSettings::initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
-                             uint pos_per_env, const str &index_path, const str &ffts_path,
+void RunSettings::initialize(CommandType command_type, DatasetProperties dataset_props, LengthProperties length_props,
+                             uint pos_per_env, const str &index_path, const str &ffts_path, const str &query_path,
                              SearchMethodType method_type, const str &logs_dir) {
     if (initialized) return;
     initialized = true;
@@ -41,10 +41,16 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
             U(dataset_size / (dataset_props.m_series_len * dataset_props.m_num_channels * sizeof(Real)));
     }
 
-    instance->m_query_properties = query_props;
+    instance->m_length_props = length_props;
+    if (length_props.m_l_per_group == 0) {
+        instance->m_length_props.m_num_l_groups = 0;
+    } else {
+        instance->m_length_props.m_num_l_groups =
+            U((length_props.m_l_max - length_props.m_l_min + length_props.m_l_per_group) / length_props.m_l_per_group);
+    }
 
     uint envs_per_ts =
-        pos_per_env == 0 ? 1 : (dataset_props.m_series_len - query_props.m_l_min + pos_per_env) / pos_per_env;
+        pos_per_env == 0 ? 1 : (dataset_props.m_series_len - length_props.m_l_min + pos_per_env) / pos_per_env;
     instance->m_envelope_props = {
         .m_pos_per_env = pos_per_env,
         .m_envs_per_ts = envs_per_ts,
@@ -52,6 +58,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
 
     instance->m_index_file = index_path;
     instance->m_ffts_file = ffts_path;
+    instance->m_query_file = query_path;
     instance->m_ffts_supported =
         instance->m_ffts_file != "" && (method_type == ISAX_ENVELOPE || method_type == ENVELOPE);
 
@@ -205,34 +212,36 @@ size_t RunSettings::get_ffts_size_on_disk() {
 
 // iSAX
 
-const vec<Real> &RunSettings::get_breakpoints() { return m_isax_props.m_breakpoints; }
+const vec<Real> &RunSettings::get_breakpoints() { return m_breakpoint_props.m_breakpoints; }
 
 void RunSettings::update_breakpoints() {
-    auto &breakpoint_strategy = m_isax_props.m_breakpoint_strategy;
-    m_isax_props.m_breakpoints =
-        breakpoint_strategy->get_breakpoints(static_cast<SaxSymbolT>(1 << m_isax_props.m_breakpoint_num_bits));
+    auto &breakpoint_strategy = m_breakpoint_props.m_breakpoint_strategy;
+    m_breakpoint_props.m_breakpoints =
+        breakpoint_strategy->get_breakpoints(static_cast<SaxSymbolT>(1 << m_breakpoint_props.m_breakpoint_num_bits));
 }
 
-void RunSettings::set_isax_properties(iSaxProperties isax_props) {
-    if (!m_isax_props_set) {
-        m_isax_props = std::move(isax_props);
-        m_isax_props_set = true;
+void RunSettings::set_breakpoint_props(BreakpointProperties breakpoint_props) {
+    if (!m_breakpoints_props_set) {
+        m_breakpoint_props = std::move(breakpoint_props);
+        m_breakpoints_props_set = true;
     }
 }
 
 // Properties
 
-const DatasetProperties &RunSettings::get_dataset_props() { return m_dataset_props; }
+const DatasetProperties &RunSettings::get_dataset_props() const { return m_dataset_props; }
 
-const QueryProperties &RunSettings::get_query_props() { return m_query_properties; }
+const BreakpointProperties &RunSettings::get_breakpoint_props() const { return m_breakpoint_props; }
 
-const iSaxProperties &RunSettings::get_isax_props() { return m_isax_props; }
+const EnvelopeProperties &RunSettings::get_envelope_props() const { return m_envelope_props; }
+
+const LengthProperties &RunSettings::get_length_props() const { return m_length_props; }
 
 // Paths
 
 str RunSettings::get_dataset_path() const { return fs::path(DATA_DIR) / m_dataset_props.m_file; }
 
-str RunSettings::get_query_path() const { return fs::path(DATA_DIR) / m_query_properties.m_file; }
+str RunSettings::get_query_path() const { return fs::path(DATA_DIR) / m_query_file; }
 
 str RunSettings::get_index_path() const { return m_index_file.empty() ? "" : fs::path(DATA_DIR) / m_index_file; }
 

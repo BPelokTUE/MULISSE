@@ -36,12 +36,10 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
 
     uptr<IFinalizedIndex<FTag>> index;
     str index_path = RS.get_index_path();
-
-    uint num_len_groups = opts.get_num_len_groups();
-    vec<uptr<IFinalizedIndex<FTag>>> group_indexes(num_len_groups);
-    vec<uptr<ISearchMethod<S, D, QS>>> search_methods(num_len_groups);
+    uint num_len_groups = RS.get_length_props().m_num_l_groups;
 
     if (opts.m_l_per_group > 0) {
+        vec<uptr<IFinalizedIndex<FTag>>> group_indexes(num_len_groups);
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {
             group_indexes[l_ind] = finalized_index_factory();
         }
@@ -54,6 +52,7 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
     index->load(index_path, opts.m_index_format);
 
     if (opts.m_l_per_group > 0) {
+        vec<uptr<ISearchMethod<S, D, QS>>> search_methods(num_len_groups);
         auto grouping_index = uptr<LengthGroupingFinalizedIndex<FTag>>(
             static_cast<LengthGroupingFinalizedIndex<FTag> *>(index.release()));
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {
@@ -193,7 +192,7 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
 
             dataset_ifs.seekg(0);
             result_set.clear();
-            if (D == MASS) {
+            if constexpr (D == MASS) {
                 fftwr_forget_wisdom();
                 fftwr_cleanup();
                 if (RS.ffts_supported()) RS.reset_query_ffts();

@@ -16,12 +16,13 @@ class FinalizedFlatEnvelopeIndex : public FinalizedEnvelopeIndex {
 
     /**
      * @brief Construct a new FinalizedFlatEnvelopeIndex instance
-     * @param segment_len The length of Paa the segments
+     * @param segmentation_strategy The segmentation strategy to use
      * @param pos_per_env The number of positions per envelope
      * @param entries The envelope entries in the index
      */
-    FinalizedFlatEnvelopeIndex(const uint segment_len, const uint pos_per_env, vec<IndexEntry<Envelope>> &&entries)
-        : FinalizedEnvelopeIndex(segment_len, pos_per_env), m_entries(std::move(entries)) {}
+    FinalizedFlatEnvelopeIndex(sptr<ISegmentationStrategy> segmentation_strategy, const uint pos_per_env,
+                               vec<IndexEntry<Envelope>> &&entries)
+        : FinalizedEnvelopeIndex(segmentation_strategy, pos_per_env), m_entries(std::move(entries)) {}
 
     const vec<IndexEntry<Envelope>> &get_entries() const { return m_entries; }
 
@@ -32,7 +33,7 @@ class FinalizedFlatEnvelopeIndex : public FinalizedEnvelopeIndex {
    private:
     vec<IndexEntry<Envelope>> m_entries;
 
-    MAKE_SERIALIZABLE((m_segment_len, m_pos_per_env, m_entries));
+    MAKE_SERIALIZABLE((m_segmentation_strategy, m_pos_per_env, m_entries));
 };
 
 /** @brief Flat envelope index */
@@ -40,13 +41,13 @@ class FlatEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_t
    public:
     /**
      * @brief Construct a new FlatEnvelopeIndex instance
-     * @param segment_len Length of the segments
+     * @param segmentation_strategy The segmentation strategy to use
      * @param pos_per_env Number of positions per envelope
      * @param sax_num_bits Number of bits used for SAX discretization. Defaults to 0, indicating no discretization.
      * If greater than 0, the breakpoints are assumed to have the same cardinality.
      */
-    FlatEnvelopeIndex(uint segment_len, uint pos_per_env, SaxNumBitsT sax_num_bits = 0)
-        : EnvelopeIndex(segment_len, pos_per_env), m_sax_num_bits(sax_num_bits) {}
+    FlatEnvelopeIndex(sptr<ISegmentationStrategy> segmentation_strategy, uint pos_per_env, SaxNumBitsT sax_num_bits = 0)
+        : EnvelopeIndex(segmentation_strategy, pos_per_env), m_sax_num_bits(sax_num_bits) {}
 
     FlatEnvelopeIndex() = default;
 
@@ -83,7 +84,8 @@ class FlatEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_t
     }
 
     uptr<IFinalizedIndex<EnvelopeTag>> finalize() override {
-        return std::make_unique<FinalizedFlatEnvelopeIndex>(m_segment_len, m_pos_per_env, std::move(m_entries));
+        return std::make_unique<FinalizedFlatEnvelopeIndex>(m_segmentation_strategy, m_pos_per_env,
+                                                            std::move(m_entries));
     }
 
    protected:
@@ -113,7 +115,8 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
                          const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
                          const vec<uint> *real_query_inds) const override {
-        auto [query_paa, query_len] = this->get_query_paa_and_len(query, m_index->get_segment_len(), real_query_inds);
+        auto [query_paa, query_len] =
+            this->get_query_paa_and_len(query, m_index->get_segmentation_strategy(), real_query_inds);
 
         if (m_use_priority_queue) {
             return search_with_priority_queue(query, query_paa, query_len, result_set, distance_measure, dataset_ifs,
@@ -134,14 +137,14 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
         auto &logger = QueryLogger::get_instance();
 
         std::priority_queue<PQueueEnvelopeEntry> pq;
-        Real segment_len_r = R(m_index->get_segment_len());
+        auto segmentation_strategy = m_index->get_segmentation_strategy();
 
         logger.start_timer(QC::FIRST_LAYER_TIME_S);
         for (auto entry : m_index->get_entries()) {
             if (this->skip_entry(query_len, series_len, entry.m_subs_info)) continue;
 
             Real min_dist_squared =
-                this->get_min_dist_squared(entry.m_mts_summary, query_paa, distance_measure) * segment_len_r;
+                this->get_min_dist_squared(entry.m_mts_summary, query_paa, distance_measure, segmentation_strategy);
             pq.push({min_dist_squared, entry.m_subs_info});
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
@@ -166,14 +169,16 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
                                              uint query_len, ResultSet<S> &result_set,
                                              const DistanceMeasure<S, D, QS> &distance_measure,
                                              std::ifstream &dataset_ifs, const vec<uint> *real_query_inds) const {
-        uint series_len = RunSettings::get_instance().get_dataset_props().m_series_len;
         auto &logger = QueryLogger::get_instance();
+        uint series_len = RunSettings::get_instance().get_dataset_props().m_series_len;
+        auto segmentation_strategy = m_index->get_segmentation_strategy();
 
         logger.start_timer(QC::TREE_TRAVERSAL_TIME_S);
         for (auto entry : m_index->get_entries()) {
             if (this->skip_entry(query_len, series_len, entry.m_subs_info)) continue;
 
-            Real min_dist_squared = this->get_min_dist_squared(entry.m_mts_summary, query_paa, distance_measure);
+            Real min_dist_squared =
+                this->get_min_dist_squared(entry.m_mts_summary, query_paa, distance_measure, segmentation_strategy);
             logger.increment_count_col(QC::NUM_MIN_DIST_CALCULATED);
             if (min_dist_squared >= result_set.get_distance_lb()) continue;
 

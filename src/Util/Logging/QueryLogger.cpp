@@ -50,7 +50,7 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
                            {SSC::INDEX_FILE, RS.m_index_file},
                            {SSC::DATASET_FILE, RS.m_dataset_props.m_file},
                            {SSC::FFTS_FILE, RS.m_ffts_file},
-                           {SSC::QUERY_FILE, RS.m_query_properties.m_file},
+                           {SSC::QUERY_FILE, RS.m_query_file},
                            {SSC::NUM_QUERIES, to_string(num_queries)},
                            {SSC::QUERY_TYPE, SEARCH_TYPE_TO_STR.at(search_options.m_search_type)},
                            {SSC::R_RANGE_R, format_num_param(r_range_r)},

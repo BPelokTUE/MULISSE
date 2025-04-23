@@ -45,7 +45,7 @@ class InvSax {
                     }
                 }
             }
-        } else {  // std::is_sam_v<T, Envelope>
+        } else {  // std::is_same_v<T, Envelope>
             vec<SaxWord> sax_lowers, sax_uppers;
             sax_lowers.reserve(entry_data.size());
             sax_uppers.reserve(entry_data.size());

@@ -15,17 +15,17 @@ enum CommandType { CREATE_DS, PARSE_CSV, CREATE_QS, CALC_Q_STATS, INDEX, CALC_I_
 DEFINE_ENUM_CONSTS_NO_EXTRA(CommandType, CMD_TYPE, false);
 
 struct DatasetProperties {
-    str m_file;
     MtsNumChannelsT m_num_channels;
     uint m_series_len;
     uint m_num_series;
+    str m_file;
 };
 
-// TODO: Rewrite, `l_min` and `l_max` are not properties of the query
-struct QueryProperties {
-    str m_file;
+struct LengthProperties {
     uint m_l_min;
     uint m_l_max;
+    uint m_l_per_group;
+    uint m_num_l_groups;
 };
 
 struct EnvelopeProperties {
@@ -33,12 +33,10 @@ struct EnvelopeProperties {
     uint m_envs_per_ts;
 };
 
-struct iSaxProperties {
-    SaxSegIndT m_num_segments;
-    uint m_segment_len;
+struct BreakpointProperties {
+    SaxNumBitsT m_breakpoint_num_bits;
     uptr<IiSaxBreakpointStrategy> m_breakpoint_strategy;
     vec<Real> m_breakpoints;
-    SaxNumBitsT m_breakpoint_num_bits;
 };
 
 class RunSettings {
@@ -50,9 +48,9 @@ class RunSettings {
 
     RunSettings();
 
-    static void initialize(CommandType command_type, DatasetProperties dataset_props, QueryProperties query_props,
-                           uint pos_per_env, const str& index_path, const str& ffts_path, SearchMethodType method_type,
-                           const str& logs_dir);
+    static void initialize(CommandType command_type, DatasetProperties dataset_props, LengthProperties length_props,
+                           uint pos_per_env, const str& index_path, const str& ffts_path, const str& query_path,
+                           SearchMethodType method_type, const str& logs_dir);
 
     static inline RunSettings& get_instance() {
         assert(initialized);
@@ -124,17 +122,56 @@ class RunSettings {
 
     /**
      * @brief Set the iSAX properties for the run
-     * @param isax_props The iSAX properties
+     * @param breakpoint_props The breakpoint properties
      */
-    void set_isax_properties(iSaxProperties isax_props);
+    void set_breakpoint_props(BreakpointProperties breakpoint_props);
 
     // Properties
 
-    const DatasetProperties& get_dataset_props();
+    const DatasetProperties& get_dataset_props() const;
 
-    const QueryProperties& get_query_props();
+    const BreakpointProperties& get_breakpoint_props() const;
 
-    virtual const iSaxProperties& get_isax_props();
+    const EnvelopeProperties& get_envelope_props() const;
+
+    const LengthProperties& get_length_props() const;
+
+    // Length properties
+
+    /**
+     * @brief Get the length group index the subsequence belongs to
+     * @param subs_length Length of the subsequence
+     * @return The index of the length group
+     */
+    inline uint get_length_group(uint subs_length) const {
+        return (m_length_props.m_num_l_groups * (subs_length - m_length_props.m_l_min)) /
+               (m_length_props.m_l_max - m_length_props.m_l_min + 1);  // CHECK
+    }
+
+    /**
+     * @brief Get the maximum length of the specified length group
+     * @param lg_ind Length group index
+     * @return The maximum length of the length group
+     */
+    inline uint get_lg_l_min(uint lg_ind) const {
+        return m_length_props.m_num_l_groups > 0
+                   ? m_length_props.m_l_min +
+                         (m_length_props.m_l_max - m_length_props.m_l_min) * lg_ind / m_length_props.m_num_l_groups
+                   : m_length_props.m_l_min;
+    }
+
+    /**
+     * @brief Get the minimum length of the specified length group
+     * @param lg_ind Length group index
+     * @return The minimum length of the length group
+     */
+    inline uint get_lg_l_max(uint lg_ind) const {
+        return m_length_props.m_num_l_groups > 0 ? m_length_props.m_l_min +
+                                                       (m_length_props.m_l_max - m_length_props.m_l_min) *
+                                                           (lg_ind + 1) / m_length_props.m_num_l_groups -
+                                                       (lg_ind != (m_length_props.m_num_l_groups - 1) ? 1 : 0)
+                                                 : m_length_props.m_l_max;
+    }
 
     // Paths
 
@@ -157,16 +194,16 @@ class RunSettings {
     // Dataset properties
     DatasetProperties m_dataset_props;
 
-    // Query properties
-    QueryProperties m_query_properties;
+    // Length properties
+    LengthProperties m_length_props;
 
     // Envelope properties
     EnvelopeProperties m_envelope_props;
 
-    // iSAX properties
+    // Breakpoint properties
     uptr<IiSaxBreakpointStrategy> m_breakpoint_strategy;
-    iSaxProperties m_isax_props;
-    bool m_isax_props_set = false;
+    BreakpointProperties m_breakpoint_props;
+    bool m_breakpoints_props_set = false;
 
     // Index
     str m_index_file;
@@ -176,6 +213,9 @@ class RunSettings {
     std::ifstream m_ffts_ifs;
     vec<uptr<FftArray>> m_query_ffts;
     bool m_ffts_supported;
+
+    // Query
+    str m_query_file;
 
     // Static
     static sptr<RunSettings> instance;

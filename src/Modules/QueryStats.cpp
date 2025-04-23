@@ -59,7 +59,7 @@ void update_query_stats(QueryStats &stats, const vec<vec<Real>> &query, const ve
 
 int calculate_query_stats(bool normalized) {
     auto &RS = RunSettings::get_instance();
-    auto [file, num_channels, series_len, num_series] = RS.get_dataset_props();
+    auto [num_channels, series_len, num_series, file] = RS.get_dataset_props();
 
     std::ifstream dataset_ifs(RS.get_dataset_path(), std::ios::binary);
     std::ifstream query_ifs(RS.get_query_path());

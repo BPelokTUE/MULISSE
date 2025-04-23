@@ -1,7 +1,9 @@
 #include <doctest/doctest.h>
+#include <fakeit/fakeit.hpp>
 
 #include "Util/constants.hpp"
 #include "Summarization/Envelope.hpp"
+#include "Summarization/SegmentationStrategy.hpp"
 
 class EnvelopeTest {
    public:
@@ -18,10 +20,13 @@ class EnvelopeTest {
 
 TEST_CASE("raw envelope happy-flow works") {
     const vec<Real> ts = {1, 3.5, 1, 4, 2, 8, 10, -3.5, 2.5, 12, -9};
-    uint ms_per_env = 4;
-    uint segment_len = 2;
-    uint l_min = 3;
-    uint l_max = 7;
+    uint pos_per_env = 4, l_min = 3, l_max = 7, segment_len = 2;
+
+    fakeit::Mock<ISegmentationStrategy> segmentation_strategy_mock;
+    fakeit::When(Method(segmentation_strategy_mock, get_num_segments)).Return(3);
+    fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).Return(segment_len);
+    fakeit::When(Method(segmentation_strategy_mock, get_type)).Return(UNIFORM);
+
     /*
     Expected envelopes:
     2.25, 2.25, 2.5,   3   -> (2.25, 3)
@@ -30,7 +35,7 @@ TEST_CASE("raw envelope happy-flow works") {
     ...
     */
 
-    auto envelopes = EnvelopeTest::get_raw_envelope(ts, {ms_per_env, segment_len, l_min, l_max});
+    auto envelopes = EnvelopeTest::get_raw_envelope(ts, {pos_per_env, &segmentation_strategy_mock.get(), l_min, l_max});
     vec<Envelope> expected = {
         {{R(2.25), R(2.5), R(-0.5)}, {3, 9, 9}},
         {{R(-0.5), R(-0.5), R(1.5)}, {9, R(7.25), R(7.25)}},
@@ -49,10 +54,12 @@ TEST_CASE("raw envelope happy-flow works") {
 
 TEST_CASE("normalized envelope happy-flow works") {
     const vec<Real> ts = {1, 3.5, 1, 4, 2, 8, 10, -3.5, 2.5, 12, -9};
-    uint ms_per_env = 4;
-    uint segment_len = 2;
-    uint l_min = 3;
-    uint l_max = 7;
+    uint ms_per_env = 4, segment_len = 2, l_min = 3, l_max = 7;
+
+    fakeit::Mock<ISegmentationStrategy> segmentation_strategy_mock;
+    fakeit::When(Method(segmentation_strategy_mock, get_num_segments)).Return(3);
+    fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).Return(segment_len);
+
     /*
     Expected envelopes:
     [-0.9486832980505138, -0.5449492609130661, -1.1111677990074318]
@@ -64,7 +71,8 @@ TEST_CASE("normalized envelope happy-flow works") {
     [0.6308598694087654, -inf, -inf]
     [0.6308598694087654, inf, inf]
     */
-    auto envelopes = EnvelopeTest::get_normalized_envelope(ts, {ms_per_env, segment_len, l_min, l_max});
+    auto envelopes =
+        EnvelopeTest::get_normalized_envelope(ts, {ms_per_env, &segmentation_strategy_mock.get(), l_min, l_max});
 
     vec<Envelope> expected = {{{R(-0.9486832980505138), R(-0.5449492609130661), R(-1.1111677990074318)},
                                {R(0.35355339059327384), R(1.1835854998978794), R(1.323448205074589)}},

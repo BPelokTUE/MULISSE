@@ -752,7 +752,7 @@ if __name__ == "__main__":
                                 args += ["-g", str(lens_per_group)]
                                 num_l_groups = (l_range + lens_per_group - 1) // lens_per_group
                         if RK_NUM_SEGMENTS in index_setting_copy:
-                            args += ["-s", str(series_len // index_setting_copy.pop(RK_NUM_SEGMENTS))]
+                            args += ["-s", str(index_setting_copy.pop(RK_NUM_SEGMENTS))]
                         pos_per_env = 1
                         if RK_POS_PER_ENV in index_setting_copy:
                             max_pos_per_env = series_len - l_min + 1

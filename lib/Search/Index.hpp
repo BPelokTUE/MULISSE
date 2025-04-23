@@ -64,16 +64,6 @@ class IFinalizedIndex {
         str index_file_w_ext = add_archive_extension(index_file, ar_type);
         return std::filesystem::exists(index_file_w_ext) ? std::filesystem::file_size(index_file_w_ext) : 0;
     }
-
-    /**
-     * @brief Get the length of the series in the index
-     * @return The length of the series
-     */
-    uint get_series_len() const { return m_series_len; }
-
-   protected:
-    uint m_series_len;
-    MtsNumChannelsT m_num_channels;
 };
 
 /**
@@ -219,7 +209,7 @@ class IIndex {
         size_t N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(Real),
                series_size = channel_size * num_channels, num_series = N / series_size;
 
-        uint num_length_groups = generator->get_num_len_groups();
+        uint num_length_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
         vec<vec<IndexEntry<T>>> dataset_entry_groups(num_length_groups);
 
         logger.start_timer(ISC::SUMMARIZATION_TIME_S);

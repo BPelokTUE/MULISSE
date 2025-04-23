@@ -36,14 +36,16 @@ class ISearchMethod {
     /**
      * @brief Get the Paa values and the length of the query
      * @param query The multivariate query
-     * @param segment_len The length of the segments
+     * @param segmentation_strategy The segmentation strategy to use
      * @param real_query_inds Real indices of the query points (to support sorted queries for early abandoning)
      * @return A pair containing the Paa values and the length of the query
      */
-    inline std::pair<vec<vec<Real>>, uint> get_query_paa_and_len(const vec<vec<Real>> &query, uint segment_len,
+    inline std::pair<vec<vec<Real>>, uint> get_query_paa_and_len(const vec<vec<Real>> &query,
+                                                                 const ISegmentationStrategy *segmentation_strategy,
                                                                  const vec<uint> *real_query_inds = nullptr) const {
         vec<vec<Real>> query_paa(query.size());
         size_t query_len = 0;
+
         for (size_t c = 0; c < query.size(); ++c) {
             if (query[c].empty()) continue;
             query_len = std::max(query_len, query[c].size());
@@ -51,9 +53,9 @@ class ISearchMethod {
             if constexpr (QS) {
                 vec<Real> unsorted_query_channel(query_len);
                 for (uint i = 0; i < query_len; ++i) unsorted_query_channel[real_query_inds->at(i)] = query[c][i];
-                query_paa[c] = paa(unsorted_query_channel, segment_len);
+                query_paa[c] = paa(unsorted_query_channel, segmentation_strategy);
             } else {
-                query_paa[c] = paa(query[c], segment_len);
+                query_paa[c] = paa(query[c], segmentation_strategy);
             }
         }
         return {query_paa, query_len};

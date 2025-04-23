@@ -24,8 +24,8 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         auto method_type = index_options.m_index_params->get_type();
         method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(method_type);
 
-        auto *paa_params = dynamic_cast<PaaIndexParams *>(index_options.m_index_params.get());
-        segment_len = paa_params->m_segment_len;
+        // auto *paa_params = dynamic_cast<PaaIndexParams *>(index_options.m_index_params.get());
+        // segment_len = 0;  // TODO: logs relevant attributes (num_segments and segmentation_strategy_type)
 
         if (std::find(METHODS_W_SAX.begin(), METHODS_W_SAX.end(), method_type) != METHODS_W_SAX.end()) {
             auto *sax_params = dynamic_cast<SaxIndexParams *>(index_options.m_index_params.get());
@@ -49,7 +49,6 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         }
         if (std::find(METHODS_W_ENVELOPE.begin(), METHODS_W_ENVELOPE.end(), method_type) != METHODS_W_ENVELOPE.end()) {
             auto *env_params = dynamic_cast<EnvelopeIndexParams *>(index_options.m_index_params.get());
-            segment_len = env_params->m_segment_len;
             pos_per_env = env_params->m_pos_per_env;
         }
     }
