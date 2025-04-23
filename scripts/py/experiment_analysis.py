@@ -225,17 +225,17 @@ class ExperimentResults(BaseModel):
         merged_df = merged_df[columns]
         self.index_stats_df = self.index_stats_df.merge(merged_df, left_on=str(ISC.INDEX_FILE), right_on=isc_index_name)
 
-    def add_query_length_group_column(self, num_query_length_groups: int):
+    def add_query_interval_column(self, num_query_intervals: int):
         merged_df = self.get_merged_df()
         qc_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.ID))
         qc_query_length = get_merged_col_name(ERD.RUNS_COLS, str(QC.QUERY_LENGTH))
         qsc_l_min = get_merged_col_name(ERD.QUERY_SETS_COLS, str(QSC.L_MIN))
         qsc_l_max = get_merged_col_name(ERD.QUERY_SETS_COLS, str(QSC.L_MAX))
 
-        merged_df[str(QC.QUERY_LENGTH_GROUP)] = (merged_df[qc_query_length] - merged_df[qsc_l_min]) // np.ceil(
-            (merged_df[qsc_l_max] - merged_df[qsc_l_min] + 1) / num_query_length_groups
+        merged_df[str(QC.QUERY_INTERVAL)] = (merged_df[qc_query_length] - merged_df[qsc_l_min]) // np.ceil(
+            (merged_df[qsc_l_max] - merged_df[qsc_l_min] + 1) / num_query_intervals
         ).astype(int)
-        merged_df = merged_df[[str(QC.QUERY_LENGTH_GROUP), qc_id]]
+        merged_df = merged_df[[str(QC.QUERY_INTERVAL), qc_id]]
         self.runs_df = self.runs_df.merge(merged_df, left_on=str(QC.ID), right_on=qc_id)
 
     @classmethod
@@ -251,7 +251,7 @@ class ExperimentResults(BaseModel):
         cols: dict[ERD, list[str]],
         add_runs: bool = True,
         add_index_stats: bool = False,
-        num_query_len_groups: int = 1,
+        num_query_intervals: int = 1,
     ):  # -> ExperimentResults:
         original_cols = cols.copy()
         cols = {erd: cols[erd] if erd in cols else [] for erd in ERD}
@@ -289,11 +289,11 @@ class ExperimentResults(BaseModel):
             extra_cols[ERD.RUNS_COLS].append(str(QC.ABANDONING_RATE))
             act_cols[ERD.RUNS_COLS].remove(str(QC.KEEP_RATE))
 
-        # Handle query length group column
-        if str(QC.QUERY_LENGTH_GROUP) in cols[ERD.RUNS_COLS] and num_query_len_groups > 1:
+        # Handle query interval column
+        if str(QC.QUERY_INTERVAL) in cols[ERD.RUNS_COLS] and num_query_intervals > 1:
             extra_cols[ERD.RUNS_COLS] += [str(QC.QUERY_LENGTH), str(QC.ID)]
             extra_cols[ERD.QUERY_SETS_COLS] += [str(QSC.L_MIN), str(QSC.L_MAX)]
-            act_cols[ERD.RUNS_COLS].remove(str(QC.QUERY_LENGTH_GROUP))
+            act_cols[ERD.RUNS_COLS].remove(str(QC.QUERY_INTERVAL))
 
         extra_cols = {erd: list(set(extra_cols[erd]) - set(act_cols[erd])) for erd in ERD}
         cols_to_load = {erd: act_cols[erd] + extra_cols[erd] for erd in ERD}
@@ -334,8 +334,8 @@ class ExperimentResults(BaseModel):
             results.runs_df[str(QC.KEEP_RATE)] = 1 - results.runs_df[str(QC.ABANDONING_RATE)]
 
         # Add query length group column
-        if str(QC.QUERY_LENGTH_GROUP) in cols[ERD.RUNS_COLS] and num_query_len_groups > 1:
-            results.add_query_length_group_column(num_query_len_groups)
+        if str(QC.QUERY_INTERVAL) in cols[ERD.RUNS_COLS] and num_query_intervals > 1:
+            results.add_query_interval_column(num_query_intervals)
 
         # Drop extra columns
         results.datasets_df = results.datasets_df.drop(columns=extra_cols[ERD.DATASETS_COLS])
@@ -547,10 +547,10 @@ METHOD_COLORS = {
     "isax-ed-early": PALETTE["Reds"][1],
     "isax-mass": PALETTE["Reds"][2],
     "isax-mass-ffts": PALETTE["Reds"][4],
-    "envelope-ed": PALETTE["Purples"][0],
-    "envelope-ed-early": PALETTE["Purples"][0],
-    "sax_envelope-ed": PALETTE["Purples"][2],
-    "sax_envelope-ed-early": PALETTE["Purples"][2],
+    "envelope-ed": PALETTE["Pinks"][1],
+    "envelope-ed-early": PALETTE["Pinks"][1],
+    "sax_envelope-ed": PALETTE["Pinks"][4],
+    "sax_envelope-ed-early": PALETTE["Pinks"][4],
     "envelope-mass": PALETTE["Purples"][3],
     "envelope-mass-ffts": PALETTE["Purples"][3],
     "sax_envelope-mass": PALETTE["Purples"][6],
@@ -768,6 +768,10 @@ def dict_to_tuples(d: dict[ERD, list[str]]) -> list[tuple[ERD, str]]:
     return tuples
 
 
+def get_tuple_strings(tuples: list[tuple[ERD, str]]) -> list[str]:
+    return [col for _, col in tuples]
+
+
 def get_col_index(col: str, tuples: list[tuple[ERD, str]]) -> int:
     for i, (_, col_name) in enumerate(tuples):
         if col_name == col:
@@ -891,7 +895,7 @@ def experiment_envelope_parametrization(
     hatch_labels=None,
     logs_dir="EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size_param",
     method_name_re: str = r".*",
-    num_query_len_groups: int = 1,
+    num_query_intervals: int = 1,
     bar_width_inches: float = 0.4,
 ):
     if isinstance(target_cols, str):
@@ -901,12 +905,12 @@ def experiment_envelope_parametrization(
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
         ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
     }
-    if num_query_len_groups > 1:
-        groups_dict[ERD.RUNS_COLS] = [str(QC.QUERY_LENGTH_GROUP)]
+    if num_query_intervals > 1:
+        groups_dict[ERD.RUNS_COLS] = [str(QC.QUERY_INTERVAL)]
     columns = {**groups_dict, ERD.RUNS_COLS: target_cols + groups_dict.get(ERD.RUNS_COLS, [])}
     print(columns)
     parametrization_results = ExperimentResults.load(
-        logs_dir=logs_dir, cols=columns, num_query_len_groups=num_query_len_groups
+        logs_dir=logs_dir, cols=columns, num_query_intervals=num_query_intervals
     )
 
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
@@ -921,14 +925,14 @@ def experiment_envelope_parametrization(
     }
 
     def get_x_label(key: tuple):
-        if num_query_len_groups == 1:
+        if num_query_intervals == 1:
             l_min, l_max, pos_per_env, _, _ = key
             query_len_label = ""
         else:
-            l_min, l_max, pos_per_env, _, _, query_len_group = key
-            query_len_group_size = int(np.ceil((l_max - l_min + 1) / num_query_len_groups))
-            low_len = l_min + query_len_group * query_len_group_size
-            high_len = min(l_min + (query_len_group + 1) * query_len_group_size, l_max + 1)
+            l_min, l_max, pos_per_env, _, _, query_interval = key
+            query_interval_size = int(np.ceil((l_max - l_min + 1) / num_query_intervals))
+            low_len = l_min + query_interval * query_interval_size
+            high_len = min(l_min + (query_interval + 1) * query_interval_size, l_max + 1)
             query_len_label = f"\n{int(low_len)}≤|Q|<{int(high_len)}"
         return f"l_min={int(l_min)}\nl_max={int(l_max)}\nPPE={int(pos_per_env)}{query_len_label}"
 
@@ -961,7 +965,7 @@ def experiment_envelope_parametrization(
 
 logs_dir = "EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size_3"
 method_name_re = r"^(?!.*isax).*ed.*$"
-num_query_len_groups = 1
+num_query_intervals = 1
 bar_width_inches = 0.8
 
 # %%
@@ -976,7 +980,7 @@ experiment_envelope_parametrization(
     # hatches=["", FIRST_LAYER_TIME_HATCH],
     # hatch_labels=PQ_TIME_LABELS,
     method_name_re=method_name_re,
-    num_query_len_groups=num_query_len_groups,
+    num_query_intervals=num_query_intervals,
     bar_width_inches=bar_width_inches,
 )
 
@@ -989,7 +993,7 @@ experiment_envelope_parametrization(
     y_scale="linear",
     logs_dir=logs_dir,
     method_name_re=method_name_re,
-    num_query_len_groups=num_query_len_groups,
+    num_query_intervals=num_query_intervals,
     bar_width_inches=bar_width_inches,
 )
 
@@ -1395,9 +1399,10 @@ def experiment_length_based_grouping(
     hatches=None,
     hatch_labels=None,
     y_scale: str = "linear",
-    num_query_len_groups: int = 1,
+    num_query_intervals: int = 1,
     datasets_to_show: list[str] | None = None,
     l_ranges_to_show: list[tuple[int, int]] | None = None,
+    regex_dict: dict[str, str] = {},
 ):
     groups_dict = {
         ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
@@ -1405,14 +1410,14 @@ def experiment_length_based_grouping(
         ERD.QUERY_SETS_COLS: [str(QSC.L_MIN), str(QSC.L_MAX)],
         ERD.INDEXES_COLS: [str(ISC.POS_PER_ENV), str(ISC.L_PER_GROUP)],
     }
-    if num_query_len_groups > 1:
-        groups_dict[ERD.RUNS_COLS] = [str(QC.QUERY_LENGTH_GROUP)]
+    if num_query_intervals > 1:
+        groups_dict[ERD.RUNS_COLS] = [str(QC.QUERY_INTERVAL)]
     ds_index = 1
     targets_dict = {ERD.RUNS_COLS: target_cols}
     columns = groups_dict.copy()
     columns[ERD.RUNS_COLS] = targets_dict[ERD.RUNS_COLS] + groups_dict.get(ERD.RUNS_COLS, [])
 
-    results = ExperimentResults.load(logs_dir=logs_dir, cols=columns, num_query_len_groups=num_query_len_groups)
+    results = ExperimentResults.load(logs_dir=logs_dir, cols=columns, num_query_intervals=num_query_intervals)
 
     targets = [(ERD.RUNS_COLS, target_col, reducer) for target_col in targets_dict[ERD.RUNS_COLS]]
     groups = dict_to_tuples(groups_dict)
@@ -1432,24 +1437,36 @@ def experiment_length_based_grouping(
         }
         ordered_datasets = {key[ds_index] for key in reduced_values}
 
+    group_strings = get_tuple_strings(groups)
+    for col, regex in regex_dict.items():
+        if col in group_strings:
+            ind = group_strings.index(col)
+            reduced_values = {key: values for key, values in reduced_values.items() if re.search(regex, str(key[ind]))}
+
     l_ranges = {(int(key[2]), int(key[3])) for key in reduced_values}
 
-    def get_x_label(key: tuple) -> str:
-        if num_query_len_groups > 1:
-            _, _, l_min, l_max, pos_per_env, l_per_group, query_len_group = key
-            query_len_group_size = int(np.ceil((l_max - l_min + 1) / num_query_len_groups))
-            low_len = l_min + query_len_group * query_len_group_size
-            high_len = min(l_min + (query_len_group + 1) * query_len_group_size, l_max + 1)
-            query_len_label = f"\n{low_len}≤|Q|<{high_len}"
+    def get_x_label(key: tuple, ind: int) -> str:
+        if num_query_intervals > 1:
+            _, _, l_min, l_max, pos_per_env, l_per_group, query_interval = key
+            query_interval_size = int(np.ceil((l_max - l_min + 1) / num_query_intervals))
+            low_len = l_min + query_interval * query_interval_size
+            high_len = min(l_min + (query_interval + 1) * query_interval_size, l_max + 1)
+            query_interval_label = f"\n{low_len}≤|Q|<{high_len}"
         else:
             _, _, l_min, l_max, pos_per_env, l_per_group = key
-            query_len_label = ""
-        if l_per_group is None or l_per_group <= 0:
-            return ""
+            query_interval_label = ""
 
-        num_l_groups = int(np.ceil((l_max - l_min + 1) / l_per_group))
-        ppe_str = f"\nPPE={int(pos_per_env)}" if pos_per_env is not None and pos_per_env > 0 else ""
-        return f"#LG={num_l_groups}{ppe_str}{query_len_label}"
+        if l_per_group is None or l_per_group <= 0:
+            label = query_interval_label
+        else:
+            num_l_groups = int(np.ceil((l_max - l_min + 1) / l_per_group))
+            ppe_str = f"\nPPE={int(pos_per_env)}" if pos_per_env is not None and pos_per_env > 0 else ""
+            label = f"#LG={num_l_groups}{ppe_str}{query_interval_label}"
+
+        if ind % 2 == 1:
+            label_num_lines = 1 + label.count("\n")
+            label = "\n" * label_num_lines + label
+        return label
 
     for dataset in ordered_datasets:
         if datasets_to_show is not None and not any(ds in dataset for ds in datasets_to_show):
@@ -1469,7 +1486,7 @@ def experiment_length_based_grouping(
             plot_bars(
                 reduced_values_ds,
                 0,
-                x_labels={key[1:]: get_x_label(key) for key in reduced_values_ds},
+                x_labels={key[1:]: get_x_label(key, i) for i, key in enumerate(reduced_values_ds)},
                 y_label=Y_LABELS.get(target_cols[0], target_cols[0]),
                 y_lim=(0, 1.05) if target_cols[0] in [str(QC.PRUNING_RATIO), str(QC.KEEP_RATE)] else None,
                 title=f"{dataset} l in [{l_range[0]}, {l_range[1]}]",
@@ -1483,18 +1500,23 @@ def experiment_length_based_grouping(
 
 logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_env_size_param"
 merge_csv_datasets = True
-num_query_len_groups = 1
+num_query_intervals = 10
 datasets_to_show = None  # ["weather", "stocks"]
-l_ranges_to_show = None  # [(128, 2048)]
+l_ranges_to_show = [(128, 2048)]
+regex_dict = {
+    # str(SSC.METHOD_NAME): r"env",
+    # str(ISC.POS_PER_ENV): r"(19|96)(\.0){0,1}$",
+}
 
 # %%
 
 experiment_length_based_grouping(
     logs_dir=logs_dir,
     merge_csv_datasets=merge_csv_datasets,
-    num_query_len_groups=num_query_len_groups,
+    num_query_intervals=num_query_intervals,
     datasets_to_show=datasets_to_show,
     l_ranges_to_show=l_ranges_to_show,
+    regex_dict=regex_dict,
     ## TIME
     # target_cols=[str(QC.TOTAL_TIME_S)],
     ## INDEX TIME
@@ -1509,22 +1531,13 @@ experiment_length_based_grouping(
 
 # %%
 
-experiment_length_based_grouping(
-    target_cols=[str(QC.NUM_PTS_EXAMINED)],
-    logs_dir=logs_dir,
-    merge_csv_datasets=merge_csv_datasets,
-    num_query_len_groups=num_query_len_groups,
-    datasets_to_show=datasets_to_show,
-    l_ranges_to_show=l_ranges_to_show,
-)
-
-# %%
-
-experiment_length_based_grouping(
-    target_cols=[str(QC.KEEP_RATE)],
-    logs_dir=logs_dir,
-    merge_csv_datasets=merge_csv_datasets,
-    num_query_len_groups=num_query_len_groups,
-    datasets_to_show=datasets_to_show,
-    l_ranges_to_show=l_ranges_to_show,
-)
+for target_col in [QC.PRUNING_RATIO, QC.NUM_PTS_EXAMINED]:
+    experiment_length_based_grouping(
+        target_cols=[str(target_col)],
+        logs_dir=logs_dir,
+        merge_csv_datasets=merge_csv_datasets,
+        num_query_intervals=num_query_intervals,
+        datasets_to_show=datasets_to_show,
+        l_ranges_to_show=l_ranges_to_show,
+        regex_dict=regex_dict,
+    )
