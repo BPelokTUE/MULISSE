@@ -98,9 +98,9 @@ The following may be inferred from this investigation:
 
 - Length-based grouping leads to **consistent but modest performance gains** independent of the dataset or query range.
 - TODO:
-    - [ ] Find the bottleneck in the best working solution, figure out how to improve on it 
+    - [x] Find the bottleneck in the best working solution, figure out how to improve on it 
         - Total time is dominated by TS examination time, therefore pruning ratio should be optimized. It is not clear why an iSAX trie would properly group together envelopes based solely on their discretized lower bounds. An invSAX based approach should work better for this.
-    - [ ] Figure out why iSAX does not work properly
+    - [x] Figure out why iSAX does not work properly
         - The pruning ratio was incorrectly calculated, however this does not affect performance, pure iSAX is still slow
         - iSAX recalculates distances for overlapping subsequences. This could be optimized, presumably making iSAX faster. However, **index construction time still makes pure iSAX unusable for even moderately large datasets**, therefore I will not implement these optimizations for now, as they will not lead to a worthwhile method.
 
@@ -108,7 +108,19 @@ The following may be inferred from this investigation:
     - [ ] Analyze the index statistics of length-grouped indexes (the data is already collected)
     - [ ] Figure out when ED is better than MASS (depending on query range, time series length, maybe number of time series but probably not)
 - TODO implementation: 
-    - [ ] Implement invSAX and combine it with envelopes. Upgrade into a UB-tree (Coconut) once this is done and works.
+    - [x] Implement invSAX and combine it with envelopes. Upgrade into a UB-tree (Coconut) once this is done and works.
+        - UB-tree is not really applicable for our use-case, as it searches for the hypothetical location of the query in the index. Since in our case the entries of the index are envelopes, but we are searching for subsequences, this is not really usable
+        - We can still apply invSAX and group together envelopes into nodes, setting the envelope bounds for each parent node to the max of children. Note however, that this cannot help with pruning: a node can be pruned away only if its children can be pruned away. It is possible that min-dist calculation time could be reduced, but that is a minor part of search time, and a cursory look at early results suggests that this not always the case.
     - [ ] Implement way to use precomputed FFTs for more than one envelop per time series (probably calculate FFT for whole time series anyways, then mark the time series once MASS has been run on it to avoid future recomputations)
     - [ ] Use different (dynamically set) index properties (e.g. different # envelope per time series) for the different length-group indexes (e.g. short query range indexes could use more envelopes per time series)
+
+## 24-04-2025
+- There was a bug when using smaller position groups. This is now fixed and lower position group sizes seem better than higher ones, especially for shorter queries
+- Shorter queries are a bottleneck, length-grouped pure envelopes with small position groups already perform well on queries with $|Q|\ge 0.25 * l_{\max}$
+- To optimize short query performance, focusing more on early segments (e.g. making these segments shorter) should be explored (decreasing segment length already show promising results, however this needlessly increases index size)
+
+- TODO:
+    - Run on raw
+    - Write down optimal PG and LG settings
+    - Figure out how to adapt segment lengths also per channel
 

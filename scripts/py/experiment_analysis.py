@@ -1498,7 +1498,7 @@ def experiment_length_based_grouping(
 
 # %%
 
-logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_env_size_param"
+logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_env_size_param_ns32"
 merge_csv_datasets = True
 num_query_intervals = 10
 datasets_to_show = None  # ["weather", "stocks"]
