@@ -33,9 +33,9 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
     fakeit::When(Method(run_settings_mock, get_breakpoints)).AlwaysReturn(breakpoints);
     fakeit::When(Method(split_strategy_mock, get_split_ind)).Return(split1, split2, split3);
 
-    fakeit::When(Method(segmentation_strategy_mock, get_num_segments)).Return(3);
-    fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).Return(3);
-    fakeit::When(Method(segmentation_strategy_mock, get_type)).Return(UNIFORM);
+    fakeit::When(Method(segmentation_strategy_mock, get_num_segments)).AlwaysReturn(3);
+    fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).AlwaysReturn(3);
+    fakeit::When(Method(segmentation_strategy_mock, get_type)).AlwaysReturn(UNIFORM);
 
 #ifdef ENABLE_TEST_CODE
     // Pass empty deleter function, because fakeit manages the lifetime of the mock
@@ -289,9 +289,9 @@ TEST_CASE("iSaxIndex insert MTS envelope works") {
     BreakpointProperties breakpoint_props = {breakpoint_num_bits, nullptr, breakpoints};
     SaxSplitIndex split1{0, 1}, split2{1, 2};
 
-    fakeit::When(Method(segmentation_strategy_mock, get_num_segments)).Return(3);
-    fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).Return(3);
-    fakeit::When(Method(segmentation_strategy_mock, get_type)).Return(UNIFORM);
+    fakeit::When(Method(segmentation_strategy_mock, get_num_segments)).AlwaysReturn(2);
+    fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).AlwaysReturn(3);
+    fakeit::When(Method(segmentation_strategy_mock, get_type)).AlwaysReturn(UNIFORM);
 
     fakeit::When(Method(run_settings_mock, get_breakpoint_props)).AlwaysReturn(breakpoint_props);
     fakeit::When(Method(run_settings_mock, get_breakpoints)).AlwaysReturn(breakpoints);

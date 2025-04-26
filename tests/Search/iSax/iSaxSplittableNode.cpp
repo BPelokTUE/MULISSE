@@ -12,6 +12,19 @@ TEST_CASE("iSAX leaf finalization works") {
 
     iSaxSplittableLeaf leaf(subsequence_positions, envelopes);
 
+    vec<Real> breakpoints = {-7, -3, -1, 1, 4, 9, 10};
+    SaxNumBitsT breakpoint_num_bits = 3;
+    BreakpointProperties breakpoint_props = {breakpoint_num_bits, nullptr, breakpoints};
+
+    fakeit::Mock<RunSettings> run_settings_mock;
+    fakeit::When(Method(run_settings_mock, get_breakpoint_props)).AlwaysReturn(breakpoint_props);
+    fakeit::When(Method(run_settings_mock, get_breakpoints)).AlwaysReturn(breakpoints);
+
+#ifdef ENABLE_TEST_CODE
+    // Pass empty deleter function, because fakeit manages the lifetime of the mock
+    RunSettings::set_instance(sptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
+#endif
+
     auto finalization_result_ptr = leaf.finalize();
     auto finalization_result = static_cast<EnvelopeFinalizationResult *>(finalization_result_ptr.get());
     auto finalized = std::move(finalization_result->m_finalized_node);
@@ -40,6 +53,19 @@ TEST_CASE("iSAX internal finalization works") {
 
     fakeit::When(Method(left, finalize)).Return(expected_finalization_result(&fin_left.get(), isax_max_left));
     fakeit::When(Method(right, finalize)).Return(expected_finalization_result(&fin_right.get(), isax_max_right));
+
+    vec<Real> breakpoints = {-3, 0, 3};
+    SaxNumBitsT breakpoint_num_bits = 2;
+    BreakpointProperties breakpoint_props = {breakpoint_num_bits, nullptr, breakpoints};
+
+    fakeit::Mock<RunSettings> run_settings_mock;
+    fakeit::When(Method(run_settings_mock, get_breakpoint_props)).AlwaysReturn(breakpoint_props);
+    fakeit::When(Method(run_settings_mock, get_breakpoints)).AlwaysReturn(breakpoints);
+
+#ifdef ENABLE_TEST_CODE
+    // Pass empty deleter function, because fakeit manages the lifetime of the mock
+    RunSettings::set_instance(sptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
+#endif
 
     SaxSplitIndex split_ind{1, 0};
     iSaxSplittableInternal internal(split_ind, &left.get(), &right.get());

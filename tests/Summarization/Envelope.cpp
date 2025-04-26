@@ -23,9 +23,21 @@ TEST_CASE("raw envelope happy-flow works") {
     uint pos_per_env = 4, l_min = 3, l_max = 7, segment_len = 2;
 
     fakeit::Mock<ISegmentationStrategy> segmentation_strategy_mock;
-    fakeit::When(Method(segmentation_strategy_mock, get_num_segments)).Return(3);
-    fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).Return(segment_len);
-    fakeit::When(Method(segmentation_strategy_mock, get_type)).Return(UNIFORM);
+    fakeit::When(Method(segmentation_strategy_mock, get_num_segments)).AlwaysDo([segment_len](uint subs_len) {
+        return subs_len / segment_len;
+    });
+    fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).AlwaysReturn(segment_len);
+    fakeit::When(Method(segmentation_strategy_mock, get_type)).AlwaysReturn(UNIFORM);
+
+    fakeit::Mock<RunSettings> run_settings_mock;
+    fakeit::When(Method(run_settings_mock, get_length_group)).AlwaysReturn(0);
+    fakeit::When(Method(run_settings_mock, get_lg_l_min)).AlwaysReturn(l_min);
+    fakeit::When(Method(run_settings_mock, get_lg_l_max)).AlwaysReturn(l_max);
+
+#ifdef ENABLE_TEST_CODE
+    // Pass empty deleter function, because fakeit manages the lifetime of the mock
+    RunSettings::set_instance(sptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
+#endif
 
     /*
     Expected envelopes:
@@ -35,7 +47,7 @@ TEST_CASE("raw envelope happy-flow works") {
     ...
     */
 
-    auto envelopes = EnvelopeTest::get_raw_envelope(ts, {pos_per_env, &segmentation_strategy_mock.get(), l_min, l_max});
+    auto envelopes = EnvelopeTest::get_raw_envelope(ts, {l_min, l_max, pos_per_env, &segmentation_strategy_mock.get()});
     vec<Envelope> expected = {
         {{R(2.25), R(2.5), R(-0.5)}, {3, 9, 9}},
         {{R(-0.5), R(-0.5), R(1.5)}, {9, R(7.25), R(7.25)}},
@@ -57,8 +69,20 @@ TEST_CASE("normalized envelope happy-flow works") {
     uint ms_per_env = 4, segment_len = 2, l_min = 3, l_max = 7;
 
     fakeit::Mock<ISegmentationStrategy> segmentation_strategy_mock;
-    fakeit::When(Method(segmentation_strategy_mock, get_num_segments)).Return(3);
-    fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).Return(segment_len);
+    fakeit::When(Method(segmentation_strategy_mock, get_num_segments)).AlwaysDo([segment_len](uint subs_len) {
+        return subs_len / segment_len;
+    });
+    fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).AlwaysReturn(segment_len);
+
+    fakeit::Mock<RunSettings> run_settings_mock;
+    fakeit::When(Method(run_settings_mock, get_length_group)).AlwaysReturn(0);
+    fakeit::When(Method(run_settings_mock, get_lg_l_min)).AlwaysReturn(l_min);
+    fakeit::When(Method(run_settings_mock, get_lg_l_max)).AlwaysReturn(l_max);
+
+#ifdef ENABLE_TEST_CODE
+    // Pass empty deleter function, because fakeit manages the lifetime of the mock
+    RunSettings::set_instance(sptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
+#endif
 
     /*
     Expected envelopes:
@@ -72,7 +96,7 @@ TEST_CASE("normalized envelope happy-flow works") {
     [0.6308598694087654, inf, inf]
     */
     auto envelopes =
-        EnvelopeTest::get_normalized_envelope(ts, {ms_per_env, &segmentation_strategy_mock.get(), l_min, l_max});
+        EnvelopeTest::get_normalized_envelope(ts, {l_min, l_max, ms_per_env, &segmentation_strategy_mock.get()});
 
     vec<Envelope> expected = {{{R(-0.9486832980505138), R(-0.5449492609130661), R(-1.1111677990074318)},
                                {R(0.35355339059327384), R(1.1835854998978794), R(1.323448205074589)}},

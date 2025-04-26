@@ -152,9 +152,9 @@ sptr<IIndex<Envelope>> get_two_stage_isax_envelope_index(const IndexFactoryParam
 uptr<IEntryGenerator<Paa>> get_paa_generator(const IndexOptions &opts,
                                              const ISegmentationStrategy *segmentation_strategy) {
     iSaxPaaParams paa_params = {
-        .m_segmentation_strategy = segmentation_strategy,
         .m_l_min = opts.m_l_min,
         .m_l_max = opts.m_l_max,
+        .m_segmentation_strategy = segmentation_strategy,
     };
     uint num_len_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
 
@@ -165,10 +165,10 @@ uptr<IEntryGenerator<Envelope>> get_envelope_generator(const IndexOptions &opts,
                                                        const ISegmentationStrategy *segmentation_strategy) {
     auto *params = dynamic_cast<EnvelopeIndexParams *>(opts.m_index_params.get());
     EnvelopeParams env_params = {
-        .m_pos_per_env = params->m_pos_per_env,
-        .m_segmentation_strategy = segmentation_strategy,
         .m_l_min = opts.m_l_min,
         .m_l_max = opts.m_l_max,
+        .m_pos_per_env = params->m_pos_per_env,
+        .m_segmentation_strategy = segmentation_strategy,
     };
     uint num_len_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
 

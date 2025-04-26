@@ -22,13 +22,6 @@ class ISegmentationStrategy {
     virtual SaxSegIndT get_num_segments(uint ts_size) const = 0;
 
     /**
-     * @brief Get the segment index of a given time series index. This should not depend on the size of the time series.
-     * @param ts_ind The time series index.
-     * @return The segment index.
-     */
-    virtual SaxSegIndT get_segment_ind(uint ts_ind) const = 0;
-
-    /**
      * @brief Get the length of a given segment.
      * @param segment_ind The segment index.
      * @return The length of the segment.
@@ -59,8 +52,6 @@ class UniformSegmentationStrategy : public ISegmentationStrategy {
     UniformSegmentationStrategy() = default;
 
     SaxSegIndT get_num_segments(uint ts_size) const override;
-
-    SaxSegIndT get_segment_ind(uint ts_ind) const override;
 
     uint get_segment_len(SaxSegIndT segment_ind) const override;
 

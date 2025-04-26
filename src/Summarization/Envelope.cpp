@@ -45,7 +45,7 @@ vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec
 }
 
 vec<vec<Envelope>> EnvelopeEntryGenerator::get_raw_envelopes(const vec<Real> &ts) {
-    auto [pos_per_env, segmentation_strategy, l_min, l_max] = m_env_params;
+    auto [l_min, l_max, pos_per_env, segmentation_strategy] = m_env_params;
 
     if (segmentation_strategy->get_type() != UNIFORM) {
         throw std::runtime_error("get_raw_envelopes is only supported for UniformSegmentationStrategy");
@@ -85,7 +85,7 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_raw_envelopes(const vec<Real> &ts
 
 vec<vec<Envelope>> EnvelopeEntryGenerator::get_normalized_envelopes(const vec<Real> &ts) {
     auto &RS = RunSettings::get_instance();
-    auto [pos_per_env, segmentation_strategy, l_min, l_max] = m_env_params;
+    auto [l_min, l_max, pos_per_env, segmentation_strategy] = m_env_params;
 
     vec<vec<Envelope>> envelope_groups =
         get_envelope_groups(U(ts.size()), pos_per_env, l_min, l_max, segmentation_strategy);
@@ -104,15 +104,14 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_normalized_envelopes(const vec<Re
             auto [mu, sigma] = calculate_mu_and_sigma(sum_accs[last_ind + 1] - sum_accs[start],
                                                       sq_sum_accs[last_ind + 1] - sq_sum_accs[start], subs_len);
 
+            uint segment_len_sum = 0;
             uint length_group = RS.get_length_group(subs_len);
-            uint lg_l_max = RS.get_lg_l_max(length_group);
-
-            SaxSegIndT num_segments = segmentation_strategy->get_num_segments(lg_l_max);
+            SaxSegIndT num_segments = segmentation_strategy->get_num_segments(subs_len);
             for (SaxSegIndT seg_ind = 0; seg_ind < num_segments; ++seg_ind) {
                 uint segment_len = segmentation_strategy->get_segment_len(seg_ind);
-                Real paa_val =
-                    (sum_accs[start + (seg_ind + 1) * segment_len] - sum_accs[start + seg_ind * segment_len]) /
-                    R(segment_len);
+                Real paa_val = (sum_accs[start + segment_len_sum + segment_len] - sum_accs[start + segment_len_sum]) /
+                               R(segment_len);
+                segment_len_sum += segment_len;
                 paa_val = (paa_val - mu) / sigma;
 
                 auto &envelope = envelope_groups[length_group][start / pos_per_env];

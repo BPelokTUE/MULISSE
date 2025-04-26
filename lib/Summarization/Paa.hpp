@@ -28,9 +28,9 @@ vec<Real> paa(const vec<Real> &ts, const ISegmentationStrategy *segmentation_str
  * @param l_max The maximum length of a subsequence
  */
 struct iSaxPaaParams {
-    const ISegmentationStrategy *m_segmentation_strategy;
     uint m_l_min;
     uint m_l_max;
+    const ISegmentationStrategy *m_segmentation_strategy;
 };
 
 struct Paa : EntryData {

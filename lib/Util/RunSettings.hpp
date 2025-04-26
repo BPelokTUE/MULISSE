@@ -130,7 +130,8 @@ class RunSettings {
 
     const DatasetProperties& get_dataset_props() const;
 
-    const BreakpointProperties& get_breakpoint_props() const;
+    virtual const BreakpointProperties& get_breakpoint_props()
+        const;  // NOTE: virtual is needed for mocking with fakeit
 
     const EnvelopeProperties& get_envelope_props() const;
 
@@ -143,7 +144,7 @@ class RunSettings {
      * @param subs_length Length of the subsequence
      * @return The index of the length group
      */
-    inline uint get_length_group(uint subs_length) const {
+    virtual inline uint get_length_group(uint subs_length) const {
         return (m_length_props.m_num_l_groups * (subs_length - m_length_props.m_l_min)) /
                (m_length_props.m_l_max - m_length_props.m_l_min + 1);  // CHECK
     }
@@ -153,7 +154,7 @@ class RunSettings {
      * @param lg_ind Length group index
      * @return The maximum length of the length group
      */
-    inline uint get_lg_l_min(uint lg_ind) const {
+    virtual inline uint get_lg_l_min(uint lg_ind) const {
         return m_length_props.m_num_l_groups > 0
                    ? m_length_props.m_l_min +
                          (m_length_props.m_l_max - m_length_props.m_l_min) * lg_ind / m_length_props.m_num_l_groups
@@ -165,7 +166,7 @@ class RunSettings {
      * @param lg_ind Length group index
      * @return The minimum length of the length group
      */
-    inline uint get_lg_l_max(uint lg_ind) const {
+    virtual inline uint get_lg_l_max(uint lg_ind) const {
         return m_length_props.m_num_l_groups > 0 ? m_length_props.m_l_min +
                                                        (m_length_props.m_l_max - m_length_props.m_l_min) *
                                                            (lg_ind + 1) / m_length_props.m_num_l_groups -

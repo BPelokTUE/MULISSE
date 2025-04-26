@@ -61,10 +61,10 @@ struct Envelope : EntryData {
  * @param l_max The maximum length of a subsequence
  */
 struct EnvelopeParams {
-    uint m_pos_per_env;
-    const ISegmentationStrategy *m_segmentation_strategy;
     uint m_l_min;
     uint m_l_max;
+    uint m_pos_per_env;
+    const ISegmentationStrategy *m_segmentation_strategy;
 };
 
 /** @brief Envelope generator for iSAX (ULISSE) envelopes */
