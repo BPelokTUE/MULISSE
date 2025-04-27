@@ -43,10 +43,14 @@ uptr<IiSaxSplitStrategy<T>> get_split_strategy(const iSaxIndexParams *params, Mt
     return nullptr;
 }
 
-sptr<ISegmentationStrategy> get_segmentation_strategy(const PaaIndexParams *params, uint l_max) {
+sptr<ISegmentationStrategy> get_segmentation_strategy(const IndexOptions &opts) {
+    auto params = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get());
     switch (params->m_segmentation_strategy_type) {
         case UNIFORM:
-            return std::make_shared<UniformSegmentationStrategy>(l_max, params->m_num_segments);
+            return std::make_shared<UniformSegmentationStrategy>(opts.m_l_max, params->m_num_segments);
+        case ADAPTIVE:
+            return std::make_shared<AdaptiveSegmentationStrategy>(opts.m_l_min, opts.m_l_max, opts.m_series_len,
+                                                                  params->m_num_segments);
     }
     return nullptr;
 }
@@ -227,8 +231,7 @@ int create_index(const IndexOptions &opts) {
 
     IndexFactoryParams factory_params{
         .m_discretize_flat_index = false,
-        .m_segmentation_strategy =
-            get_segmentation_strategy(dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get()), opts.m_l_max),
+        .m_segmentation_strategy = get_segmentation_strategy(opts),
         .m_opts = opts,
     };
 
