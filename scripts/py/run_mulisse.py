@@ -3,6 +3,7 @@
 import argparse
 import itertools
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -16,6 +17,7 @@ from pydantic import BaseModel
 CK_CSV_DATA_DIRS = "csv_data_dirs"
 CK_DATASET_SIZES = "dataset_sizes"
 CK_SERIES_LENGTHS = "series_lengths"
+CK_SEGMENTATION_STRATEGIES = "segmentation_strategies"
 CK_NUM_SEGMENTS = "num_segments"
 CK_NUM_CHANNELS = "num_channels"
 CK_SYN_NUM_CHANNELS = "syn_num_channels"
@@ -59,6 +61,7 @@ RK_L_RANGE = "l_range"
 RK_COMMAND = "command"
 RK_LOCATION = "location"
 RK_SIZE = "size"
+RK_SEGMENTATION_STRATEGY = "segmentation_strategy"
 RK_NUM_SEGMENTS = "num_segments"
 RK_NUM_CHANNELS = "num_channels"
 RK_STEP_STDEV = "step_stdev"
@@ -283,6 +286,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
 
         def get_index_settings() -> Settings:
             common_settings = {
+                RK_SEGMENTATION_STRATEGY: config.get(CK_SEGMENTATION_STRATEGIES, ["uniform"]),
                 RK_NUM_SEGMENTS: config.get(CK_NUM_SEGMENTS, []),
                 RK_INSERTER_TYPE: config.get(CK_INDEX_INSERTERS, []),
                 RK_LENS_PER_GROUP: config.get(CK_LENGTH_GROUP_SIZE_RATIOS, [0]),
@@ -747,10 +751,12 @@ if __name__ == "__main__":
                         lens_per_group = 0
                         num_l_groups = 0
                         if RK_LENS_PER_GROUP in index_setting_copy:
-                            lens_per_group = int(round(l_range * index_setting_copy.pop(RK_LENS_PER_GROUP)))
+                            lens_per_group = int(math.ceil(l_range * index_setting_copy.pop(RK_LENS_PER_GROUP)))
                             if lens_per_group > 0:
                                 args += ["-g", str(lens_per_group)]
                                 num_l_groups = (l_range + lens_per_group - 1) // lens_per_group
+                        if RK_SEGMENTATION_STRATEGY in index_setting_copy:
+                            args += ["-S", index_setting_copy.pop(RK_SEGMENTATION_STRATEGY)]
                         if RK_NUM_SEGMENTS in index_setting_copy:
                             args += ["-s", str(index_setting_copy.pop(RK_NUM_SEGMENTS))]
                         pos_per_env = 1

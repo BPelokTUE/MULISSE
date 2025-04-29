@@ -147,7 +147,7 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
     inline void calculate_isax_channel(const IndexEntry<T> &entry, MtsNumChannelsT c, iSaxWord &isax_word) {
         auto isax_input = entry.m_mts_summary[c].get_isax_input();
         isax_word = iSaxWord(isax_input, *m_breakpoints, m_alphabet_num_bits,
-                             vec<SaxNumBitsT>(isax_input.size(), m_first_layer_num_bits), );
+                             vec<SaxNumBitsT>(isax_input.size(), m_first_layer_num_bits));
     }
 
     inline void calculate_isax(const IndexEntry<T> &entry, vec<iSaxWord> &isax_words) {
@@ -167,7 +167,7 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
         for (MtsNumChannelsT c = 0; c < symbols.size(); ++c) {
             auto isax_input = entry.m_mts_summary[c].get_isax_input();
             iSaxWord isax_word(isax_input, *m_breakpoints, m_alphabet_num_bits,
-                               vec<SaxNumBitsT>(isax_input.size(), m_first_layer_num_bits), );
+                               vec<SaxNumBitsT>(isax_input.size(), m_first_layer_num_bits));
             SaxSegIndT num_segments = static_cast<SaxSegIndT>(symbols[c].size());
             for (SaxSegIndT s = 0; s < num_segments; ++s) symbols[c][s] = isax_word[s];
         }

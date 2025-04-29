@@ -56,4 +56,7 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION(EnvelopeNode, EnvelopeLeaf)
 CEREAL_REGISTER_TYPE(UniformSegmentationStrategy)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(ISegmentationStrategy, UniformSegmentationStrategy)
 
+CEREAL_REGISTER_TYPE(AdaptiveSegmentationStrategy)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(ISegmentationStrategy, AdaptiveSegmentationStrategy)
+
 #endif  // SERIALIZATION_REGISTRATION_HPP

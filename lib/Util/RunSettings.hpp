@@ -145,8 +145,7 @@ class RunSettings {
      * @return The index of the length group
      */
     virtual inline uint get_length_group(uint subs_length) const {
-        return (m_length_props.m_num_l_groups * (subs_length - m_length_props.m_l_min)) /
-               (m_length_props.m_l_max - m_length_props.m_l_min + 1);  // CHECK
+        return (subs_length - m_length_props.m_l_min) / m_length_props.m_l_per_group;
     }
 
     /**
@@ -155,10 +154,8 @@ class RunSettings {
      * @return The maximum length of the length group
      */
     virtual inline uint get_lg_l_min(uint lg_ind) const {
-        return m_length_props.m_num_l_groups > 0
-                   ? m_length_props.m_l_min +
-                         (m_length_props.m_l_max - m_length_props.m_l_min) * lg_ind / m_length_props.m_num_l_groups
-                   : m_length_props.m_l_min;
+        return m_length_props.m_num_l_groups > 0 ? m_length_props.m_l_min + lg_ind * m_length_props.m_l_per_group
+                                                 : m_length_props.m_l_min;
     }
 
     /**
@@ -167,11 +164,9 @@ class RunSettings {
      * @return The minimum length of the length group
      */
     virtual inline uint get_lg_l_max(uint lg_ind) const {
-        return m_length_props.m_num_l_groups > 0 ? m_length_props.m_l_min +
-                                                       (m_length_props.m_l_max - m_length_props.m_l_min) *
-                                                           (lg_ind + 1) / m_length_props.m_num_l_groups -
-                                                       (lg_ind != (m_length_props.m_num_l_groups - 1) ? 1 : 0)
-                                                 : m_length_props.m_l_max;
+        return m_length_props.m_num_l_groups > 0
+                   ? m_length_props.m_l_min + (lg_ind + 1) * m_length_props.m_l_per_group - 1
+                   : m_length_props.m_l_max;
     }
 
     // Paths

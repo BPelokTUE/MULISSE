@@ -7,7 +7,7 @@
 /** @brief Enum for IiSaxSplitStrategy implementations */
 enum SegmentationStrategyType { UNIFORM, ADAPTIVE };
 
-DEFINE_ENUM_CONSTS(SegmentationStrategyType, SEGMENTATION_STRATEGY_TYPE, false,
+DEFINE_ENUM_CONSTS(SegmentationStrategyType, SEGMENTATION_STRATEGY, false,
                    (umap<str, SegmentationStrategyType>{{"equi_width", UNIFORM}, {"equi_depth", ADAPTIVE}}));
 
 /** @brief Interface for segmentation strategies. */
@@ -66,7 +66,7 @@ class UniformSegmentationStrategy : public ISegmentationStrategy {
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(m_segment_len);
+        ar(m_segment_len, m_l_max);
     }
 };
 
@@ -116,7 +116,7 @@ class AdaptiveSegmentationStrategy : public ISegmentationStrategy {
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(m_segment_lens, m_segment_ends);
+        ar(m_l_max, m_segment_lens, m_segment_ends);
     }
 };
 

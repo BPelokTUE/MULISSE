@@ -67,6 +67,7 @@ int main(int argc, char **argv) {
     str dataset_path, query_path, index_path, ffts_path,
         breakpoints_path = "", logs_path = "../LOGS",
         search_method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(ISAX_ENVELOPE),
+        segmentation_strategy_str = SEGMENTATION_STRATEGY_TO_STR.at(ADAPTIVE),
         split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
@@ -175,15 +176,19 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-t,--index_type", search_method_type_str, "Index type")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_SEARCH_METHOD_TYPE_STRS));
-    index_subcommand->add_option("-S,--split_strategy", split_strategy_str, "Split strategy")
+    index_subcommand
+        ->add_option("-S,--segmentation_strategy", segmentation_strategy_str, "Segmentation strategy to use")
+        ->capture_default_str()
+        ->check(CLI::IsMember(ACCEPTED_SEGMENTATION_STRATEGY_STRS));
+    index_subcommand->add_option("--split_strategy", split_strategy_str, "Split strategy")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ISAX_SPLIT_STRATEGY_STRS));
-    index_subcommand->add_flag("--prefer_first_in_em", prefer_first_in_em,
-                               "Prefer the first segment over the one with the minimum number of bits, in case of ties "
-                               "in the split when using EntropyMaximizing strategy");
     index_subcommand->add_option("-B,--breakpoint_strategy", breakpoint_strategy_str, "Breakpoint strategy")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS));
+    index_subcommand->add_flag("--prefer_first_in_em", prefer_first_in_em,
+                               "Prefer the first segment over the one with the minimum number of bits, in case of ties "
+                               "in the split when using EntropyMaximizing strategy");
     index_subcommand->add_option("--breakpoints", breakpoints_path, "Path to breakpoints file")->capture_default_str();
     index_subcommand->add_flag("--adapt", adapt_index, "Adapt the index properties to the dataset");
     index_subcommand->add_option("-l,--l_min", l_min, "Minimum length of subsequences")
@@ -426,7 +431,7 @@ int main(int argc, char **argv) {
 
             auto breakpoint_strategy_type = STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str);
             auto split_strategy_type = STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str);
-            auto segmentation_strategy_type = STR_TO_SEGMENTATION_STRATEGY_TYPE.at("uniform");
+            auto segmentation_strategy_type = STR_TO_SEGMENTATION_STRATEGY.at(segmentation_strategy_str);
 
             switch (method_type) {
                 case ISAX_ENVELOPE:

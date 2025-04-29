@@ -30,6 +30,10 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 # Add optimizations for release build
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
 
+# Option for sanitizers
+option(USE_ASAN "Enable Address Sanitizer" OFF)
+option(USE_TSAN "Enable Thread Sanitizer" OFF)
+
 # Include header files
 include_directories(${CMAKE_SOURCE_DIR}/lib)
 # Include external header files
@@ -70,6 +74,19 @@ function(set_up_target target)
         target_include_directories(${target} SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/extern)
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         target_compile_options(${target} PRIVATE /external:I ${CMAKE_SOURCE_DIR}/extern)
+    endif()
+
+    # Add sanitizers if requested
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        if (USE_ASAN)
+            target_compile_options(${target} PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+            target_link_options(${target} PRIVATE -fsanitize=address,undefined)
+        elseif (USE_TSAN)
+            target_compile_options(${target} PRIVATE -fsanitize=thread -fno-omit-frame-pointer)
+            target_link_options(${target} PRIVATE -fsanitize=thread)
+        endif()
+    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" and USE_ASAN)
+        target_compile_options(${target} PRIVATE /fsanitize=address)
     endif()
 
     # Add preprocessor definitions
