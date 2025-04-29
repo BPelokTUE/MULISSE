@@ -66,25 +66,27 @@ TEST_CASE("AdaptiveSegmentationStrategy calculate_presences works") {
 }
 
 TEST_CASE("AdaptiveSegmentationStrategy get_num_segments works") {
-    auto ss = AdaptiveSegmentationStrategy(10, 30, 30, 10);
-    CHECK_EQ(ss.get_num_segments(30), 10);
-    CHECK_EQ(ss.get_num_segments(10), 5);
-    CHECK_EQ(ss.get_num_segments(20), 9);
-    CHECK_EQ(ss.get_num_segments(19), 8);
+    for (uint pos_per_env : {0, 5, 9}) {
+        auto ss = AdaptiveSegmentationStrategy(10, 30, 30, 10);
+        CHECK_EQ(ss.get_num_segments(30), 10);
+        CHECK_EQ(ss.get_num_segments(10), 5);
+        CHECK_EQ(ss.get_num_segments(20), 9);
+        CHECK_EQ(ss.get_num_segments(19), 8);
 
-    ss = AdaptiveSegmentationStrategy(128, 2048, 2048, 16);
-    CHECK_EQ(ss.get_num_segments(2048), 16);
-    CHECK_EQ(ss.get_num_segments(1024), 13);
-    CHECK_EQ(ss.get_num_segments(512), 9);
-    CHECK_EQ(ss.get_num_segments(256), 5);
-    CHECK_EQ(ss.get_num_segments(128), 2);
+        ss = AdaptiveSegmentationStrategy(128, 2048, 2048, 16);
+        CHECK_EQ(ss.get_num_segments(2048), 16);
+        CHECK_EQ(ss.get_num_segments(1024), 13);
+        CHECK_EQ(ss.get_num_segments(512), 9);
+        CHECK_EQ(ss.get_num_segments(256), 5);
+        CHECK_EQ(ss.get_num_segments(128), 2);
 
-    ss = AdaptiveSegmentationStrategy(128, 2048, 3072, 16);
-    CHECK_EQ(ss.get_num_segments(2048), 16);
-    CHECK_EQ(ss.get_num_segments(1024), 12);
-    CHECK_EQ(ss.get_num_segments(512), 7);
-    CHECK_EQ(ss.get_num_segments(256), 4);
-    CHECK_EQ(ss.get_num_segments(128), 2);
+        ss = AdaptiveSegmentationStrategy(128, 2048, 3072, 16);
+        CHECK_EQ(ss.get_num_segments(2048), 16);
+        CHECK_EQ(ss.get_num_segments(1024), 12);
+        CHECK_EQ(ss.get_num_segments(512), 7);
+        CHECK_EQ(ss.get_num_segments(256), 4);
+        CHECK_EQ(ss.get_num_segments(128), 2);
+    }
 }
 
 TEST_CASE("AdaptiveSegmentationStrategy get_segment_len works") {
@@ -99,6 +101,18 @@ TEST_CASE("AdaptiveSegmentationStrategy get_segment_len works") {
     CHECK_EQ(ss.get_segment_len(7), 3);
     CHECK_EQ(ss.get_segment_len(8), 3);
     CHECK_EQ(ss.get_segment_len(9), 10);
+
+    ss = AdaptiveSegmentationStrategy(10, 30, 30, 10, 5);
+    CHECK_EQ(ss.get_segment_len(0), 2);
+    CHECK_EQ(ss.get_segment_len(1), 2);
+    CHECK_EQ(ss.get_segment_len(2), 2);
+    CHECK_EQ(ss.get_segment_len(3), 2);
+    CHECK_EQ(ss.get_segment_len(4), 2);
+    CHECK_EQ(ss.get_segment_len(5), 2);
+    CHECK_EQ(ss.get_segment_len(6), 3);
+    CHECK_EQ(ss.get_segment_len(7), 3);
+    CHECK_EQ(ss.get_segment_len(8), 4);
+    CHECK_EQ(ss.get_segment_len(9), 8);
 
     ss = AdaptiveSegmentationStrategy(128, 2048, 2048, 8);
     CHECK_EQ(ss.get_segment_len(0), 96);

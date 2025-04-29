@@ -27,10 +27,11 @@ void Paa::resize(size_t new_size) { m_paa_values.resize(new_size); }
 vec<Real> Paa::get_isax_input() const { return m_paa_values; }
 
 vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normalized(const vec<Real> &ts,
-                                                                                    const iSaxPaaParams &paa_params) {
+                                                                                    const PaaParams &paa_params) {
     auto &RS = RunSettings::get_instance();
 
     vec<vec<std::tuple<Paa, uint, uint>>> entry_tuple_groups(m_num_len_groups);
+    bool multiple_ss = paa_params.m_segmentation_strategies.size() > 1;
 
     Real sum = 0, sum_sq = 0;
     for (uint last_ind = 0; last_ind < ts.size(); ++last_ind) {
@@ -49,14 +50,15 @@ vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normali
         for (uint start_ind = min_start_ind; static_cast<int>(start_ind) <= max_start_ind; ++start_ind) {
             uint subs_len = last_ind - start_ind + 1;
             uint length_group = RS.get_length_group(subs_len);
+            uint ss_ind = multiple_ss ? length_group : 0;
             auto [mu, sigma] = calculate_mu_and_sigma(tmp_sum, tmp_sum_sq, subs_len);
 
             vec<Real> subsequence(subs_len);
             for (uint i = 0; i < subs_len; ++i) subsequence[i] = (ts[start_ind + i] - mu) / sigma;
-            vec<Real> paa_values = paa(subsequence, paa_params.m_segmentation_strategy);
+            vec<Real> paa_values = paa(subsequence, paa_params.m_segmentation_strategies[ss_ind]);
 
             uint lg_l_max = RS.get_lg_l_max(length_group);
-            paa_values.resize(paa_params.m_segmentation_strategy->get_num_segments(lg_l_max), 0.0);
+            paa_values.resize(paa_params.m_segmentation_strategies[ss_ind]->get_num_segments(lg_l_max), 0.0);
 
             entry_tuple_groups[length_group].push_back(std::make_tuple(Paa(paa_values), U(start_ind), subs_len));
 
@@ -67,7 +69,7 @@ vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normali
     return entry_tuple_groups;
 }
 
-PaaEntryGenerator::PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params, uint num_len_groups)
+PaaEntryGenerator::PaaEntryGenerator(MtsNumChannelsT num_channels, const PaaParams &paa_params, uint num_len_groups)
     : m_num_channels(num_channels), m_paa_params(paa_params), m_num_len_groups(num_len_groups) {}
 
 vec<vec<IndexEntry<Paa>>> PaaEntryGenerator::get_entries(const vec<vec<Real>> &mts, uint series_ind) {

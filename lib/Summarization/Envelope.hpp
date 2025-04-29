@@ -50,21 +50,16 @@ struct Envelope : EntryData {
 // --------------- ULISSE ENVELOPE --------------- //
 // ----------------------------------------------- //
 
-/**
- * @brief Parameters for the ULISSE Envelope computation
- *
- * This struct contains the parameters needed to compute the ULISSE envelopes of (a subsequences of) a time series
- *
- * @param pos_per_env The (max) number of master series in each envelope
- * @param segment_len The length of each PAA segment
- * @param l_min The minimum length of a subsequence
- * @param l_max The maximum length of a subsequence
- */
 struct EnvelopeParams {
+    /** @brief The minimum length of a subsequence */
     uint m_l_min;
+    /** @brief The maximum length of a subsequence */
     uint m_l_max;
+    /** @brief The (max) number of master series in each envelope */
     uint m_pos_per_env;
-    const ISegmentationStrategy *m_segmentation_strategy;
+    /** @brief The segmentation strategies to use for each length group. If it only contains a single strategy, that is
+     * used across all length groups. */
+    vec<const ISegmentationStrategy *> m_segmentation_strategies;
 };
 
 /** @brief Envelope generator for iSAX (ULISSE) envelopes */
@@ -120,7 +115,8 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
      * @param segmentation_strategy Segmentation strategy to use
      */
     vec<vec<Envelope>> get_envelope_groups(const uint series_len, const uint pos_per_env, const uint l_min,
-                                           const uint l_max, const ISegmentationStrategy *segmentation_strategy);
+                                           const uint l_max,
+                                           vec<const ISegmentationStrategy *> segmentation_strategies);
 
     /**
      * @brief Helper function to flip the values of envelope segments without data

@@ -85,8 +85,10 @@ class AdaptiveSegmentationStrategy : public ISegmentationStrategy {
      * @param l_max Maximum length of queries
      * @param series_len Length of the whole time series
      * @param num_segments Number of segments
+     * @param pos_per_env Number of positions per envelope, defaults to 0 indicating no enveloping
      */
-    AdaptiveSegmentationStrategy(uint l_min, uint l_max, uint series_len, SaxSegIndT num_segments);
+    AdaptiveSegmentationStrategy(uint l_min, uint l_max, uint series_len, SaxSegIndT num_segments,
+                                 uint pos_per_env = 0);
 
     AdaptiveSegmentationStrategy() = default;
 
@@ -105,9 +107,11 @@ class AdaptiveSegmentationStrategy : public ISegmentationStrategy {
      * @param l_min Minimum length of queries
      * @param l_max Maximum length of queries
      * @param series_len Length of the whole time series
+     * @param pos_per_env Number of positions per envelope, defaults to 0 indicating no enveloping
      * @return A pair containing the presence of each point and the total presence sum.
      */
-    std::pair<vec<size_t>, size_t> calculate_presences(uint l_min, uint l_max, uint series_len) const;
+    std::pair<vec<size_t>, size_t> calculate_presences(uint l_min, uint l_max, uint series_len,
+                                                       uint pos_per_env = 0) const;
 
     friend class AdaptiveSegmentationStrategyTest;
 

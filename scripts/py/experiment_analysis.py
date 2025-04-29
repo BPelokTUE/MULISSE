@@ -1479,7 +1479,7 @@ experiment_ulisse_comparison(
 
 
 def experiment_length_based_grouping(
-    target_cols: list[Column] = [QC.TOTAL_TIME_S],
+    targets_dict: dict[ERD, list[Column]] = {ERD.RUNS_COLS: [QC.TOTAL_TIME_S]},
     logs_dir: str = "EXPERIMENT_LOGS/length_grouping/LOGS_univariate_edea",
     reducer: Reducer = MeanReducer(),
     merge_csv_datasets: bool = False,
@@ -1503,17 +1503,17 @@ def experiment_length_based_grouping(
     if num_query_intervals > 1:
         groups_dict[ERD.RUNS_COLS] = [QC.QUERY_INTERVAL]
     ds_index = 1
-    targets_dict = {ERD.RUNS_COLS: target_cols}
     columns = groups_dict.copy()
-    columns[ERD.RUNS_COLS] = targets_dict[ERD.RUNS_COLS] + groups_dict.get(ERD.RUNS_COLS, [])
+    for erd, target_cols in targets_dict.items():
+        columns[erd] = target_cols + groups_dict.get(erd, [])
 
     results = ExperimentResults.load(logs_dir=logs_dir, cols=columns, num_query_intervals=num_query_intervals)
 
-    targets = [(ERD.RUNS_COLS, target_col, reducer) for target_col in targets_dict[ERD.RUNS_COLS]]
+    targets = [(erd, target_col, reducer) for erd, target_cols in targets_dict.items() for target_col in target_cols]
     groups = dict_to_tuples(groups_dict)
     reduced_values = execute_reduction([results], targets, groups)
 
-    if target_cols[0] == QC.KEEP_RATE:
+    if ERD.RUNS_COLS in targets_dict and QC.KEEP_RATE in targets_dict[ERD.RUNS_COLS]:
         reduced_values = {key: value for key, value in reduced_values.items() if value[0] < 1.0}
 
     if merge_csv_datasets:
@@ -1556,7 +1556,9 @@ def experiment_length_based_grouping(
                 0,
                 x_labels=get_x_labels(reduced_values_ds, groups_dict, padding_rows=padding_rows),
                 y_label=get_y_label(targets),
-                y_lim=(0, 1.05) if target_cols[0] in [str(QC.PRUNING_RATIO), str(QC.KEEP_RATE)] else None,
+                y_lim=(0, 1.05)
+                if any(col in [QC.PRUNING_RATIO, QC.KEEP_RATE] for col in targets_dict.get(ERD.RUNS_COLS, []))
+                else None,
                 title=f"{dataset} l in [{l_range[0]}, {l_range[1]}]",
                 hatches=hatches,
                 hatch_labels=hatch_labels,
@@ -1586,22 +1588,22 @@ experiment_length_based_grouping(
     l_ranges_to_show=l_ranges_to_show,
     regex_dict=regex_dict,
     ## TIME
-    # target_cols=[str(QC.TOTAL_TIME_S)],
+    targets_dict={ERD.RUNS_COLS: [QC.TOTAL_TIME_S]},
     ## INDEX TIME
-    # target_cols=TIME_TARGETS,
+    # targets_dict={ERD.RUNS_COLS: TIME_TARGETS},
     # hatches=["", PREP_TIME_HATCH],
     # hatch_labels=TIME_LABELS,
     ## PQ TIME
-    target_cols=PQ_TIME_TARGETS,
-    hatches=["", FIRST_LAYER_TIME_HATCH],
-    hatch_labels=PQ_TIME_LABELS,
+    # targets_dict={ERD.RUNS_COLS: PQ_TIME_TARGETS},
+    # hatches=["", FIRST_LAYER_TIME_HATCH],
+    # hatch_labels=PQ_TIME_LABELS,
 )
 
 # %%
 
-for target_col in [QC.PRUNING_RATIO]:
+for target_erd, target_col in [(ERD.RUNS_COLS, QC.PRUNING_RATIO)]:
     experiment_length_based_grouping(
-        target_cols=[target_col],
+        targets_dict={target_erd: [target_col]},
         logs_dir=logs_dir,
         merge_csv_datasets=merge_csv_datasets,
         num_query_intervals=num_query_intervals,
@@ -1617,16 +1619,17 @@ Experiment: Segmentation strategy
 
 # %%
 
-logs_dir = "EXPERIMENT_LOGS/segmentation/LOGS_adaptive_seg_univariate"
+# logs_dir = "EXPERIMENT_LOGS/segmentation/LOGS_adaptive_seg_univariate"
+logs_dir = "EXPERIMENT_LOGS/segmentation/LOGS_num_segments_univariate"
 merge_csv_datasets = True
 num_query_intervals = 1
 datasets_to_show = None  # ["weather", "stocks"]
-l_ranges_to_show = [(128, 2048)]
+l_ranges_to_show = None  # [(128, 2048)]
 regex_dict = {
     # SSC.METHOD_NAME: r"env",
     # ISC.POS_PER_ENV: r"(19|96)(\.0){0,1}$",
     # ISC.SEGMENTATION_STRATEGY: r"^(adaptive|0)$",
-    ISC.L_PER_GROUP: r"^(0\.0|61\.0)$",
+    # ISC.L_PER_GROUP: r"^(0\.0|61\.0)$",
 }
 
 # %%
@@ -1640,6 +1643,16 @@ experiment_length_based_grouping(
     l_ranges_to_show=l_ranges_to_show,
     regex_dict=regex_dict,
     num_query_intervals=num_query_intervals,
-    # TARGET
-    target_cols=[QC.TOTAL_TIME_S],
+    ## TOTAL TIME
+    # targets_dict={ERD.RUNS_COLS: [QC.TOTAL_TIME_S]},
+    ## AMORTIZED TIME
+    # targets_dict={ERD.RUNS_COLS: TIME_TARGETS},
+    # hatches=["", PREP_TIME_HATCH],
+    # hatch_labels=TIME_LABELS,
+    ## PQ TIME
+    # targets_dict={ERD.RUNS_COLS: PQ_TIME_TARGETS},
+    # hatches=["", FIRST_LAYER_TIME_HATCH],
+    # hatch_labels=PQ_TIME_LABELS,
+    ## INDEX SIZE
+    targets_dict={ERD.INDEXES_COLS: [ISC.SIZE_ON_DISK_B]},
 )

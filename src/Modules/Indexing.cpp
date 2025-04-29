@@ -43,14 +43,18 @@ uptr<IiSaxSplitStrategy<T>> get_split_strategy(const iSaxIndexParams *params, Mt
     return nullptr;
 }
 
-sptr<ISegmentationStrategy> get_segmentation_strategy(const IndexOptions &opts) {
+sptr<ISegmentationStrategy> get_segmentation_strategy(const IndexOptions &opts, uint l_min, uint l_max) {
     auto params = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get());
     switch (params->m_segmentation_strategy_type) {
         case UNIFORM:
-            return std::make_shared<UniformSegmentationStrategy>(opts.m_l_max, params->m_num_segments);
+            return std::make_shared<UniformSegmentationStrategy>(l_max, params->m_num_segments);
         case ADAPTIVE:
-            return std::make_shared<AdaptiveSegmentationStrategy>(opts.m_l_min, opts.m_l_max, opts.m_series_len,
-                                                                  params->m_num_segments);
+            uint pos_per_env = 0;
+            if (auto *env_params = dynamic_cast<const EnvelopeIndexParams *>(opts.m_index_params.get())) {
+                pos_per_env = env_params->m_pos_per_env;
+            }
+            return std::make_shared<AdaptiveSegmentationStrategy>(l_min, l_max, opts.m_series_len,
+                                                                  params->m_num_segments, pos_per_env);
     }
     return nullptr;
 }
@@ -154,25 +158,25 @@ sptr<IIndex<Envelope>> get_two_stage_isax_envelope_index(const IndexFactoryParam
 // Generator getters
 
 uptr<IEntryGenerator<Paa>> get_paa_generator(const IndexOptions &opts,
-                                             const ISegmentationStrategy *segmentation_strategy) {
-    iSaxPaaParams paa_params = {
+                                             const vec<const ISegmentationStrategy *> &segmentation_strategies) {
+    PaaParams paa_params = {
         .m_l_min = opts.m_l_min,
         .m_l_max = opts.m_l_max,
-        .m_segmentation_strategy = segmentation_strategy,
+        .m_segmentation_strategies = segmentation_strategies,
     };
     uint num_len_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
 
     return std::make_unique<PaaEntryGenerator>(opts.m_num_channels, paa_params, num_len_groups);
 }
 
-uptr<IEntryGenerator<Envelope>> get_envelope_generator(const IndexOptions &opts,
-                                                       const ISegmentationStrategy *segmentation_strategy) {
+uptr<IEntryGenerator<Envelope>> get_envelope_generator(
+    const IndexOptions &opts, const vec<const ISegmentationStrategy *> &segmentation_strategies) {
     auto *params = dynamic_cast<EnvelopeIndexParams *>(opts.m_index_params.get());
     EnvelopeParams env_params = {
         .m_l_min = opts.m_l_min,
         .m_l_max = opts.m_l_max,
         .m_pos_per_env = params->m_pos_per_env,
-        .m_segmentation_strategy = segmentation_strategy,
+        .m_segmentation_strategies = segmentation_strategies,
     };
     uint num_len_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
 
@@ -182,7 +186,8 @@ uptr<IEntryGenerator<Envelope>> get_envelope_generator(const IndexOptions &opts,
 template <typename T>
     requires DerivedFromEntryData<T>
 void construct_index(std::function<sptr<IIndex<T>>(const IndexFactoryParams &)> index_factory,
-                     uptr<IEntryGenerator<T>> generator, IndexFactoryParams &factory_params) {
+                     uptr<IEntryGenerator<T>> generator, IndexFactoryParams &factory_params,
+                     vec<sptr<ISegmentationStrategy>> &segmentation_strategies) {
     auto &RS = RunSettings::get_instance();
     auto &logger = IndexLogger::get_instance();
     auto &opts = factory_params.m_opts;
@@ -192,10 +197,17 @@ void construct_index(std::function<sptr<IIndex<T>>(const IndexFactoryParams &)> 
         uint num_len_groups = RS.get_length_props().m_num_l_groups;
         vec<sptr<IIndex<T>>> group_indexes(num_len_groups);
         for (uint lg_ind = 0; lg_ind < num_len_groups; lg_ind++) {
-            group_indexes[lg_ind] = index_factory(factory_params);
+            if (!factory_params.m_segmentation_strategy) {
+                auto lg_factory_params = factory_params;
+                lg_factory_params.m_segmentation_strategy = segmentation_strategies[lg_ind];
+                group_indexes[lg_ind] = index_factory(lg_factory_params);
+            } else {
+                group_indexes[lg_ind] = index_factory(factory_params);
+            }
         }
         index = std::make_shared<LengthGroupingIndex<T>>(std::move(group_indexes), opts.m_l_min, opts.m_l_max);
     } else {
+        if (factory_params.m_segmentation_strategy) factory_params.m_segmentation_strategy = segmentation_strategies[0];
         index = index_factory(factory_params);
     }
 
@@ -223,38 +235,54 @@ int create_index(const IndexOptions &opts) {
     auto &logger = IndexLogger::get_instance();
 
 #define CONSTRUCT_INDEX(Type, index_factory, generator)                         \
+    vec<const ISegmentationStrategy *> segmentation_strategies_ref;             \
+    segmentation_strategies_ref.reserve(segmentation_strategies.size());        \
+    for (const auto &ss : segmentation_strategies) {                            \
+        segmentation_strategies_ref.push_back(ss.get());                        \
+    }                                                                           \
     construct_index<Type>(                                                      \
         [](const IndexFactoryParams &factory_params_in) -> sptr<IIndex<Type>> { \
             return index_factory(factory_params_in);                            \
         },                                                                      \
-        generator(opts, factory_params.m_segmentation_strategy.get()), factory_params);
+        generator(opts, segmentation_strategies_ref), factory_params, segmentation_strategies);
 
     IndexFactoryParams factory_params{
         .m_discretize_flat_index = false,
-        .m_segmentation_strategy = get_segmentation_strategy(opts),
         .m_opts = opts,
     };
 
+    uint num_len_groups = RS.get_length_props().m_num_l_groups;
+    vec<sptr<ISegmentationStrategy>> segmentation_strategies(num_len_groups);
+    for (uint lg_ind = 0; lg_ind < num_len_groups; lg_ind++) {
+        segmentation_strategies[lg_ind] =
+            get_segmentation_strategy(opts, RS.get_lg_l_min(lg_ind), RS.get_lg_l_max(lg_ind));
+    }
+
     switch (opts.m_index_method) {
-        case ISAX_ENVELOPE:
+        case ISAX_ENVELOPE: {
             CONSTRUCT_INDEX(Envelope, get_isax_index<Envelope>, get_envelope_generator);
             break;
+        }
         case ISAX_ENV_W_SAX_ENV:
             factory_params.m_discretize_flat_index = true;
-        case ISAX_ENV_W_ENV:
+        case ISAX_ENV_W_ENV: {
             CONSTRUCT_INDEX(Envelope, get_two_stage_isax_envelope_index, get_envelope_generator);
             break;
-        case ISAX:
+        }
+        case ISAX: {
             CONSTRUCT_INDEX(Paa, get_isax_index<Paa>, get_paa_generator);
             break;
+        }
         case SAX_ENVELOPE:
             factory_params.m_discretize_flat_index = true;
-        case ENVELOPE:
+        case ENVELOPE: {
             CONSTRUCT_INDEX(Envelope, get_envelope_index, get_envelope_generator);
             break;
-        case TREE_ENVELOPE:
+        }
+        case TREE_ENVELOPE: {
             CONSTRUCT_INDEX(Envelope, get_envelope_tree_index, get_envelope_generator);
             break;
+        }
         default:
             break;
     }

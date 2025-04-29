@@ -18,19 +18,14 @@
  */
 vec<Real> paa(const vec<Real> &ts, const ISegmentationStrategy *segmentation_strategy);
 
-/**
- * @brief Parameters for the iSAX PAA computation
- *
- * This struct contains the parameters needed to compute the PAAs of subsequences to insert into the iSAX index
- *
- * @param segmentation_strategy The segmentation strategy to use
- * @param l_min The minimum length of a subsequence
- * @param l_max The maximum length of a subsequence
- */
-struct iSaxPaaParams {
+struct PaaParams {
+    /** @brief The minimum length of a subsequence */
     uint m_l_min;
+    /** @brief The maximum length of a subsequence */
     uint m_l_max;
-    const ISegmentationStrategy *m_segmentation_strategy;
+    /** @brief The segmentation strategies to use for each length group. If it only contains a single strategy, that is
+     * used across all length groups. */
+    vec<const ISegmentationStrategy *> m_segmentation_strategies;
 };
 
 struct Paa : EntryData {
@@ -61,14 +56,14 @@ class PaaEntryGenerator : public IEntryGenerator<Paa> {
      * @param paa_params Parameters for the PAA computation
      * @param num_len_groups Number of length groups
      */
-    PaaEntryGenerator(MtsNumChannelsT num_channels, const iSaxPaaParams &paa_params, uint num_len_groups = 1);
+    PaaEntryGenerator(MtsNumChannelsT num_channels, const PaaParams &paa_params, uint num_len_groups = 1);
 
     vec<vec<IndexEntry<Paa>>> get_entries(const vec<vec<Real>> &mts, uint series_ind) override;
 
    private:
     MtsNumChannelsT m_num_channels;
     uint m_num_len_groups;
-    iSaxPaaParams m_paa_params;
+    PaaParams m_paa_params;
 
     /**
      * @brief Get the PAA entries for all normalized subsequences of a UTS, grouped by length
@@ -76,8 +71,7 @@ class PaaEntryGenerator : public IEntryGenerator<Paa> {
      * @param paa_params The parameters for the PAA computation
      * @return The PAA entries, their time series index and their starting position
      */
-    vec<vec<std::tuple<Paa, uint, uint>>> get_paa_entries_normalized(const vec<Real> &ts,
-                                                                     const iSaxPaaParams &paa_params);
+    vec<vec<std::tuple<Paa, uint, uint>>> get_paa_entries_normalized(const vec<Real> &ts, const PaaParams &paa_params);
 };
 
 #endif  // PAA_HPP

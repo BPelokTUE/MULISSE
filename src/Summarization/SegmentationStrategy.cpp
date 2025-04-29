@@ -17,9 +17,9 @@ SegmentationStrategyType UniformSegmentationStrategy::get_type() const { return 
 // AdaptiveSegmentationStrategy
 
 AdaptiveSegmentationStrategy::AdaptiveSegmentationStrategy(uint l_min, uint l_max, uint series_len,
-                                                           SaxSegIndT num_segments)
+                                                           SaxSegIndT num_segments, uint pos_per_env)
     : m_l_max(l_max) {
-    auto [presences, presences_sum] = calculate_presences(l_min, l_max, series_len);
+    auto [presences, presences_sum] = calculate_presences(l_min, l_max, series_len, pos_per_env);
 
     SaxSegIndT segments_remaining = num_segments;
     size_t segment_presence = presences_sum / segments_remaining;
@@ -46,13 +46,16 @@ AdaptiveSegmentationStrategy::AdaptiveSegmentationStrategy(uint l_min, uint l_ma
 }
 
 std::pair<vec<size_t>, size_t> AdaptiveSegmentationStrategy::calculate_presences(uint l_min, uint l_max,
-                                                                                 uint series_len) const {
+                                                                                 uint series_len,
+                                                                                 uint pos_per_env) const {
     assert(l_min > 0 && l_max > l_min);
+
+    if (pos_per_env == 0) pos_per_env = series_len;
 
     vec<size_t> presences(l_max + 2, 0);
     size_t presences_sum = 0;
     for (uint l = l_max; l >= l_min; --l) {
-        presences[l] = presences[l + 1] + (series_len - l + 1);
+        presences[l] = presences[l + 1] + std::min(pos_per_env, series_len - l + 1);
         presences_sum += presences[l];
     }
     for (uint l = l_min - 1; l > 0; --l) {

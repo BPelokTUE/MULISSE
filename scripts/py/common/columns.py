@@ -45,6 +45,7 @@ class IndexSettingsColumn(Enum):
     NUM_ENTRIES = auto()
     INDEXING_TIME_S = auto()
     FFT_CALC_TIME_S = auto()
+    SIZE_ON_DISK_B = auto()
 
     def __str__(self):
         return self.name.lower()
