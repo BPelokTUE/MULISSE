@@ -30,7 +30,8 @@ class IndexSettingsColumn(Enum):
     L_PER_GROUP = auto()
     NORMALIZED = auto()
     INDEX_TYPE = auto()
-    SEGMENT_LENGTH = auto()
+    SEGMENTATION_STRATEGY = auto()
+    NUM_SEGMENTS = auto()
     POS_PER_ENV = auto()
     FIRST_LAYER_NUM_BITS = auto()
     LEAF_CAPACITY = auto()
@@ -188,5 +189,10 @@ class QueryStatsColumn(Enum):
         return "query_stats.csv"
 
 
-def get_stats_col(col: IndexStatsColumn | QueryStatsColumn, prefix: StatsColumnPrefix) -> str:
-    return f"{str(prefix)}_{str(col).replace('_stats', '')}"
+class StatsColumn:
+    def __init__(self, col: IndexStatsColumn | QueryStatsColumn, prefix: StatsColumnPrefix):
+        self.col = col
+        self.prefix = prefix
+
+    def __str__(self):
+        return f"{str(self.prefix)}_{str(self.col).replace('_stats', '')}"

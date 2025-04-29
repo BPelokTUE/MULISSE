@@ -20,7 +20,7 @@ This script contains the necessary classes and functions to analyze the results 
 import os
 import re
 from enum import Enum, auto
-from typing import Any
+from typing import Any, Iterator
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -37,8 +37,8 @@ from scripts.py.common.columns import QueryColumn as QC
 from scripts.py.common.columns import QuerySetSettingsColumn as QSC
 from scripts.py.common.columns import QueryStatsColumn as QSTC
 from scripts.py.common.columns import SearchSettingsColumn as SSC
+from scripts.py.common.columns import StatsColumn
 from scripts.py.common.columns import StatsColumnPrefix as SCP
-from scripts.py.common.columns import get_stats_col
 from scripts.py.common.style import PALETTE
 from scripts.py.common.utils import COLS_FOR_METHOD_NAME, define_method_name_col
 
@@ -48,6 +48,9 @@ from scripts.py.common.utils import COLS_FOR_METHOD_NAME, define_method_name_col
 """
 
 # %%
+
+
+Column = QC | ISC | DSC | QSC | SSC | QSTC | ISTC | StatsColumn
 
 
 class ExperimentResultDataframe(Enum):
@@ -93,6 +96,12 @@ def get_merged_col_name(df_name: ERD, col_name: str) -> str:
 
 def rename_df_columns(df: pd.DataFrame, df_name: ERD) -> pd.DataFrame:
     return df.rename(columns={col: get_merged_col_name(df_name, col) for col in df.columns})
+
+
+def iterate_columns(columns: dict[ERD, list[Column]]) -> Iterator[Column]:
+    for erd, erd_columns in columns.items():
+        for column in erd_columns:
+            yield column
 
 
 class ExperimentResults(BaseModel):
@@ -214,9 +223,9 @@ class ExperimentResults(BaseModel):
         isc_leaf_capacity = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.LEAF_CAPACITY))
 
         for stat in SCP:
-            leaf_fill_col = get_stats_col(ISTC.LEAF_FILL_STATS, stat)
+            leaf_fill_col = StatsColumn(ISTC.LEAF_FILL_STATS, stat)
             if leaf_fill_col in leaf_fill_columns:
-                leaf_size_col = get_stats_col(ISTC.LEAF_SIZE_STATS, stat)
+                leaf_size_col = StatsColumn(ISTC.LEAF_SIZE_STATS, stat)
                 istc_leaf_size_col = get_merged_col_name(ERD.INDEX_STATS_COLS, leaf_size_col)
                 merged_df[leaf_fill_col] = merged_df[istc_leaf_size_col] / merged_df[isc_leaf_capacity]
 
@@ -241,20 +250,22 @@ class ExperimentResults(BaseModel):
     @classmethod
     def load_csv_if_exists(cls, path: str, cols: list[str]) -> pd.DataFrame:
         if os.path.exists(path):
-            return pd.read_csv(path, usecols=cols)
+            available_cols = pd.read_csv(path, nrows=0).columns
+            valid_cols = [col for col in cols if col in available_cols]
+            return pd.read_csv(path, usecols=valid_cols)
         return pd.DataFrame()
 
     @classmethod
     def load(
         cls,
         logs_dir: str,
-        cols: dict[ERD, list[str]],
+        cols: dict[ERD, list[Column]],
         add_runs: bool = True,
         add_index_stats: bool = False,
         num_query_intervals: int = 1,
     ):  # -> ExperimentResults:
         original_cols = cols.copy()
-        cols = {erd: cols[erd] if erd in cols else [] for erd in ERD}
+        cols = {erd: [str(col) for col in cols[erd]] if erd in cols else [] for erd in ERD}
         act_cols = {erd: list(set(REQUIRED_COLS[erd] + cols[erd])) for erd in ERD}
         extra_cols = {erd: [] for erd in ERD}
 
@@ -276,10 +287,10 @@ class ExperimentResults(BaseModel):
         # Handle leaf fill stats columns
         leaf_fill_cols = []
         for stat in SCP:
-            leaf_fill_col = get_stats_col(ISTC.LEAF_FILL_STATS, stat)
+            leaf_fill_col = StatsColumn(ISTC.LEAF_FILL_STATS, stat)
             if leaf_fill_col in cols[ERD.INDEX_STATS_COLS]:
                 leaf_fill_cols.append(leaf_fill_col)
-                extra_cols[ERD.INDEX_STATS_COLS].append(get_stats_col(ISTC.LEAF_SIZE_STATS, stat))
+                extra_cols[ERD.INDEX_STATS_COLS].append(StatsColumn(ISTC.LEAF_SIZE_STATS, stat))
                 act_cols[ERD.INDEX_STATS_COLS].remove(leaf_fill_col)
         if len(leaf_fill_cols) > 0:
             extra_cols[ERD.INDEXES_COLS].append(str(ISC.LEAF_CAPACITY))
@@ -485,8 +496,8 @@ class MaxReducer(Reducer):
 
 # %%
 
-Targets = list[tuple[ERD, str, Reducer]]
-Groups = list[tuple[ERD, str]]
+Targets = list[tuple[ERD, Column, Reducer]]
+Groups = list[tuple[ERD, Column]]
 ReductionResult = dict[tuple, list[float]]
 
 
@@ -503,8 +514,10 @@ def execute_reduction(
     :return: The reduction result.
     """
 
-    merged_targets = {get_merged_col_name(target_df, target_col): reducer for target_df, target_col, reducer in targets}
-    merged_groups = [get_merged_col_name(group, group_col) for group, group_col in groups]
+    merged_targets = {
+        get_merged_col_name(target_df, str(target_col)): reducer for target_df, target_col, reducer in targets
+    }
+    merged_groups = [get_merged_col_name(group, str(group_col)) for group, group_col in groups]
     reduction_result = {}
 
     merged_df = pd.concat([experiment.get_merged_df() for experiment in experiments], ignore_index=True)
@@ -649,7 +662,6 @@ def plot_bars(
         bar_groups[bar_group_key].append((group[color_group_ind], target_values))
         num_bars += 1
     if len(bar_groups) == 0:
-        print(reduction_result)
         return
 
     fig, ax = plt.subplots()
@@ -727,11 +739,11 @@ Misc. helpers
 """
 
 # %%
-TIME_TARGETS = [str(QC.TOTAL_TIME_S), str(QC.AMORTIZED_PREP_TIME_S)]
+TIME_TARGETS = [QC.TOTAL_TIME_S, QC.AMORTIZED_PREP_TIME_S]
 TIME_LABELS = ["Search time", "Prep. time"]
 PREP_TIME_HATCH = "/////"
 
-PQ_TIME_TARGETS = [str(QC.TS_EXAMINATION_TIME_S), str(QC.FIRST_LAYER_TIME_S)]
+PQ_TIME_TARGETS = [QC.TS_EXAMINATION_TIME_S, QC.FIRST_LAYER_TIME_S]
 PQ_TIME_LABELS = ["TS examination time", "First layer time"]
 FIRST_LAYER_TIME_HATCH = "+++"
 
@@ -745,14 +757,14 @@ NUM_PTS_EXAMINED_Y_LABEL = "Number of points examined"
 NUM_PTS_IN_EXAMINED_ENTRIES_Y_LABEL = "Number of points in examined entries"
 
 Y_LABELS = {
-    str(QC.TOTAL_TIME_S): TOTAL_TIME_Y_LABEL,
-    str(QC.TS_EXAMINATION_TIME_S): TS_EXAMINATION_TIME_Y_LABEL,
-    str(QC.FIRST_LAYER_TIME_S): FIRST_LAYER_TIME_S_Y_LABEL,
-    str(QC.ABANDONING_RATE): ABANDONING_RATE_Y_LABEL,
-    str(QC.PRUNING_RATIO): PRUNING_RATIO_Y_LABEL,
-    str(QC.KEEP_RATE): KEEP_RATE_Y_LABEL,
-    str(QC.NUM_PTS_EXAMINED): NUM_PTS_EXAMINED_Y_LABEL,
-    str(QC.NUM_PTS_IN_EXAMINED_ENTRIES): NUM_PTS_IN_EXAMINED_ENTRIES_Y_LABEL,
+    QC.TOTAL_TIME_S: TOTAL_TIME_Y_LABEL,
+    QC.TS_EXAMINATION_TIME_S: TS_EXAMINATION_TIME_Y_LABEL,
+    QC.FIRST_LAYER_TIME_S: FIRST_LAYER_TIME_S_Y_LABEL,
+    QC.ABANDONING_RATE: ABANDONING_RATE_Y_LABEL,
+    QC.PRUNING_RATIO: PRUNING_RATIO_Y_LABEL,
+    QC.KEEP_RATE: KEEP_RATE_Y_LABEL,
+    QC.NUM_PTS_EXAMINED: NUM_PTS_EXAMINED_Y_LABEL,
+    QC.NUM_PTS_IN_EXAMINED_ENTRIES: NUM_PTS_IN_EXAMINED_ENTRIES_Y_LABEL,
 }
 
 
@@ -760,7 +772,7 @@ def sort_dict(d: dict, key_func: callable) -> dict:
     return {k: v for k, v in sorted(d.items(), key=key_func)}
 
 
-def dict_to_tuples(d: dict[ERD, list[str]]) -> list[tuple[ERD, str]]:
+def dict_to_tuples(d: dict[ERD, list[Column]]) -> list[tuple[ERD, Column]]:
     tuples = []
     for key, values in d.items():
         for value in values:
@@ -768,8 +780,8 @@ def dict_to_tuples(d: dict[ERD, list[str]]) -> list[tuple[ERD, str]]:
     return tuples
 
 
-def get_tuple_strings(tuples: list[tuple[ERD, str]]) -> list[str]:
-    return [col for _, col in tuples]
+def get_tuple_strings(tuples: list[tuple[ERD, Column]]) -> list[str]:
+    return [str(col) for _, col in tuples]
 
 
 def get_col_index(col: str, tuples: list[tuple[ERD, str]]) -> int:
@@ -793,6 +805,153 @@ def merge_univariate_datasets(reduced_values, ds_index: int = 0):
         merged_reduced_values[group] = [np.mean(values) for values in values_lists]
 
     return merged_reduced_values
+
+
+def abbreviate(name: str, max_len: int = 5) -> str:
+    return (name if len(name) <= 5 else f"{name[:5]}.").capitalize()
+
+
+def get_x_label(
+    key: tuple,
+    columns: dict[ERD, list[str]],
+    ignore_cols: set[Column] = set(),
+    padding: str = "",
+    num_query_intervals: int = 0,
+) -> str:
+    label_parts = []
+    length_values = {}
+
+    for col, val in zip(iterate_columns(columns), key):
+        if col in ignore_cols:
+            continue
+
+        match col:
+            case DSC.L_MIN | ISC.L_MIN | QSC.L_MIN:
+                length_values["l_min"] = val
+            case DSC.L_MAX | ISC.L_MAX | QSC.L_MAX:
+                length_values["l_max"] = val
+            case QC.QUERY_INTERVAL:
+                length_values["l_q_interval"] = val
+            case ISC.L_PER_GROUP:
+                l_per_group = val
+                if l_per_group is not None and l_per_group > 0:
+                    length_values["l_per_group"] = l_per_group
+            case QC.QUERY_LENGTH:
+                label_parts.append(f"|Q|={int(val)}")
+            case ISC.POS_PER_ENV:
+                label_parts.append(f"PPE={int(val)}")
+            case DSC.DATASET_FILE:
+                label_parts.append(val)
+            case DSC.NUM_CHANNELS:
+                label_parts.append(f"|C|={int(val)}")
+            case DSC.SD:
+                label_parts.append(f"SD={int(val)}")
+            case ISC.FIRST_LAYER_NUM_BITS:
+                if val is not None and val > 0:
+                    label_parts.append(f"FLB={int(val)}")
+            case ISC.NUM_BITS_LIMIT:
+                if val is not None and val > 0:
+                    label_parts.append(f"BLim={int(val)}")
+            case ISC.LEAF_CAPACITY:
+                if val is not None and val > 0:
+                    label_parts.append(
+                        f"LC={int(val) if val < 10000 else f'{int(val / 1000)}K' if val < 1e6 else f'{round(val / 1e6, 2)}M'}"
+                    )
+            case ISC.ADAPT_TO_DATASET:
+                if val == 1:
+                    label_parts.append("Adapt")
+            case SSC.SORT_QUERY:
+                if val == 1:
+                    label_parts.append("Sort")
+            case SSC.USE_PRIORITY_QUEUE:
+                if val == 1:
+                    label_parts.append("PQ")
+            case ISC.BREAKPOINT_STRATEGY:
+                if isinstance(val, str) and len(val) > 0:
+                    label_parts.append(abbreviate(val))
+            case ISC.SPLIT_STRATEGY:
+                if isinstance(val, str) and len(val) > 0:
+                    label_parts.append("".join(s[0].upper() for s in val.split("_")))
+            case ISC.NUM_SEGMENTS:
+                if val is not None and val > 0:
+                    label_parts.append(f"|S|={int(val)}")
+            case ISC.SEGMENTATION_STRATEGY:
+                if isinstance(val, str) and len(val) > 0:
+                    label_parts.append(abbreviate(val))
+
+    if "l_min" in length_values:
+        l_min = length_values["l_min"]
+        if "l_max" in length_values:
+            l_max = length_values["l_max"]
+            label_parts.append(f"{l_min}≤l≤{l_max}")
+            if num_query_intervals > 0 and "l_q_interval" in length_values:
+                query_interval = length_values["l_q_interval"]
+                query_interval_size = int(np.ceil((l_max - l_min + 1) / num_query_intervals))
+                low_len = l_min + query_interval * query_interval_size
+                high_len = min(l_min + (query_interval + 1) * query_interval_size, l_max + 1)
+                label_parts.append(f"\n{int(low_len)}≤|Q|<{int(high_len)}")
+            if "l_per_group" in length_values:
+                num_l_groups = int(np.ceil((l_max - l_min + 1) / l_per_group))
+                label_parts.append(f"#LG={num_l_groups}")
+        else:
+            label_parts.append(f"{int(l_min)}≤l")
+    elif "l_max" in length_values:
+        label_parts.append(f"l<{int(length_values['l_max'])}")
+
+    return padding + "\n".join(label_parts)
+
+
+def get_x_labels(
+    reduced_values: ReductionResult,
+    groups_dict: dict[ERD, list[Column]],
+    color_group_col: Column = SSC.METHOD_NAME,
+    ignore_cols: set[Column] = set(),
+    num_query_intervals: int = 0,
+    padding_rows: int = 0,
+) -> dict[tuple, str]:
+    x_labels = {}
+
+    keys = list(reduced_values.keys())
+    key_to_show_index = [True] * len(keys[0])
+    columns_to_show = {}
+
+    ind = 0
+    for erd, erd_columns in groups_dict.items():
+        for col in erd_columns:
+            if col != color_group_col:
+                if erd not in columns_to_show:
+                    columns_to_show[erd] = []
+                columns_to_show[erd].append(col)
+            else:
+                key_to_show_index[ind] = False
+            ind += 1
+
+    for ind, key in enumerate(keys):
+        key_to_show = tuple([key[i] for i in range(len(key)) if key_to_show_index[i]])
+        x_labels[key_to_show] = get_x_label(
+            key_to_show,
+            columns_to_show,
+            num_query_intervals=num_query_intervals,
+            padding="\n" * padding_rows if ind % 2 == 0 else "",
+            ignore_cols=ignore_cols,
+        )
+    return x_labels
+
+
+def get_y_label(targets: list[tuple[ERD, Column, Reducer]]) -> str:
+    col = targets[0][1]
+    reducer_str = ""
+    match targets[0][2]:
+        case MeanReducer():
+            reducer_str = "mean"
+        case StdReducer():
+            reducer_str = "std"
+        case MinReducer():
+            reducer_str = "min"
+        case MaxReducer():
+            reducer_str = "max"
+
+    return f"{reducer_str.capitalize()} {Y_LABELS.get(col, str(col))}"
 
 
 # %%[markdown]
@@ -825,14 +984,14 @@ groups = [
 
 
 def experiment_num_channels_and_dataset(
-    target_cols: str | list[str], y_label: str, target_labels: list[str] = None, y_scale: str = "log"
+    target_cols: str | list[str], target_labels: list[str] = None, y_scale: str = "log"
 ):
-    if isinstance(target_cols, str):
+    if isinstance(target_cols, Column):
         target_cols = [target_cols]
 
     groups_dict = {
-        ERD.DATASETS_COLS: [str(DSC.NUM_CHANNELS), str(DSC.DATASET_FILE)],
-        ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
+        ERD.DATASETS_COLS: [DSC.NUM_CHANNELS, DSC.DATASET_FILE],
+        ERD.METHODS_COLS: [SSC.METHOD_NAME],
     }
     columns = {**groups_dict, ERD.RUNS_COLS: target_cols}
     few_channels_results = ExperimentResults.load(
@@ -844,7 +1003,7 @@ def experiment_num_channels_and_dataset(
 
     targets = [(ERD.RUNS_COLS, target_col, MeanReducer()) for target_col in target_cols]
     groups = dict_to_tuples(groups_dict)
-    mean_values = execute_reduction([few_channels_results, many_channels_results], targets, groups)
+    reduced_values = execute_reduction([few_channels_results, many_channels_results], targets, groups)
 
     methods_to_show = [
         "sequential_scan-ed",
@@ -852,24 +1011,20 @@ def experiment_num_channels_and_dataset(
         "isax_envelope-ed-early",
         "isax_envelope-mass-ffts",
     ]
-    mean_values_to_show = {group: values for group, values in mean_values.items() if group[2] in methods_to_show}
-    mean_values_to_show = {
+    reduced_values_to_show = {group: values for group, values in reduced_values.items() if group[2] in methods_to_show}
+    reduced_values_to_show = {
         (num_channels, dataset.split("/", 1)[0], method): value
-        for (num_channels, dataset, method), value in mean_values_to_show.items()
+        for (num_channels, dataset, method), value in reduced_values_to_show.items()
     }
-    x_labels = {
-        (num_channels, dataset): f"{dataset}\nC = {num_channels}"
-        for (num_channels, dataset, _), _ in mean_values_to_show.items()
-    }
-    mean_values_to_show = sort_dict(
-        mean_values_to_show, lambda x: (ORDERED_DATASETS.index(x[0][1]), x[0][0], methods_to_show.index(x[0][2]))
+    reduced_values_to_show = sort_dict(
+        reduced_values_to_show, lambda x: (ORDERED_DATASETS.index(x[0][1]), x[0][0], methods_to_show.index(x[0][2]))
     )
 
     plot_bars(
-        mean_values_to_show,
+        reduced_values_to_show,
         2,
-        x_labels=x_labels,
-        y_label=y_label,
+        x_labels=get_x_labels(reduced_values_to_show, groups_dict),
+        y_label=get_y_label(targets),
         scale=y_scale,
         hatches=["", PREP_TIME_HATCH] if target_labels is not None else None,
         hatch_labels=target_labels,
@@ -878,8 +1033,8 @@ def experiment_num_channels_and_dataset(
 
 # %%
 
-experiment_num_channels_and_dataset(TIME_TARGETS, TOTAL_TIME_Y_LABEL, target_labels=TIME_LABELS)
-experiment_num_channels_and_dataset(str(QC.PRUNING_RATIO), PRUNING_RATIO_Y_LABEL, y_scale="linear")
+experiment_num_channels_and_dataset(TIME_TARGETS, target_labels=TIME_LABELS)
+experiment_num_channels_and_dataset(QC.PRUNING_RATIO, y_scale="linear")
 
 # %%[markdown]
 """
@@ -888,8 +1043,7 @@ experiment_num_channels_and_dataset(str(QC.PRUNING_RATIO), PRUNING_RATIO_Y_LABEL
 
 
 def experiment_envelope_parametrization(
-    target_cols: list[str] | str,
-    y_label: str,
+    target_cols: list[Column] | Column,
     y_scale: str = "log",
     hatches=None,
     hatch_labels=None,
@@ -898,17 +1052,17 @@ def experiment_envelope_parametrization(
     num_query_intervals: int = 1,
     bar_width_inches: float = 0.4,
 ):
-    if isinstance(target_cols, str):
+    if isinstance(target_cols, Column):
         target_cols = [target_cols]
+
     groups_dict = {
-        ERD.INDEXES_COLS: [str(ISC.L_MIN), str(ISC.L_MAX), str(ISC.POS_PER_ENV)],
-        ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
-        ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
+        ERD.INDEXES_COLS: [ISC.L_MIN, ISC.L_MAX, ISC.POS_PER_ENV],
+        ERD.METHODS_COLS: [SSC.METHOD_NAME],
+        ERD.DATASETS_COLS: [DSC.DATASET_FILE],
     }
     if num_query_intervals > 1:
-        groups_dict[ERD.RUNS_COLS] = [str(QC.QUERY_INTERVAL)]
+        groups_dict[ERD.RUNS_COLS] = [QC.QUERY_INTERVAL]
     columns = {**groups_dict, ERD.RUNS_COLS: target_cols + groups_dict.get(ERD.RUNS_COLS, [])}
-    print(columns)
     parametrization_results = ExperimentResults.load(
         logs_dir=logs_dir, cols=columns, num_query_intervals=num_query_intervals
     )
@@ -924,18 +1078,6 @@ def experiment_envelope_parametrization(
         for group, values in reduced_values.items()
     }
 
-    def get_x_label(key: tuple):
-        if num_query_intervals == 1:
-            l_min, l_max, pos_per_env, _, _ = key
-            query_len_label = ""
-        else:
-            l_min, l_max, pos_per_env, _, _, query_interval = key
-            query_interval_size = int(np.ceil((l_max - l_min + 1) / num_query_intervals))
-            low_len = l_min + query_interval * query_interval_size
-            high_len = min(l_min + (query_interval + 1) * query_interval_size, l_max + 1)
-            query_len_label = f"\n{int(low_len)}≤|Q|<{int(high_len)}"
-        return f"l_min={int(l_min)}\nl_max={int(l_max)}\nPPE={int(pos_per_env)}{query_len_label}"
-
     datasets = {group[4] for group in reduced_values}
     for dataset in datasets:
         l_ranges = {group[:2] for group in reduced_values}
@@ -946,13 +1088,12 @@ def experiment_envelope_parametrization(
                 if group[4] == dataset and group[:2] == l_range
             }
             reduced_values_ds = sort_dict(reduced_values_ds, lambda x: (x[0][4], *x[0][:3], x[0][3]))
-            x_labels = {(*group[:3], *group[4:]): get_x_label(group) for group in reduced_values_ds}
 
             plot_bars(
                 reduced_values_ds,
                 3,
-                x_labels=x_labels,
-                y_label=y_label,
+                x_labels=get_x_labels(reduced_values_ds, groups_dict),
+                y_label=get_y_label(targets),
                 scale=y_scale,
                 title=dataset,
                 hatches=hatches,
@@ -964,7 +1105,7 @@ def experiment_envelope_parametrization(
 # %%
 
 logs_dir = "EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size_3"
-method_name_re = r"^(?!.*isax).*ed.*$"
+method_name_re = ""  # r"^(?!.*isax).*ed.*$"
 num_query_intervals = 1
 bar_width_inches = 0.8
 
@@ -973,8 +1114,7 @@ bar_width_inches = 0.8
 print("Total time:")
 experiment_envelope_parametrization(
     # PQ_TIME_TARGETS,
-    str(QC.TOTAL_TIME_S),
-    TOTAL_TIME_Y_LABEL,
+    QC.TOTAL_TIME_S,
     y_scale="linear",
     logs_dir=logs_dir,
     # hatches=["", FIRST_LAYER_TIME_HATCH],
@@ -988,8 +1128,7 @@ experiment_envelope_parametrization(
 
 print("Pruning ratio:")
 experiment_envelope_parametrization(
-    str(QC.PRUNING_RATIO),
-    PRUNING_RATIO_Y_LABEL,
+    QC.PRUNING_RATIO,
     y_scale="linear",
     logs_dir=logs_dir,
     method_name_re=method_name_re,
@@ -1013,7 +1152,7 @@ NOISE_LABELS = {val: f"Noise={val}" for val in NOISE_COLORS.keys()}
 
 
 def experiment_relative_contrast(
-    target_col: str,
+    target_col: Column,
     y_label: str,
     query_noise_levels=list(NOISE_LABELS.keys()),
     y_scale: str = "linear",
@@ -1021,11 +1160,12 @@ def experiment_relative_contrast(
     remove_top=0.00,
     datasets_to_show=["weather", "synthetic"],
 ):
-    columns = {
-        ERD.DATASETS_COLS: [str(DSC.DATASET_FILE), str(DSC.NUM_CHANNELS), str(DSC.SD)],
-        ERD.QUERY_STATS_COLS: [str(QSTC.QUERY_NOISE), target_col],
+    groups_dict = {
+        ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS, DSC.SD],
+        ERD.QUERY_STATS_COLS: [QSTC.QUERY_NOISE],
     }
-    rc_results = ExperimentResults.load(logs_dir=logs_dir, cols=columns, add_runs=False, add_index_stats=True)
+    columns = {**groups_dict, ERD.QUERY_STATS_COLS: [target_col] + groups_dict.get(ERD.QUERY_STATS_COLS, [])}
+    rc_results = ExperimentResults.load(logs_dir=logs_dir, cols=columns, add_runs=False, add_index_stats=False)
 
     targets = [(ERD.QUERY_STATS_COLS, target_col, MeanReducer())]
     if remove_top > 0:
@@ -1033,35 +1173,26 @@ def experiment_relative_contrast(
             rc_results.query_stats_df[target_col] < rc_results.query_stats_df[target_col].quantile(1 - remove_top)
         ]
 
-    groups = [
-        (ERD.DATASETS_COLS, str(DSC.DATASET_FILE)),
-        (ERD.DATASETS_COLS, str(DSC.NUM_CHANNELS)),
-        (ERD.DATASETS_COLS, str(DSC.SD)),
-        (ERD.QUERY_STATS_COLS, str(QSTC.QUERY_NOISE)),
-    ]
-    mean_values = execute_reduction([rc_results], targets, groups)
-    mean_values = {group: values for group, values in mean_values.items() if group[3] in query_noise_levels}
+    groups = dict_to_tuples(groups_dict)
+    reduced_values = execute_reduction([rc_results], targets, groups)
+    reduced_values = {group: values for group, values in reduced_values.items() if group[3] in query_noise_levels}
 
-    mean_values = {
+    reduced_values = {
         (dataset.split("/", 1)[0], num_channels, sd, noise): value
-        for (dataset, num_channels, sd, noise), value in mean_values.items()
+        for (dataset, num_channels, sd, noise), value in reduced_values.items()
     }
     if datasets_to_show is not None:
-        mean_values = {group: values for group, values in mean_values.items() if group[0] in datasets_to_show}
+        reduced_values = {group: values for group, values in reduced_values.items() if group[0] in datasets_to_show}
 
-    mean_values = sort_dict(mean_values, lambda x: (x[0][1], ORDERED_DATASETS.index(x[0][0]), x[0][2]))
-    x_labels = {
-        (dataset, num_channels, sd): f"{dataset}\nC={num_channels}\nStep={sd}"
-        for dataset, num_channels, sd, _ in mean_values
-    }
+    reduced_values = sort_dict(reduced_values, lambda x: (x[0][1], ORDERED_DATASETS.index(x[0][0]), x[0][2]))
 
     bar_width_inches = 0.9 / len(query_noise_levels)
     plot_bars(
-        mean_values,
+        reduced_values,
         3,
         NOISE_COLORS,
         NOISE_LABELS,
-        x_labels,
+        x_labels=get_x_labels(reduced_values, groups_dict, QSTC.QUERY_NOISE),
         y_label=y_label,
         scale=y_scale,
         bar_width_inches=bar_width_inches,
@@ -1069,19 +1200,19 @@ def experiment_relative_contrast(
 
 
 # %%
-experiment_relative_contrast(str(QSTC.RC_USING_MAX), "RC using max", query_noise_levels=[0.1, 0.5, 1.0])
-experiment_relative_contrast(str(QSTC.RC_USING_MEAN), "RC using mean", query_noise_levels=[0.1, 0.5, 1.0])
+experiment_relative_contrast(QSTC.RC_USING_MAX, "RC using max", query_noise_levels=[0.1, 0.5, 1.0])
+experiment_relative_contrast(QSTC.RC_USING_MEAN, "RC using mean", query_noise_levels=[0.1, 0.5, 1.0])
 experiment_relative_contrast(
-    get_stats_col(QSTC.DIST_STATS, SCP.STD), "Std. dev. of distance to query", query_noise_levels=[0.1, 0.5, 1.0]
+    StatsColumn(QSTC.DIST_STATS, SCP.STD), "Std. dev. of distance to query", query_noise_levels=[0.1, 0.5, 1.0]
 )
 experiment_relative_contrast(
-    get_stats_col(QSTC.DIST_STATS, SCP.MAX), "Maximum distance to query", query_noise_levels=[0.1, 0.5, 1.0]
+    StatsColumn(QSTC.DIST_STATS, SCP.MAX), "Maximum distance to query", query_noise_levels=[0.1, 0.5, 1.0]
 )
 experiment_relative_contrast(
-    get_stats_col(QSTC.DIST_STATS, SCP.MIN), "Minimum distance to query", query_noise_levels=[0.1, 0.5, 1.0]
+    StatsColumn(QSTC.DIST_STATS, SCP.MIN), "Minimum distance to query", query_noise_levels=[0.1, 0.5, 1.0]
 )
 experiment_relative_contrast(
-    get_stats_col(QSTC.DIST_STATS, SCP.MEAN), "Mean distance to query", query_noise_levels=[0.1, 0.5, 1.0]
+    StatsColumn(QSTC.DIST_STATS, SCP.MEAN), "Mean distance to query", query_noise_levels=[0.1, 0.5, 1.0]
 )
 
 # %%[markdown]
@@ -1094,9 +1225,8 @@ experiment_relative_contrast(
 
 
 def experiment_univariate_parametrization(
-    targets_dict: dict[ERD, list[str]],
+    targets_dict: dict[ERD, list[Column]],
     logs_dirs: list[str],
-    y_label: str,
     use_adapt_to_dataset: bool = False,
     y_scale: str = "log",
     merge_datasets: bool = True,
@@ -1107,17 +1237,17 @@ def experiment_univariate_parametrization(
     reducer=MeanReducer(),
 ):
     groups_dict = {
-        ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
-        ERD.QUERY_SETS_COLS: [str(QSC.L_MIN), str(QSC.L_MAX)],
-        ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
+        ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+        ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+        ERD.METHODS_COLS: [SSC.METHOD_NAME],
         ERD.INDEXES_COLS: [
-            str(ISC.FIRST_LAYER_NUM_BITS),
-            str(ISC.POS_PER_ENV),
-            str(ISC.LEAF_CAPACITY),
+            ISC.FIRST_LAYER_NUM_BITS,
+            ISC.POS_PER_ENV,
+            ISC.LEAF_CAPACITY,
         ],
     }
     if use_adapt_to_dataset:
-        groups_dict[ERD.INDEXES_COLS].append(str(ISC.ADAPT_TO_DATASET))
+        groups_dict[ERD.INDEXES_COLS].append(ISC.ADAPT_TO_DATASET)
 
     columns = {**groups_dict, **targets_dict}
     add_runs = ERD.RUNS_COLS in targets_dict
@@ -1129,50 +1259,38 @@ def experiment_univariate_parametrization(
 
     targets = [(csv, target, reducer) for csv, target in dict_to_tuples(targets_dict)]
     groups = dict_to_tuples(groups_dict)
-    mean_values = execute_reduction(results_list, targets, groups)
-    method_name_ind = get_col_index(str(SSC.METHOD_NAME), groups)
+    reduced_values = execute_reduction(results_list, targets, groups)
+    method_name_ind = get_col_index(SSC.METHOD_NAME, groups)
 
-    ordered_datasets = {key[0] for key in mean_values}
+    ordered_datasets = {key[0] for key in reduced_values}
     if merge_datasets:
-        mean_values = merge_univariate_datasets(mean_values)
+        reduced_values = merge_univariate_datasets(reduced_values)
         ordered_datasets = ORDERED_DATASETS
 
-    def get_x_label(key: tuple):
-        if use_adapt_to_dataset:
-            _dataset, _l_min, _l_max, method, first_layer_bits, pos_per_env, leaf_capacity, adapt = key
-        else:
-            _dataset, _l_min, _l_max, method, first_layer_bits, pos_per_env, leaf_capacity = key
-        bits_str = f"Bits={int(first_layer_bits)}" if first_layer_bits is not None and first_layer_bits > 0 else ""
-        ppe_str = f"PPE={int(pos_per_env)}" if pos_per_env is not None and pos_per_env > 0 else ""
-        leaf_str = (
-            f"C={int(leaf_capacity) if leaf_capacity < 10000 else f'{int(leaf_capacity / 1000)}K' if leaf_capacity < 1e6 else f'{round(leaf_capacity / 1e6, 2)}M'}"
-            if leaf_capacity is not None and leaf_capacity > 0
-            else ""
-        )
-        adapt_str = "Adapt" if use_adapt_to_dataset and "isax" in method and adapt == 1 else ""
-        return "\n".join([s for s in [bits_str, ppe_str, leaf_str, adapt_str] if s])
-
-    datasets = {group[0] for group in mean_values}
+    datasets = {group[0] for group in reduced_values}
     if datasets_to_show is not None:
         datasets = {dataset for dataset in datasets if dataset in datasets_to_show}
 
     for dataset in datasets:
-        l_ranges = {(key[1], key[2]) for key in mean_values if key[0] == dataset}
+        l_ranges = {(key[1], key[2]) for key in reduced_values if key[0] == dataset}
         if l_ranges_to_show is not None:
             l_ranges = {l_range for l_range in l_ranges if l_range in l_ranges_to_show}
 
         for l_range in l_ranges:
-            mean_values_ds = {
-                group: values for group, values in mean_values.items() if group[0] == dataset and group[1:3] == l_range
+            reduced_values_ds = {
+                group: values
+                for group, values in reduced_values.items()
+                if group[0] == dataset and group[1:3] == l_range
             }
-            mean_values_ds = sort_dict(mean_values_ds, lambda x: (ordered_datasets.index(x[0][0]), *x[0][1:]))
-            x_labels = {(*key[:3], *key[4:]): get_x_label(key) for key in mean_values_ds}
+            reduced_values_ds = sort_dict(reduced_values_ds, lambda x: (ordered_datasets.index(x[0][0]), *x[0][1:]))
 
             plot_bars(
-                mean_values_ds,
+                reduced_values_ds,
                 method_name_ind,
-                x_labels=x_labels,
-                y_label=y_label,
+                x_labels=get_x_labels(
+                    reduced_values_ds, groups_dict, ignore_cols={QSC.L_MIN, QSC.L_MAX, DSC.DATASET_FILE}
+                ),
+                y_label=get_y_label(targets),
                 scale=y_scale,
                 bar_width_inches=0.4,
                 title=f"{dataset}: l_min={l_range[0]}, l_max={l_range[1]}",
@@ -1197,11 +1315,11 @@ l_ranges_to_show = None  # [(256, 1024)]
 
 hatches = None
 hatch_labels = None
-targets_dict = {ERD.RUNS_COLS: [str(QC.TOTAL_TIME_S)]}
+targets_dict = {ERD.RUNS_COLS: [QC.TOTAL_TIME_S]}
 if show_indexing_time:
     hatches = ["", PREP_TIME_HATCH]
     hatch_labels = TIME_LABELS
-    targets_dict = {ERD.RUNS_COLS: [str(QC.TOTAL_TIME_S), str(QC.AMORTIZED_PREP_TIME_S)]}
+    targets_dict = {ERD.RUNS_COLS: [QC.TOTAL_TIME_S, QC.AMORTIZED_PREP_TIME_S]}
 
 # %%
 
@@ -1216,7 +1334,6 @@ for key, reducer in reducers.items():
     experiment_univariate_parametrization(
         targets_dict,
         logs_dirs,
-        f"{key} {TOTAL_TIME_Y_LABEL}",
         hatches=hatches,
         hatch_labels=hatch_labels,
         merge_datasets=merge_datasets,
@@ -1232,9 +1349,8 @@ for key, reducer in reducers.items():
 
 for col in [QC.PRUNING_RATIO]:
     experiment_univariate_parametrization(
-        {ERD.RUNS_COLS: [str(col)]},
+        {ERD.RUNS_COLS: [col]},
         logs_dirs,
-        str(col).replace("_", " ").capitalize(),
         y_scale="log" if col == QC.NUM_ENTRIES_EXAMINED else "linear",
         merge_datasets=merge_datasets,
         use_adapt_to_dataset=use_adapt_to_dataset,
@@ -1244,13 +1360,11 @@ for col in [QC.PRUNING_RATIO]:
 
 # %%
 
-for istc_col in [ISTC.LEAF_HEIGHT_STATS, ISTC.LEAF_FILL_STATS]:
-    y_label_prefix = str(istc_col).replace("_", " ").capitalize()
+for istc_col in [ISTC.LEAF_HEIGHT_STATS]:
     for stat in [SCP.MEAN, SCP.STD]:
         experiment_univariate_parametrization(
-            {ERD.INDEX_STATS_COLS: [get_stats_col(istc_col, stat)]},
+            {ERD.INDEX_STATS_COLS: [StatsColumn(istc_col, stat)]},
             logs_dirs,
-            f"{y_label_prefix} {str(stat)}",
             merge_datasets=merge_datasets,
             use_adapt_to_dataset=use_adapt_to_dataset,
             y_scale="linear",
@@ -1266,7 +1380,7 @@ for istc_col in [ISTC.LEAF_HEIGHT_STATS, ISTC.LEAF_FILL_STATS]:
 
 # %%
 def experiment_ulisse_comparison(
-    target_col: str = str(QC.TOTAL_TIME_S),
+    target_col: str = QC.TOTAL_TIME_S,
     logs_dir: str = "EXPERIMENT_LOGS/base_compare/LOGS_base_compare_final",
     reducer: Reducer = MeanReducer(),
     max_ulisse_pruning_ratio: float = 1.0,
@@ -1277,17 +1391,17 @@ def experiment_ulisse_comparison(
         raise ValueError("Cannot use both only_important and bars_by_query_length")
 
     groups_dict = {
-        ERD.METHODS_COLS: [str(SSC.METHOD_NAME), str(SSC.SORT_QUERY), str(SSC.USE_PRIORITY_QUEUE)],
+        ERD.METHODS_COLS: [SSC.METHOD_NAME, SSC.SORT_QUERY, SSC.USE_PRIORITY_QUEUE],
         ERD.INDEXES_COLS: [
-            str(ISC.BREAKPOINT_STRATEGY),
-            str(ISC.SPLIT_STRATEGY),
-            str(ISC.NUM_BITS_LIMIT),
+            ISC.BREAKPOINT_STRATEGY,
+            ISC.SPLIT_STRATEGY,
+            ISC.NUM_BITS_LIMIT,
         ],
-        ERD.RUNS_COLS: [str(QC.PRUNING_RATIO), str(QC.QUERY_ID)],
+        ERD.RUNS_COLS: [QC.PRUNING_RATIO, QC.QUERY_ID],
     }
 
     if bars_by_query_length:
-        groups_dict[ERD.RUNS_COLS].append(str(QC.QUERY_LENGTH))
+        groups_dict[ERD.RUNS_COLS].append(QC.QUERY_LENGTH)
 
     targets_dict = {ERD.RUNS_COLS: [target_col]}
     columns = groups_dict.copy()
@@ -1306,7 +1420,7 @@ def experiment_ulisse_comparison(
     groups_dict.pop(ERD.RUNS_COLS)
 
     if bars_by_query_length:
-        groups_dict[ERD.RUNS_COLS] = [str(QC.QUERY_LENGTH)]
+        groups_dict[ERD.RUNS_COLS] = [QC.QUERY_LENGTH]
 
     targets = [(ERD.RUNS_COLS, target_col, reducer) for target_col in targets_dict[ERD.RUNS_COLS]]
     groups = dict_to_tuples(groups_dict)
@@ -1331,36 +1445,11 @@ def experiment_ulisse_comparison(
     method_labels_keys = list(METHOD_LABELS.keys())
     reduced_values = sort_dict(reduced_values, lambda x: method_labels_keys.index(x[0][0]))
 
-    def get_x_label(key: tuple):
-        if not bars_by_query_length:
-            method, sort_query, use_pq, breakpoint_strat, split_strat, num_bits = key
-            ql_str = ""
-        else:
-            method, sort_query, use_pq, breakpoint_strat, split_strat, num_bits, query_length = key
-            ql_str = f"QL={int(query_length)}"
-
-        sort_str = "Sort\n" if sort_query else ""
-        pq_str = "PQ\n" if use_pq else ""
-
-        if "isax" not in method:
-            return sort_str + pq_str + ql_str
-
-        breakpoint_str = breakpoint_strat if len(breakpoint_strat) <= 5 else f"{breakpoint_strat[:5]}."
-        breakpoint_str = breakpoint_str.capitalize()
-        split_str = "".join([s[0].upper() for s in split_strat.split("_")])
-        num_bits_str = f"{int(num_bits)} bits" if num_bits > 0 else ""
-
-        label = f"{sort_str}{pq_str}{breakpoint_str}\n{split_str}\n{num_bits_str}"
-        if bars_by_query_length:
-            label += f"\n{ql_str}"
-        return label
-
-    x_labels = {(*key[1:],): get_x_label(key) for key in reduced_values}
     plot_bars(
         reduced_values,
         0,
-        x_labels=x_labels,
-        y_label=Y_LABELS[target_col],
+        x_labels=get_x_labels(reduced_values, groups_dict),
+        y_label=get_y_label(targets),
         scale="linear",
     )
 
@@ -1368,7 +1457,7 @@ def experiment_ulisse_comparison(
 # %%
 
 experiment_ulisse_comparison(
-    target_col=str(QC.TOTAL_TIME_S),
+    target_col=QC.TOTAL_TIME_S,
     # logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_5M",
     logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_5M_node",
     # max_ulisse_pruning_ratio=0.0,
@@ -1378,9 +1467,7 @@ experiment_ulisse_comparison(
 
 # %%
 experiment_ulisse_comparison(
-    target_col=str(QC.TOTAL_TIME_S),
-    logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_100K",
-    only_important=True,
+    target_col=QC.TOTAL_TIME_S, logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_100K", only_important=True
 )
 
 # %%[markdown]
@@ -1392,26 +1479,29 @@ experiment_ulisse_comparison(
 
 
 def experiment_length_based_grouping(
-    target_cols: list[str] = [str(QC.TOTAL_TIME_S)],
+    target_cols: list[Column] = [QC.TOTAL_TIME_S],
     logs_dir: str = "EXPERIMENT_LOGS/length_grouping/LOGS_univariate_edea",
     reducer: Reducer = MeanReducer(),
     merge_csv_datasets: bool = False,
+    consider_segmentation: bool = False,
     hatches=None,
     hatch_labels=None,
     y_scale: str = "linear",
     num_query_intervals: int = 1,
     datasets_to_show: list[str] | None = None,
     l_ranges_to_show: list[tuple[int, int]] | None = None,
-    regex_dict: dict[str, str] = {},
+    regex_dict: dict[Column, str] = {},
 ):
     groups_dict = {
-        ERD.METHODS_COLS: [str(SSC.METHOD_NAME)],
-        ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
-        ERD.QUERY_SETS_COLS: [str(QSC.L_MIN), str(QSC.L_MAX)],
-        ERD.INDEXES_COLS: [str(ISC.POS_PER_ENV), str(ISC.L_PER_GROUP)],
+        ERD.METHODS_COLS: [SSC.METHOD_NAME],
+        ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+        ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+        ERD.INDEXES_COLS: [ISC.POS_PER_ENV, ISC.L_PER_GROUP],
     }
+    if consider_segmentation:
+        groups_dict[ERD.INDEXES_COLS] += [ISC.SEGMENTATION_STRATEGY, ISC.NUM_SEGMENTS]
     if num_query_intervals > 1:
-        groups_dict[ERD.RUNS_COLS] = [str(QC.QUERY_INTERVAL)]
+        groups_dict[ERD.RUNS_COLS] = [QC.QUERY_INTERVAL]
     ds_index = 1
     targets_dict = {ERD.RUNS_COLS: target_cols}
     columns = groups_dict.copy()
@@ -1423,7 +1513,7 @@ def experiment_length_based_grouping(
     groups = dict_to_tuples(groups_dict)
     reduced_values = execute_reduction([results], targets, groups)
 
-    if target_cols[0] == str(QC.KEEP_RATE):
+    if target_cols[0] == QC.KEEP_RATE:
         reduced_values = {key: value for key, value in reduced_values.items() if value[0] < 1.0}
 
     if merge_csv_datasets:
@@ -1437,36 +1527,14 @@ def experiment_length_based_grouping(
         }
         ordered_datasets = {key[ds_index] for key in reduced_values}
 
-    group_strings = get_tuple_strings(groups)
+    groups_list = [col for col in iterate_columns(groups_dict)]
     for col, regex in regex_dict.items():
-        if col in group_strings:
-            ind = group_strings.index(col)
+        if col in groups_list:
+            ind = groups_list.index(col)
             reduced_values = {key: values for key, values in reduced_values.items() if re.search(regex, str(key[ind]))}
 
     l_ranges = {(int(key[2]), int(key[3])) for key in reduced_values}
-
-    def get_x_label(key: tuple, ind: int) -> str:
-        if num_query_intervals > 1:
-            _, _, l_min, l_max, pos_per_env, l_per_group, query_interval = key
-            query_interval_size = int(np.ceil((l_max - l_min + 1) / num_query_intervals))
-            low_len = l_min + query_interval * query_interval_size
-            high_len = min(l_min + (query_interval + 1) * query_interval_size, l_max + 1)
-            query_interval_label = f"\n{low_len}≤|Q|<{high_len}"
-        else:
-            _, _, l_min, l_max, pos_per_env, l_per_group = key
-            query_interval_label = ""
-
-        if l_per_group is None or l_per_group <= 0:
-            label = query_interval_label
-        else:
-            num_l_groups = int(np.ceil((l_max - l_min + 1) / l_per_group))
-            ppe_str = f"\nPPE={int(pos_per_env)}" if pos_per_env is not None and pos_per_env > 0 else ""
-            label = f"#LG={num_l_groups}{ppe_str}{query_interval_label}"
-
-        if ind % 2 == 1:
-            label_num_lines = 1 + label.count("\n")
-            label = "\n" * label_num_lines + label
-        return label
+    padding_rows = 4 + 2 * consider_segmentation
 
     for dataset in ordered_datasets:
         if datasets_to_show is not None and not any(ds in dataset for ds in datasets_to_show):
@@ -1486,8 +1554,8 @@ def experiment_length_based_grouping(
             plot_bars(
                 reduced_values_ds,
                 0,
-                x_labels={key[1:]: get_x_label(key, i) for i, key in enumerate(reduced_values_ds)},
-                y_label=Y_LABELS.get(target_cols[0], target_cols[0]),
+                x_labels=get_x_labels(reduced_values_ds, groups_dict, padding_rows=padding_rows),
+                y_label=get_y_label(targets),
                 y_lim=(0, 1.05) if target_cols[0] in [str(QC.PRUNING_RATIO), str(QC.KEEP_RATE)] else None,
                 title=f"{dataset} l in [{l_range[0]}, {l_range[1]}]",
                 hatches=hatches,
@@ -1498,14 +1566,14 @@ def experiment_length_based_grouping(
 
 # %%
 
-logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_env_size_param_short_q"
+logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_env_size_param"
 merge_csv_datasets = True
-num_query_intervals = 10
+num_query_intervals = 1
 datasets_to_show = None  # ["weather", "stocks"]
 l_ranges_to_show = None  # [(128, 2048)]
 regex_dict = {
-    # str(SSC.METHOD_NAME): r"env",
-    # str(ISC.POS_PER_ENV): r"(19|96)(\.0){0,1}$",
+    # SSC.METHOD_NAME: r"env",
+    # ISC.POS_PER_ENV: r"(19|96)(\.0){0,1}$",
 }
 
 # %%
@@ -1533,7 +1601,7 @@ experiment_length_based_grouping(
 
 for target_col in [QC.PRUNING_RATIO]:
     experiment_length_based_grouping(
-        target_cols=[str(target_col)],
+        target_cols=[target_col],
         logs_dir=logs_dir,
         merge_csv_datasets=merge_csv_datasets,
         num_query_intervals=num_query_intervals,
@@ -1541,3 +1609,37 @@ for target_col in [QC.PRUNING_RATIO]:
         l_ranges_to_show=l_ranges_to_show,
         regex_dict=regex_dict,
     )
+
+# %%[markdown]
+"""
+Experiment: Segmentation strategy
+"""
+
+# %%
+
+logs_dir = "EXPERIMENT_LOGS/segmentation/LOGS_adaptive_seg_univariate"
+merge_csv_datasets = True
+num_query_intervals = 1
+datasets_to_show = None  # ["weather", "stocks"]
+l_ranges_to_show = [(128, 2048)]
+regex_dict = {
+    # SSC.METHOD_NAME: r"env",
+    # ISC.POS_PER_ENV: r"(19|96)(\.0){0,1}$",
+    # ISC.SEGMENTATION_STRATEGY: r"^(adaptive|0)$",
+    ISC.L_PER_GROUP: r"^(0\.0|61\.0)$",
+}
+
+# %%
+
+experiment_length_based_grouping(
+    logs_dir=logs_dir,
+    merge_csv_datasets=merge_csv_datasets,
+    consider_segmentation=True,
+    y_scale="linear",
+    datasets_to_show=datasets_to_show,
+    l_ranges_to_show=l_ranges_to_show,
+    regex_dict=regex_dict,
+    num_query_intervals=num_query_intervals,
+    # TARGET
+    target_cols=[QC.TOTAL_TIME_S],
+)
