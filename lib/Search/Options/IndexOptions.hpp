@@ -26,16 +26,22 @@ struct IIndexParams {
 struct PaaIndexParams : virtual IIndexParams {
     /** @brief Type of strategy to use for segmentation */
     SegmentationStrategyType m_segmentation_strategy_type;
+    /** @brief Whether to use different segmentation strategy per length-group */
+    bool m_per_lg_segmentation;
     /** @brief Number of segments to use */
     SaxSegIndT m_num_segments;
 
     /**
      * @brief Constructor
      * @param segmentation_strategy_type Type of strategy to use for segmentation
+     * @param per_lg_segmentation Whether to use different segmentation strategy per length-group
      * @param num_segments Number of segments to use
      */
-    PaaIndexParams(SegmentationStrategyType segmentation_strategy_type, SaxSegIndT num_segments)
-        : m_segmentation_strategy_type(segmentation_strategy_type), m_num_segments(num_segments) {}
+    PaaIndexParams(SegmentationStrategyType segmentation_strategy_type, bool per_lg_segmentation,
+                   SaxSegIndT num_segments)
+        : m_segmentation_strategy_type(segmentation_strategy_type),
+          m_per_lg_segmentation(per_lg_segmentation),
+          m_num_segments(num_segments) {}
 };
 
 /** @brief Parameters for indexes that use envelopes */
@@ -48,11 +54,13 @@ struct EnvelopeIndexParams : virtual PaaIndexParams {
     /**
      * @brief Constructor
      * @param segmentation_strategy_type Type of strategy to use for segmentation
+     * @param per_lg_segmentation Whether to use different segmentation strategy per length-group
      * @param num_segments Number of segments to use
      * @param pos_per_env Size of the starting position groups
      */
-    EnvelopeIndexParams(SegmentationStrategyType segmentation_strategy_type, SaxSegIndT num_segments, uint pos_per_env)
-        : PaaIndexParams(segmentation_strategy_type, num_segments), m_pos_per_env(pos_per_env) {}
+    EnvelopeIndexParams(SegmentationStrategyType segmentation_strategy_type, bool per_lg_segmentation,
+                        SaxSegIndT num_segments, uint pos_per_env)
+        : PaaIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments), m_pos_per_env(pos_per_env) {}
 };
 
 /** @brief Parameters for indexes that use SAX */
@@ -70,6 +78,7 @@ struct SaxIndexParams : virtual PaaIndexParams {
     /**
      * @brief Constructor
      * @param segmentation_strategy_type Type of strategy to use for segmentation
+     * @param per_lg_segmentation Whether to use different segmentation strategy per length-group
      * @param num_segments Number of segments to use
      * @param num_bits Number of bits to use for the SAX representations
      * @param breakpoint_strategy_type Strategy for getting the breakpoints of the symbol intervals
@@ -77,10 +86,10 @@ struct SaxIndexParams : virtual PaaIndexParams {
      * @param breakpoints_file Only used for FixedBreakpointStrategy: path to the plain text file to load the fixed
      * breakpoints from
      */
-    SaxIndexParams(SegmentationStrategyType segmentation_strategy_type, SaxSegIndT num_segments, SaxNumBitsT num_bits,
-                   iSaxBreakpointStrategyType breakpoint_strategy_type, bool min_num_bits_on_tie,
-                   const str &breakpoints_file)
-        : PaaIndexParams(segmentation_strategy_type, num_segments),
+    SaxIndexParams(SegmentationStrategyType segmentation_strategy_type, bool per_lg_segmentation,
+                   SaxSegIndT num_segments, SaxNumBitsT num_bits, iSaxBreakpointStrategyType breakpoint_strategy_type,
+                   bool min_num_bits_on_tie, const str &breakpoints_file)
+        : PaaIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments),
           m_num_bits(num_bits),
           m_breakpoint_strategy_type(breakpoint_strategy_type),
           m_min_num_bits_on_tie(min_num_bits_on_tie),
@@ -94,6 +103,7 @@ struct SaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual SaxIndexPar
     /**
      * @brief Constructor
      * @param segmentation_strategy_type Type of strategy to use for segmentation
+     * @param per_lg_segmentation Whether to use different segmentation strategy per length-group
      * @param num_segments Number of segments to use
      * @param pos_per_env Size of the starting position groups
      * @param num_bits Number of bits to use for the SAX representations
@@ -103,13 +113,14 @@ struct SaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual SaxIndexPar
      * @param breakpoints_file Only used for FixedBreakpointStrategy: path to the plain text file to load the fixed
      * breakpoints from
      */
-    SaxEnvelopeIndexParams(SegmentationStrategyType segmentation_strategy_type, SaxSegIndT num_segments,
-                           uint pos_per_env, SaxNumBitsT num_bits, iSaxBreakpointStrategyType breakpoint_strategy_type,
-                           bool min_num_bits_on_tie, const str &breakpoints_file)
-        : PaaIndexParams(segmentation_strategy_type, num_segments),
-          EnvelopeIndexParams(segmentation_strategy_type, num_segments, pos_per_env),
-          SaxIndexParams(segmentation_strategy_type, num_segments, num_bits, breakpoint_strategy_type,
-                         min_num_bits_on_tie, breakpoints_file) {}
+    SaxEnvelopeIndexParams(SegmentationStrategyType segmentation_strategy_type, bool per_lg_segmentation,
+                           SaxSegIndT num_segments, uint pos_per_env, SaxNumBitsT num_bits,
+                           iSaxBreakpointStrategyType breakpoint_strategy_type, bool min_num_bits_on_tie,
+                           const str &breakpoints_file)
+        : PaaIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments),
+          EnvelopeIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments, pos_per_env),
+          SaxIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments, num_bits,
+                         breakpoint_strategy_type, min_num_bits_on_tie, breakpoints_file) {}
 };
 
 /**
@@ -129,6 +140,7 @@ struct iSaxIndexParams : virtual PaaIndexParams, virtual SaxIndexParams {
     /**
      * @brief Constructor
      * @param segmentation_strategy_type Type of strategy to use for segmentation
+     * @param per_lg_segmentation Whether to use different segmentation strategy per length-group
      * @param num_segments Number of segments to use
      * @param first_layer_num_bits Number of bits to use for symbols in the first layer of the index
      * @param leaf_capacity Maximum number of entries in a leaf
@@ -140,13 +152,13 @@ struct iSaxIndexParams : virtual PaaIndexParams, virtual SaxIndexParams {
      * @param breakpoints_file Only used for FixedBreakpointStrategy: path to the plain text file to load the fixed
      * breakpoints
      */
-    iSaxIndexParams(SegmentationStrategyType segmentation_strategy_type, SaxSegIndT num_segments,
-                    SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
+    iSaxIndexParams(SegmentationStrategyType segmentation_strategy_type, bool per_lg_segmentation,
+                    SaxSegIndT num_segments, SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
                     iSaxBreakpointStrategyType breakpoint_strategy_type, iSaxSplitStrategyType split_strategy_type,
                     SaxNumBitsT num_bits_limit, bool min_num_bits_on_tie, const str &breakpoints_file)
-        : PaaIndexParams(segmentation_strategy_type, num_segments),
-          SaxIndexParams(segmentation_strategy_type, num_segments, first_layer_num_bits, breakpoint_strategy_type,
-                         min_num_bits_on_tie, breakpoints_file),
+        : PaaIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments),
+          SaxIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments, first_layer_num_bits,
+                         breakpoint_strategy_type, min_num_bits_on_tie, breakpoints_file),
           m_leaf_capacity(leaf_capacity),
           m_split_strategy_type(split_strategy_type),
           m_num_bits_limit(num_bits_limit) {}
@@ -160,8 +172,8 @@ struct iSaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual iSaxIndexP
      * @brief Constructor
      *
      * @param segmentation_strategy_type Type of strategy to use for segmentation
+     * @param per_lg_segmentation Whether to use different segmentation strategy per length-group
      * @param num_segments Number of segments to use
-
      * @param pos_per_env Size of the starting position groups
      * @param first_layer_num_bits Number of bit to use for symbols in the first layer of the index
      * @param leaf_capacity Maximum number of entries in a leaf
@@ -173,18 +185,18 @@ struct iSaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual iSaxIndexP
      * @param breakpoints_file Only used for FixedBreakpointStrategy: path to the plain text file to load the fixed
      * breakpoints from
      */
-    iSaxEnvelopeIndexParams(SegmentationStrategyType segmentation_strategy_type, SaxSegIndT num_segments,
-                            uint pos_per_env, SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
-                            iSaxBreakpointStrategyType breakpoint_strategy_type,
+    iSaxEnvelopeIndexParams(SegmentationStrategyType segmentation_strategy_type, bool per_lg_segmentation,
+                            SaxSegIndT num_segments, uint pos_per_env, SaxNumBitsT first_layer_num_bits,
+                            size_t leaf_capacity, iSaxBreakpointStrategyType breakpoint_strategy_type,
                             iSaxSplitStrategyType split_strategy_type, SaxNumBitsT num_bits_limit,
                             bool min_num_bits_on_tie, const str &breakpoints_file)
-        : iSaxIndexParams(segmentation_strategy_type, num_segments, first_layer_num_bits, leaf_capacity,
-                          breakpoint_strategy_type, split_strategy_type, num_bits_limit, min_num_bits_on_tie,
-                          breakpoints_file),
-          PaaIndexParams(segmentation_strategy_type, num_segments),
-          EnvelopeIndexParams(segmentation_strategy_type, num_segments, pos_per_env),
-          SaxIndexParams(segmentation_strategy_type, num_segments, first_layer_num_bits, breakpoint_strategy_type,
-                         min_num_bits_on_tie, breakpoints_file) {}
+        : iSaxIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments, first_layer_num_bits,
+                          leaf_capacity, breakpoint_strategy_type, split_strategy_type, num_bits_limit,
+                          min_num_bits_on_tie, breakpoints_file),
+          PaaIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments),
+          EnvelopeIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments, pos_per_env),
+          SaxIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments, first_layer_num_bits,
+                         breakpoint_strategy_type, min_num_bits_on_tie, breakpoints_file) {}
 };
 
 /** @brief Parameters for TreeEnvelopeIndex */
@@ -198,8 +210,8 @@ struct TreeEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual SaxIndexPa
      * @brief Constructor
      *
      * @param segmentation_strategy_type Type of strategy to use for segmentation
+     * @param per_lg_segmentation Whether to use different segmentation strategy per length-group
      * @param num_segments Number of segments to use
-
      * @param pos_per_env Size of the starting position groups
      * @param inv_sax_num_bits Number of bits to use for the invSAX representations
      * @param bucket_size Size of buckets
@@ -209,14 +221,14 @@ struct TreeEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual SaxIndexPa
      * @param breakpoints_file Only used for FixedBreakpointStrategy: path to the plain text file to load the fixed
      * breakpoints from
      */
-    TreeEnvelopeIndexParams(SegmentationStrategyType segmentation_strategy_type, SaxSegIndT num_segments,
-                            uint pos_per_env, SaxNumBitsT inv_sax_num_bits, size_t bucket_size,
+    TreeEnvelopeIndexParams(SegmentationStrategyType segmentation_strategy_type, bool per_lg_segmentation,
+                            SaxSegIndT num_segments, uint pos_per_env, SaxNumBitsT inv_sax_num_bits, size_t bucket_size,
                             iSaxBreakpointStrategyType breakpoint_strategy_type, bool min_num_bits_on_tie,
                             const str &breakpoints_file)
-        : PaaIndexParams(segmentation_strategy_type, num_segments),
-          EnvelopeIndexParams(segmentation_strategy_type, num_segments, pos_per_env),
-          SaxIndexParams(segmentation_strategy_type, num_segments, inv_sax_num_bits, breakpoint_strategy_type,
-                         min_num_bits_on_tie, breakpoints_file),
+        : PaaIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments),
+          EnvelopeIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments, pos_per_env),
+          SaxIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments, inv_sax_num_bits,
+                         breakpoint_strategy_type, min_num_bits_on_tie, breakpoints_file),
           m_bucket_size(bucket_size) {}
 };
 

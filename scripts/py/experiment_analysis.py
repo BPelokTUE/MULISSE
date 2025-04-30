@@ -1646,13 +1646,13 @@ experiment_length_based_grouping(
     ## TOTAL TIME
     # targets_dict={ERD.RUNS_COLS: [QC.TOTAL_TIME_S]},
     ## AMORTIZED TIME
-    # targets_dict={ERD.RUNS_COLS: TIME_TARGETS},
-    # hatches=["", PREP_TIME_HATCH],
-    # hatch_labels=TIME_LABELS,
+    targets_dict={ERD.RUNS_COLS: TIME_TARGETS},
+    hatches=["", PREP_TIME_HATCH],
+    hatch_labels=TIME_LABELS,
     ## PQ TIME
     # targets_dict={ERD.RUNS_COLS: PQ_TIME_TARGETS},
     # hatches=["", FIRST_LAYER_TIME_HATCH],
     # hatch_labels=PQ_TIME_LABELS,
     ## INDEX SIZE
-    targets_dict={ERD.INDEXES_COLS: [ISC.SIZE_ON_DISK_B]},
+    # targets_dict={ERD.INDEXES_COLS: [ISC.SIZE_ON_DISK_B]},
 )

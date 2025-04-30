@@ -195,6 +195,11 @@ void construct_index(std::function<sptr<IIndex<T>>(const IndexFactoryParams &)> 
     sptr<IIndex<T>> index;
     if (opts.m_l_per_group > 0) {
         uint num_len_groups = RS.get_length_props().m_num_l_groups;
+
+        if (segmentation_strategies.size() < num_len_groups) {
+            factory_params.m_segmentation_strategy = segmentation_strategies[0];
+        }
+
         vec<sptr<IIndex<T>>> group_indexes(num_len_groups);
         for (uint lg_ind = 0; lg_ind < num_len_groups; lg_ind++) {
             if (!factory_params.m_segmentation_strategy) {
@@ -207,7 +212,7 @@ void construct_index(std::function<sptr<IIndex<T>>(const IndexFactoryParams &)> 
         }
         index = std::make_shared<LengthGroupingIndex<T>>(std::move(group_indexes), opts.m_l_min, opts.m_l_max);
     } else {
-        if (factory_params.m_segmentation_strategy) factory_params.m_segmentation_strategy = segmentation_strategies[0];
+        factory_params.m_segmentation_strategy = segmentation_strategies[0];
         index = index_factory(factory_params);
     }
 
@@ -251,11 +256,17 @@ int create_index(const IndexOptions &opts) {
         .m_opts = opts,
     };
 
-    uint num_len_groups = RS.get_length_props().m_num_l_groups;
-    vec<sptr<ISegmentationStrategy>> segmentation_strategies(num_len_groups);
-    for (uint lg_ind = 0; lg_ind < num_len_groups; lg_ind++) {
-        segmentation_strategies[lg_ind] =
-            get_segmentation_strategy(opts, RS.get_lg_l_min(lg_ind), RS.get_lg_l_max(lg_ind));
+    vec<sptr<ISegmentationStrategy>> segmentation_strategies;
+
+    if (dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get())->m_per_lg_segmentation) {
+        uint num_len_groups = RS.get_length_props().m_num_l_groups;
+        segmentation_strategies.resize(num_len_groups);
+        for (uint lg_ind = 0; lg_ind < num_len_groups; lg_ind++) {
+            segmentation_strategies[lg_ind] =
+                get_segmentation_strategy(opts, RS.get_lg_l_min(lg_ind), RS.get_lg_l_max(lg_ind));
+        }
+    } else {
+        segmentation_strategies.push_back(get_segmentation_strategy(opts, opts.m_l_min, opts.m_l_max));
     }
 
     switch (opts.m_index_method) {

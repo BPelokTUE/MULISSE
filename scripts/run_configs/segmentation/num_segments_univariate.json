@@ -18,6 +18,7 @@
     "isax_leaf_cap_ratios": [],
     "isax_start_bit_numbers": [],
     "segmentation_strategies": ["uniform", "adaptive"],
+    "per_lg_segmentation": [false],
     "num_segments": [4, 8, 12, 16],
     "envelope_size_ratios": [0.05],
     "length_group_size_ratios": [0.0625],

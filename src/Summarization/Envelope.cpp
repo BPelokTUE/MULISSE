@@ -134,13 +134,16 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_envelope_groups(
     vec<const ISegmentationStrategy *> segmentation_strategies) {
     auto &RS = RunSettings::get_instance();
 
+    bool multiple_ss = segmentation_strategies.size() > 1;
+
     vec<vec<Envelope>> envelope_groups(m_num_len_groups);
     for (uint lg_ind = 0; lg_ind < m_num_len_groups; ++lg_ind) {
         uint lg_l_min = RS.get_lg_l_min(lg_ind);  // l_min + (l_max - l_min) * lg_ind / m_num_len_groups;
         uint lg_l_max = RS.get_lg_l_max(lg_ind);
         uint num_env = U((series_len - lg_l_min + pos_per_env) / pos_per_env);
-        // CHECK: this might need to be rounded up, but probably not
-        SaxSegIndT segments_per_env_lg = segmentation_strategies[lg_ind]->get_num_segments(lg_l_max);
+
+        uint ss_ind = multiple_ss ? lg_ind : 0;
+        SaxSegIndT segments_per_env_lg = segmentation_strategies[ss_ind]->get_num_segments(lg_l_max);
 
         envelope_groups[lg_ind].reserve(num_env);
         for (uint env_ind = 0; env_ind < num_env; ++env_ind)
