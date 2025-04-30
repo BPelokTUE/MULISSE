@@ -120,7 +120,51 @@ The following may be inferred from this investigation:
 - To optimize short query performance, focusing more on early segments (e.g. making these segments shorter) should be explored (decreasing segment length already show promising results, however this needlessly increases index size)
 
 - TODO:
-    - Run on raw
-    - Write down optimal PG and LG settings
-    - Figure out how to adapt segment lengths also per channel
+    - [ ] Run on raw
+        - ULISSE fails on `malloc` errors. I could not run a single experiment with raw (unnormalized data). I suggest implementing raw search in MULISSE and running experiments there if needed.
+        - [ ] Implement raw
+    - [x] Write down optimal PG ($N_p$) and LG ($N_l$) settings
+        - $N_p^{\text{optimal}} \approx 20$
+        - $N_l^{\text{optimal}} \approx 16$
+    - [~] Figure out how to adapt segment lengths also per channel
+        - Idea: presence
+
+### Presence
+Before segmentation (PAA averaging) is applied in envelopes, we can calculate the "presence" of each point within the envelope. The presence for point at index $l\in[1, l_{\max}]$ is the **number of subsequences in the envelope that contribute to the point**, in other words, the number of subsequences with length and starting position relevant to the envelope that include this point. Let $m$ be the length of time series, $\gamma$ be the number of starting positions in the envelope, $l^g_{\min}$ and $l^g_{\max}$ be the minimum and maximum query lengths in group $g$ respectively, and $p\in\mathbb{N}^{l^g_{\max}}$ be the array of presence scores for points in an envelope of length group $g$. Then, $p$ can be calculated as:
+$$
+\begin{array}{rcl}
+    p_{l^g_{\max}} & := & \min(\gamma, m - l^g_{\max} + 1) \\
+    p_{l^g_{\max}-1} & := & \min(\gamma, m - l^g_{\max} + 2) + p_{l^g_{\max}} \\
+    & \vdots & \\
+    p_{l^g_{\min}} & := & \min(\gamma, m - l^g_{\min} + 1) + p_{l^g_{\min}+1} \\
+    p_{l^g_{\min}-1} & := & p_{l^g_{\min}} \\
+    & \vdots & \\
+    p_1 & := & p_{l^g_{\min}} 
+\end{array}
+$$
+Or equivalently:
+$$
+p_l=\begin{cases}
+    0 & \text{if }l>l^g_{\max} \\
+    \min(\gamma, m - l + 1) + p_{l+1} & \text{if }l^g_{\min}\le l\le l^g_{\max}\\
+    p_{l^g_{\min}} & \text{if }l<l^g_{\min}
+\end{cases}
+$$
+
+Using presence:
+- [x] A channel can be divided into $N_s$ segments of roughly equal presence
+- [~] $N_s*N_l$ segments can be divided across $N_l$ length groups, such that each segment has roughly equal presence
+- [ ] $N_s*N_l*N_c$ segments can be divided across $N_l$ length groups and $N_c$ channels, such that each channel gets segments proportional to its importance determined based on **???**
+
+*NOTE*: This **does not solve the parametrization issue** (having three parameters to tune: $N_s$, $N_l$ and $N_p$), however it does make a connection between them. It could lead to a solution down the line, but I currently don't see exactly how.
+
+### Meeting notes
+- Why use presence instead of the range of values summarized in each point: presence is agnostic to the dataset, and therefore the segmentation will be the same for all envelopes in a given length group, in contrast if segmentation is determined based on ranges, then every envelope can potentially have a unique segmentation which makes it difficult to calculate mindistances to the query, because all unique segmentation for the query would have to be calculated.
+
+- TODO:
+    - [ ] Implement raw search:
+        - Hypothesis: on raw time series the mean of time series should be good enough for pruning, based on the fact that $\gamma$ is large and sometimes there are only a few segments
+    - [ ] Finalize experiments for segmentation
+    - [ ] Think about how to prioritize channels (e.g. based on cross-dataset variance)
+    - [ ] Think about summarizing after inserting into the index
 
