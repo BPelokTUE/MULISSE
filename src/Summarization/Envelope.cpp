@@ -16,9 +16,10 @@ vec<Real> Envelope::get_isax_input() const { return m_lower; }
 
 EnvelopeEntryGenerator::EnvelopeEntryGenerator(MtsNumChannelsT num_channels, bool normalized,
                                                const EnvelopeParams &uli_params, uint num_len_groups)
-    : m_num_channels(num_channels), m_normalized(normalized), m_env_params(uli_params) {
-    m_num_len_groups = num_len_groups;
-}
+    : m_num_channels(num_channels),
+      m_normalized(normalized),
+      m_env_params(uli_params),
+      m_num_len_groups(num_len_groups) {}
 
 vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec<Real>> &mts, uint series_ind) {
     uint series_len = U(mts[0].size());
@@ -45,12 +46,14 @@ vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec
 }
 
 vec<vec<Envelope>> EnvelopeEntryGenerator::get_raw_envelopes(const vec<Real> &ts) {
+    if (m_num_len_groups != 1) {
+        throw std::runtime_error("Length-based grouping is not supported for raw envelopes");
+    }
+
     auto [l_min, l_max, pos_per_env, segmentation_strategies] = m_env_params;
 
-    for (auto &segmentation_strategy : segmentation_strategies) {
-        if (segmentation_strategy->get_type() != UNIFORM) {
-            throw std::runtime_error("get_raw_envelopes is only supported for UniformSegmentationStrategy");
-        }
+    if (segmentation_strategies[0]->get_type() != UNIFORM) {
+        throw std::runtime_error("get_raw_envelopes is only supported for UniformSegmentationStrategy");
     }
     uint segment_len = segmentation_strategies[0]->get_segment_len(0);
 
@@ -70,7 +73,7 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_raw_envelopes(const vec<Real> &ts
         for (uint seg_ind = 0; seg_ind < segments_in_subs; ++seg_ind) {
             uint first_ind = last_ind + 1 - (seg_ind + 1) * segment_len;
             if (ts.size() - first_ind >= l_min) {
-                auto &envelope = envelope_groups[m_num_len_groups - 1][first_ind / pos_per_env];
+                auto &envelope = envelope_groups[0][first_ind / pos_per_env];
                 envelope.m_lower[seg_ind] = std::min(envelope.m_lower[seg_ind], paa_val);
                 envelope.m_upper[seg_ind] = std::max(envelope.m_upper[seg_ind], paa_val);
             }

@@ -288,6 +288,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
 
         def get_index_settings() -> Settings:
             common_settings = {
+                RK_RAW: config[CK_SEARCH_RAW],
                 RK_SEGMENTATION_STRATEGY: config.get(CK_SEGMENTATION_STRATEGIES, ["uniform"]),
                 RK_PER_LG_SEGMENTATION: config.get(CK_PER_LG_SEGMENTATION, [False]),
                 RK_NUM_SEGMENTS: config.get(CK_NUM_SEGMENTS, []),
@@ -753,6 +754,9 @@ if __name__ == "__main__":
                         l_range = l_max - l_min + 1
                         lens_per_group = 0
                         num_l_groups = 0
+
+                        if index_setting_copy.pop(RK_RAW, False):
+                            args += ["--raw"]
                         if RK_LENS_PER_GROUP in index_setting_copy:
                             lens_per_group = int(math.ceil(l_range * index_setting_copy.pop(RK_LENS_PER_GROUP)))
                             if lens_per_group > 0:

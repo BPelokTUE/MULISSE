@@ -102,15 +102,15 @@ class DistanceMeasure<S, ED, QS> {
                     auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], query_len);
 
                     for (uint query_ind = 0; query_ind < query_len; ++query_ind) {
-                        uint real_ind = query_ind;
-                        if constexpr (QS) real_ind = real_query_inds->at(query_ind);
+                        uint actual_ind = query_ind;
+                        if constexpr (QS) actual_ind = real_query_inds->at(query_ind);
 
-                        Real diff = (mts[c][start_pos + real_ind] - mu) / sigma - query[c][query_ind];
+                        Real diff = (mts[c][start_pos + actual_ind] - mu) / sigma - query[c][query_ind];
                         dist_squared += diff * diff;
                         if (c_use_early_abandoning && dist_squared >= result_set.get_distance_lb()) {
                             points_examined += query_ind + 1;
                             point_in_entry += query_len;
-                            goto start_pos_it_end;
+                            goto start_pos_it_end_normalized;
                         }
                     }
                     points_examined += query_len;
@@ -120,7 +120,7 @@ class DistanceMeasure<S, ED, QS> {
                     {{subs_info.m_series_ind, subs_info.m_start_pos + start_pos, subs_info.m_length - start_pos},
                      dist_squared});
                 updated = true;
-            start_pos_it_end:;
+            start_pos_it_end_normalized:;
                 uint end_pos = start_pos + query_len;
                 if (end_pos < mts_len) {
                     for (MtsNumChannelsT c : present_channels) {
@@ -132,7 +132,34 @@ class DistanceMeasure<S, ED, QS> {
                 logger.increment_num_points_in_examined_entries(point_in_entry);
             }
         } else {
-            throw std::runtime_error("Non-normalized Euclidean distance not implemented yet");
+            for (uint start_pos = 0; start_pos < num_start_pos; ++start_pos) {
+                Real dist_squared = 0;
+                uint64_t points_examined = 0, point_in_entry = 0;
+
+                for (MtsNumChannelsT c : present_channels) {
+                    for (uint query_ind = 0; query_ind < query_len; ++query_ind) {
+                        uint actual_ind = query_ind;
+                        if constexpr (QS) actual_ind = real_query_inds->at(query_ind);
+
+                        Real diff = mts[c][start_pos + actual_ind] - query[c][query_ind];
+                        dist_squared += diff * diff;
+                        if (c_use_early_abandoning && dist_squared >= result_set.get_distance_lb()) {
+                            points_examined += query_ind + 1;
+                            point_in_entry += query_len;
+                            goto start_pos_it_end_raw;
+                        }
+                    }
+                    points_examined += query_len;
+                    point_in_entry += query_len;
+                }
+                result_set.insert(
+                    {{subs_info.m_series_ind, subs_info.m_start_pos + start_pos, subs_info.m_length - start_pos},
+                     dist_squared});
+                updated = true;
+            start_pos_it_end_raw:
+                logger.increment_num_points_examined(points_examined);
+                logger.increment_num_points_in_examined_entries(point_in_entry);
+            }
         }
 
         return updated;
@@ -219,7 +246,8 @@ class DistanceMeasure<S, MASS> {
                 for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
                     Real dot = R(dot_products[query_len - 1 + start_pos]);
                     squared_dists[start_pos] += std::max(
-                        R(0.0), R(query_sum_sq + (mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos]) + dot));
+                        R(0.0),
+                        R(query_sum_sq + (mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos]) - 2 * dot));
                 }
             }
 
