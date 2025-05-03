@@ -71,8 +71,8 @@ ERD = ExperimentResultDataframe
 REQUIRED_COLS = {
     ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
     ERD.QUERY_SETS_COLS: [str(QSC.DATASET_FILE)],
-    ERD.INDEXES_COLS: [str(ISC.DATASET_FILE), str(ISC.INDEX_FILE)],
-    ERD.METHODS_COLS: [str(SSC.DATASET_FILE), str(SSC.INDEX_FILE), str(SSC.ID)],
+    ERD.INDEXES_COLS: [str(ISC.DATASET_FILE), str(ISC.INDEX_FILE), str(ISC.FFTS_FILE)],
+    ERD.METHODS_COLS: [str(SSC.DATASET_FILE), str(SSC.INDEX_FILE), str(SSC.FFTS_FILE), str(SSC.ID)],
     ERD.RUNS_COLS: [str(QC.SETTINGS_ID)],
     ERD.INDEX_STATS_COLS: [str(ISTC.INDEX_FILE)],
     ERD.QUERY_STATS_COLS: [str(QSTC.DATASET_FILE)],
@@ -389,18 +389,23 @@ class ExperimentResults(BaseModel):
 
             if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEXES_COLS])):
                 ssc_index_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.INDEX_FILE))
+                ssc_ffts_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.FFTS_FILE))
                 isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
+                isc_ffts_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.FFTS_FILE))
                 isc_dataset_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.DATASET_FILE))
 
                 has_index = merged_df[ssc_index_file].notna()
                 merged_df_w_index = merged_df[has_index]
                 merged_df_no_index = merged_df[~has_index]
 
+                indexes_df = rename_df_columns(self.indexes_df, ERD.INDEXES_COLS)
                 merged_df_w_index = merged_df_w_index.merge(
-                    rename_df_columns(self.indexes_df, ERD.INDEXES_COLS),
-                    left_on=ssc_index_file,
-                    right_on=isc_index_file,
-                    how="left",
+                    indexes_df, left_on=ssc_index_file, right_on=isc_index_file, how="left"
+                )
+
+                ffts_df = indexes_df[indexes_df[isc_ffts_file].notna()]
+                merged_df_no_index = merged_df_no_index.merge(
+                    ffts_df, left_on=ssc_ffts_file, right_on=isc_ffts_file, how="left"
                 )
                 merged_df = pd.concat([merged_df_no_index, merged_df_w_index], ignore_index=True)
 
@@ -1484,6 +1489,7 @@ def experiment_length_based_grouping(
     reducer: Reducer = MeanReducer(),
     merge_csv_datasets: bool = False,
     consider_segmentation: bool = False,
+    consider_lg_segmentation: bool = False,
     hatches=None,
     hatch_labels=None,
     y_scale: str = "linear",

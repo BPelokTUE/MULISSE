@@ -18,15 +18,17 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
     uint num_segments = 0, pos_per_env = 0;
     SaxNumBitsT first_layer_num_bits = 0, num_bits_limit = 0;
     size_t leaf_capacity = 0;
-    str ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "", method_type_str = "";
+    str ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "", method_type_str = "",
+        per_lg_segmentation_str = "";
 
     if (index_options.m_index_params) {
         auto method_type = index_options.m_index_params->get_type();
         method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(method_type);
 
         auto *paa_params = dynamic_cast<PaaIndexParams *>(index_options.m_index_params.get());
-        num_segments = paa_params->m_num_segments;
         ss_str = SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_strategy_type);
+        per_lg_segmentation_str = to_string(paa_params->m_per_lg_segmentation);
+        num_segments = paa_params->m_num_segments;
 
         if (std::find(METHODS_W_SAX.begin(), METHODS_W_SAX.end(), method_type) != METHODS_W_SAX.end()) {
             auto *sax_params = dynamic_cast<SaxIndexParams *>(index_options.m_index_params.get());
@@ -69,6 +71,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         {ISC::FIRST_LAYER_NUM_BITS, format_num_param(first_layer_num_bits)},
         {ISC::LEAF_CAPACITY, format_num_param(leaf_capacity)},
         {ISC::SEGMENTATION_STRATEGY, ss_str},
+        {ISC::PER_LG_SEGMENTATION, per_lg_segmentation_str},
         {ISC::BREAKPOINT_STRATEGY, brs_str},
         {ISC::SPLIT_STRATEGY, sps_str},
         {ISC::MIN_NUM_BITS_ON_TIE, min_num_bits_on_tie_str},

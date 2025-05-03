@@ -165,7 +165,8 @@ class RunSettings {
      */
     virtual inline uint get_lg_l_max(uint lg_ind) const {
         return m_length_props.m_num_l_groups > 0
-                   ? m_length_props.m_l_min + (lg_ind + 1) * m_length_props.m_l_per_group - 1
+                   ? std::min(m_length_props.m_l_max,
+                              m_length_props.m_l_min + (lg_ind + 1) * m_length_props.m_l_per_group - 1)
                    : m_length_props.m_l_max;
     }
 

@@ -14,17 +14,18 @@ enum class IndexSettingsColumn {
     L_MIN,                  // Minimum allowed query length
     L_MAX,                  // Maximum allowed query length
     L_PER_GROUP,            // Size of length groups
+    POS_PER_ENV,            // Number of positions per envelope for envelope-based methods
     NORMALIZED,             // Whether the query and subsequences are normalized
     INDEX_TYPE,             // Type of index used
-    NUM_SEGMENTS,           // The number of segments per channel used
-    POS_PER_ENV,            // Number of positions per envelope for envelope-based methods
-    FIRST_LAYER_NUM_BITS,   // Number of bits per segment used in the first layer for iSAX indexes
-    LEAF_CAPACITY,          // Maximum number of entries in a leaves (if applicable)
     SEGMENTATION_STRATEGY,  // Strategy for segmenting the time series channels
-    SPLIT_STRATEGY,         // Strategy for choosing the index to split on for iSAX indexes
+    PER_LG_SEGMENTATION,    // Whether to use different segmentation strategy per length-group
+    NUM_SEGMENTS,           // The number of segments per channel used
     BREAKPOINT_STRATEGY,    // Strategy for getting the breakpoints of the symbol intervals for iSAX indexes
+    SPLIT_STRATEGY,         // Strategy for choosing the index to split on for iSAX indexes
     MIN_NUM_BITS_ON_TIE,    // Whether to choose the segment with the minimum number of bits when tied for
                             // EntropyMaximizing split strategy for iSAX indexes
+    FIRST_LAYER_NUM_BITS,   // Number of bits per segment used in the first layer for iSAX indexes
+    LEAF_CAPACITY,          // Maximum number of entries in a leaves (if applicable)
     NUM_BITS_LIMIT,         // Maximum number of bits per segment for iSAX indexes
     ADAPT_TO_DATASET,       // Whether to adapt the index properties to the dataset
     INSERTER_TYPE,          // Type of inserter used for the index

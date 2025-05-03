@@ -54,7 +54,7 @@ TEST_CASE("get_paa_entries_normalized works") {
     RunSettings::set_instance(sptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
 #endif
 
-    PaaParams params = {l_min, l_max, &segmentation_strategy_mock.get()};
+    PaaParams params = {l_min, l_max, {&segmentation_strategy_mock.get()}};
     PaaEntryGenerator generator(1, params);
 
     vec<vec<Real>> uts = {{3, 7, R(1.2), R(3.7), R(9.1), R(-3.5), R(-1.5), 0, R(0.8)}};

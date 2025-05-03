@@ -42,7 +42,7 @@ void IndexAnalyzer<FinalizedFlatEnvelopeIndex, EnvelopeTag>::analyze(uint length
     }
     SaxSegIndT num_segments = static_cast<SaxSegIndT>(entries[0].m_mts_summary[0].size());
     if (num_segments == 0) {
-        throw std::runtime_error("Number of segments is 0");
+        std::cout << "Warning: Number of segments is 0\n";
     }
     IndexStats stats(num_channels, num_segments);
 
