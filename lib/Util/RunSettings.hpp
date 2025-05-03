@@ -22,6 +22,7 @@ struct DatasetProperties {
 };
 
 struct LengthProperties {
+    bool m_use_length_groups;
     uint m_l_min;
     uint m_l_max;
     uint m_l_per_group;
@@ -154,8 +155,8 @@ class RunSettings {
      * @return The maximum length of the length group
      */
     virtual inline uint get_lg_l_min(uint lg_ind) const {
-        return m_length_props.m_num_l_groups > 0 ? m_length_props.m_l_min + lg_ind * m_length_props.m_l_per_group
-                                                 : m_length_props.m_l_min;
+        return m_length_props.m_use_length_groups ? m_length_props.m_l_min + lg_ind * m_length_props.m_l_per_group
+                                                  : m_length_props.m_l_min;
     }
 
     /**
@@ -164,7 +165,7 @@ class RunSettings {
      * @return The minimum length of the length group
      */
     virtual inline uint get_lg_l_max(uint lg_ind) const {
-        return m_length_props.m_num_l_groups > 0
+        return m_length_props.m_use_length_groups
                    ? std::min(m_length_props.m_l_max,
                               m_length_props.m_l_min + (lg_ind + 1) * m_length_props.m_l_per_group - 1)
                    : m_length_props.m_l_max;

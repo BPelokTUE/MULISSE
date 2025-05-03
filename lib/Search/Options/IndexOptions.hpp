@@ -269,6 +269,8 @@ struct IndexOptions {
     bool m_normalized;
     /** @brief Whether to adapt the index properties to the dataset entries */
     bool m_adapt;
+    /** @brief Whether to use length groups */
+    bool m_use_length_groups;
     /** @brief The type of the index method to use */
     SearchMethodType m_index_method;
     /** @brief Format to save the index in */

@@ -193,7 +193,7 @@ void construct_index(std::function<sptr<IIndex<T>>(const IndexFactoryParams &)> 
     auto &opts = factory_params.m_opts;
 
     sptr<IIndex<T>> index;
-    if (opts.m_l_per_group > 0) {
+    if (opts.m_use_length_groups) {
         uint num_len_groups = RS.get_length_props().m_num_l_groups;
 
         if (segmentation_strategies.size() < num_len_groups) {

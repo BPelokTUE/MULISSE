@@ -21,6 +21,8 @@ struct SearchOptions {
     bool m_use_priority_queue = false;
     /** @brief Whether the index is grouped by length */
     bool m_group_by_length = false;
+    /** @brief Whether to use length groups */
+    bool m_use_length_groups = false;
     /** @brief Type of search method to use */
     SearchMethodType m_search_method_type;
     /** @brief Archive type of the index */

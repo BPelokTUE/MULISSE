@@ -322,6 +322,7 @@ int main(int argc, char **argv) {
     CLI11_PARSE(app, argc, argv);
     CommandType command_type = STR_TO_CMD_TYPE.at(app.get_subcommands().front()->get_name());
     SearchMethodType method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str);
+    bool use_length_groups = l_per_group > 0;
 
     // Extra parsing; TODO: handle this with CLI11 if possible
     if (l_min > l_max) {
@@ -396,7 +397,7 @@ int main(int argc, char **argv) {
                 return 1;
             }
         }
-        if (l_per_group > 0) {
+        if (use_length_groups) {
             if (l_min == 0 || l_max == 0 || l_min > l_max) {
                 std::cerr << "When using length-based grouping, --l_min and --l_max must be provided\n";
                 return 1;
@@ -407,8 +408,8 @@ int main(int argc, char **argv) {
     // Initialize run settings
     try {
         RunSettings::initialize(command_type, {num_channels, series_len, num_series, dataset_path},
-                                {l_min, l_max, l_per_group, num_l_groups}, pos_per_env, index_path, ffts_path,
-                                query_path, method_type, logs_path);
+                                {use_length_groups, l_min, l_max, l_per_group, num_l_groups}, pos_per_env, index_path,
+                                ffts_path, query_path, method_type, logs_path);
     } catch (const std::exception &e) {
         std::cerr << "Error configuring run: " << e.what() << '\n';
         return 1;
@@ -472,6 +473,7 @@ int main(int argc, char **argv) {
             IndexOptions index_options{
                 .m_normalized = !unnormalized,
                 .m_adapt = adapt_index,
+                .m_use_length_groups = use_length_groups,
                 .m_index_method = method_type,
                 .m_index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
                 .m_inserter_type = STR_TO_ENTRY_INSERTER_TYPE.at(inserter_type_str),
@@ -500,6 +502,7 @@ int main(int argc, char **argv) {
                 .m_use_early_abandoning = early_abandon,
                 .m_sort_queries = sort_query,
                 .m_use_priority_queue = !no_use_pq,
+                .m_use_length_groups = use_length_groups,
                 .m_search_method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str),
                 .m_index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
                 .m_search_type = search_type,

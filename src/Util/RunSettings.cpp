@@ -42,8 +42,9 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     }
 
     instance->m_length_props = length_props;
-    if (length_props.m_l_per_group == 0) {
-        instance->m_length_props.m_num_l_groups = 0;
+    if (!length_props.m_use_length_groups) {
+        instance->m_length_props.m_num_l_groups = 1;
+        instance->m_length_props.m_l_per_group = length_props.m_l_max - length_props.m_l_min + 1;
     } else {
         instance->m_length_props.m_num_l_groups =
             U((length_props.m_l_max - length_props.m_l_min + length_props.m_l_per_group) / length_props.m_l_per_group);
