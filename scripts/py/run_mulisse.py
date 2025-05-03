@@ -26,6 +26,7 @@ CK_QUERY_SET_SIZES = "query_set_sizes"
 CK_SYN_STEP_STDEVS = "syn_step_stdevs"
 CK_L_RANGE_RATIOS = "l_range_ratios"
 CK_USED_CHANNEL_RATIOS = "used_channel_ratios"
+CK_EXACT_QUERY_LENGTH_SETS = "exact_query_length_sets"
 CK_QUERY_NOISE_STDEVS = "query_noise_stdevs"
 CK_SEARCH_METHODS = "search_methods"
 CK_INDEX_INSERTERS = "index_inserters"
@@ -68,6 +69,7 @@ RK_NUM_SEGMENTS = "num_segments"
 RK_NUM_CHANNELS = "num_channels"
 RK_STEP_STDEV = "step_stdev"
 RK_USED_CHANNEL_RATIO = "used_channel_ratio"
+RK_EXACT_QUERY_LENGTHS = "exact_query_lengths"
 RK_NOISE_STDEV = "noise_stdev"
 RK_INSERTER_TYPE = "inserter_type"
 RK_BREAKPOINT_STRATEGY = "breakpoint_strategy"
@@ -283,6 +285,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
                     RK_USED_CHANNEL_RATIO: config[CK_USED_CHANNEL_RATIOS],
                     RK_NOISE_STDEV: config[CK_QUERY_NOISE_STDEVS],
                     RK_QUERY_SET_SEED: config.get(CK_QUERY_SET_SEEDS, [0]),
+                    RK_EXACT_QUERY_LENGTHS: config.get(CK_EXACT_QUERY_LENGTH_SETS, []),
                 }
             ]
 
@@ -684,15 +687,19 @@ if __name__ == "__main__":
                     used_channels = int(num_channels * query_setting[RK_USED_CHANNEL_RATIO])
                     noise_stdev = query_setting[RK_NOISE_STDEV]
                     seed = query_setting[RK_QUERY_SET_SEED]
+                    exact_query_lengths = query_setting.get(RK_EXACT_QUERY_LENGTHS, [])
 
                     query_file = os.path.join(dataset_setting[RK_LOCATION], f"queries-{query_counter}.txt")
                     query_counter += 1
                     # fmt: off
                     args = [
                         SUB_CREATE_QS, "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
-                        "-Q", str(num_queries), "-l", str(l_min), "-L", str(l_max), "-u", str(used_channels), "--noise",
-                        str(noise_stdev), "-S", str(seed)
+                        "-Q", str(num_queries), "-u", str(used_channels), "--noise", str(noise_stdev), "-S", str(seed)
                     ]
+                    if len(exact_query_lengths) > 0:
+                        args += ["-e", *[str(int(q_len)) for q_len in exact_query_lengths]]
+                    else:
+                        args += ["-l", str(l_min), "-L", str(l_max)]
                     # fmt: on
                     queries_created = run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
 

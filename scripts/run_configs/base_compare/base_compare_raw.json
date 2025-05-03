@@ -1,15 +1,16 @@
 {
     "csv_data_dirs": [],
-    "dataset_sizes": [100],
+    "dataset_sizes": [5000],
     "series_lengths": [4096],
     "syn_num_channels": [1],
     "syn_step_stdevs": [1.0],
-    "query_set_sizes": [25],
+    "query_set_sizes": [5],
+    "exact_query_length_sets": [[256, 512, 1024, 2048, 4096]],
     "l_range_ratios": [[0.0625, 1.0]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {
-        "sensible": ["isax_env_w_env"],
+        "sensible": ["isax_env_w_sax_env"],
         "scan": ["scan"]
     },
     "isax_split_strategies": {
@@ -29,7 +30,7 @@
     "num_segments": [32],
     "envelope_size_ratios": [1.0],
     "distance_measures": {
-        "scan": ["ed", "mass"],
+        "scan": ["mass"],
         "sensible": ["ed"]
     },
     "early_abandon": [true],
