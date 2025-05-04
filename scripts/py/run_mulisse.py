@@ -17,8 +17,8 @@ from pydantic import BaseModel
 CK_CSV_DATA_DIRS = "csv_data_dirs"
 CK_DATASET_SIZES = "dataset_sizes"
 CK_SERIES_LENGTHS = "series_lengths"
+CK_LG_SEGMENTATION_STRATEGIES = "lg_segmentation_strategies"
 CK_SEGMENTATION_STRATEGIES = "segmentation_strategies"
-CK_PER_LG_SEGMENTATION = "per_lg_segmentation"
 CK_NUM_SEGMENTS = "num_segments"
 CK_NUM_CHANNELS = "num_channels"
 CK_SYN_NUM_CHANNELS = "syn_num_channels"
@@ -63,8 +63,8 @@ RK_L_RANGE = "l_range"
 RK_COMMAND = "command"
 RK_LOCATION = "location"
 RK_SIZE = "size"
+RK_LG_SEGMENTATION_STRATEGY = "lg_segmentation_strategy"
 RK_SEGMENTATION_STRATEGY = "segmentation_strategy"
-RK_PER_LG_SEGMENTATION = "per_lg_segmentation"
 RK_NUM_SEGMENTS = "num_segments"
 RK_NUM_CHANNELS = "num_channels"
 RK_STEP_STDEV = "step_stdev"
@@ -279,21 +279,21 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
             return dataset_settings
 
         def get_query_set_settings() -> Settings:
-            return [
-                {
-                    RK_SIZE: config[CK_QUERY_SET_SIZES],
-                    RK_USED_CHANNEL_RATIO: config[CK_USED_CHANNEL_RATIOS],
-                    RK_NOISE_STDEV: config[CK_QUERY_NOISE_STDEVS],
-                    RK_QUERY_SET_SEED: config.get(CK_QUERY_SET_SEEDS, [0]),
-                    RK_EXACT_QUERY_LENGTHS: config.get(CK_EXACT_QUERY_LENGTH_SETS, []),
-                }
-            ]
+            setting = {
+                RK_SIZE: config[CK_QUERY_SET_SIZES],
+                RK_USED_CHANNEL_RATIO: config[CK_USED_CHANNEL_RATIOS],
+                RK_NOISE_STDEV: config[CK_QUERY_NOISE_STDEVS],
+                RK_QUERY_SET_SEED: config.get(CK_QUERY_SET_SEEDS, [0]),
+            }
+            if CK_EXACT_QUERY_LENGTH_SETS in config:
+                setting[RK_EXACT_QUERY_LENGTHS] = config[CK_EXACT_QUERY_LENGTH_SETS]
+            return [setting]
 
         def get_index_settings() -> Settings:
             common_settings = {
                 RK_RAW: config[CK_SEARCH_RAW],
+                RK_LG_SEGMENTATION_STRATEGY: config.get(CK_LG_SEGMENTATION_STRATEGIES, ["single"]),
                 RK_SEGMENTATION_STRATEGY: config.get(CK_SEGMENTATION_STRATEGIES, ["uniform"]),
-                RK_PER_LG_SEGMENTATION: config.get(CK_PER_LG_SEGMENTATION, [False]),
                 RK_NUM_SEGMENTS: config.get(CK_NUM_SEGMENTS, []),
                 RK_INSERTER_TYPE: config.get(CK_INDEX_INSERTERS, []),
                 RK_LENS_PER_GROUP: config.get(CK_LENGTH_GROUP_SIZE_RATIOS, [0]),
@@ -769,10 +769,10 @@ if __name__ == "__main__":
                             if lens_per_group > 0:
                                 args += ["-g", str(lens_per_group)]
                                 num_l_groups = (l_range + lens_per_group - 1) // lens_per_group
+                        if RK_LG_SEGMENTATION_STRATEGY in index_setting_copy:
+                            args += ["-G", index_setting_copy.pop(RK_LG_SEGMENTATION_STRATEGY)]
                         if RK_SEGMENTATION_STRATEGY in index_setting_copy:
                             args += ["-S", index_setting_copy.pop(RK_SEGMENTATION_STRATEGY)]
-                        if index_setting_copy.pop(RK_PER_LG_SEGMENTATION, False):
-                            args += ["--per_lg_segmentation"]
                         if RK_NUM_SEGMENTS in index_setting_copy:
                             args += ["-s", str(index_setting_copy.pop(RK_NUM_SEGMENTS))]
                         pos_per_env = 1

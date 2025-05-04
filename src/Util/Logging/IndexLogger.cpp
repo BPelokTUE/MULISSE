@@ -18,8 +18,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
     uint num_segments = 0, pos_per_env = 0;
     SaxNumBitsT first_layer_num_bits = 0, num_bits_limit = 0;
     size_t leaf_capacity = 0;
-    str lg_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "", method_type_str = "",
-        per_lg_segmentation_str = "";
+    str lg_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "", method_type_str = "";
 
     if (index_options.m_index_params) {
         auto method_type = index_options.m_index_params->get_type();
@@ -70,8 +69,8 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         {ISC::POS_PER_ENV, format_num_param(pos_per_env)},
         {ISC::FIRST_LAYER_NUM_BITS, format_num_param(first_layer_num_bits)},
         {ISC::LEAF_CAPACITY, format_num_param(leaf_capacity)},
+        {ISC::LG_SEGMENTATION_STRATEGY, lg_ss_str},
         {ISC::SEGMENTATION_STRATEGY, ss_str},
-        {ISC::PER_LG_SEGMENTATION, per_lg_segmentation_str},
         {ISC::BREAKPOINT_STRATEGY, brs_str},
         {ISC::SPLIT_STRATEGY, sps_str},
         {ISC::MIN_NUM_BITS_ON_TIE, min_num_bits_on_tie_str},

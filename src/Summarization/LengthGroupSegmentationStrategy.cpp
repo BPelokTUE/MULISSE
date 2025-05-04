@@ -78,7 +78,7 @@ vec<SaxSegIndT> AdaptiveMultiSegmentationStrategy::calculate_num_segments_per_lg
     auto &presences = presence_array.get_presences();
 
     vec<SaxSegIndT> num_segments_per_lg(length_props.m_num_l_groups);
-    size_t accounted_presence = 0, remaining_presence = 0;
+    size_t accounted_presence = 0, remaining_presence = presence_array.get_presence_sum();
     uint remaining_segments = U(avg_num_segments * length_props.m_num_l_groups);
     size_t presence_per_segment = remaining_presence / remaining_segments;
 
@@ -89,10 +89,10 @@ vec<SaxSegIndT> AdaptiveMultiSegmentationStrategy::calculate_num_segments_per_lg
         for (uint l = lg_l_max; l >= lg_l_min; --l) {
             lg_presence_sum += presences[l] - accounted_presence;
         }
-        lg_presence_sum += presences[lg_l_min] * (lg_l_min - 1);
-        accounted_presence += presences[lg_l_min];
+        lg_presence_sum += (presences[lg_l_min] - accounted_presence) * (lg_l_min - 1);
+        accounted_presence += presences[lg_l_min] - accounted_presence;
 
-        num_segments_per_lg[lg_ind] = lg_presence_sum / presence_per_segment;
+        num_segments_per_lg[lg_ind] = static_cast<SaxSegIndT>(lg_presence_sum / presence_per_segment);
 
         remaining_presence -= lg_presence_sum;
         remaining_segments -= num_segments_per_lg[lg_ind];

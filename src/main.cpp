@@ -67,6 +67,7 @@ int main(int argc, char **argv) {
     str dataset_path, query_path, index_path, ffts_path,
         breakpoints_path = "", logs_path = "../LOGS",
         search_method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(ISAX_ENVELOPE),
+        lg_segmentation_strategy_str = LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(ADAPTIVE_MULTI),
         segmentation_strategy_str = SEGMENTATION_STRATEGY_TO_STR.at(ADAPTIVE),
         split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
@@ -84,7 +85,7 @@ int main(int argc, char **argv) {
     MtsNumChannelsT num_channels, used_channels = 0;
     vec<bool> channel_mask;
     bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false, sort_query = false,
-         no_use_pq = false, adapt_index = false, prefer_first_in_em = false, per_lg_segmentation = false;
+         no_use_pq = false, adapt_index = false, prefer_first_in_em = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -177,6 +178,11 @@ int main(int argc, char **argv) {
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_SEARCH_METHOD_TYPE_STRS));
     index_subcommand
+        ->add_option("-G,--lg_segmentation_strategy", lg_segmentation_strategy_str,
+                     "Length group segmentation strategy to use")
+        ->capture_default_str()
+        ->check(CLI::IsMember(ACCEPTED_LENGTH_GROUP_SEGMENTATION_STRATEGY_STRS));
+    index_subcommand
         ->add_option("-S,--segmentation_strategy", segmentation_strategy_str, "Segmentation strategy to use")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_SEGMENTATION_STRATEGY_STRS));
@@ -208,8 +214,6 @@ int main(int argc, char **argv) {
                      "Lengths per group, 0 by default, indicating no length-based grouping")
         ->capture_default_str()
         ->check(positive_int);
-    index_subcommand->add_flag("--per_lg_segmentation", per_lg_segmentation,
-                               "Use different segmentation strategies for each length group");
     index_subcommand
         ->add_option("-C,--leaf_capacity", leaf_capacity,
                      "Leaf capacity or bucket size in case of tree envelope indexes")
@@ -432,7 +436,8 @@ int main(int argc, char **argv) {
         case INDEX: {
             IIndexParams *index_params;
 
-            auto lg_segmentation_strategy_type = STR_TO_LENGTH_GROUP_SEGMENTATION_STRATEGY.at("single");
+            auto lg_segmentation_strategy_type =
+                STR_TO_LENGTH_GROUP_SEGMENTATION_STRATEGY.at(lg_segmentation_strategy_str);
             auto segmentation_strategy_type = STR_TO_SEGMENTATION_STRATEGY.at(segmentation_strategy_str);
             auto breakpoint_strategy_type = STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str);
             auto split_strategy_type = STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str);
