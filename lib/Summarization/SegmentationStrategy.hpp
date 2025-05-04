@@ -4,7 +4,7 @@
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 
-/** @brief Enum for IiSaxSplitStrategy implementations */
+/** @brief Enum for ISegmentationStrategy implementations */
 enum SegmentationStrategyType { UNIFORM, ADAPTIVE };
 
 DEFINE_ENUM_CONSTS(SegmentationStrategyType, SEGMENTATION_STRATEGY, false,
@@ -101,19 +101,6 @@ class AdaptiveSegmentationStrategy : public ISegmentationStrategy {
    private:
     uint m_l_max;
     vec<uint> m_segment_lens, m_segment_ends;
-
-    /**
-     * @brief Calculate the presence of each point and the total presence sum.
-     * @param l_min Minimum length of queries
-     * @param l_max Maximum length of queries
-     * @param series_len Length of the whole time series
-     * @param pos_per_env Number of positions per envelope, defaults to 0 indicating no enveloping
-     * @return A pair containing the presence of each point and the total presence sum.
-     */
-    std::pair<vec<size_t>, size_t> calculate_presences(uint l_min, uint l_max, uint series_len,
-                                                       uint pos_per_env = 0) const;
-
-    friend class AdaptiveSegmentationStrategyTest;
 
     // Required for Cereal (de)serialization
     friend class cereal::access;

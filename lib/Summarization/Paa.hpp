@@ -6,6 +6,7 @@
 #include "Util/typedefs.hpp"
 #include "Summarization/IndexEntry.hpp"
 #include "Summarization/SegmentationStrategy.hpp"
+#include "Summarization/LengthGroupSegmentationStrategy.hpp"
 
 /**
  * @brief Piecewise Aggregate Approximation (PAA) of a time series
@@ -25,7 +26,7 @@ struct PaaParams {
     uint m_l_max;
     /** @brief The segmentation strategies to use for each length group. If it only contains a single strategy, that is
      * used across all length groups. */
-    vec<const ISegmentationStrategy *> m_segmentation_strategies;
+    const ILengthGroupSegmentationStrategy *m_lg_segmentation_strategy;
 };
 
 struct Paa : EntryData {

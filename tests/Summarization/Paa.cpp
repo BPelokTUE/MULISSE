@@ -38,11 +38,16 @@ TEST_CASE("PAA happy-flow works") {
 
 TEST_CASE("get_paa_entries_normalized works") {
     uint segment_len = 3, l_min = 4, l_max = 7;
+
     fakeit::Mock<ISegmentationStrategy> segmentation_strategy_mock;
     fakeit::When(Method(segmentation_strategy_mock, get_num_segments)).AlwaysDo([segment_len](uint subs_len) {
         return subs_len / segment_len;
     });
     fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).AlwaysReturn(segment_len);
+
+    fakeit::Mock<ILengthGroupSegmentationStrategy> lg_segmentation_strategy_mock;
+    fakeit::When(Method(lg_segmentation_strategy_mock, get_const_segmentation_strategy))
+        .AlwaysReturn(&segmentation_strategy_mock.get());
 
     fakeit::Mock<RunSettings> run_settings_mock;
     fakeit::When(Method(run_settings_mock, get_length_group)).AlwaysReturn(0);
@@ -54,7 +59,7 @@ TEST_CASE("get_paa_entries_normalized works") {
     RunSettings::set_instance(sptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
 #endif
 
-    PaaParams params = {l_min, l_max, {&segmentation_strategy_mock.get()}};
+    PaaParams params = {l_min, l_max, &lg_segmentation_strategy_mock.get()};
     PaaEntryGenerator generator(1, params);
 
     vec<vec<Real>> uts = {{3, 7, R(1.2), R(3.7), R(9.1), R(-3.5), R(-1.5), 0, R(0.8)}};

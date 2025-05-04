@@ -6,10 +6,10 @@
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 
-/** @brief Enum type for IiSaxBreakpointStrategy */
-enum iSaxBreakpointStrategyType { EQUIPROBABLE, FIXED };
+/** @brief Enum type for ISaxBreakpointStrategy */
+enum SaxBreakpointStrategyType { EQUIPROBABLE, FIXED };
 
-DEFINE_ENUM_CONSTS_NO_EXTRA(iSaxBreakpointStrategyType, ISAX_BREAKPOINT_STRATEGY, false);
+DEFINE_ENUM_CONSTS_NO_EXTRA(SaxBreakpointStrategyType, ISAX_BREAKPOINT_STRATEGY, false);
 
 /**
  * @brief Interface for breakpoints strategies
@@ -20,9 +20,9 @@ DEFINE_ENUM_CONSTS_NO_EXTRA(iSaxBreakpointStrategyType, ISAX_BREAKPOINT_STRATEGY
  * (2) doubling the size of the alphabet should result in a new set of breakpoints, such that
  * beta_old[i] = beta_new[2*i + 1] for i = 0, 1, ..., alphabet_size_old - 1.
  */
-class IiSaxBreakpointStrategy {
+class ISaxBreakpointStrategy {
    public:
-    virtual ~IiSaxBreakpointStrategy() = default;
+    virtual ~ISaxBreakpointStrategy() = default;
 
     /**
      * @brief Get the breakpoints for the given alphabet size
@@ -44,7 +44,7 @@ class IiSaxBreakpointStrategy {
  *
  * Breakpoints strategy that returns breakpoints that divide the normal distribution into equal probability intervals
  */
-class EquiprobableBreakpointStrategy : public IiSaxBreakpointStrategy {
+class EquiprobableBreakpointStrategy : public ISaxBreakpointStrategy {
    public:
     /**
      * @brief Constructor
@@ -67,7 +67,7 @@ class EquiprobableBreakpointStrategy : public IiSaxBreakpointStrategy {
  *
  * Use fixed breakpoints loaded from an external file.
  */
-class FixedBreakpointStrategy : public IiSaxBreakpointStrategy {
+class FixedBreakpointStrategy : public ISaxBreakpointStrategy {
    public:
     /**
      * @brief Constructor

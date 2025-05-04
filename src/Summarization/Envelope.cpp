@@ -50,15 +50,16 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_raw_envelopes(const vec<Real> &ts
         throw std::runtime_error("Length-based grouping is not supported for raw envelopes");
     }
 
-    auto [l_min, l_max, pos_per_env, segmentation_strategies] = m_env_params;
+    auto [l_min, l_max, pos_per_env, lg_segmentation_strategy] = m_env_params;
 
-    if (segmentation_strategies[0]->get_type() != UNIFORM) {
+    if (lg_segmentation_strategy->get_type() != SINGLE ||
+        lg_segmentation_strategy->get_const_segmentation_strategy(0)->get_type() != UNIFORM) {
         throw std::runtime_error("get_raw_envelopes is only supported for UniformSegmentationStrategy");
     }
-    uint segment_len = segmentation_strategies[0]->get_segment_len(0);
+    uint segment_len = lg_segmentation_strategy->get_const_segmentation_strategy(0)->get_segment_len(0);
 
     vec<vec<Envelope>> envelope_groups =
-        get_envelope_groups(U(ts.size()), pos_per_env, l_min, l_max, segmentation_strategies);
+        get_envelope_groups(U(ts.size()), pos_per_env, l_min, l_max, lg_segmentation_strategy);
 
     Real paa_acc = 0.0, segment_len_r = R(segment_len);
 
@@ -90,11 +91,10 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_raw_envelopes(const vec<Real> &ts
 
 vec<vec<Envelope>> EnvelopeEntryGenerator::get_normalized_envelopes(const vec<Real> &ts) {
     auto &RS = RunSettings::get_instance();
-    auto [l_min, l_max, pos_per_env, segmentation_strategies] = m_env_params;
-    bool multiple_ss = segmentation_strategies.size() > 1;
+    auto [l_min, l_max, pos_per_env, lg_segmentation_strategy] = m_env_params;
 
     vec<vec<Envelope>> envelope_groups =
-        get_envelope_groups(U(ts.size()), pos_per_env, l_min, l_max, segmentation_strategies);
+        get_envelope_groups(U(ts.size()), pos_per_env, l_min, l_max, lg_segmentation_strategy);
 
     vec<Real> sum_accs(ts.size() + 1, 0.0), sq_sum_accs(ts.size() + 1, 0.0);
 
@@ -112,11 +112,11 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_normalized_envelopes(const vec<Re
 
             uint segment_len_sum = 0;
             uint length_group = RS.get_length_group(subs_len);
-            uint ss_ind = multiple_ss ? length_group : 0;
+            auto segmentation_strategy = lg_segmentation_strategy->get_const_segmentation_strategy(length_group);
 
-            SaxSegIndT num_segments = segmentation_strategies[ss_ind]->get_num_segments(subs_len);
+            SaxSegIndT num_segments = segmentation_strategy->get_num_segments(subs_len);
             for (SaxSegIndT seg_ind = 0; seg_ind < num_segments; ++seg_ind) {
-                uint segment_len = segmentation_strategies[ss_ind]->get_segment_len(seg_ind);
+                uint segment_len = segmentation_strategy->get_segment_len(seg_ind);
                 Real paa_val = (sum_accs[start + segment_len_sum + segment_len] - sum_accs[start + segment_len_sum]) /
                                R(segment_len);
                 segment_len_sum += segment_len;
@@ -134,10 +134,8 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_normalized_envelopes(const vec<Re
 
 vec<vec<Envelope>> EnvelopeEntryGenerator::get_envelope_groups(
     const uint series_len, const uint pos_per_env, const uint l_min, const uint l_max,
-    vec<const ISegmentationStrategy *> segmentation_strategies) {
+    const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
     auto &RS = RunSettings::get_instance();
-
-    bool multiple_ss = segmentation_strategies.size() > 1;
 
     vec<vec<Envelope>> envelope_groups(m_num_len_groups);
     for (uint lg_ind = 0; lg_ind < m_num_len_groups; ++lg_ind) {
@@ -145,8 +143,8 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_envelope_groups(
         uint lg_l_max = RS.get_lg_l_max(lg_ind);
         uint num_env = U((series_len - lg_l_min + pos_per_env) / pos_per_env);
 
-        uint ss_ind = multiple_ss ? lg_ind : 0;
-        SaxSegIndT segments_per_env_lg = segmentation_strategies[ss_ind]->get_num_segments(lg_l_max);
+        SaxSegIndT segments_per_env_lg =
+            lg_segmentation_strategy->get_const_segmentation_strategy(lg_ind)->get_num_segments(lg_l_max);
 
         envelope_groups[lg_ind].reserve(num_env);
         for (uint env_ind = 0; env_ind < num_env; ++env_ind)

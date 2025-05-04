@@ -18,7 +18,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
     uint num_segments = 0, pos_per_env = 0;
     SaxNumBitsT first_layer_num_bits = 0, num_bits_limit = 0;
     size_t leaf_capacity = 0;
-    str ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "", method_type_str = "",
+    str lg_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "", method_type_str = "",
         per_lg_segmentation_str = "";
 
     if (index_options.m_index_params) {
@@ -26,25 +26,25 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(method_type);
 
         auto *paa_params = dynamic_cast<PaaIndexParams *>(index_options.m_index_params.get());
-        ss_str = SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_strategy_type);
-        per_lg_segmentation_str = to_string(paa_params->m_per_lg_segmentation);
-        num_segments = paa_params->m_num_segments;
+        lg_ss_str = LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_lg_strategy_type);
+        ss_str = SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_strategy_type);
+        num_segments = paa_params->m_segmentation_params.m_num_segments;
 
         if (std::find(METHODS_W_SAX.begin(), METHODS_W_SAX.end(), method_type) != METHODS_W_SAX.end()) {
-            auto *sax_params = dynamic_cast<SaxIndexParams *>(index_options.m_index_params.get());
-            first_layer_num_bits = sax_params->m_num_bits;
-            brs_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(sax_params->m_breakpoint_strategy_type);
+            auto *sax_index_params = dynamic_cast<SaxIndexParams *>(index_options.m_index_params.get());
+            first_layer_num_bits = sax_index_params->m_sax_params.m_num_bits;
+            brs_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(sax_index_params->m_sax_params.m_breakpoint_strategy_type);
 
             if (std::find(METHODS_W_ISAX.begin(), METHODS_W_ISAX.end(), method_type) != METHODS_W_ISAX.end()) {
-                auto *isax_params = dynamic_cast<iSaxIndexParams *>(index_options.m_index_params.get());
-                leaf_capacity = isax_params->m_leaf_capacity;
+                auto *isax_index_params = dynamic_cast<iSaxIndexParams *>(index_options.m_index_params.get());
+                leaf_capacity = isax_index_params->m_isax_trie_params.m_leaf_capacity;
 
-                auto split_strategy = isax_params->m_split_strategy_type;
+                auto split_strategy = isax_index_params->m_isax_trie_params.m_split_strategy_type;
                 sps_str = ISAX_SPLIT_STRATEGY_TO_STR.at(split_strategy);
 
                 if (split_strategy == ENTROPY_MAXIMIZING)
-                    min_num_bits_on_tie_str = to_string(isax_params->m_min_num_bits_on_tie);
-                num_bits_limit = isax_params->m_num_bits_limit;
+                    min_num_bits_on_tie_str = to_string(isax_index_params->m_isax_trie_params.m_min_num_bits_on_tie);
+                num_bits_limit = isax_index_params->m_isax_trie_params.m_num_bits_limit;
             } else if (method_type == TREE_ENVELOPE) {
                 auto *tree_env_params = dynamic_cast<TreeEnvelopeIndexParams *>(index_options.m_index_params.get());
                 leaf_capacity = tree_env_params->m_bucket_size;

@@ -29,6 +29,10 @@ TEST_CASE("raw envelope happy-flow works") {
     fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).AlwaysReturn(segment_len);
     fakeit::When(Method(segmentation_strategy_mock, get_type)).AlwaysReturn(UNIFORM);
 
+    fakeit::Mock<ILengthGroupSegmentationStrategy> lg_segmentation_strategy_mock;
+    fakeit::When(Method(lg_segmentation_strategy_mock, get_const_segmentation_strategy))
+        .AlwaysReturn(&segmentation_strategy_mock.get());
+
     fakeit::Mock<RunSettings> run_settings_mock;
     fakeit::When(Method(run_settings_mock, get_length_group)).AlwaysReturn(0);
     fakeit::When(Method(run_settings_mock, get_lg_l_min)).AlwaysReturn(l_min);
@@ -48,7 +52,7 @@ TEST_CASE("raw envelope happy-flow works") {
     */
 
     auto envelopes =
-        EnvelopeTest::get_raw_envelope(ts, {l_min, l_max, pos_per_env, {&segmentation_strategy_mock.get()}});
+        EnvelopeTest::get_raw_envelope(ts, {l_min, l_max, pos_per_env, &lg_segmentation_strategy_mock.get()});
     vec<Envelope> expected = {
         {{R(2.25), R(2.5), R(-0.5)}, {3, 9, 9}},
         {{R(-0.5), R(-0.5), R(1.5)}, {9, R(7.25), R(7.25)}},
@@ -75,6 +79,10 @@ TEST_CASE("normalized envelope happy-flow works") {
     });
     fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).AlwaysReturn(segment_len);
 
+    fakeit::Mock<ILengthGroupSegmentationStrategy> lg_segmentation_strategy_mock;
+    fakeit::When(Method(lg_segmentation_strategy_mock, get_const_segmentation_strategy))
+        .AlwaysReturn(&segmentation_strategy_mock.get());
+
     fakeit::Mock<RunSettings> run_settings_mock;
     fakeit::When(Method(run_settings_mock, get_length_group)).AlwaysReturn(0);
     fakeit::When(Method(run_settings_mock, get_lg_l_min)).AlwaysReturn(l_min);
@@ -97,7 +105,7 @@ TEST_CASE("normalized envelope happy-flow works") {
     [0.6308598694087654, inf, inf]
     */
     auto envelopes =
-        EnvelopeTest::get_normalized_envelope(ts, {l_min, l_max, ms_per_env, {&segmentation_strategy_mock.get()}});
+        EnvelopeTest::get_normalized_envelope(ts, {l_min, l_max, ms_per_env, &lg_segmentation_strategy_mock.get()});
 
     vec<Envelope> expected = {{{R(-0.9486832980505138), R(-0.5449492609130661), R(-1.1111677990074318)},
                                {R(0.35355339059327384), R(1.1835854998978794), R(1.323448205074589)}},

@@ -6,6 +6,7 @@
 #include "Util/RunSettings.hpp"
 #include "Summarization/IndexEntry.hpp"
 #include "Summarization/SegmentationStrategy.hpp"
+#include "Summarization/LengthGroupSegmentationStrategy.hpp"
 
 /**
  * @brief Envelope of a multivariate time series
@@ -57,9 +58,8 @@ struct EnvelopeParams {
     uint m_l_max;
     /** @brief The (max) number of master series in each envelope */
     uint m_pos_per_env;
-    /** @brief The segmentation strategies to use for each length group. If it only contains a single strategy, that is
-     * used across all length groups. */
-    vec<const ISegmentationStrategy *> m_segmentation_strategies;
+    /** @brief The segmentation strategies to use for each length group. */
+    const ILengthGroupSegmentationStrategy *m_segmentation_strategies;
 };
 
 /** @brief Envelope generator for iSAX (ULISSE) envelopes */
@@ -112,11 +112,11 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
      * @param num_env Number of envelopes per time series
      * @param l_min Minimum length of a query
      * @param l_max Maximum length of a query
-     * @param segmentation_strategy Segmentation strategy to use
+     * @param lg_segmentation_strategy ILengthGroupSegmentationStrategy to use
      */
     vec<vec<Envelope>> get_envelope_groups(const uint series_len, const uint pos_per_env, const uint l_min,
                                            const uint l_max,
-                                           vec<const ISegmentationStrategy *> segmentation_strategies);
+                                           const ILengthGroupSegmentationStrategy *lg_segmentation_strategies);
 
     /**
      * @brief Helper function to flip the values of envelope segments without data

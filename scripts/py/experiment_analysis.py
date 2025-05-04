@@ -877,12 +877,15 @@ def get_x_label(
             case ISC.SPLIT_STRATEGY:
                 if isinstance(val, str) and len(val) > 0:
                     label_parts.append("".join(s[0].upper() for s in val.split("_")))
-            case ISC.NUM_SEGMENTS:
-                if val is not None and val > 0:
-                    label_parts.append(f"|S|={int(val)}")
             case ISC.SEGMENTATION_STRATEGY:
                 if isinstance(val, str) and len(val) > 0:
                     label_parts.append(abbreviate(val))
+            case ISC.PER_LG_SEGMENTATION:
+                if val == 1:
+                    label_parts.append("PLG")
+            case ISC.NUM_SEGMENTS:
+                if val is not None and val > 0:
+                    label_parts.append(f"|S|={int(val)}")
 
     if "l_min" in length_values:
         l_min = length_values["l_min"]
@@ -1506,6 +1509,8 @@ def experiment_length_based_grouping(
     }
     if consider_segmentation:
         groups_dict[ERD.INDEXES_COLS] += [ISC.SEGMENTATION_STRATEGY, ISC.NUM_SEGMENTS]
+    if consider_lg_segmentation:
+        groups_dict[ERD.INDEXES_COLS].append(ISC.PER_LG_SEGMENTATION)
     if num_query_intervals > 1:
         groups_dict[ERD.RUNS_COLS] = [QC.QUERY_INTERVAL]
     ds_index = 1
@@ -1540,7 +1545,7 @@ def experiment_length_based_grouping(
             reduced_values = {key: values for key, values in reduced_values.items() if re.search(regex, str(key[ind]))}
 
     l_ranges = {(int(key[2]), int(key[3])) for key in reduced_values}
-    padding_rows = 4 + 2 * consider_segmentation
+    padding_rows = 4 + 2 * consider_segmentation + consider_lg_segmentation
 
     for dataset in ordered_datasets:
         if datasets_to_show is not None and not any(ds in dataset for ds in datasets_to_show):
@@ -1630,12 +1635,13 @@ logs_dir = "EXPERIMENT_LOGS/segmentation/LOGS_num_segments_univariate"
 merge_csv_datasets = True
 num_query_intervals = 1
 datasets_to_show = None  # ["weather", "stocks"]
-l_ranges_to_show = None  # [(128, 2048)]
+l_ranges_to_show = [(128, 2048)]
 regex_dict = {
     # SSC.METHOD_NAME: r"env",
     # ISC.POS_PER_ENV: r"(19|96)(\.0){0,1}$",
     # ISC.SEGMENTATION_STRATEGY: r"^(adaptive|0)$",
     # ISC.L_PER_GROUP: r"^(0\.0|61\.0)$",
+    ISC.PER_LG_SEGMENTATION: "1"
 }
 
 # %%
@@ -1644,6 +1650,7 @@ experiment_length_based_grouping(
     logs_dir=logs_dir,
     merge_csv_datasets=merge_csv_datasets,
     consider_segmentation=True,
+    consider_lg_segmentation=True,
     y_scale="linear",
     datasets_to_show=datasets_to_show,
     l_ranges_to_show=l_ranges_to_show,
@@ -1652,13 +1659,13 @@ experiment_length_based_grouping(
     ## TOTAL TIME
     # targets_dict={ERD.RUNS_COLS: [QC.TOTAL_TIME_S]},
     ## AMORTIZED TIME
-    targets_dict={ERD.RUNS_COLS: TIME_TARGETS},
-    hatches=["", PREP_TIME_HATCH],
-    hatch_labels=TIME_LABELS,
+    # targets_dict={ERD.RUNS_COLS: TIME_TARGETS},
+    # hatches=["", PREP_TIME_HATCH],
+    # hatch_labels=TIME_LABELS,
     ## PQ TIME
     # targets_dict={ERD.RUNS_COLS: PQ_TIME_TARGETS},
     # hatches=["", FIRST_LAYER_TIME_HATCH],
     # hatch_labels=PQ_TIME_LABELS,
     ## INDEX SIZE
-    # targets_dict={ERD.INDEXES_COLS: [ISC.SIZE_ON_DISK_B]},
+    targets_dict={ERD.INDEXES_COLS: [ISC.SIZE_ON_DISK_B]},
 )

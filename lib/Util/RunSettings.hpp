@@ -36,7 +36,7 @@ struct EnvelopeProperties {
 
 struct BreakpointProperties {
     SaxNumBitsT m_breakpoint_num_bits;
-    uptr<IiSaxBreakpointStrategy> m_breakpoint_strategy;
+    uptr<ISaxBreakpointStrategy> m_breakpoint_strategy;
     vec<Real> m_breakpoints;
 };
 
@@ -199,7 +199,7 @@ class RunSettings {
     EnvelopeProperties m_envelope_props;
 
     // Breakpoint properties
-    uptr<IiSaxBreakpointStrategy> m_breakpoint_strategy;
+    uptr<ISaxBreakpointStrategy> m_breakpoint_strategy;
     BreakpointProperties m_breakpoint_props;
     bool m_breakpoints_props_set = false;
 

@@ -360,7 +360,7 @@ int main(int argc, char **argv) {
         if (method_type == ISAX || method_type == ISAX_ENVELOPE || method_type == SAX_ENVELOPE) {
             // When using fixed breakpoints strategy, the breakpoints file must exist and must contain sufficient
             // breakpoints
-            iSaxBreakpointStrategyType breakpoint_strategy_type =
+            SaxBreakpointStrategyType breakpoint_strategy_type =
                 STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str);
 
             if (breakpoint_strategy_type == FIXED) {
@@ -432,39 +432,47 @@ int main(int argc, char **argv) {
         case INDEX: {
             IIndexParams *index_params;
 
+            auto lg_segmentation_strategy_type = STR_TO_LENGTH_GROUP_SEGMENTATION_STRATEGY.at("single");
+            auto segmentation_strategy_type = STR_TO_SEGMENTATION_STRATEGY.at(segmentation_strategy_str);
             auto breakpoint_strategy_type = STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str);
             auto split_strategy_type = STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str);
-            auto segmentation_strategy_type = STR_TO_SEGMENTATION_STRATEGY.at(segmentation_strategy_str);
+
+            SegmentationParams segmentation_params{
+                .m_lg_strategy_type = lg_segmentation_strategy_type,
+                .m_strategy_type = segmentation_strategy_type,
+                .m_num_segments = num_segments,
+            };
+            SaxParams sax_params{
+                .m_breakpoint_strategy_type = breakpoint_strategy_type,
+                .m_num_bits = first_layer_num_bits,
+                .m_breakpoints_file = breakpoints_path,
+            };
+            iSaxTrieParams isax_trie_params{
+                .m_min_num_bits_on_tie = !prefer_first_in_em,
+                .m_split_strategy_type = split_strategy_type,
+                .m_num_bits_limit = num_bits_limit,
+                .m_leaf_capacity = leaf_capacity,
+            };
 
             switch (method_type) {
                 case ISAX_ENVELOPE:
                 case ISAX_ENV_W_ENV:
                 case ISAX_ENV_W_SAX_ENV:
-                    index_params = new iSaxEnvelopeIndexParams(
-                        segmentation_strategy_type, per_lg_segmentation, num_segments, pos_per_env,
-                        first_layer_num_bits, leaf_capacity, breakpoint_strategy_type, split_strategy_type,
-                        num_bits_limit, !prefer_first_in_em, breakpoints_path);
+                    index_params =
+                        new iSaxEnvelopeIndexParams(segmentation_params, pos_per_env, sax_params, isax_trie_params);
                     break;
                 case ISAX:
-                    index_params =
-                        new iSaxIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments,
-                                            first_layer_num_bits, leaf_capacity, breakpoint_strategy_type,
-                                            split_strategy_type, num_bits_limit, !prefer_first_in_em, breakpoints_path);
+                    index_params = new iSaxIndexParams(segmentation_params, sax_params, isax_trie_params);
                     break;
                 case ENVELOPE:
-                    index_params = new EnvelopeIndexParams(segmentation_strategy_type, per_lg_segmentation,
-                                                           num_segments, pos_per_env);
+                    index_params = new EnvelopeIndexParams(segmentation_params, pos_per_env);
                     break;
                 case SAX_ENVELOPE:
-                    index_params = new SaxEnvelopeIndexParams(
-                        segmentation_strategy_type, per_lg_segmentation, num_segments, pos_per_env,
-                        first_layer_num_bits, breakpoint_strategy_type, !prefer_first_in_em, breakpoints_path);
+                    index_params = new SaxEnvelopeIndexParams(segmentation_params, pos_per_env, sax_params);
                     break;
                 case TREE_ENVELOPE:
                     index_params =
-                        new TreeEnvelopeIndexParams(segmentation_strategy_type, per_lg_segmentation, num_segments,
-                                                    pos_per_env, first_layer_num_bits, leaf_capacity,
-                                                    breakpoint_strategy_type, !prefer_first_in_em, breakpoints_path);
+                        new TreeEnvelopeIndexParams(segmentation_params, pos_per_env, sax_params, leaf_capacity);
                     break;
                 case SEQUENTIAL_SCAN:
                     std::cerr << "Sequential scan does not require indexation\n";

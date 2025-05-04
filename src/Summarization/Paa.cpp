@@ -31,7 +31,6 @@ vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normali
     auto &RS = RunSettings::get_instance();
 
     vec<vec<std::tuple<Paa, uint, uint>>> entry_tuple_groups(m_num_len_groups);
-    bool multiple_ss = paa_params.m_segmentation_strategies.size() > 1;
 
     Real sum = 0, sum_sq = 0;
     for (uint last_ind = 0; last_ind < ts.size(); ++last_ind) {
@@ -49,18 +48,18 @@ vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normali
 
         for (uint start_ind = min_start_ind; static_cast<int>(start_ind) <= max_start_ind; ++start_ind) {
             uint subs_len = last_ind - start_ind + 1;
-            uint length_group = RS.get_length_group(subs_len);
-            uint ss_ind = multiple_ss ? length_group : 0;
+            uint lg_ind = RS.get_length_group(subs_len);
+            auto segmentation_strategy = paa_params.m_lg_segmentation_strategy->get_const_segmentation_strategy(lg_ind);
             auto [mu, sigma] = calculate_mu_and_sigma(tmp_sum, tmp_sum_sq, subs_len);
 
             vec<Real> subsequence(subs_len);
             for (uint i = 0; i < subs_len; ++i) subsequence[i] = (ts[start_ind + i] - mu) / sigma;
-            vec<Real> paa_values = paa(subsequence, paa_params.m_segmentation_strategies[ss_ind]);
+            vec<Real> paa_values = paa(subsequence, segmentation_strategy);
 
-            uint lg_l_max = RS.get_lg_l_max(length_group);
-            paa_values.resize(paa_params.m_segmentation_strategies[ss_ind]->get_num_segments(lg_l_max), 0.0);
+            uint lg_l_max = RS.get_lg_l_max(lg_ind);
+            paa_values.resize(segmentation_strategy->get_num_segments(lg_l_max), 0.0);
 
-            entry_tuple_groups[length_group].push_back(std::make_tuple(Paa(paa_values), U(start_ind), subs_len));
+            entry_tuple_groups[lg_ind].push_back(std::make_tuple(Paa(paa_values), U(start_ind), subs_len));
 
             tmp_sum -= ts[start_ind];
             tmp_sum_sq -= ts[start_ind] * ts[start_ind];
