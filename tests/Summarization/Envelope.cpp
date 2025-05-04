@@ -32,6 +32,7 @@ TEST_CASE("raw envelope happy-flow works") {
     fakeit::Mock<ILengthGroupSegmentationStrategy> lg_segmentation_strategy_mock;
     fakeit::When(Method(lg_segmentation_strategy_mock, get_const_segmentation_strategy))
         .AlwaysReturn(&segmentation_strategy_mock.get());
+    fakeit::When(Method(lg_segmentation_strategy_mock, get_type)).AlwaysReturn(SINGLE);
 
     fakeit::Mock<RunSettings> run_settings_mock;
     fakeit::When(Method(run_settings_mock, get_length_group)).AlwaysReturn(0);

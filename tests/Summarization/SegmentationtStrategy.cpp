@@ -32,20 +32,6 @@ TEST_CASE("UniformSegmentationStrategy get_type works") {
 
 // Test cases for AdaptiveSegmentationStrategy
 
-// TEST_CASE("AdaptiveSegmentationStrategy calculate_presences works") {
-//     auto [presences, presences_sum] = AdaptiveSegmentationStrategyTest::calculate_presences(10, 30, 30);
-
-//     CHECK_EQ(presences_sum, 3850);
-//     CHECK_EQ(presences.size(), 32);
-
-//     vec<size_t> expected_presences = {0,   231, 231, 231, 231, 231, 231, 231, 231, 231, 231, 210, 190, 171, 153, 136,
-//                                       120, 105, 91,  78,  66,  55,  45,  36,  28,  21,  15,  10,  6,   3,   1,   0};
-
-//     for (size_t i = 0; i < expected_presences.size(); ++i) {
-//         CHECK_EQ(presences[i], expected_presences[i]);
-//     }
-// }
-
 TEST_CASE("AdaptiveSegmentationStrategy get_num_segments works") {
     for (uint pos_per_env : {0, 5, 9}) {
         auto ss = AdaptiveSegmentationStrategy(10, 30, 30, 10);
