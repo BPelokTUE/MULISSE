@@ -765,7 +765,7 @@ if __name__ == "__main__":
                         if index_setting_copy.pop(RK_RAW, False):
                             args += ["--raw"]
                         if RK_LENS_PER_GROUP in index_setting_copy:
-                            lens_per_group = int(math.ceil(l_range * index_setting_copy.pop(RK_LENS_PER_GROUP)))
+                            lens_per_group = max(1, int(math.ceil(l_range * index_setting_copy.pop(RK_LENS_PER_GROUP))))
                             if lens_per_group > 0:
                                 args += ["-g", str(lens_per_group)]
                                 num_l_groups = (l_range + lens_per_group - 1) // lens_per_group
@@ -778,7 +778,7 @@ if __name__ == "__main__":
                         pos_per_env = 1
                         if RK_POS_PER_ENV in index_setting_copy:
                             max_pos_per_env = series_len - l_min + 1
-                            pos_per_env = int(max_pos_per_env * index_setting_copy.pop(RK_POS_PER_ENV))
+                            pos_per_env = max(1, int(max_pos_per_env * index_setting_copy.pop(RK_POS_PER_ENV)))
                             args += ["-p", str(pos_per_env)]
                         if RK_LEAF_CAPACITY in index_setting_copy:
                             num_entries = num_series

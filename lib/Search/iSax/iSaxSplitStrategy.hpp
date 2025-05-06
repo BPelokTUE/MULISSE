@@ -10,7 +10,7 @@
 #include "Util/RunSettings.hpp"
 
 /** @brief Enum for IiSaxSplitStrategy implementations */
-enum iSaxSplitStrategyType { DOUBLE_ROUND_ROBIN, ENTROPY_MAXIMIZING, ULISSE_CLOSEST_TO_MEAN, CLOSES_TO_MEAN };
+enum iSaxSplitStrategyType { DOUBLE_ROUND_ROBIN, ENTROPY_MAXIMIZING, ULISSE_CLOSEST_TO_MEAN, CLOSEST_TO_MEAN };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(iSaxSplitStrategyType, ISAX_SPLIT_STRATEGY, true);
 

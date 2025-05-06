@@ -871,18 +871,12 @@ def get_x_label(
             case SSC.USE_PRIORITY_QUEUE:
                 if val == 1:
                     label_parts.append("PQ")
-            case ISC.BREAKPOINT_STRATEGY:
+            case ISC.LG_SEGMENTATION_STRATEGY | ISC.SEGMENTATION_STRATEGY | ISC.BREAKPOINT_STRATEGY:
                 if isinstance(val, str) and len(val) > 0:
                     label_parts.append(abbreviate(val))
             case ISC.SPLIT_STRATEGY:
                 if isinstance(val, str) and len(val) > 0:
                     label_parts.append("".join(s[0].upper() for s in val.split("_")))
-            case ISC.SEGMENTATION_STRATEGY:
-                if isinstance(val, str) and len(val) > 0:
-                    label_parts.append(abbreviate(val))
-            case ISC.PER_LG_SEGMENTATION:
-                if val == 1:
-                    label_parts.append("PLG")
             case ISC.NUM_SEGMENTS:
                 if val is not None and val > 0:
                     label_parts.append(f"|S|={int(val)}")
@@ -1394,17 +1388,15 @@ def experiment_ulisse_comparison(
     max_ulisse_pruning_ratio: float = 1.0,
     only_important: bool = False,
     bars_by_query_length: bool = False,
+    search_cols: list[SSC] = [SSC.SORT_QUERY, SSC.USE_PRIORITY_QUEUE],
+    index_cols: list[ISC] = [ISC.BREAKPOINT_STRATEGY, ISC.SPLIT_STRATEGY, ISC.NUM_BITS_LIMIT],
 ):
     if only_important and bars_by_query_length:
         raise ValueError("Cannot use both only_important and bars_by_query_length")
 
     groups_dict = {
-        ERD.METHODS_COLS: [SSC.METHOD_NAME, SSC.SORT_QUERY, SSC.USE_PRIORITY_QUEUE],
-        ERD.INDEXES_COLS: [
-            ISC.BREAKPOINT_STRATEGY,
-            ISC.SPLIT_STRATEGY,
-            ISC.NUM_BITS_LIMIT,
-        ],
+        ERD.METHODS_COLS: [SSC.METHOD_NAME, *search_cols],
+        ERD.INDEXES_COLS: index_cols,
         ERD.RUNS_COLS: [QC.PRUNING_RATIO, QC.QUERY_ID],
     }
 
@@ -1465,12 +1457,15 @@ def experiment_ulisse_comparison(
 # %%
 
 experiment_ulisse_comparison(
-    target_col=QC.TOTAL_TIME_S,
+    target_col=QC.KEEP_RATE,
     # logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_5M",
-    logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_5M_node",
+    # logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_5M_node",
+    logs_dir="EXPERIMENT_LOGS/base_compare/LOGS_base_compare_raw_5M",
     # max_ulisse_pruning_ratio=0.0,
     bars_by_query_length=True,
     # reducer=MaxReducer(),
+    search_cols=[],
+    index_cols=[],
 )
 
 # %%
@@ -1510,7 +1505,7 @@ def experiment_length_based_grouping(
     if consider_segmentation:
         groups_dict[ERD.INDEXES_COLS] += [ISC.SEGMENTATION_STRATEGY, ISC.NUM_SEGMENTS]
     if consider_lg_segmentation:
-        groups_dict[ERD.INDEXES_COLS].append(ISC.PER_LG_SEGMENTATION)
+        groups_dict[ERD.INDEXES_COLS].append(ISC.LG_SEGMENTATION_STRATEGY)
     if num_query_intervals > 1:
         groups_dict[ERD.RUNS_COLS] = [QC.QUERY_INTERVAL]
     ds_index = 1
@@ -1633,15 +1628,15 @@ Experiment: Segmentation strategy
 # logs_dir = "EXPERIMENT_LOGS/segmentation/LOGS_adaptive_seg_univariate"
 logs_dir = "EXPERIMENT_LOGS/segmentation/LOGS_num_segments_univariate"
 merge_csv_datasets = True
-num_query_intervals = 1
+num_query_intervals = 10
 datasets_to_show = None  # ["weather", "stocks"]
 l_ranges_to_show = [(128, 2048)]
 regex_dict = {
     # SSC.METHOD_NAME: r"env",
     # ISC.POS_PER_ENV: r"(19|96)(\.0){0,1}$",
-    # ISC.SEGMENTATION_STRATEGY: r"^(adaptive|0)$",
-    # ISC.L_PER_GROUP: r"^(0\.0|61\.0)$",
-    ISC.PER_LG_SEGMENTATION: "1"
+    # ISC.SEGMENTATION_STRATEGY: r"^(|0)$",
+    ISC.LG_SEGMENTATION_STRATEGY: r"^(single|0)$",
+    ISC.NUM_SEGMENTS: r"^(12|0)\.0$",
 }
 
 # %%
@@ -1659,13 +1654,15 @@ experiment_length_based_grouping(
     ## TOTAL TIME
     # targets_dict={ERD.RUNS_COLS: [QC.TOTAL_TIME_S]},
     ## AMORTIZED TIME
-    # targets_dict={ERD.RUNS_COLS: TIME_TARGETS},
-    # hatches=["", PREP_TIME_HATCH],
-    # hatch_labels=TIME_LABELS,
+    targets_dict={ERD.RUNS_COLS: TIME_TARGETS},
+    hatches=["", PREP_TIME_HATCH],
+    hatch_labels=TIME_LABELS,
     ## PQ TIME
     # targets_dict={ERD.RUNS_COLS: PQ_TIME_TARGETS},
     # hatches=["", FIRST_LAYER_TIME_HATCH],
     # hatch_labels=PQ_TIME_LABELS,
     ## INDEX SIZE
-    targets_dict={ERD.INDEXES_COLS: [ISC.SIZE_ON_DISK_B]},
+    # targets_dict={ERD.INDEXES_COLS: [ISC.SIZE_ON_DISK_B]},
+    ## PRUNING RATIO
+    # targets_dict={ERD.RUNS_COLS: [QC.PRUNING_RATIO]},
 )

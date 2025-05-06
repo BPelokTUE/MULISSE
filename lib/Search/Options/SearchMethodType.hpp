@@ -30,4 +30,7 @@ constexpr std::array<SearchMethodType, 6> METHODS_W_SAX{ISAX,           ISAX_ENV
 constexpr std::array<SearchMethodType, 6> METHODS_W_ENVELOPE{ENVELOPE,       ISAX_ENVELOPE,      SAX_ENVELOPE,
                                                              ISAX_ENV_W_ENV, ISAX_ENV_W_SAX_ENV, TREE_ENVELOPE};
 
+constexpr std::array<SearchMethodType, 4> METHODS_W_FLAT_PART{ENVELOPE, SAX_ENVELOPE, ISAX_ENV_W_ENV,
+                                                              ISAX_ENV_W_SAX_ENV};
+
 #endif  // SEARCH_METHOD_TYPE_HPP

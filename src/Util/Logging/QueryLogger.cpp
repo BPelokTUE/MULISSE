@@ -41,7 +41,7 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
     if (search_options.m_distance_type == DistanceType::ED) sort_query_str = to_string(search_options.m_sort_queries);
 
     str use_priority_queue_str = "";
-    if (search_options.m_search_method_type == ENVELOPE || search_options.m_search_method_type == SAX_ENVELOPE)
+    if (arr_contains(METHODS_W_FLAT_PART, search_options.m_search_method_type))
         use_priority_queue_str = to_string(search_options.m_use_priority_queue);
 
     instance.write_row(search_settings_path,

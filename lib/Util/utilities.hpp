@@ -55,8 +55,8 @@ bool vec_contains(const vec<T>& vec, const T& value) {
     return std::find(vec.begin(), vec.end(), value) != vec.end();
 }
 
-template <typename T>
-bool arr_contains(const std::array<T, 2>& arr, const T& value) {
+template <typename T, size_t N>
+bool arr_contains(const std::array<T, N>& arr, const T& value) {
     return std::find(arr.begin(), arr.end(), value) != arr.end();
 }
 

@@ -162,9 +162,28 @@ Using presence:
 - Why use presence instead of the range of values summarized in each point: presence is agnostic to the dataset, and therefore the segmentation will be the same for all envelopes in a given length group, in contrast if segmentation is determined based on ranges, then every envelope can potentially have a unique segmentation which makes it difficult to calculate mindistances to the query, because all unique segmentation for the query would have to be calculated.
 
 - TODO:
-    - [ ] Implement raw search:
+    - [x] Implement raw search:
         - Hypothesis: on raw time series the mean of time series should be good enough for pruning, based on the fact that $\gamma$ is large and sometimes there are only a few segments
     - [ ] Finalize experiments for segmentation
     - [ ] Think about how to prioritize channels (e.g. based on cross-dataset variance)
     - [ ] Think about summarizing after inserting into the index
 
+## 07-05-2025
+
+### ULISSE on raw (MULISSE lib implementation)
+
+Performance on raw is better than MASS, but still not as good as expected:
+- Query time is not in line with pruning ratio, logging for Chained indexes may need to be checked
+    - $|Q|=l_{\max}$ leads to very fast query time, most likely due to last tight envelope, however this is not reflected in the pruning ratio to a sufficient degree
+- $\gamma_{\max}$ may not be optimal for raw either
+- *Note*: there was a bug, causing data and logs to be stored in `/home` instead of `$TMPDIR`. This does not affect previous experiments on Linardi's code.
+
+![](./summaries/images/ULISSE_5M_raw_per_length.png)
+
+### Segmentation
+
+In total 6 different ways of choosing segment lengths have been attempted, 4 of them utilizing presence in some form. The results are underwhelming, any method that has lower query time has higher amortized index time and index size, suggesting that "how" segments sizes are chosen is not too important, at least with the current methods.
+
+### Summarization after insertion
+
+To investigate the possibility of summarizing subsequences after insertion into an index, various combinations of $N_p$ and $N_l$ were tested. In the most extreme case, when there is a single length in each length group, and a single starting position in each envelope, all subsequences are inserted separately into the indexes. Bigger length groups and position groups lead to more summarization before insertion, therefore smaller indexes, but potentially suboptimal grouping.

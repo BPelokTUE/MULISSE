@@ -41,7 +41,7 @@ uptr<IiSaxSplitStrategy<T>> get_split_strategy(const iSaxIndexParams *index_para
                 index_params->m_isax_trie_params.m_min_num_bits_on_tie);
         case ULISSE_CLOSEST_TO_MEAN:
             return std::make_unique<UlisseClosestToMeanStrategy<T>>();
-        case CLOSES_TO_MEAN:
+        case CLOSEST_TO_MEAN:
             return std::make_unique<ClosestToMeanStrategy<T>>();
     }
     return nullptr;
