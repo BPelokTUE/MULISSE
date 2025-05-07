@@ -66,3 +66,20 @@ PALETTE = {
         "#cccccc",
     ],
 }
+
+CATEGORY_COLORS = [
+    PALETTE["Blues"][3],
+    PALETTE["Oranges"][2],
+    PALETTE["Greens"][3],
+    PALETTE["Reds"][2],
+    PALETTE["Yellows"][3],
+    PALETTE["Purples"][2],
+    PALETTE["Pinks"][2],
+    PALETTE["Blues"][6],
+    PALETTE["Oranges"][5],
+    PALETTE["Greens"][6],
+    PALETTE["Reds"][5],
+    PALETTE["Yellows"][5],
+    PALETTE["Purples"][6],
+    PALETTE["Pinks"][4],
+]

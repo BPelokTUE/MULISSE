@@ -19,6 +19,7 @@ This script contains the necessary classes and functions to analyze the results 
 
 import os
 import re
+import textwrap
 from enum import Enum, auto
 from typing import Any, Iterator
 
@@ -39,7 +40,7 @@ from scripts.py.common.columns import QueryStatsColumn as QSTC
 from scripts.py.common.columns import SearchSettingsColumn as SSC
 from scripts.py.common.columns import StatsColumn
 from scripts.py.common.columns import StatsColumnPrefix as SCP
-from scripts.py.common.style import PALETTE
+from scripts.py.common.style import CATEGORY_COLORS, PALETTE
 from scripts.py.common.utils import COLS_FOR_METHOD_NAME, define_method_name_col
 
 # %%[markdown]
@@ -634,7 +635,7 @@ def plot_bars(
     x_labels: dict[tuple, str] = {},
     y_label: str = "",
     y_lim: tuple[float, float] = None,
-    scale: str = "linear",
+    y_scale: str = "linear",
     bar_width_inches: float = 0.4,
     legend_max_cols: int = 4,
     title: str = None,
@@ -651,7 +652,7 @@ def plot_bars(
     :param x_labels: The labels for the x-axis for each group.
     :param y_label: The label for the y-axis.
     :param y_range: The range to use for the y-axis. If `None`, the range is automatically determined.
-    :param scale: The scale to use for the y-axis.
+    :param y_scale: The scale to use for the y-axis.
     :param bar_width_inches: The width of the bars in inches.
     :param title: The title of the plot.
     :param hatches: The hatches to use for the bars. If `None`, no hatches are used.
@@ -726,7 +727,7 @@ def plot_bars(
     legend_y_coord = get_legend_y_coord(num_labels)
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, legend_y_coord), ncol=legend_num_cols)
 
-    ax.set_yscale(scale)
+    ax.set_yscale(y_scale)
     ax.yaxis.grid(True)
     ax.set_ylabel(y_label)
     ax.set_ylim(y_lim)
@@ -735,6 +736,69 @@ def plot_bars(
     ax.set_title(title)
 
     fig.set_size_inches((num_bars + len(bar_groups)) * bar_width_inches, 6)
+    plt.show()
+
+
+# %%
+
+
+def plot_lines(
+    reduction_result: ReductionResult,
+    x_axis_attr_ind: int,
+    legend: list[str],
+    colors: list[str] = CATEGORY_COLORS,
+    x_label: str = "",
+    y_label: str = "",
+    y_lim: tuple[float, float] = None,
+    y_scale: str = "linear",
+    title: str = None,
+    only_max_points: bool = True,
+):
+    """
+    Plot lines for the given reduction result.
+
+    :param reduction_result: The reduction result to plot.
+    :param x_axis_attr_ind: The index of the attribute in the keys of the reduction result to use for the x-axis.
+    :param legend: The labels for the legend.
+    :param colors: The list of colors to use for the lines.
+    :param y_label: The label for the y-axis.
+    :param y_range: The range to use for the y-axis. If `None`, the range is automatically determined.
+    :param y_scale: The scale to use for the y-axis.
+    :param title: The title of the plot.
+    """
+    values = {}
+    max_points = 0
+    for i, (group, target_values) in enumerate(reduction_result.items()):
+        x = group[x_axis_attr_ind]
+        if x is None or x == "":
+            continue
+
+        line = group[:x_axis_attr_ind] + group[x_axis_attr_ind + 1 :]
+        if line not in values:
+            values[line] = []
+        y = sum(target_values)
+        values[line].append((x, y))
+        max_points = max(max_points, len(values[line]))
+
+    fig, ax = plt.subplots()
+    for color, (line, points) in zip(colors, values.items()):
+        if only_max_points and len(points) != max_points:
+            continue
+
+        sorted_points = sorted(points, key=lambda x: x[0])
+        xs = [point[0] for point in sorted_points]
+        ys = [point[1] for point in sorted_points]
+        ax.plot(xs, ys, color=color, label=legend[line])
+        ax.scatter(xs, ys, color=color)
+
+    ax.set_xlabel(x_label)
+    ax.set_yscale(y_scale)
+    ax.set_ylabel(y_label)
+    ax.set_ylim(y_lim)
+    ax.set_title(title)
+    ax.grid(True)
+    ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+
     plt.show()
 
 
@@ -752,7 +816,8 @@ PQ_TIME_TARGETS = [QC.TS_EXAMINATION_TIME_S, QC.FIRST_LAYER_TIME_S]
 PQ_TIME_LABELS = ["TS examination time", "First layer time"]
 FIRST_LAYER_TIME_HATCH = "+++"
 
-TOTAL_TIME_Y_LABEL = "Total time (S)"
+TOTAL_TIME_Y_LABEL = "Query time (S)"
+AMORTIZED_PREP_TIME_Y_LABEL = "Amortized prep. time (S)"
 TS_EXAMINATION_TIME_Y_LABEL = "Time for TS examination (S)"
 FIRST_LAYER_TIME_S_Y_LABEL = "Time for first layer (S)"
 PRUNING_RATIO_Y_LABEL = "Pruning ratio"
@@ -763,6 +828,7 @@ NUM_PTS_IN_EXAMINED_ENTRIES_Y_LABEL = "Number of points in examined entries"
 
 Y_LABELS = {
     QC.TOTAL_TIME_S: TOTAL_TIME_Y_LABEL,
+    QC.AMORTIZED_PREP_TIME_S: AMORTIZED_PREP_TIME_Y_LABEL,
     QC.TS_EXAMINATION_TIME_S: TS_EXAMINATION_TIME_Y_LABEL,
     QC.FIRST_LAYER_TIME_S: FIRST_LAYER_TIME_S_Y_LABEL,
     QC.ABANDONING_RATE: ABANDONING_RATE_Y_LABEL,
@@ -820,14 +886,17 @@ def get_x_label(
     key: tuple,
     columns: dict[ERD, list[str]],
     ignore_cols: set[Column] = set(),
+    include_cols: set[Column] | None = None,
     padding: str = "",
     num_query_intervals: int = 0,
+    sep: str = "\n",
+    max_line_length: int = 20,
 ) -> str:
     label_parts = []
     length_values = {}
 
     for col, val in zip(iterate_columns(columns), key):
-        if col in ignore_cols:
+        if col in ignore_cols or (include_cols is not None and col not in include_cols):
             continue
 
         match col:
@@ -847,6 +916,8 @@ def get_x_label(
                 label_parts.append(f"PPE={int(val)}")
             case DSC.DATASET_FILE:
                 label_parts.append(val)
+            case DSC.NUM_SERIES:
+                label_parts.append(f"n={int(val)}")
             case DSC.NUM_CHANNELS:
                 label_parts.append(f"|C|={int(val)}")
             case DSC.SD:
@@ -871,9 +942,15 @@ def get_x_label(
             case SSC.USE_PRIORITY_QUEUE:
                 if val == 1:
                     label_parts.append("PQ")
-            case ISC.LG_SEGMENTATION_STRATEGY | ISC.SEGMENTATION_STRATEGY | ISC.BREAKPOINT_STRATEGY:
+            case ISC.LG_SEGMENTATION_STRATEGY:
                 if isinstance(val, str) and len(val) > 0:
-                    label_parts.append(abbreviate(val))
+                    label_parts.append(f"LGS={abbreviate(val)}")
+            case ISC.SEGMENTATION_STRATEGY:
+                if isinstance(val, str) and len(val) > 0:
+                    label_parts.append(f"SEG={abbreviate(val)}")
+            case ISC.BREAKPOINT_STRATEGY:
+                if isinstance(val, str) and len(val) > 0:
+                    label_parts.append(f"BRK={abbreviate(val)}")
             case ISC.SPLIT_STRATEGY:
                 if isinstance(val, str) and len(val) > 0:
                     label_parts.append("".join(s[0].upper() for s in val.split("_")))
@@ -891,7 +968,7 @@ def get_x_label(
                 query_interval_size = int(np.ceil((l_max - l_min + 1) / num_query_intervals))
                 low_len = l_min + query_interval * query_interval_size
                 high_len = min(l_min + (query_interval + 1) * query_interval_size, l_max + 1)
-                label_parts.append(f"\n{int(low_len)}≤|Q|<{int(high_len)}")
+                label_parts.append(f"{sep}{int(low_len)}≤|Q|<{int(high_len)}")
             if "l_per_group" in length_values:
                 num_l_groups = int(np.ceil((l_max - l_min + 1) / l_per_group))
                 label_parts.append(f"#LG={num_l_groups}")
@@ -900,16 +977,24 @@ def get_x_label(
     elif "l_max" in length_values:
         label_parts.append(f"l<{int(length_values['l_max'])}")
 
-    return padding + "\n".join(label_parts)
+    label = sep.join(label_parts)
+    if "\n" not in label:
+        label = textwrap.fill(
+            sep.join(label_parts), width=max_line_length, break_long_words=False, break_on_hyphens=False
+        )
+    return padding + label
 
 
 def get_x_labels(
     reduced_values: ReductionResult,
     groups_dict: dict[ERD, list[Column]],
-    color_group_col: Column = SSC.METHOD_NAME,
     ignore_cols: set[Column] = set(),
+    discard_cols: set[Column] = {SSC.METHOD_NAME},
+    include_cols: set[Column] | None = None,
     num_query_intervals: int = 0,
     padding_rows: int = 0,
+    sep: str = "\n",
+    max_line_length: int = 30,
 ) -> dict[tuple, str]:
     x_labels = {}
 
@@ -920,7 +1005,7 @@ def get_x_labels(
     ind = 0
     for erd, erd_columns in groups_dict.items():
         for col in erd_columns:
-            if col != color_group_col:
+            if col not in discard_cols:
                 if erd not in columns_to_show:
                     columns_to_show[erd] = []
                 columns_to_show[erd].append(col)
@@ -934,8 +1019,11 @@ def get_x_labels(
             key_to_show,
             columns_to_show,
             num_query_intervals=num_query_intervals,
-            padding="\n" * padding_rows if ind % 2 == 0 else "",
+            padding=sep * padding_rows if ind % 2 == 0 else "",
             ignore_cols=ignore_cols,
+            include_cols=include_cols,
+            sep=sep,
+            max_line_length=max_line_length,
         )
     return x_labels
 
@@ -953,7 +1041,9 @@ def get_y_label(targets: list[tuple[ERD, Column, Reducer]]) -> str:
         case MaxReducer():
             reducer_str = "max"
 
-    return f"{reducer_str.capitalize()} {Y_LABELS.get(col, str(col))}"
+    y_label = Y_LABELS.get(col, str(col))
+    y_label = y_label[0].lower() + y_label[1:]
+    return f"{reducer_str.capitalize()} {y_label}"
 
 
 # %%[markdown]
@@ -1027,7 +1117,7 @@ def experiment_num_channels_and_dataset(
         2,
         x_labels=get_x_labels(reduced_values_to_show, groups_dict),
         y_label=get_y_label(targets),
-        scale=y_scale,
+        y_scale=y_scale,
         hatches=["", PREP_TIME_HATCH] if target_labels is not None else None,
         hatch_labels=target_labels,
     )
@@ -1096,7 +1186,7 @@ def experiment_envelope_parametrization(
                 3,
                 x_labels=get_x_labels(reduced_values_ds, groups_dict),
                 y_label=get_y_label(targets),
-                scale=y_scale,
+                y_scale=y_scale,
                 title=dataset,
                 hatches=hatches,
                 hatch_labels=hatch_labels,
@@ -1196,7 +1286,7 @@ def experiment_relative_contrast(
         NOISE_LABELS,
         x_labels=get_x_labels(reduced_values, groups_dict, QSTC.QUERY_NOISE),
         y_label=y_label,
-        scale=y_scale,
+        y_scale=y_scale,
         bar_width_inches=bar_width_inches,
     )
 
@@ -1293,7 +1383,7 @@ def experiment_univariate_parametrization(
                     reduced_values_ds, groups_dict, ignore_cols={QSC.L_MIN, QSC.L_MAX, DSC.DATASET_FILE}
                 ),
                 y_label=get_y_label(targets),
-                scale=y_scale,
+                y_scale=y_scale,
                 bar_width_inches=0.4,
                 title=f"{dataset}: l_min={l_range[0]}, l_max={l_range[1]}",
                 hatches=hatches,
@@ -1450,7 +1540,7 @@ def experiment_ulisse_comparison(
         0,
         x_labels=get_x_labels(reduced_values, groups_dict),
         y_label=get_y_label(targets),
-        scale="linear",
+        y_scale="linear",
     )
 
 
@@ -1483,11 +1573,16 @@ experiment_ulisse_comparison(
 
 def experiment_length_based_grouping(
     targets_dict: dict[ERD, list[Column]] = {ERD.RUNS_COLS: [QC.TOTAL_TIME_S]},
+    index_cols: list[ISC] = [
+        ISC.POS_PER_ENV,
+        ISC.L_PER_GROUP,
+        ISC.SEGMENTATION_STRATEGY,
+        ISC.LG_SEGMENTATION_STRATEGY,
+        ISC.NUM_SEGMENTS,
+    ],
     logs_dir: str = "EXPERIMENT_LOGS/length_grouping/LOGS_univariate_edea",
     reducer: Reducer = MeanReducer(),
     merge_csv_datasets: bool = False,
-    consider_segmentation: bool = False,
-    consider_lg_segmentation: bool = False,
     hatches=None,
     hatch_labels=None,
     y_scale: str = "linear",
@@ -1495,17 +1590,14 @@ def experiment_length_based_grouping(
     datasets_to_show: list[str] | None = None,
     l_ranges_to_show: list[tuple[int, int]] | None = None,
     regex_dict: dict[Column, str] = {},
+    line_plot_x_attr: Column | None = None,
 ):
     groups_dict = {
         ERD.METHODS_COLS: [SSC.METHOD_NAME],
-        ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+        ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_SERIES],
         ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
-        ERD.INDEXES_COLS: [ISC.POS_PER_ENV, ISC.L_PER_GROUP],
+        ERD.INDEXES_COLS: index_cols,
     }
-    if consider_segmentation:
-        groups_dict[ERD.INDEXES_COLS] += [ISC.SEGMENTATION_STRATEGY, ISC.NUM_SEGMENTS]
-    if consider_lg_segmentation:
-        groups_dict[ERD.INDEXES_COLS].append(ISC.LG_SEGMENTATION_STRATEGY)
     if num_query_intervals > 1:
         groups_dict[ERD.RUNS_COLS] = [QC.QUERY_INTERVAL]
     ds_index = 1
@@ -1539,8 +1631,11 @@ def experiment_length_based_grouping(
             ind = groups_list.index(col)
             reduced_values = {key: values for key, values in reduced_values.items() if re.search(regex, str(key[ind]))}
 
-    l_ranges = {(int(key[2]), int(key[3])) for key in reduced_values}
-    padding_rows = 4 + 2 * consider_segmentation + consider_lg_segmentation
+    if line_plot_x_attr is not None:
+        line_plot_x_attr_ind = get_col_index(line_plot_x_attr, groups)
+
+    l_ranges = {(int(key[3]), int(key[4])) for key in reduced_values}
+    padding_rows = max([label.count("\n") + 1 for label in get_x_labels(reduced_values, groups_dict).values()])
 
     for dataset in ordered_datasets:
         if datasets_to_show is not None and not any(ds in dataset for ds in datasets_to_show):
@@ -1552,29 +1647,73 @@ def experiment_length_based_grouping(
             reduced_values_ds = {
                 key: values
                 for key, values in reduced_values.items()
-                if key[1].startswith(dataset) and key[2] == l_range[0] and key[3] == l_range[1]
+                if key[1].startswith(dataset) and key[3] == l_range[0] and key[4] == l_range[1]
             }
             method_keys_list = list(METHOD_LABELS.keys())
-            reduced_values_ds = sort_dict(reduced_values_ds, lambda x: method_keys_list.index(x[0][0]))
+            reduced_values_ds = sort_dict(reduced_values_ds, lambda x: (method_keys_list.index(x[0][0]), *x[0][1:]))
+
+            y_label = get_y_label(targets)
+            y_lim = (
+                (0, 1.05)
+                if any(col in [QC.PRUNING_RATIO, QC.KEEP_RATE] for col in targets_dict.get(ERD.RUNS_COLS, []))
+                else None
+            )
+            title = f"{dataset} l in [{l_range[0]}, {l_range[1]}]"
 
             plot_bars(
                 reduced_values_ds,
                 0,
                 x_labels=get_x_labels(reduced_values_ds, groups_dict, padding_rows=padding_rows),
-                y_label=get_y_label(targets),
-                y_lim=(0, 1.05)
-                if any(col in [QC.PRUNING_RATIO, QC.KEEP_RATE] for col in targets_dict.get(ERD.RUNS_COLS, []))
-                else None,
-                title=f"{dataset} l in [{l_range[0]}, {l_range[1]}]",
+                y_label=y_label,
+                y_lim=y_lim,
+                title=title,
                 hatches=hatches,
                 hatch_labels=hatch_labels,
-                scale=y_scale,
+                y_scale=y_scale,
             )
+
+            if line_plot_x_attr is not None:
+                plot_lines(
+                    reduced_values_ds,
+                    line_plot_x_attr_ind,
+                    legend=get_x_labels(
+                        reduced_values_ds,
+                        groups_dict,
+                        discard_cols={line_plot_x_attr},
+                        include_cols={ISC.LG_SEGMENTATION_STRATEGY, ISC.SEGMENTATION_STRATEGY},
+                    ),
+                    x_label=str(line_plot_x_attr).replace("_", " ").capitalize(),
+                    y_label=y_label,
+                    y_lim=y_lim,
+                    title=title,
+                )
 
 
 # %%
 
+target_args = {
+    "query_time": {"targets_dict": {ERD.RUNS_COLS: [QC.TOTAL_TIME_S]}},
+    "combined_time": {
+        "targets_dict": {ERD.RUNS_COLS: TIME_TARGETS},
+        "hatches": ["", PREP_TIME_HATCH],
+        "hatch_labels": TIME_LABELS,
+    },
+    "mindist_time": {
+        "targets_dict": {ERD.RUNS_COLS: PQ_TIME_TARGETS},
+        "hatches": ["", FIRST_LAYER_TIME_HATCH],
+        "hatch_labels": PQ_TIME_LABELS,
+    },
+    "index_time": {"targets_dict": {ERD.RUNS_COLS: [QC.AMORTIZED_PREP_TIME_S]}},
+    "index_size": {"targets_dict": {ERD.INDEXES_COLS: [ISC.SIZE_ON_DISK_B]}},
+    "index_info": {"targets_dict": {ERD.INDEXES_COLS: [ISC.SIZE_ON_DISK_B], ERD.RUNS_COLS: [QC.AMORTIZED_PREP_TIME_S]}},
+    "pruning_ratio": {"targets_dict": {ERD.RUNS_COLS: [QC.PRUNING_RATIO]}},
+    "abandoning_rate": {"targets_dict": {ERD.RUNS_COLS: [QC.ABANDONING_RATE]}},
+}
+
+# %%
+
 logs_dir = "EXPERIMENT_LOGS/length_grouping/LOGS_env_size_param"
+index_cols = [ISC.POS_PER_ENV, ISC.L_PER_GROUP]
 merge_csv_datasets = True
 num_query_intervals = 1
 datasets_to_show = None  # ["weather", "stocks"]
@@ -1583,39 +1722,20 @@ regex_dict = {
     # SSC.METHOD_NAME: r"env",
     # ISC.POS_PER_ENV: r"(19|96)(\.0){0,1}$",
 }
+target_arg_keys = ["query_time", "pruning_ratio"]
 
 # %%
 
-experiment_length_based_grouping(
-    logs_dir=logs_dir,
-    merge_csv_datasets=merge_csv_datasets,
-    num_query_intervals=num_query_intervals,
-    datasets_to_show=datasets_to_show,
-    l_ranges_to_show=l_ranges_to_show,
-    regex_dict=regex_dict,
-    ## TIME
-    targets_dict={ERD.RUNS_COLS: [QC.TOTAL_TIME_S]},
-    ## INDEX TIME
-    # targets_dict={ERD.RUNS_COLS: TIME_TARGETS},
-    # hatches=["", PREP_TIME_HATCH],
-    # hatch_labels=TIME_LABELS,
-    ## PQ TIME
-    # targets_dict={ERD.RUNS_COLS: PQ_TIME_TARGETS},
-    # hatches=["", FIRST_LAYER_TIME_HATCH],
-    # hatch_labels=PQ_TIME_LABELS,
-)
-
-# %%
-
-for target_erd, target_col in [(ERD.RUNS_COLS, QC.PRUNING_RATIO)]:
+for target_arg_key in target_arg_keys:
     experiment_length_based_grouping(
-        targets_dict={target_erd: [target_col]},
         logs_dir=logs_dir,
+        index_cols=index_cols,
         merge_csv_datasets=merge_csv_datasets,
         num_query_intervals=num_query_intervals,
         datasets_to_show=datasets_to_show,
         l_ranges_to_show=l_ranges_to_show,
         regex_dict=regex_dict,
+        **target_args[target_arg_key],
     )
 
 # %%[markdown]
@@ -1628,41 +1748,65 @@ Experiment: Segmentation strategy
 # logs_dir = "EXPERIMENT_LOGS/segmentation/LOGS_adaptive_seg_univariate"
 logs_dir = "EXPERIMENT_LOGS/segmentation/LOGS_num_segments_univariate"
 merge_csv_datasets = True
-num_query_intervals = 10
-datasets_to_show = None  # ["weather", "stocks"]
+num_query_intervals = 1
+datasets_to_show = ["weather"]
 l_ranges_to_show = [(128, 2048)]
 regex_dict = {
     # SSC.METHOD_NAME: r"env",
     # ISC.POS_PER_ENV: r"(19|96)(\.0){0,1}$",
-    # ISC.SEGMENTATION_STRATEGY: r"^(|0)$",
-    ISC.LG_SEGMENTATION_STRATEGY: r"^(single|0)$",
-    ISC.NUM_SEGMENTS: r"^(12|0)\.0$",
+    # ISC.SEGMENTATION_STRATEGY: r"^(adaptive|0)$",
+    # ISC.LG_SEGMENTATION_STRATEGY: r"^(single|0)$",
+    # ISC.NUM_SEGMENTS: r"^(12|0)\.0$",
 }
+target_arg_keys = ["query_time", "index_time"]
+line_plot_x_attr = ISC.NUM_SEGMENTS
 
 # %%
 
-experiment_length_based_grouping(
-    logs_dir=logs_dir,
-    merge_csv_datasets=merge_csv_datasets,
-    consider_segmentation=True,
-    consider_lg_segmentation=True,
-    y_scale="linear",
-    datasets_to_show=datasets_to_show,
-    l_ranges_to_show=l_ranges_to_show,
-    regex_dict=regex_dict,
-    num_query_intervals=num_query_intervals,
-    ## TOTAL TIME
-    # targets_dict={ERD.RUNS_COLS: [QC.TOTAL_TIME_S]},
-    ## AMORTIZED TIME
-    targets_dict={ERD.RUNS_COLS: TIME_TARGETS},
-    hatches=["", PREP_TIME_HATCH],
-    hatch_labels=TIME_LABELS,
-    ## PQ TIME
-    # targets_dict={ERD.RUNS_COLS: PQ_TIME_TARGETS},
-    # hatches=["", FIRST_LAYER_TIME_HATCH],
-    # hatch_labels=PQ_TIME_LABELS,
-    ## INDEX SIZE
-    # targets_dict={ERD.INDEXES_COLS: [ISC.SIZE_ON_DISK_B]},
-    ## PRUNING RATIO
-    # targets_dict={ERD.RUNS_COLS: [QC.PRUNING_RATIO]},
-)
+for target_arg_key in target_arg_keys:
+    experiment_length_based_grouping(
+        logs_dir=logs_dir,
+        merge_csv_datasets=merge_csv_datasets,
+        y_scale="linear",
+        datasets_to_show=datasets_to_show,
+        l_ranges_to_show=l_ranges_to_show,
+        regex_dict=regex_dict,
+        num_query_intervals=num_query_intervals,
+        line_plot_x_attr=line_plot_x_attr,
+        **target_args[target_arg_key],
+    )
+
+# %%[markdown]
+"""
+Experiment: Index size
+"""
+
+# %%
+logs_dir = "EXPERIMENT_LOGS/tree_envelope/LOGS_index_size"
+index_cols = [ISC.POS_PER_ENV, ISC.L_PER_GROUP]
+merge_csv_datasets = True
+num_query_intervals = 1
+datasets_to_show = None  # ["weather", "stocks"]
+l_ranges_to_show = None  # [(128, 2048)]
+regex_dict = {
+    # SSC.METHOD_NAME: r"^(?!isax_envelope-mass).*",
+    # ISC.POS_PER_ENV: r"(19|96)(\.0){0,1}$",
+    # ISC.SEGMENTATION_STRATEGY: r"^(|0)$",
+    DSC.NUM_SERIES: r"^500$"
+}
+target_arg_keys = ["combined_time", "index_info"]
+
+# %%
+
+for target_arg_key in target_arg_keys:
+    experiment_length_based_grouping(
+        logs_dir=logs_dir,
+        index_cols=index_cols,
+        merge_csv_datasets=merge_csv_datasets,
+        datasets_to_show=datasets_to_show,
+        l_ranges_to_show=l_ranges_to_show,
+        regex_dict=regex_dict,
+        num_query_intervals=num_query_intervals,
+        y_scale="log",
+        **target_args[target_arg_key],
+    )

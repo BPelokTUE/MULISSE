@@ -164,9 +164,9 @@ Using presence:
 - TODO:
     - [x] Implement raw search:
         - Hypothesis: on raw time series the mean of time series should be good enough for pruning, based on the fact that $\gamma$ is large and sometimes there are only a few segments
-    - [ ] Finalize experiments for segmentation
+    - [x] Finalize experiments for segmentation
     - [ ] Think about how to prioritize channels (e.g. based on cross-dataset variance)
-    - [ ] Think about summarizing after inserting into the index
+    - [~] Think about summarizing after inserting into the index
 
 ## 07-05-2025
 
@@ -184,6 +184,14 @@ Performance on raw is better than MASS, but still not as good as expected:
 
 In total 6 different ways of choosing segment lengths have been attempted, 4 of them utilizing presence in some form. The results are underwhelming, any method that has lower query time has higher amortized index time and index size, suggesting that "how" segments sizes are chosen is not too important, at least with the current methods.
 
+TODO:
+- [ ] Establish if uniform segmentation has different optima across datasets
+- [ ] Check if the optimal value of $N_s$, $N_l$ and $N_p$ is **more stable across datasets and length ranges** with adaptive techniques than uniform.
+    - [ ] Do a low resolution contour search with all three parameters
+    - [ ] Do grid search on the three separately ($(x,y,z)\to(\hat{x},y,z)\to(\hat{x},\hat{y},z)\to(\hat{x},\hat{y},\hat{z})$. This would give roughly $3x3x3+10+10+10=57$ runs per dataset and length-range combinations.
+    - [ ] After search on the subset, select a set of random configurations, run on the full dataset, check if the results line up
+
+
 ### Summarization after insertion
 
-To investigate the possibility of summarizing subsequences after insertion into an index, various combinations of $N_p$ and $N_l$ were tested. In the most extreme case, when there is a single length in each length group, and a single starting position in each envelope, all subsequences are inserted separately into the indexes. Bigger length groups and position groups lead to more summarization before insertion, therefore smaller indexes, but potentially suboptimal grouping.
+To investigate the possibility of summarizing subsequences after insertion into an index, various combinations of $N_p$ and $N_l$ were tested. In the most extreme case, when there is a single length in each length group, and a single starting position in each envelope, all subsequences are inserted separately into the indexes. Bigger length groups and position groups lead to more summarization before insertion, therefore smaller indexes, but potentially suboptimal grouping. Too little pre-insertion summarization leads to prohibitively large index sizes and indexation times, e.g. methods without summarization failed due to memory issues in a locally run docker container, for $n=500, l\in[256,1204]$.
