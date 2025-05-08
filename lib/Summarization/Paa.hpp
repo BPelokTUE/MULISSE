@@ -29,7 +29,7 @@ struct PaaParams {
     const ILengthGroupSegmentationStrategy *m_lg_segmentation_strategy;
 };
 
-struct Paa : EntryData {
+struct Paa : IEntryData {
     vec<Real> m_paa_values;
 
     Paa(const vec<Real> &paa_values);
@@ -40,7 +40,7 @@ struct Paa : EntryData {
 
     void resize(size_t new_size) override;
 
-    vec<Real> get_isax_input() const override;
+    const vec<Real> &get_isax_input() const override;
 
     template <class Archive>
     void serialize(Archive &ar) {

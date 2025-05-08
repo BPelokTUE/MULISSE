@@ -10,7 +10,7 @@ void Envelope::resize(size_t new_size) {
     m_upper.resize(new_size);
 }
 
-vec<Real> Envelope::get_isax_input() const { return m_lower; }
+const vec<Real> &Envelope::get_isax_input() const { return m_lower; }
 
 // EnvelopeEntryGenerator
 

@@ -115,6 +115,7 @@ sptr<IIndex<Envelope>> get_isax_index(const IndexOptions &opts, const iSaxIndexP
     return sptr<IIndex<Envelope>>(index);
 }
 
+// TODO: rewrite, pass breakpoints and number of bits to relevant classes directly
 void calculate_sax_breakpoints(const SaxIndexParams *params, SaxNumBitsT num_bits_limit) {
     auto breakpoint_strategy = get_breakpoint_strategy(params);
     auto breakpoints = breakpoint_strategy->get_breakpoints(static_cast<SaxSymbolT>(1 << num_bits_limit));

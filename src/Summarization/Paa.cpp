@@ -24,7 +24,7 @@ size_t Paa::size() const { return m_paa_values.size(); }
 
 void Paa::resize(size_t new_size) { m_paa_values.resize(new_size); }
 
-vec<Real> Paa::get_isax_input() const { return m_paa_values; }
+const vec<Real> &Paa::get_isax_input() const { return m_paa_values; }
 
 vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normalized(const vec<Real> &ts,
                                                                                     const PaaParams &paa_params) {

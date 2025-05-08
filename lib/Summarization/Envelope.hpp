@@ -13,7 +13,7 @@
  *
  * An envelope is a set of lower and upper bounds that summarizes subsequences of a multivariate time series
  */
-struct Envelope : EntryData {
+struct Envelope : IEntryData {
     /** @brief Lower bounds of the envelope */
     vec<Real> m_lower;
     /** @brief Upper bounds of the envelope */
@@ -39,7 +39,7 @@ struct Envelope : EntryData {
 
     void resize(size_t new_size) override;
 
-    vec<Real> get_isax_input() const override;
+    const vec<Real> &get_isax_input() const override;
 
     template <class Archive>
     void serialize(Archive &ar) {
