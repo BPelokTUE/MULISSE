@@ -749,22 +749,25 @@ def plot_lines(
     colors: list[str] = CATEGORY_COLORS,
     x_label: str = "",
     y_label: str = "",
-    y_lim: tuple[float, float] = None,
+    y_lim: tuple[float, float] | None = None,
     y_scale: str = "linear",
     title: str = None,
     only_max_points: bool = True,
+    mark_minimum: bool = False,
 ):
     """
     Plot lines for the given reduction result.
 
     :param reduction_result: The reduction result to plot.
     :param x_axis_attr_ind: The index of the attribute in the keys of the reduction result to use for the x-axis.
-    :param legend: The labels for the legend.
-    :param colors: The list of colors to use for the lines.
+    :param legend: The list of labels for the lines.
+    :param colors: The list of colors for the lines.
     :param y_label: The label for the y-axis.
-    :param y_range: The range to use for the y-axis. If `None`, the range is automatically determined.
+    :param y_lim: The range to use for the y-axis. If `None`, the range is automatically determined.
     :param y_scale: The scale to use for the y-axis.
     :param title: The title of the plot.
+    :param only_max_points: If `True`, only plot lines with the maximum number of points.
+    :param mark_minimum: If `True`, mark the minimum points on each line.
     """
     values = {}
     max_points = 0
@@ -785,7 +788,18 @@ def plot_lines(
         if only_max_points and len(points) != max_points:
             continue
 
-        sorted_points = sorted(points, key=lambda x: x[0])
+        sorted_points = sorted(points, key=lambda p: p[0])
+        if mark_minimum:
+            min_point = min(sorted_points, key=lambda p: p[1])
+            hline_half_length = (sorted_points[-1][0] - sorted_points[0][0]) * 0.05
+            ax.hlines(
+                min_point[1],
+                min_point[0] - hline_half_length,
+                min_point[0] + hline_half_length,
+                linestyle="--",
+                color=color,
+            )
+
         xs = [point[0] for point in sorted_points]
         ys = [point[1] for point in sorted_points]
         ax.plot(xs, ys, color=color, label=legend[line])
@@ -1590,6 +1604,7 @@ def experiment_length_based_grouping(
     datasets_to_show: list[str] | None = None,
     l_ranges_to_show: list[tuple[int, int]] | None = None,
     regex_dict: dict[Column, str] = {},
+    show_bar_plot: bool = True,
     line_plot_x_attr: Column | None = None,
 ):
     groups_dict = {
@@ -1660,17 +1675,18 @@ def experiment_length_based_grouping(
             )
             title = f"{dataset} l in [{l_range[0]}, {l_range[1]}]"
 
-            plot_bars(
-                reduced_values_ds,
-                0,
-                x_labels=get_x_labels(reduced_values_ds, groups_dict, padding_rows=padding_rows),
-                y_label=y_label,
-                y_lim=y_lim,
-                title=title,
-                hatches=hatches,
-                hatch_labels=hatch_labels,
-                y_scale=y_scale,
-            )
+            if show_bar_plot:
+                plot_bars(
+                    reduced_values_ds,
+                    0,
+                    x_labels=get_x_labels(reduced_values_ds, groups_dict, padding_rows=padding_rows),
+                    y_label=y_label,
+                    y_lim=y_lim,
+                    title=title,
+                    hatches=hatches,
+                    hatch_labels=hatch_labels,
+                    y_scale=y_scale,
+                )
 
             if line_plot_x_attr is not None:
                 plot_lines(
@@ -1686,6 +1702,7 @@ def experiment_length_based_grouping(
                     y_label=y_label,
                     y_lim=y_lim,
                     title=title,
+                    mark_minimum=True,
                 )
 
 
@@ -1746,19 +1763,20 @@ Experiment: Segmentation strategy
 # %%
 
 # logs_dir = "EXPERIMENT_LOGS/segmentation/LOGS_adaptive_seg_univariate"
-logs_dir = "EXPERIMENT_LOGS/segmentation/LOGS_num_segments_univariate"
-merge_csv_datasets = True
+# logs_dir = "EXPERIMENT_LOGS/segmentation/LOGS_num_segments_univariate"
+logs_dir = "EXPERIMENT_LOGS/segmentation/LOGS_num_segments_univariate_large"
+merge_csv_datasets = False
 num_query_intervals = 1
-datasets_to_show = ["weather"]
+datasets_to_show = None  # ["weather"]
 l_ranges_to_show = [(128, 2048)]
 regex_dict = {
     # SSC.METHOD_NAME: r"env",
     # ISC.POS_PER_ENV: r"(19|96)(\.0){0,1}$",
-    # ISC.SEGMENTATION_STRATEGY: r"^(adaptive|0)$",
-    # ISC.LG_SEGMENTATION_STRATEGY: r"^(single|0)$",
+    ISC.SEGMENTATION_STRATEGY: r"^(adaptive|0)$",
+    ISC.LG_SEGMENTATION_STRATEGY: r"^(single|0)$",
     # ISC.NUM_SEGMENTS: r"^(12|0)\.0$",
 }
-target_arg_keys = ["query_time", "index_time"]
+target_arg_keys = ["query_time"]
 line_plot_x_attr = ISC.NUM_SEGMENTS
 
 # %%
@@ -1772,6 +1790,7 @@ for target_arg_key in target_arg_keys:
         l_ranges_to_show=l_ranges_to_show,
         regex_dict=regex_dict,
         num_query_intervals=num_query_intervals,
+        show_bar_plot=False,
         line_plot_x_attr=line_plot_x_attr,
         **target_args[target_arg_key],
     )
