@@ -7,6 +7,9 @@
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
 
+#include "Util/typedefs.hpp"
+#include "Util/SubsequenceInfo.hpp"
+#include "Util/Logging/IndexLogger.hpp"
 #include "Search/SearchMethod.hpp"
 #include "Search/Options/IndexOptions.hpp"
 #include "Search/Options/SearchOptions.hpp"
@@ -14,8 +17,6 @@
 #include "Summarization/Envelope.hpp"
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/Paa.hpp"
-#include "Util/typedefs.hpp"
-#include "Util/Logging/IndexLogger.hpp"
 
 template <typename T>
 struct IndexTraits;

@@ -3,8 +3,6 @@
 
 #include <functional>
 
-#include <boost/functional/hash.hpp>
-
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
 

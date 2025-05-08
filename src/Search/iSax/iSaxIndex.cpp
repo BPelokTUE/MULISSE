@@ -11,16 +11,6 @@
 #include "Util/Logging/IndexLogger.hpp"
 #include "Util/RunSettings.hpp"
 
-size_t SaxSymbolsHash::operator()(const vec<vec<SaxSymbolT>> &symbols) const {
-    size_t seed = 0;
-    for (auto &channel : symbols) {
-        for (SaxSymbolT symbol : channel) {
-            boost::hash_combine(seed, symbol);
-        }
-    }
-    return seed;
-}
-
 // iSaxPaaIndex
 
 using FTagPaa = typename IndexTraits<Paa>::FinalizedTag;

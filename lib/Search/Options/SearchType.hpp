@@ -3,6 +3,7 @@
 
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
+#include "Util/SubsequenceInfo.hpp"
 
 /** @brief Types of similarity search */
 enum SearchType { KNN, R_RANGE };

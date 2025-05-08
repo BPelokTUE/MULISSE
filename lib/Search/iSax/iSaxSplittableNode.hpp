@@ -3,6 +3,7 @@
 
 #include "Util/typedefs.hpp"
 #include "Util/constants.hpp"
+#include "Util/SubsequenceInfo.hpp"
 #include "Search/iSax/iSaxNode.hpp"
 #include "Search/iSax/iSaxFinalizedNode.hpp"
 #include "Summarization/Envelope.hpp"

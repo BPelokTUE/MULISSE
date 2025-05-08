@@ -28,6 +28,12 @@ struct Envelope : IEntryData {
      */
     Envelope(vec<Real> lower, vec<Real> upper);
 
+    /**
+     * @brief Equality operator
+     * @param other The other envelope to compare with
+     */
+    bool operator==(const Envelope &other) const;
+
     inline size_t size() const override { return m_lower.size(); }
 
     inline void merge(const Envelope &other) {

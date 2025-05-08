@@ -4,6 +4,7 @@
 #include <queue>
 
 #include "Util/typedefs.hpp"
+#include "Util/SubsequenceInfo.hpp"
 #include "Search/Index.hpp"
 #include "Search/SearchMethod.hpp"
 #include "Search/TopDownInserter.hpp"

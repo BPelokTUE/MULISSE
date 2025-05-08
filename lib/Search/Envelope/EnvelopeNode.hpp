@@ -4,6 +4,7 @@
 #include <cereal/types/memory.hpp>
 
 #include "Util/typedefs.hpp"
+#include "Util/SubsequenceInfo.hpp"
 #include "Summarization/Envelope.hpp"
 
 /** @brief Base class for envelope nodes */

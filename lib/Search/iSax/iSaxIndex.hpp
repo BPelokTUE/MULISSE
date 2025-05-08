@@ -16,10 +16,7 @@
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/iSaxBreakpointStrategy.hpp"
 #include "Summarization/Paa.hpp"
-
-struct SaxSymbolsHash {
-    size_t operator()(const vec<vec<SaxSymbolT>> &symbols) const;
-};
+#include "Summarization/SaxHelpers.hpp"
 
 // Forward declarations
 

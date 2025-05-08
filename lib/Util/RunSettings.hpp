@@ -7,6 +7,7 @@
 #include "Summarization/iSaxBreakpointStrategy.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
+#include "Util/SubsequenceInfo.hpp"
 #include "Util/FftArray.hpp"
 
 /** @brief Enumeration type for the command type */

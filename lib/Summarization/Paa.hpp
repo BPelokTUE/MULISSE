@@ -32,9 +32,19 @@ struct PaaParams {
 struct Paa : IEntryData {
     vec<Real> m_paa_values;
 
+    /**
+     * @brief Construct a new Paa object
+     * @param paa_values The PAA values of the time series
+     */
     Paa(const vec<Real> &paa_values);
 
     Paa() = default;
+
+    /**
+     * @brief Equality operator
+     * @param other The other PAA to compare with
+     */
+    bool operator==(const Paa &other) const;
 
     size_t size() const override;
 
