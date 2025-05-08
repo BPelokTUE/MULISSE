@@ -2,6 +2,8 @@
 
 #include "Summarization/EnvelopeEntryMerger.hpp"
 
+// SaxBasedEnvelopeEntryMerger
+
 SaxBasedEnvelopeEntryMerger::SaxBasedEnvelopeEntryMerger(SaxNumBitsT sax_num_bits) : m_sax_num_bits(sax_num_bits) {
     auto &RS = RunSettings::get_instance();
     m_alphabet_num_bits = RS.get_breakpoint_props().m_breakpoint_num_bits;
@@ -23,31 +25,55 @@ vec<IndexEntry<Envelope>> SaxBasedEnvelopeEntryMerger::merge_entries(vec<IndexEn
     entries.clear();
 
     for (auto [symbols, symbol_entries] : symbols_to_entries) {
-        std::sort(
-            symbol_entries.begin(), symbol_entries.end(),
-            [](const IndexEntry<Envelope> &a, const IndexEntry<Envelope> &b) { return a.m_subs_info < b.m_subs_info; });
+        merge_and_add_entries(std::move(symbol_entries), entries);
+    }
+    return entries;
+}
 
-        // Merge the entries with the same symbols
-        uint rightmost = 0;
-        vec<IndexEntry<Envelope>> merged_entries;
-        for (auto &entry : symbol_entries) {
-            uint entry_rightmost = entry.m_subs_info.m_start_pos + entry.m_subs_info.m_length - 1;
-            if (merged_entries.empty() || entry.m_subs_info.m_start_pos > rightmost) {
-                merged_entries.push_back(std::move(entry));
+void SaxBasedEnvelopeEntryMerger::merge_and_add_entries(vec<IndexEntry<Envelope>> &&symbol_entries,
+                                                        vec<IndexEntry<Envelope>> &merged_entries) {
+    std::sort(
+        symbol_entries.begin(), symbol_entries.end(),
+        [](const IndexEntry<Envelope> &a, const IndexEntry<Envelope> &b) { return a.m_subs_info < b.m_subs_info; });
+
+    // Merge the entries with the same symbols
+    uint rightmost = 0;
+    vec<IndexEntry<Envelope>> symbol_merged_entries;
+    for (auto &entry : symbol_entries) {
+        uint entry_rightmost = entry.m_subs_info.m_start_pos + entry.m_subs_info.m_length - 1;
+        if (symbol_merged_entries.empty() || entry.m_subs_info.m_start_pos > rightmost) {
+            symbol_merged_entries.push_back(std::move(entry));
+            rightmost = entry_rightmost;
+        } else {
+            auto &last_entry = symbol_merged_entries.back();
+            if (entry_rightmost > rightmost) {
                 rightmost = entry_rightmost;
-            } else {
-                auto &last_entry = merged_entries.back();
-                if (entry_rightmost > rightmost) {
-                    rightmost = entry_rightmost;
-                    last_entry.m_subs_info.m_length =
-                        rightmost - last_entry.m_subs_info.m_start_pos + 1;
-                }
-                for (MtsNumChannelsT c = 0; c < entry.m_mts_summary.size(); ++c)
-                    last_entry.m_mts_summary[c].merge(entry.m_mts_summary[c]);
+                last_entry.m_subs_info.m_length = rightmost - last_entry.m_subs_info.m_start_pos + 1;
             }
+            for (MtsNumChannelsT c = 0; c < entry.m_mts_summary.size(); ++c)
+                last_entry.m_mts_summary[c].merge(entry.m_mts_summary[c]);
         }
-        entries.insert(entries.end(), std::make_move_iterator(merged_entries.begin()),
-                       std::make_move_iterator(merged_entries.end()));
+    }
+    merged_entries.insert(merged_entries.end(), std::make_move_iterator(symbol_merged_entries.begin()),
+                          std::make_move_iterator(symbol_merged_entries.end()));
+}
+
+// LowerSaxBasedEnvelopeEntryMerger
+
+LowerSaxBasedEnvelopeEntryMerger::LowerSaxBasedEnvelopeEntryMerger(SaxNumBitsT sax_num_bits)
+    : SaxBasedEnvelopeEntryMerger(sax_num_bits) {}
+
+vec<IndexEntry<Envelope>> LowerSaxBasedEnvelopeEntryMerger::merge_entries(vec<IndexEntry<Envelope>> &&entries) {
+    umap_hash<vec<vec<SaxSymbolT>>, vec<IndexEntry<Envelope>>, SaxSymbolsHash> symbols_to_entries;
+
+    for (auto &entry : entries) {
+        auto symbols = get_entry_sax_symbols(entry, m_isax_word_factory);
+        symbols_to_entries[symbols].push_back(std::move(entry));
+    }
+    entries.clear();
+
+    for (auto [symbols, symbol_entries] : symbols_to_entries) {
+        merge_and_add_entries(std::move(symbol_entries), entries);
     }
     return entries;
 }

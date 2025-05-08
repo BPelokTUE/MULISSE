@@ -20,11 +20,9 @@ class IEnvelopeEntryMerger {
     virtual vec<IndexEntry<Envelope>> merge_entries(vec<IndexEntry<Envelope>> &&entries) = 0;
 };
 
-/** @brief Class that merges overlapping IndexEntry objects if their SAX representation is the same */
+/** @brief Class that merges overlapping IndexEntry<Envelope> objects if their SAX representation is the same */
 class SaxBasedEnvelopeEntryMerger : public IEnvelopeEntryMerger {
    public:
-    SaxBasedEnvelopeEntryMerger() = default;
-
     /**
      * @brief Constructor
      * @param sax_num_bits The number of bits to use for the SAX representation
@@ -33,10 +31,33 @@ class SaxBasedEnvelopeEntryMerger : public IEnvelopeEntryMerger {
 
     vec<IndexEntry<Envelope>> merge_entries(vec<IndexEntry<Envelope>> &&entries) override;
 
+   protected:
+    /**
+     * @brief Merge and add entries with the same symbols to the list of merged entries
+     * @param symbol_entries The list of entries to merge
+     * @param merged_entries The list of merged entries
+     */
+    void merge_and_add_entries(vec<IndexEntry<Envelope>> &&symbols_entries, vec<IndexEntry<Envelope>> &merged_entries);
+
    private:
     SaxNumBitsT m_sax_num_bits, m_alphabet_num_bits;
     const vec<Real> *m_breakpoints;
+
+   protected:
     iSaxWordFactory m_isax_word_factory;
+};
+
+/** @brief Class that merges overlapping IndexEntry<Envelope> objects if the SAX representation of their lower bounds is
+ * the same */
+class LowerSaxBasedEnvelopeEntryMerger : public SaxBasedEnvelopeEntryMerger {
+   public:
+    /**
+     * @brief Constructor
+     * @param sax_num_bits The number of bits to use for the SAX representation
+     */
+    LowerSaxBasedEnvelopeEntryMerger(SaxNumBitsT sax_num_bits);
+
+    vec<IndexEntry<Envelope>> merge_entries(vec<IndexEntry<Envelope>> &&entries) override;
 };
 
 #endif  // ENVELOPE_ENTRY_MERGER_HPP
