@@ -19,8 +19,16 @@ vec<IndexEntry<Envelope>> SaxBasedEnvelopeEntryMerger::merge_entries(vec<IndexEn
     umap_hash<vec<vec<SaxSymbolT>>, vec<IndexEntry<Envelope>>, SaxSymbolsHash> symbols_to_entries;
 
     for (auto &entry : entries) {
-        auto symbols = get_entry_sax_symbols(entry, m_isax_word_factory);
-        symbols_to_entries[symbols].push_back(std::move(entry));
+        vec<vec<SaxSymbolT>> combined_symbols(entry.m_mts_summary.size());
+        for (MtsNumChannelsT c = 0; c < entry.m_mts_summary.size(); ++c) {
+            combined_symbols[c].reserve(2 * entry.m_mts_summary[c].size());
+
+            auto isax_word = m_isax_word_factory(entry.m_mts_summary[c].m_lower);
+            for (SaxSegIndT s = 0; s < isax_word.size(); ++s) combined_symbols[c].push_back(isax_word[s]);
+            isax_word = m_isax_word_factory(entry.m_mts_summary[c].m_upper);
+            for (SaxSegIndT s = 0; s < isax_word.size(); ++s) combined_symbols[c].push_back(isax_word[s]);
+        }
+        symbols_to_entries[combined_symbols].push_back(std::move(entry));
     }
     entries.clear();
 
