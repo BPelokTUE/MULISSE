@@ -8,6 +8,7 @@ import os
 import shutil
 import subprocess
 from concurrent.futures import ProcessPoolExecutor
+from time import time
 from typing import Any, Iterator, Optional
 
 import pandas as pd
@@ -514,6 +515,7 @@ def run_command_with_logging(
     args: list[str], timeout: Optional[int] = None, command_log_path: str = COMMAND_LOG_PATH
 ) -> bool:
     with open(command_log_path, "a+") as f:
+        start_time = time()
         f.write(f"Running command:\n{' '.join(args)}\n")
         try:
             result = subprocess.run(args, stdout=f, stderr=subprocess.STDOUT, cwd=BUILD_PATH, timeout=timeout)
@@ -523,7 +525,7 @@ def run_command_with_logging(
         except subprocess.TimeoutExpired:
             f.write(f"Command timed out after {timeout} seconds\n")
             return False
-        f.write("\n")
+        f.write(f"\nTook: {time() - start_time:.2f} seconds\n")
         return True
 
 
@@ -615,6 +617,8 @@ if __name__ == "__main__":
     # --------------------#
     # RUN EXPERIMENTS     #
     # --------------------#
+
+    start_time = time()
 
     with ProcessPoolExecutor() as executor:
         for l_profile, length_setting in SettingIterator(length_settings).iterate(desc="Length settings"):
@@ -860,3 +864,10 @@ if __name__ == "__main__":
 
     # Run check
     run_command_with_logging([CHECK_RESULTS_SCRIPT_PATH, "-l", LOGS_DIR])
+
+    with open(COMMAND_LOG_PATH, "a+") as f:
+        f.write(f"\nTotal time: {time() - start_time:.2f} seconds\n")
+        f.write(f"Total datasets created: {dataset_counter}\n")
+        f.write(f"Total queries created: {query_counter}\n")
+        f.write(f"Total indexes created: {index_counter}\n")
+        f.write(f"Total runs: {dataset_counter * query_counter * index_counter}\n")

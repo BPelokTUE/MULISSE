@@ -1,3 +1,6 @@
+import numpy as np
+from matplotlib.colors import LinearSegmentedColormap
+
 PALETTE = {
     "Blues": [
         "#004589",
@@ -83,3 +86,7 @@ CATEGORY_COLORS = [
     PALETTE["Purples"][6],
     PALETTE["Pinks"][4],
 ]
+
+COLDEST_COLOR = PALETTE["Blues"][5]
+HOTTEST_COLOR = PALETTE["Reds"][1]
+COLD_TO_HOT_COLORS = LinearSegmentedColormap.from_list("cold_to_hot", [COLDEST_COLOR, HOTTEST_COLOR])

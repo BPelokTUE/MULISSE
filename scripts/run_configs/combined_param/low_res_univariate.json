@@ -5,7 +5,7 @@
     "syn_num_channels": [1],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [100],
-    "l_range_ratios": [[0.125, 1.0], [0.5, 1.0]],
+    "l_range_ratios": [[0.125, 0.75]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {
@@ -18,9 +18,9 @@
     "isax_leaf_cap_ratios": [],
     "isax_start_bit_numbers": [],
     "max_leaves_to_visit": [5],
-    "num_segments": [8, 32, 128],
-    "envelope_size_ratios": [0.01, 0.1, 1.0],
     "length_group_size_ratios": [0.01, 0.1, 1.0],
+    "envelope_size_ratios": [0.01, 0.1, 1.0],
+    "num_segments": [8, 32, 128],
     "distance_measures": {
         "scan": ["ed", "mass"],
         "flat": ["ed"]

@@ -54,10 +54,11 @@ from scripts.py.visualization.plots import (
     get_x_labels,
     get_y_label,
     plot_bars,
+    plot_heat_map,
     plot_lines,
 )
 from scripts.py.visualization.reduction import ERD, ExperimentResults, MeanReducer, Reducer, execute_reduction
-from scripts.py.visualization.style import PALETTE
+from scripts.py.visualization.style import COLD_TO_HOT_COLORS, PALETTE
 
 # %%[markdown]
 """
@@ -114,6 +115,7 @@ def visualize_experiments(
     # Filtering
     regex_dict: dict[Column, str] = {},
     # Plotting
+    x_scale: str = "linear",
     y_scale: str = "linear",
     title_base: str = "",
     # Bar plots
@@ -244,12 +246,37 @@ def visualize_experiments(
                     ),
                     x_label=str(line_plot_x_attr).replace("_", " ").capitalize(),
                     y_label=y_label,
+                    x_scale=x_scale,
+                    y_scale=y_scale,
                     y_lim=y_lim,
                     title=title,
                     mark_minimum=True,
                 )
 
+            if heat_map_x_attr is not None and heat_map_y_attr is not None:
+                plot_heat_map(
+                    reduced_values_subset,
+                    get_col_index(heat_map_x_attr, groups),
+                    get_col_index(heat_map_y_attr, groups),
+                    title=f"{y_label} for {title}",
+                    subtitles=get_x_labels(
+                        reduced_values_subset,
+                        groups_dict,
+                        discard_cols={heat_map_x_attr, heat_map_y_attr},
+                        include_cols=heat_map_included_cols,
+                    ),
+                    x_label=str(heat_map_x_attr).replace("_", " ").capitalize(),
+                    y_label=str(heat_map_y_attr).replace("_", " ").capitalize(),
+                    color_map=COLD_TO_HOT_COLORS,
+                )
+
     create_plots(title_base, separate_plots_dict, reduced_values)
+
+
+# %%[markdown]
+"""
+End of helper functions
+"""
 
 
 # %%[markdown]
@@ -596,10 +623,13 @@ for target_args in [TargetArgs.COMBINED_TIME, TargetArgs.PRUNING_RATIO]:
 Experiment: Segmentation strategy
 """
 
+# %%
+
 
 def experiment_segmentation_strategy(target_args: TargetArgs):
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_num_segments_univariate_large"],
+        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_low_res_univariate"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
@@ -613,20 +643,25 @@ def experiment_segmentation_strategy(target_args: TargetArgs):
             ],
         },
         separate_plots_dict={
-            (DSC.DATASET_FILE,): [],
-            (QSC.L_MIN, QSC.L_MAX): [],
+            # (DSC.DATASET_FILE,): [],
+            # (QSC.L_MIN, QSC.L_MAX): [],
+            (ISC.SEGMENTATION_STRATEGY, ISC.LG_SEGMENTATION_STRATEGY): [],
         },
+        # regex_dict={QSC.L_MIN: r"128"},
         num_query_intervals=1,
         merge_csv_datasets=True,
+        bar_plot_color_attr=None,
         line_plot_x_attr=ISC.NUM_SEGMENTS,
-        line_plot_included_cols={ISC.SEGMENTATION_STRATEGY, ISC.LG_SEGMENTATION_STRATEGY},
+        line_plot_included_cols={DSC.DATASET_FILE, QSC.L_MIN, QSC.L_MAX},
+        x_scale="log",
+        # heat_map_x_attr=ISC.NUM_SEGMENTS,
+        # heat_map_y_attr=ISC.L_PER_GROUP,
+        # heat_map_included_cols={ISC.POS_PER_ENV},
         **target_args.value,
     )
 
 
-# %%
-
-for target_args in [TargetArgs.COMBINED_TIME, TargetArgs.INDEX_SIZE]:
+for target_args in [TargetArgs.QUERY_TIME]:
     experiment_segmentation_strategy(target_args=target_args)
 
 # %%[markdown]

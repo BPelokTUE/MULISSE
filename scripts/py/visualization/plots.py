@@ -1,8 +1,11 @@
 import textwrap
+from copy import copy
 from typing import Any, Callable
 
 import numpy as np
+import seaborn as sns
 from matplotlib import pyplot as plt
+from matplotlib.colors import Colormap
 from scripts.py.common.columns import Column
 from scripts.py.common.columns import DatasetSettingsColumn as DSC
 from scripts.py.common.columns import IndexSettingsColumn as ISC
@@ -227,6 +230,7 @@ def plot_lines(
     x_label: str = "",
     y_label: str = "",
     y_lim: tuple[float, float] | None = None,
+    x_scale: str = "linear",
     y_scale: str = "linear",
     title: str = None,
     only_max_points: bool = True,
@@ -267,16 +271,17 @@ def plot_lines(
             continue
 
         sorted_points = sorted(points, key=lambda p: p[0])
-        if mark_minimum:
+        if len(points) > 1 and mark_minimum:
             min_point = min(sorted_points, key=lambda p: p[1])
-            hline_half_length = (sorted_points[-1][0] - sorted_points[0][0]) * 0.05
-            ax.hlines(
-                min_point[1],
-                min_point[0] - hline_half_length,
-                min_point[0] + hline_half_length,
-                linestyle="--",
-                color=color,
-            )
+            if x_scale == "log":
+                hline_half_length = (np.log10(sorted_points[-1][0]) - np.log10(sorted_points[0][0])) * 0.1
+                line_start = 10 ** (np.log10(min_point[0]) - hline_half_length)
+                line_end = 10 ** (np.log10(min_point[0]) + hline_half_length)
+            else:
+                hline_half_length = (sorted_points[-1][0] - sorted_points[0][0]) * 0.1
+                line_start = min_point[0] - hline_half_length
+                line_end = min_point[0] + hline_half_length
+            ax.hlines(min_point[1], line_start, line_end, linestyle="--", color=color)
 
         xs = [point[0] for point in sorted_points]
         ys = [point[1] for point in sorted_points]
@@ -284,8 +289,9 @@ def plot_lines(
         ax.scatter(xs, ys, color=color)
 
     ax.set_xlabel(x_label)
-    ax.set_yscale(y_scale)
     ax.set_ylabel(y_label)
+    ax.set_xscale(x_scale)
+    ax.set_yscale(y_scale)
     ax.set_ylim(y_lim)
     ax.set_title(title)
     ax.grid(True)
@@ -301,10 +307,15 @@ def plot_heat_map(
     reduction_result: ReductionResult,
     x_axis_attr_ind: int,
     y_axis_attr_ind: int,
-    titles: list[str],
-    color_fn: Callable[[float], str],
+    title: str,
+    subtitles: dict[tuple, str],
+    color_map: Colormap,
     x_label: str = "",
     y_label: str = "",
+    only_max_points_x: bool = True,
+    only_max_points_y: bool = True,
+    max_maps_per_row: int = 3,
+    map_inches: float = 5.0,
 ):
     """
     Plot lines for the given reduction result.
@@ -312,12 +323,99 @@ def plot_heat_map(
     :param reduction_result: The reduction result to plot.
     :param x_axis_attr_ind: The index of the attribute in the keys of the reduction result to use for the x-axis.
     :param y_axis_attr_ind: The index of the attribute in the keys of the reduction result to use for the y-axis.
-    :param titles: The list of titles for the heat maps.
-    :param color_fn: The function to map values to colors.
+    :param title: The prefix for the title of the heat maps.
+    :param subtitles: The subtitles for the heat maps.
+    :param color_map: The color map to use for the heat maps.
     :param x_label: The label for the x-axis.
     :param y_label: The label for the y-axis.
+    :param only_max_points_x: If `True`, only heat maps with maximum number of points on the x-axis are plotted.
+    :param only_max_points_y: If `True`, only heat maps with maximum number of points on the y-axis are plotted.
+    :param max_maps_per_row: The maximum number of heat maps to plot per row.
+    :param map_inches: The width and height of the heat maps in inches.
     """
-    pass
+
+    values = {}
+    max_points_x, max_points_y = 0, 0
+    heat_lim = (np.inf, -np.inf)
+
+    for i, (group, target_values) in enumerate(reduction_result.items()):
+        x = group[x_axis_attr_ind]
+        y = group[y_axis_attr_ind]
+        if x is None or x == "" or y is None or y == "":
+            continue
+
+        heat_map_key = tuple(group[i] for i in range(len(group)) if i != x_axis_attr_ind and i != y_axis_attr_ind)
+
+        if heat_map_key not in values:
+            values[heat_map_key] = {}
+        if y not in values[heat_map_key]:
+            values[heat_map_key][y] = {}
+
+        val = sum(target_values)
+        values[heat_map_key][y][x] = val
+        heat_lim = (min(heat_lim[0], val), max(heat_lim[1], val))
+
+        max_points_x = max(max_points_x, len(values[heat_map_key][y]))
+        max_points_y = max(max_points_y, len(values[heat_map_key]))
+
+    heat_pad = (heat_lim[1] - heat_lim[0]) * 0.05
+    heat_lim = (heat_lim[0] - heat_pad, heat_lim[1] + heat_pad)
+
+    heat_map_matrices = {}
+    heat_map_ticks = {}
+
+    for heat_map_key, heat_map_values in values.items():
+        y_values = sorted(heat_map_values.keys())
+        x_values = list(set([x for y in y_values for x in heat_map_values[y].keys()]))
+
+        if only_max_points_x and len(x_values) != max_points_x:
+            continue
+        if only_max_points_y and len(y_values) != max_points_y:
+            continue
+
+        data = np.zeros((len(y_values), len(x_values)))
+        for y_ind, y in enumerate(y_values):
+            for x in x_values:
+                x_ind = x_values.index(x)
+                data[y_ind][x_ind] = heat_map_values[y][x]
+
+        heat_map_matrices[heat_map_key] = data
+        heat_map_ticks[heat_map_key] = (x_values, y_values)
+
+    num_heat_maps = len(heat_map_matrices)
+    if num_heat_maps == 0:
+        return
+
+    num_rows = (num_heat_maps + max_maps_per_row - 1) // max_maps_per_row
+    num_cols = min(num_heat_maps, max_maps_per_row)
+    fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, figsize=(map_inches * num_cols, map_inches * num_rows))
+
+    if num_heat_maps == 1:
+        axes = np.array([axes])
+    elif num_rows > 1 and num_cols > 1:
+        axes = axes.flatten()
+
+    for i, heat_map_key in enumerate(heat_map_matrices):
+        matrix = heat_map_matrices[heat_map_key]
+        x_values, y_values = heat_map_ticks[heat_map_key]
+
+        ax = axes[i]
+        sns.heatmap(data=matrix, vmin=heat_lim[0], vmax=heat_lim[1], annot=True, ax=ax, cmap=color_map)
+
+        # Set labels and title
+        ax.set_title(subtitles[heat_map_key])
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+        ax.set_xticklabels(x_values)
+        ax.set_yticklabels(y_values)
+
+    # Hide any unused subplots
+    for i in range(num_heat_maps, len(axes)):
+        axes[i].axis("off")
+
+    fig.suptitle(title)
+    plt.tight_layout(rect=[0, 0, 1, 0.96])  # Make room for the suptitle
+    plt.show()
 
 
 # %%[markdown]
