@@ -186,8 +186,19 @@ In total 6 different ways of choosing segment lengths have been attempted, 4 of 
 
 TODO:
 - [ ] Establish if uniform segmentation has different optima across datasets
+    - Pattern is largely the same for all segmentation strategies across all datasets and length-ranges:
+        - Sharp decrease in query time at the start, slow but steady increase after $N_s\approx 32$
+        - Indexation time increases linearly with number of segments, segmentation strategies only influence the rate of growth
 - [ ] Check if the optimal value of $N_s$, $N_l$ and $N_p$ is **more stable across datasets and length ranges** with adaptive techniques than uniform.
     - [ ] Do a low resolution contour search with all three parameters
+        - $l\in[512,1024]$:
+            - $N_s$: $\bar{T_q}(N_s=8)\ge\bar{T_q}(N_s=32)\gt\bar{T_q}(N_s=128)$
+            - $N_p$: $\bar{T_q}(N_p=10)\$
+            - $N_l$:
+        - $l\in[128,1024]$:
+            - $N_s$: 
+            - $N_p$:
+            - $N_l$:
     - [ ] Do grid search on the three separately ($(x,y,z)\to(\hat{x},y,z)\to(\hat{x},\hat{y},z)\to(\hat{x},\hat{y},\hat{z})$. This would give roughly $3x3x3+10+10+10=57$ runs per dataset and length-range combinations.
     - [ ] After search on the subset, select a set of random configurations, run on the full dataset, check if the results line up
 

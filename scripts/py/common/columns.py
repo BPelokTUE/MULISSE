@@ -198,3 +198,14 @@ class StatsColumn:
 
     def __str__(self):
         return f"{str(self.prefix)}_{str(self.col).replace('_stats', '')}"
+
+
+Column = (
+    IndexSettingsColumn
+    | DatasetSettingsColumn
+    | QuerySetSettingsColumn
+    | QueryStatsColumn
+    | IndexStatsColumn
+    | SearchSettingsColumn
+    | QueryColumn
+)

@@ -35,5 +35,5 @@
     "search_approx": [false],
     "search_raw": [false],
     "separate_csv_datasets": true,
-    "calculate_index_stats": true
+    "calculate_index_stats": false
 }
