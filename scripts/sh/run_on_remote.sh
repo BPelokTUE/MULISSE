@@ -13,6 +13,8 @@ NO_SCP_REPO=false
 INCLUDE_SLURM_FILES=false
 IGNORE_TESTS=true
 CLEAN_BUILD=false
+USE_DOUBLE=true
+
 reading_config_files=false
 
 config_files=()
@@ -50,6 +52,9 @@ while [[ "$#" -gt 0 ]]; do
     --clean_build)
         CLEAN_BUILD=true
         ;;
+    --float)
+        USE_DOUBLE=false
+        ;;
     *)
         if $reading_config_files; then
             config_files+=("$1")
@@ -61,6 +66,7 @@ while [[ "$#" -gt 0 ]]; do
             echo "  --no_scp_repo        Skip copying the repository to the remote"
             echo "  --tests              Build tests as well"
             echo "  --clean_build        Perform a clean build on the remote"
+            echo "  --float              Use float instead of double precision"
             exit 1
         fi
         ;;
@@ -79,6 +85,7 @@ fi
 
 build_flags=$([[ "$CLEAN_BUILD" == true ]] && echo "-c" || echo "")
 build_flags+=$([[ "$IGNORE_TESTS" == true ]] && echo "" || echo " -t")
+build_flags+=$([[ "$USE_DOUBLE" == true ]] && echo "--use_double" || echo "")
 
 # Step 1
 if ! $NO_SCP_REPO; then

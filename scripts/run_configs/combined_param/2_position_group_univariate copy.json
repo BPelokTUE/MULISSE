@@ -5,11 +5,10 @@
     "syn_num_channels": [1],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [100],
-    "l_range_ratios": [[0.125, 0.75]],
+    "l_range_ratios": [[0.125, 1.0], [0.5, 1.0], [0.125, 0.75]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {
-        "scan": ["scan"],
         "flat": ["envelope"]
     },
     "isax_split_strategies": ["em"],
@@ -18,11 +17,10 @@
     "isax_leaf_cap_ratios": [],
     "isax_start_bit_numbers": [],
     "max_leaves_to_visit": [5],
-    "length_group_size_ratios": [0.01, 0.1, 1.0],
-    "envelope_size_ratios": [0.01, 0.1, 1.0],
-    "num_segments": [8, 32, 128],
+    "length_group_size_ratios": [0.0025],
+    "envelope_size_ratios": [0.025, 0.05, 0.08, 0.1, 0.15, 0.25, 0.5],
+    "num_segments": [32],
     "distance_measures": {
-        "scan": ["ed", "mass"],
         "flat": ["ed"]
     },
     "early_abandon": [true],

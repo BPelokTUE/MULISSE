@@ -870,4 +870,3 @@ if __name__ == "__main__":
         f.write(f"Total datasets created: {dataset_counter}\n")
         f.write(f"Total queries created: {query_counter}\n")
         f.write(f"Total indexes created: {index_counter}\n")
-        f.write(f"Total runs: {dataset_counter * query_counter * index_counter}\n")
