@@ -55,7 +55,7 @@ void SaxBasedEnvelopeEntryMerger::merge_and_add_entries(vec<IndexEntry<Envelope>
     vec<IndexEntry<Envelope>> symbol_merged_entries;
     for (auto &entry : symbol_entries) {
         uint entry_rightmost = entry.m_subs_info.m_start_pos + entry.m_subs_info.m_length - 1;
-        if (symbol_merged_entries.empty() || entry.m_subs_info.m_start_pos > rightmost) {
+        if (symbol_merged_entries.empty() || entry.m_subs_info.m_start_pos > rightmost + 1) {
             symbol_merged_entries.push_back(std::move(entry));
             rightmost = entry_rightmost;
         } else {

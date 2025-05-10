@@ -491,6 +491,12 @@ def get_x_label(
                 label_parts.append(f"|Q|={int(val)}")
             case ISC.POS_PER_ENV:
                 label_parts.append(f"PPE={int(val)}")
+            case ISC.MERGER_NUM_BITS:
+                if val is not None and val > 0:
+                    label_parts.append(f"EMB={int(val)}")
+            case ISC.ENTRY_MERGER_TYPE:
+                if isinstance(val, str) and len(val) > 0:
+                    label_parts.append(f"EMT={abbreviate(val)}")
             case DSC.DATASET_FILE:
                 label_parts.append(val)
             case DSC.NUM_SERIES:

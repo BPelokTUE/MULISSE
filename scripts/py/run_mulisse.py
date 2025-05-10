@@ -49,6 +49,8 @@ CK_ISAX_SPLIT_STRATEGIES = "isax_split_strategies"
 CK_ISAX_LEAF_CAP_RATIOS = "isax_leaf_cap_ratios"
 CK_ISAX_NUM_BITS_LIMITS = "isax_num_bits_limits"
 CK_ENVELOPE_SIZE_RATIOS = "envelope_size_ratios"
+CK_MERGER_TYPES = "merger_types"
+CK_MERGER_NUM_BIT_NUMBERS = "merger_num_bit_numbers"
 CK_LENGTH_GROUP_SIZE_RATIOS = "length_group_size_ratios"
 CK_SEARCH_KS = "search_ks"
 CK_SEARCH_RS = "search_rs"
@@ -84,6 +86,8 @@ RK_SPLIT_STRATEGY = "split_strategy"
 RK_LEAF_CAPACITY = "leaf_capacity"
 RK_ISAX_NUM_BITS_LIMIT = "isax_num_bits_limit"
 RK_POS_PER_ENV = "pos_per_env"
+RK_MERGER_TYPE = "merger_type"
+RK_MERGER_NUM_BITS = "merger_num_bits"
 RK_LENS_PER_GROUP = "lens_per_group"
 RK_INDEX_TYPE = "index_type"
 RK_K = "k"
@@ -242,6 +246,9 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
     # fmt: on
 
     def parse_flat_config(config) -> ParsedConfig:
+        def get_key_or_none(rk: str, ck: str):
+            return {rk: config[ck]} if ck in config else {}
+
         def get_length_settings() -> Settings:
             return [{RK_SERIES_LEN: config[CK_SERIES_LENGTHS], RK_L_RANGE: config[CK_L_RANGE_RATIOS]}]
 
@@ -284,7 +291,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
                 RK_SIZE: config[CK_QUERY_SET_SIZES],
                 RK_USED_CHANNEL_RATIO: config[CK_USED_CHANNEL_RATIOS],
                 RK_NOISE_STDEV: config[CK_QUERY_NOISE_STDEVS],
-                RK_QUERY_SET_SEED: config.get(CK_QUERY_SET_SEEDS, [0]),
+                **get_key_or_none(RK_QUERY_SET_SEED, CK_QUERY_SET_SEEDS),
             }
             if CK_EXACT_QUERY_LENGTH_SETS in config:
                 setting[RK_EXACT_QUERY_LENGTHS] = config[CK_EXACT_QUERY_LENGTH_SETS]
@@ -292,28 +299,33 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
 
         def get_index_settings() -> Settings:
             common_settings = {
-                RK_RAW: config[CK_SEARCH_RAW],
-                RK_LG_SEGMENTATION_STRATEGY: config.get(CK_LG_SEGMENTATION_STRATEGIES, ["single"]),
-                RK_SEGMENTATION_STRATEGY: config.get(CK_SEGMENTATION_STRATEGIES, ["uniform"]),
                 RK_NUM_SEGMENTS: config.get(CK_NUM_SEGMENTS, []),
-                RK_INSERTER_TYPE: config.get(CK_INDEX_INSERTERS, []),
-                RK_LENS_PER_GROUP: config.get(CK_LENGTH_GROUP_SIZE_RATIOS, [0]),
+                **get_key_or_none(RK_RAW, CK_SEARCH_RAW),
+                **get_key_or_none(RK_LG_SEGMENTATION_STRATEGY, CK_LG_SEGMENTATION_STRATEGIES),
+                **get_key_or_none(RK_SEGMENTATION_STRATEGY, CK_SEGMENTATION_STRATEGIES),
+                **get_key_or_none(RK_NUM_CHANNELS, CK_NUM_CHANNELS),
+                **get_key_or_none(RK_LENS_PER_GROUP, CK_LENGTH_GROUP_SIZE_RATIOS),
             }
             sax_settings = {
                 **common_settings,
-                RK_BREAKPOINT_STRATEGY: config.get(CK_ISAX_BREAKPOINT_STRATEGIES, []),
-                RK_FIRST_LAYER_BITS: config.get(CK_ISAX_START_BIT_NUMBERS, []),
-                RK_ADAPT: config.get(CK_ADAPT_INDEX, [False]),
-                RK_ISAX_BREAKPOINTS_FILE: config.get(CK_ISAX_BREAKPOINTS_FILE, [""]),
-                RK_ISAX_PREFER_FIRST_IN_EM: config.get(CK_ISAX_PREFER_FIRST_IN_EM, [False]),
+                **get_key_or_none(RK_BREAKPOINT_STRATEGY, CK_ISAX_BREAKPOINT_STRATEGIES),
+                **get_key_or_none(RK_FIRST_LAYER_BITS, CK_ISAX_START_BIT_NUMBERS),
+                **get_key_or_none(RK_ADAPT, CK_ADAPT_INDEX),
+                **get_key_or_none(RK_ISAX_BREAKPOINTS_FILE, CK_ISAX_BREAKPOINTS_FILE),
             }
             isax_settings = {
                 **sax_settings,
-                RK_SPLIT_STRATEGY: config.get(CK_ISAX_SPLIT_STRATEGIES, []),
                 RK_LEAF_CAPACITY: config.get(CK_ISAX_LEAF_CAP_RATIOS, []),
-                RK_ISAX_NUM_BITS_LIMIT: config.get(CK_ISAX_NUM_BITS_LIMITS, [0]),
+                **get_key_or_none(RK_SPLIT_STRATEGY, CK_ISAX_SPLIT_STRATEGIES),
+                **get_key_or_none(RK_ISAX_NUM_BITS_LIMIT, CK_ISAX_NUM_BITS_LIMITS),
+                **get_key_or_none(RK_ISAX_PREFER_FIRST_IN_EM, CK_ISAX_PREFER_FIRST_IN_EM),
             }
-            envelope_settings = {**common_settings, RK_POS_PER_ENV: config.get(CK_ENVELOPE_SIZE_RATIOS, [])}
+            envelope_settings = {
+                **common_settings,
+                RK_POS_PER_ENV: config.get(CK_ENVELOPE_SIZE_RATIOS, []),
+                **get_key_or_none(RK_MERGER_TYPE, CK_MERGER_TYPES),
+                **get_key_or_none(RK_MERGER_NUM_BITS, CK_MERGER_NUM_BIT_NUMBERS),
+            }
             tree_envelope_settings = {
                 **envelope_settings,
                 **sax_settings,
@@ -374,13 +386,13 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
 
             ed_settings = {
                 RK_DISTANCE: DIST_ED,
-                RK_EARLY_ABANDON: config.get(CK_EARLY_ABANDON, []),
-                RK_SORT_QUERY: config.get(CK_SORT_QUERY, [False]),
+                **get_key_or_none(RK_EARLY_ABANDON, CK_EARLY_ABANDON),
+                **get_key_or_none(RK_SORT_QUERY, CK_SORT_QUERY),
             }
             distance_measures_settings = {
                 DIST_ED: ed_settings,
                 DIST_EUCLIDEAN: ed_settings,
-                DIST_MASS: {RK_DISTANCE: DIST_MASS, RK_PRECALCULATE_FFTS: config.get(CK_PRECALCULATE_FFTS, [])},
+                DIST_MASS: {RK_DISTANCE: DIST_MASS, **get_key_or_none(RK_PRECALCULATE_FFTS, CK_PRECALCULATE_FFTS)},
             }
             for distance_measure, settings in distance_measures_settings.items():
                 if distance_measure in config[CK_DISTANCE_MEASURES]:
@@ -690,7 +702,6 @@ if __name__ == "__main__":
                     num_queries = query_setting[RK_SIZE]
                     used_channels = int(num_channels * query_setting[RK_USED_CHANNEL_RATIO])
                     noise_stdev = query_setting[RK_NOISE_STDEV]
-                    seed = query_setting[RK_QUERY_SET_SEED]
                     exact_query_lengths = query_setting.get(RK_EXACT_QUERY_LENGTHS, [])
 
                     query_file = os.path.join(dataset_setting[RK_LOCATION], f"queries-{query_counter}.txt")
@@ -698,8 +709,10 @@ if __name__ == "__main__":
                     # fmt: off
                     args = [
                         SUB_CREATE_QS, "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
-                        "-Q", str(num_queries), "-u", str(used_channels), "--noise", str(noise_stdev), "-S", str(seed)
+                        "-Q", str(num_queries), "-u", str(used_channels), "--noise", str(noise_stdev)
                     ]
+                    if RK_QUERY_SET_SEED in query_setting:
+                        args += ["-S", str(query_setting[RK_QUERY_SET_SEED])]
                     if len(exact_query_lengths) > 0:
                         args += ["-e", *[str(int(q_len)) for q_len in exact_query_lengths]]
                     else:
@@ -779,6 +792,10 @@ if __name__ == "__main__":
                             args += ["-S", index_setting_copy.pop(RK_SEGMENTATION_STRATEGY)]
                         if RK_NUM_SEGMENTS in index_setting_copy:
                             args += ["-s", str(index_setting_copy.pop(RK_NUM_SEGMENTS))]
+                        if RK_MERGER_TYPE in index_setting_copy:
+                            args += ["-M", index_setting_copy.pop(RK_MERGER_TYPE)]
+                        if RK_MERGER_NUM_BITS in index_setting_copy:
+                            args += ["--merger_num_bits", str(index_setting_copy.pop(RK_MERGER_NUM_BITS))]
                         pos_per_env = 1
                         if RK_POS_PER_ENV in index_setting_copy:
                             max_pos_per_env = series_len - l_min + 1

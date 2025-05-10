@@ -66,7 +66,7 @@ TEST_CASE("SaxBasedEntryMerger with Envelope type") {
         SaxBasedEnvelopeEntryMerger merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 1, 4), {Envelope({R(-0.1), R(-0.2), R(0.3)}, {R(0.5), R(1.1), R(1.3)})}},
+            {SubsequenceInfo(0, 1, 3), {Envelope({R(-0.1), R(-0.2), R(0.3)}, {R(0.5), R(1.1), R(1.3)})}},
             {SubsequenceInfo(0, 4, 3), {Envelope({R(-1.6), R(0.2), R(-0.3)}, {R(-0.6), R(0.7), R(0.8)})}},
             {SubsequenceInfo(0, 6, 5), {Envelope({R(-0.5), R(-1.0), R(-2.3)}, {R(1.9), R(-0.1), R(-0.4)})}},
         };
@@ -80,7 +80,7 @@ TEST_CASE("SaxBasedEntryMerger with Envelope type") {
         SaxBasedEnvelopeEntryMerger merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 1, 4), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(0.5), R(1.1), R(1.3)})}},
+            {SubsequenceInfo(0, 1, 3), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(0.5), R(1.1), R(1.3)})}},
             {SubsequenceInfo(0, 4, 3), {Envelope({R(-1.4), R(-0.6), R(-0.15)}, {R(-0.6), R(0.7), R(0.8)})}},
             {SubsequenceInfo(0, 6, 5), {Envelope({R(-0.9), R(-0.55), R(-0.2)}, {R(1.9), R(-0.1), R(0.4)})}},
         };
@@ -94,7 +94,7 @@ TEST_CASE("SaxBasedEntryMerger with Envelope type") {
         SaxBasedEnvelopeEntryMerger merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 1, 4), {Envelope({R(-0.1), R(-0.2), R(0.3)}, {R(1.55), R(0.3), R(1.3)})}},
+            {SubsequenceInfo(0, 1, 3), {Envelope({R(-0.1), R(-0.2), R(0.3)}, {R(1.55), R(0.3), R(1.3)})}},
             {SubsequenceInfo(0, 4, 3), {Envelope({R(-1.6), R(0.2), R(-0.3)}, {R(1.6), R(0.25), R(0.8)})}},
             {SubsequenceInfo(0, 6, 5), {Envelope({R(-0.5), R(-1.0), R(-2.3)}, {R(1.9), R(0.1), R(1.4)})}},
         };
@@ -122,7 +122,7 @@ TEST_CASE("SaxBasedEntryMerger with Envelope type") {
         SaxBasedEnvelopeEntryMerger merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 1, 4), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(1.55), R(0.3), R(1.3)})}},
+            {SubsequenceInfo(0, 1, 3), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(1.55), R(0.3), R(1.3)})}},
             {SubsequenceInfo(0, 4, 3), {Envelope({R(-1.4), R(-0.6), R(-0.15)}, {R(1.6), R(0.25), R(0.8)})}},
             {SubsequenceInfo(0, 6, 5), {Envelope({R(-0.9), R(-0.55), R(-0.2)}, {R(1.9), R(0.1), R(1.4)})}},
         };
@@ -204,7 +204,7 @@ TEST_CASE("LowerSaxBasedEntryMerger with Envelope type") {
         LowerSaxBasedEnvelopeEntryMerger merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 1, 4), {Envelope({R(-0.1), R(-0.2), R(0.3)}, {R(0.5), R(1.1), R(1.3)})}},
+            {SubsequenceInfo(0, 1, 3), {Envelope({R(-0.1), R(-0.2), R(0.3)}, {R(0.5), R(1.1), R(1.3)})}},
             {SubsequenceInfo(0, 4, 3), {Envelope({R(-1.6), R(0.2), R(-0.3)}, {R(-0.6), R(0.7), R(0.8)})}},
             {SubsequenceInfo(0, 6, 5), {Envelope({R(-0.5), R(-1.0), R(-2.3)}, {R(1.9), R(-0.1), R(-0.4)})}},
         };
@@ -218,7 +218,7 @@ TEST_CASE("LowerSaxBasedEntryMerger with Envelope type") {
         LowerSaxBasedEnvelopeEntryMerger merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 1, 4), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(0.5), R(1.1), R(1.3)})}},
+            {SubsequenceInfo(0, 1, 3), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(0.5), R(1.1), R(1.3)})}},
             {SubsequenceInfo(0, 6, 3), {Envelope({R(-1.4), R(-0.6), R(-0.15)}, {R(-0.6), R(0.7), R(0.8)})}},
             {SubsequenceInfo(0, 11, 5), {Envelope({R(-0.9), R(-0.55), R(-0.2)}, {R(1.9), R(-0.1), R(0.4)})}},
         };
@@ -232,7 +232,7 @@ TEST_CASE("LowerSaxBasedEntryMerger with Envelope type") {
         LowerSaxBasedEnvelopeEntryMerger merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 1, 4), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(0.5), R(1.1), R(1.3)})}},
+            {SubsequenceInfo(0, 1, 3), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(0.5), R(1.1), R(1.3)})}},
             {SubsequenceInfo(0, 4, 3), {Envelope({R(-1.4), R(-0.6), R(-0.15)}, {R(-0.6), R(0.7), R(0.8)})}},
             {SubsequenceInfo(0, 6, 5), {Envelope({R(-0.9), R(-0.55), R(-0.2)}, {R(1.9), R(-0.1), R(0.4)})}},
         };
@@ -248,7 +248,7 @@ TEST_CASE("LowerSaxBasedEntryMerger with Envelope type") {
         LowerSaxBasedEnvelopeEntryMerger merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 1, 4), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(0.5), R(1.1), R(1.3)})}},
+            {SubsequenceInfo(0, 1, 3), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(0.5), R(1.1), R(1.3)})}},
             {SubsequenceInfo(0, 4, 3), {Envelope({R(-2.4), R(-0.6), R(-1.15)}, {R(-1.6), R(0.7), R(-0.8)})}},
             {SubsequenceInfo(0, 3, 5), {Envelope({R(-0.9), R(-0.55), R(-0.2)}, {R(1.9), R(-0.1), R(0.4)})}},
         };

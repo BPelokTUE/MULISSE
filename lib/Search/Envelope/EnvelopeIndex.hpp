@@ -119,7 +119,8 @@ class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, QS> {
         MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
 
         vec<vec<Real>> subsequence(num_channels);
-        size_t data_to_read = std::min(subs_info.m_length, query_len + pos_per_env - 1);
+        uint num_start_pos = subs_info.m_length;
+        size_t data_to_read = std::min(query_len + num_start_pos - 1, series_len - subs_info.m_start_pos);
 
         logger.start_timer(QC::IO_TIME_S);
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {

@@ -119,12 +119,6 @@ class iSaxFinalizedIndex : public IFinalizedIndex<FTag> {
     const iSaxFinalizedNode<FTag>* get_first_layer_node(size_t ind) const { return m_first_layer_nodes[ind].get(); }
 
     /**
-     * @brief Get the number of positions per envelope
-     * @return The number of positions per envelope
-     */
-    uint get_pos_per_env() const { return m_pos_per_env; }
-
-    /**
      * @brief Get the segmentation strategy
      * @return The segmentation strategy
      */
@@ -172,7 +166,6 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
         SaxNumBitsT first_layer_num_bits = m_index->get_first_layer_num_bits();
         auto& first_layer_symbols = m_index->get_first_layer_symbols();
         auto segmentation_strategy = m_index->get_segmentation_strategy();
-        uint pos_per_env = m_index->get_pos_per_env();
 
         assert(query.size() == num_channels);
 
@@ -254,7 +247,8 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
 
                     size_t data_to_read;
                     if constexpr (std::is_same_v<FTag, EnvelopeTag>) {
-                        data_to_read = std::min(subs_info.m_length, query_len + pos_per_env - 1);
+                        uint num_start_pos = subs_info.m_length;
+                        data_to_read = std::min(query_len + num_start_pos - 1, series_len - subs_info.m_start_pos);
                     } else {
                         data_to_read = subs_info.m_length;
                     }

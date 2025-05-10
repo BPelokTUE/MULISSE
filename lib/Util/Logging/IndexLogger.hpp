@@ -15,6 +15,8 @@ enum class IndexSettingsColumn {
     L_MAX,                     // Maximum allowed query length
     L_PER_GROUP,               // Size of length groups
     POS_PER_ENV,               // Number of positions per envelope for envelope-based methods
+    ENTRY_MERGER_TYPE,        // Type of entry merger used
+    MERGER_NUM_BITS,           // Number of bits used for SAX-based entry merger, if applicable
     NORMALIZED,                // Whether the query and subsequences are normalized
     INDEX_TYPE,                // Type of index used
     LG_SEGMENTATION_STRATEGY,  // Strategy for varying the segmentation strategy for different length groups
