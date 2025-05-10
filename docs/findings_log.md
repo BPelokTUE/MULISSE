@@ -191,17 +191,19 @@ TODO:
         - Indexation time increases linearly with number of segments, segmentation strategies only influence the rate of growth
 - [ ] Check if the optimal value of $N_s$, $N_l$ and $N_p$ is **more stable across datasets and length ranges** with adaptive techniques than uniform.
     - [ ] Do a low resolution contour search with all three parameters
-        - $l\in[512,1024]$:
-            - $N_s$: $\bar{T_q}(N_s=8)\ge\bar{T_q}(N_s=32)\gt\bar{T_q}(N_s=128)$
-            - $N_p$: $\bar{T_q}(N_p=10)\$
-            - $N_l$:
-        - $l\in[128,1024]$:
-            - $N_s$: 
-            - $N_p$:
-            - $N_l$:
+        - [x] Univariate:
+            - $N_l$: more length groups always lead to faster query time, but slower indexation and especially larger indexes
+            - $N_p=10$ leads to the lowest query time in all cases
+            - $N_s=32$ leads to the lowest query time in all cases
+        - [ ] Multivariate
     - [ ] Do grid search on the three separately ($(x,y,z)\to(\hat{x},y,z)\to(\hat{x},\hat{y},z)\to(\hat{x},\hat{y},\hat{z})$. This would give roughly $3x3x3+10+10+10=57$ runs per dataset and length-range combinations.
+        - [x] Univariate:
+            - [x] $N_l$: More length groups $\Rightarrow$ faster queries, but returns are diminishing, $N_l\approx20$ is not much slower (around $10-15\%$ slower) than $N_l\approx400$.
+            - [x] $N_p$: Larger query ranges prefer more positions groups: $N_p\approx 20$, while shorter ranges work best with $N_p\approx 8$. Default values should be biased towards the long query range case, so $N_p=16$ is reasonable default.
+            - [x] $N_s$: Larger query ranges prefer more segments, $N_s\approx36$, while shorter ranges work best with $N_s\approx20$. However, for both cases, the range of $N_s$ values that lead to close to optimal query time is quite wide. $N_s=20$ is good default for all cases.
     - [ ] After search on the subset, select a set of random configurations, run on the full dataset, check if the results line up
-
+        - [ ] Univariate
+        - [ ] Multivariate
 
 ### Summarization after insertion
 

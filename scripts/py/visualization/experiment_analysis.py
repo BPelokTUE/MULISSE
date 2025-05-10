@@ -629,9 +629,11 @@ Experiment: Segmentation strategy
 def experiment_segmentation_strategy(target_args: TargetArgs):
     visualize_experiments(
         # logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_num_segments_univariate_large"],
-        logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_univariate"],
+        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_univariate"],
         # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_1_length_group_univariate"],
         # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_2_position_group_univariate"],
+        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_3_num_segments_univariate"],
+        logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_3_num_segments_univariate_long"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
@@ -645,7 +647,7 @@ def experiment_segmentation_strategy(target_args: TargetArgs):
             ],
         },
         separate_plots_dict={
-            (DSC.DATASET_FILE,): [],
+            # (DSC.DATASET_FILE,): [],
             (QSC.L_MIN, QSC.L_MAX): [],
             # (ISC.SEGMENTATION_STRATEGY, ISC.LG_SEGMENTATION_STRATEGY): [],
         },
@@ -653,12 +655,12 @@ def experiment_segmentation_strategy(target_args: TargetArgs):
         num_query_intervals=1,
         merge_csv_datasets=True,
         bar_plot_color_attr=None,
-        # line_plot_x_attr=ISC.POS_PER_ENV,
-        # line_plot_included_cols={DSC.DATASET_FILE},
-        # x_scale="log",
-        heat_map_x_attr=ISC.NUM_SEGMENTS,
-        heat_map_y_attr=ISC.L_PER_GROUP,
-        heat_map_included_cols={ISC.POS_PER_ENV},
+        line_plot_x_attr=ISC.NUM_SEGMENTS,
+        line_plot_included_cols={DSC.DATASET_FILE},
+        x_scale="log",
+        # heat_map_x_attr=ISC.POS_PER_ENV,
+        # heat_map_y_attr=ISC.L_PER_GROUP,
+        # heat_map_included_cols={ISC.NUM_SEGMENTS},
         **target_args.value,
     )
 

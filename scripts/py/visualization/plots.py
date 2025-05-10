@@ -1,6 +1,5 @@
 import textwrap
-from copy import copy
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 import seaborn as sns
@@ -266,6 +265,7 @@ def plot_lines(
         max_points = max(max_points, len(values[line]))
 
     fig, ax = plt.subplots()
+    x_coords = set()
     for color, (line, points) in zip(colors, values.items()):
         if only_max_points and len(points) != max_points:
             continue
@@ -287,12 +287,17 @@ def plot_lines(
         ys = [point[1] for point in sorted_points]
         ax.plot(xs, ys, color=color, label=legend[line])
         ax.scatter(xs, ys, color=color)
+        x_coords.update(xs)
+
+    x_coords = sorted(list(x_coords))
 
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.set_xscale(x_scale)
     ax.set_yscale(y_scale)
     ax.set_ylim(y_lim)
+    ax.set_xticks(sorted(list(x_coords)))
+    ax.set_xticklabels(sorted(list(x_coords)))
     ax.set_title(title)
     ax.grid(True)
     ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
