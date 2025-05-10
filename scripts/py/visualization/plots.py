@@ -382,7 +382,10 @@ def plot_heat_map(
         for y_ind, y in enumerate(y_values):
             for x in x_values:
                 x_ind = x_values.index(x)
-                data[y_ind][x_ind] = heat_map_values[y][x]
+                if y in heat_map_values and x in heat_map_values[y]:
+                    data[y_ind][x_ind] = heat_map_values[y][x]
+                else:
+                    data[y_ind][x_ind] = np.nan
 
         heat_map_matrices[heat_map_key] = data
         heat_map_ticks[heat_map_key] = (x_values, y_values)
