@@ -14,6 +14,7 @@
 #include "Search/DistanceMeasure.hpp"
 #include "Search/ResultSet.hpp"
 #include "Summarization/SegmentationStrategy.hpp"
+#include "Summarization/EnvelopeEntryMerger.hpp"
 #include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/RunSettings.hpp"
@@ -67,15 +68,16 @@ int main(int argc, char **argv) {
     str dataset_path, query_path, index_path, ffts_path,
         breakpoints_path = "", logs_path = "../LOGS",
         search_method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(ISAX_ENVELOPE),
-        lg_segmentation_strategy_str = LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(ADAPTIVE_MULTI),
-        segmentation_strategy_str = SEGMENTATION_STRATEGY_TO_STR.at(ADAPTIVE),
+        lg_segmentation_strategy_str = LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(SINGLE),
+        segmentation_strategy_str = SEGMENTATION_STRATEGY_TO_STR.at(UNIFORM),
         split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
-        distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(TOP_DOWN);
+        distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(TOP_DOWN),
+        env_entry_merger_type_str = ENVELOPE_ENTRY_MERGER_TYPE_TO_STR.at(DUMMY);
     vec<str> csv_paths;
     Real step_sd = R(1.0), noise = R(0.1);
-    SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT;
+    SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT, merger_num_bits = MAX_NUM_BITS_LIMIT;
     SaxSegIndT num_segments;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
          num_l_groups = 0, knn_k = 1, seed = 0;
@@ -232,6 +234,15 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-I,--inserter_type", inserter_type_str, "Entry inserter type")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ENTRY_INSERTER_TYPE_STRS));
+    index_subcommand->add_option("-M,--merger", env_entry_merger_type_str, "Envelope entry merger type")
+        ->capture_default_str()
+        ->check(CLI::IsMember(ACCEPTED_ENVELOPE_ENTRY_MERGER_TYPE_STRS));
+    index_subcommand
+        ->add_option("--merger_num_bits", merger_num_bits,
+                     "Number of bits to use for SAX-based envelope entry mergers. If not provided, takes the value of "
+                     "`--num_bits_limit`.")
+        ->capture_default_str()
+        ->check(positive_int);
     index_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Options for calculating index statistics
@@ -441,21 +452,33 @@ int main(int argc, char **argv) {
             auto segmentation_strategy_type = STR_TO_SEGMENTATION_STRATEGY.at(segmentation_strategy_str);
             auto breakpoint_strategy_type = STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str);
             auto split_strategy_type = STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str);
+            auto env_entry_merger_type = STR_TO_ENVELOPE_ENTRY_MERGER_TYPE.at(env_entry_merger_type_str);
+
+            uptr<SaxParams> merger_sax_params = nullptr;
+            if (env_entry_merger_type == SAX_BASED || env_entry_merger_type == LOWER_SAX_BASED) {
+                merger_sax_params = std::make_unique<SaxParams>(std::min(merger_num_bits, num_bits_limit),
+                                                                breakpoint_strategy_type, breakpoints_path);
+            }
 
             SegmentationParams segmentation_params{
+                .m_num_segments = num_segments,
                 .m_lg_strategy_type = lg_segmentation_strategy_type,
                 .m_strategy_type = segmentation_strategy_type,
-                .m_num_segments = num_segments,
             };
             SaxParams sax_params{
-                .m_breakpoint_strategy_type = breakpoint_strategy_type,
                 .m_num_bits = first_layer_num_bits,
+                .m_breakpoint_strategy_type = breakpoint_strategy_type,
                 .m_breakpoints_file = breakpoints_path,
+            };
+            EnvelopingParams enveloping_params{
+                .m_entry_merger_type = env_entry_merger_type,
+                .m_pos_per_env = pos_per_env,
+                .m_merger_sax_params = merger_sax_params.get(),
             };
             iSaxTrieParams isax_trie_params{
                 .m_min_num_bits_on_tie = !prefer_first_in_em,
-                .m_split_strategy_type = split_strategy_type,
                 .m_num_bits_limit = num_bits_limit,
+                .m_split_strategy_type = split_strategy_type,
                 .m_leaf_capacity = leaf_capacity,
             };
 
@@ -463,21 +486,21 @@ int main(int argc, char **argv) {
                 case ISAX_ENVELOPE:
                 case ISAX_ENV_W_ENV:
                 case ISAX_ENV_W_SAX_ENV:
-                    index_params =
-                        new iSaxEnvelopeIndexParams(segmentation_params, pos_per_env, sax_params, isax_trie_params);
+                    index_params = new iSaxEnvelopeIndexParams(segmentation_params, enveloping_params, sax_params,
+                                                               isax_trie_params);
                     break;
                 case ISAX:
                     index_params = new iSaxIndexParams(segmentation_params, sax_params, isax_trie_params);
                     break;
                 case ENVELOPE:
-                    index_params = new EnvelopeIndexParams(segmentation_params, pos_per_env);
+                    index_params = new EnvelopeIndexParams(segmentation_params, enveloping_params);
                     break;
                 case SAX_ENVELOPE:
-                    index_params = new SaxEnvelopeIndexParams(segmentation_params, pos_per_env, sax_params);
+                    index_params = new SaxEnvelopeIndexParams(segmentation_params, enveloping_params, sax_params);
                     break;
                 case TREE_ENVELOPE:
                     index_params =
-                        new TreeEnvelopeIndexParams(segmentation_params, pos_per_env, sax_params, leaf_capacity);
+                        new TreeEnvelopeIndexParams(segmentation_params, enveloping_params, sax_params, leaf_capacity);
                     break;
                 case SEQUENTIAL_SCAN:
                     std::cerr << "Sequential scan does not require indexation\n";
@@ -487,10 +510,10 @@ int main(int argc, char **argv) {
                 .m_normalized = !unnormalized,
                 .m_adapt = adapt_index,
                 .m_use_length_groups = use_length_groups,
+                .m_num_channels = num_channels,
                 .m_index_method = method_type,
                 .m_index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
                 .m_inserter_type = STR_TO_ENTRY_INSERTER_TYPE.at(inserter_type_str),
-                .m_num_channels = num_channels,
                 .m_l_min = l_min,
                 .m_l_max = l_max,
                 .m_series_len = series_len,

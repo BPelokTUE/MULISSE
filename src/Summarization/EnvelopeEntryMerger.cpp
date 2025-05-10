@@ -2,6 +2,12 @@
 
 #include "Summarization/EnvelopeEntryMerger.hpp"
 
+// DummyEnvelopeEntryMerger
+
+vec<IndexEntry<Envelope>> DummyEnvelopeEntryMerger::merge_entries(vec<IndexEntry<Envelope>> &&entries) {
+    return entries;
+}
+
 // SaxBasedEnvelopeEntryMerger
 
 SaxBasedEnvelopeEntryMerger::SaxBasedEnvelopeEntryMerger(SaxNumBitsT sax_num_bits) : m_sax_num_bits(sax_num_bits) {

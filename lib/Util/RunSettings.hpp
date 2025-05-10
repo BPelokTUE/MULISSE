@@ -123,6 +123,12 @@ class RunSettings {
     void update_breakpoints();
 
     /**
+     * @brief Check if the iSAX breakpoints are set
+     * @return True if the breakpoints are set, false otherwise
+     */
+    bool breakpoints_set() const;
+
+    /**
      * @brief Set the iSAX properties for the run
      * @param breakpoint_props The breakpoint properties
      */

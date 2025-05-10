@@ -221,6 +221,8 @@ void RunSettings::update_breakpoints() {
         breakpoint_strategy->get_breakpoints(static_cast<SaxSymbolT>(1 << m_breakpoint_props.m_breakpoint_num_bits));
 }
 
+bool RunSettings::breakpoints_set() const { return m_breakpoints_props_set; }
+
 void RunSettings::set_breakpoint_props(BreakpointProperties breakpoint_props) {
     if (!m_breakpoints_props_set) {
         m_breakpoint_props = std::move(breakpoint_props);

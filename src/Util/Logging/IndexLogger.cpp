@@ -51,7 +51,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         }
         if (std::find(METHODS_W_ENVELOPE.begin(), METHODS_W_ENVELOPE.end(), method_type) != METHODS_W_ENVELOPE.end()) {
             auto *env_params = dynamic_cast<EnvelopeIndexParams *>(index_options.m_index_params.get());
-            pos_per_env = env_params->m_pos_per_env;
+            pos_per_env = env_params->m_enveloping_params.m_pos_per_env;
         }
     }
 

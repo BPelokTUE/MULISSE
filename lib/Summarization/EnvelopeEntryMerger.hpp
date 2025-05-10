@@ -2,10 +2,20 @@
 #define ENVELOPE_ENTRY_MERGER_HPP
 
 #include "Util/typedefs.hpp"
+#include "Util/utilities.hpp"
 #include "Util/RunSettings.hpp"
 #include "Summarization/IndexEntry.hpp"
 #include "Summarization/Envelope.hpp"
 #include "Summarization/SaxHelpers.hpp"
+
+/** @brief Enum for IEnvelopeEntryMerger implementations */
+enum EnvelopeEntryMergerType { DUMMY, SAX_BASED, LOWER_SAX_BASED };
+
+DEFINE_ENUM_CONSTS(EnvelopeEntryMergerType, ENVELOPE_ENTRY_MERGER_TYPE, false,
+                   (umap<str, EnvelopeEntryMergerType>{
+                       {"sax", SAX_BASED}, {"lower_sax", LOWER_SAX_BASED}, {"none", DUMMY}}));
+
+constexpr std::array<EnvelopeEntryMergerType, 2> MERGERS_W_SAX{SAX_BASED, LOWER_SAX_BASED};
 
 /** @brief Interface for merging IndexEntry<Envelope> objects */
 class IEnvelopeEntryMerger {
@@ -18,6 +28,12 @@ class IEnvelopeEntryMerger {
      * @return The merged entries
      */
     virtual vec<IndexEntry<Envelope>> merge_entries(vec<IndexEntry<Envelope>> &&entries) = 0;
+};
+
+/** @brief Dummy implementation of IEnvelopeEntryMerger that does not do any merging */
+class DummyEnvelopeEntryMerger : public IEnvelopeEntryMerger {
+   public:
+    vec<IndexEntry<Envelope>> merge_entries(vec<IndexEntry<Envelope>> &&entries) override;
 };
 
 /** @brief Class that merges overlapping IndexEntry<Envelope> objects if their SAX representation is the same */

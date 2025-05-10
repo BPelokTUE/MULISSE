@@ -82,11 +82,8 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
     ~iSaxIndex() = default;
 
     void insert(IndexEntry<T> &entry) override {
-        MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(entry.m_mts_summary.size());
-        SaxSegIndT num_seg_per_channel = m_segmentation_strategy->get_num_segments(U(entry.m_mts_summary[0].size()));
-
-        assert(entry.m_mts_summary.size() == num_channels);
-        assert(entry.m_mts_summary[0].size() == num_seg_per_channel);
+        assert(entry.m_mts_summary.size() == static_cast<MtsNumChannelsT>(entry.m_mts_summary.size()));
+        assert(entry.m_mts_summary[0].size() == m_segmentation_strategy->get_num_segments(U(entry.m_mts_summary[0].size())));
 
         auto [symbols, isax_words] = get_entry_sax_symbols_and_isax(entry, m_isax_word_factory);
 
