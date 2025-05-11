@@ -34,14 +34,19 @@ struct Envelope : IEntryData {
      */
     bool operator==(const Envelope &other) const;
 
-    inline size_t size() const override { return m_lower.size(); }
-
+    /**
+     * @brief Merge the envelope with another, by selecting the minimum of the lower and maximum of the upper
+     * in each segment
+     * @param other The other envelope to merge with
+     */
     inline void merge(const Envelope &other) {
         for (size_t i = 0; i < m_lower.size(); ++i) {
             m_lower[i] = std::min(m_lower[i], other.m_lower[i]);
             m_upper[i] = std::max(m_upper[i], other.m_upper[i]);
         }
     }
+
+    inline size_t size() const override { return m_lower.size(); }
 
     void resize(size_t new_size) override;
 

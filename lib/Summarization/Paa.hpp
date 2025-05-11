@@ -46,6 +46,16 @@ struct Paa : IEntryData {
      */
     bool operator==(const Paa &other) const;
 
+    /**
+     * @brief Merge the Paa with another, by selecting the minimum of each segment
+     * @param other The other PAA to merge with
+     */
+    inline void merge(const Paa &other) {
+        for (size_t i = 0; i < m_paa_values.size(); ++i) {
+            m_paa_values[i] = std::min(m_paa_values[i], other.m_paa_values[i]);
+        }
+    }
+
     size_t size() const override;
 
     void resize(size_t new_size) override;

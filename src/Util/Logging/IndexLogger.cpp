@@ -1,6 +1,6 @@
 #include "Util/typedefs.hpp"
 #include "Util/Logging/IndexLogger.hpp"
-#include "Summarization/EnvelopeEntryMerger.hpp"
+#include "Summarization/EntryMerger.hpp"
 
 IndexLogger IndexLogger::instance = IndexLogger();
 bool IndexLogger::initialized = false;
@@ -53,12 +53,12 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         }
         if (arr_contains(METHODS_W_ENVELOPE, method_type)) {
             auto *env_params = dynamic_cast<EnvelopeIndexParams *>(index_options.m_index_params.get());
-            pos_per_env = env_params->m_enveloping_params.m_pos_per_env;
+            pos_per_env = env_params->m_pos_per_env;
 
-            auto entry_merger_type = env_params->m_enveloping_params.m_entry_merger_type;
-            entry_merger_type_str = ENVELOPE_ENTRY_MERGER_TYPE_TO_STR.at(entry_merger_type);
+            auto entry_merger_type = env_params->m_merger_params.m_entry_merger_type;
+            entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(entry_merger_type);
             if (arr_contains(MERGERS_W_SAX, entry_merger_type)) {
-                merger_num_bits = env_params->m_enveloping_params.m_merger_sax_params->m_num_bits;
+                merger_num_bits = env_params->m_merger_params.m_merger_sax_params->m_num_bits;
             }
         }
     }

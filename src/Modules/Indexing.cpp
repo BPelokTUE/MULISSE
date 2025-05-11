@@ -14,7 +14,7 @@
 #include "Search/TopDownInserter.hpp"
 #include "Summarization/SegmentationStrategy.hpp"
 #include "Summarization/LengthGroupSegmentationStrategy.hpp"
-#include "Summarization/EnvelopeEntryMerger.hpp"
+#include "Summarization/EntryMerger.hpp"
 #include "Serialization/SerializationRegistration.hpp"
 #include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
@@ -59,7 +59,7 @@ sptr<ISegmentationStrategy> get_segmentation_strategy(const IndexOptions &opts, 
         case ADAPTIVE:
             uint pos_per_env = 0;
             if (auto *env_params = dynamic_cast<const EnvelopeIndexParams *>(opts.m_index_params.get())) {
-                pos_per_env = env_params->m_enveloping_params.m_pos_per_env;
+                pos_per_env = env_params->m_pos_per_env;
             }
             return std::make_unique<AdaptiveSegmentationStrategy>(l_min, l_max, opts.m_series_len, num_segments,
                                                                   pos_per_env);
@@ -81,7 +81,7 @@ uptr<ILengthGroupSegmentationStrategy> get_lg_segmentation_strategy(const IndexO
         case ADAPTIVE_MULTI:
             uint pos_per_env = 0;
             if (auto *env_params = dynamic_cast<const EnvelopeIndexParams *>(opts.m_index_params.get())) {
-                pos_per_env = env_params->m_enveloping_params.m_pos_per_env;
+                pos_per_env = env_params->m_pos_per_env;
             }
             return std::make_unique<AdaptiveMultiSegmentationStrategy>(
                 [&opts](uint lg_l_min, uint lg_l_max, SaxSegIndT num_segments) {
@@ -112,7 +112,7 @@ uptr<IEntryGenerator<Envelope>> get_envelope_generator(
     EnvelopeParams env_params = {
         .m_l_min = opts.m_l_min,
         .m_l_max = opts.m_l_max,
-        .m_pos_per_env = params->m_enveloping_params.m_pos_per_env,
+        .m_pos_per_env = params->m_pos_per_env,
         .m_segmentation_strategies = segmentation_strategies,
     };
     uint num_len_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
@@ -122,17 +122,18 @@ uptr<IEntryGenerator<Envelope>> get_envelope_generator(
 
 // Mergers
 
-uptr<IEnvelopeEntryMerger> get_envelope_merger(const IndexOptions &opts) {
+template <typename T>
+    requires DerivedFromEntryData<T>
+uptr<IEntryMerger<T>> get_entry_merger(const IndexOptions &opts) {
     auto &params = dynamic_cast<EnvelopeIndexParams &>(*opts.m_index_params);
-    switch (params.m_enveloping_params.m_entry_merger_type) {
+    switch (params.m_merger_params.m_entry_merger_type) {
         case DUMMY:
-            return std::make_unique<DummyEnvelopeEntryMerger>();
+            return std::make_unique<DummyEntryMerger<T>>();
         case SAX_BASED:
-            return std::make_unique<SaxBasedEnvelopeEntryMerger>(
-                params.m_enveloping_params.m_merger_sax_params->m_num_bits);
+            return std::make_unique<SaxBasedEntryMerger<T>>(params.m_merger_params.m_merger_sax_params->m_num_bits);
         case LOWER_SAX_BASED:
-            return std::make_unique<LowerSaxBasedEnvelopeEntryMerger>(
-                params.m_enveloping_params.m_merger_sax_params->m_num_bits);
+            return std::make_unique<LowerSaxBasedEntryMerger<T>>(
+                params.m_merger_params.m_merger_sax_params->m_num_bits);
     }
     return nullptr;
 }
@@ -159,7 +160,7 @@ sptr<IIndex<Envelope>> get_isax_index(const IndexOptions &opts, const iSaxIndexP
     auto *env_index_params = dynamic_cast<iSaxEnvelopeIndexParams *>(opts.m_index_params.get());
     auto *index = new iSaxEnvelopeIndex(env_index_params->m_sax_params.m_num_bits,
                                         env_index_params->m_isax_trie_params.m_leaf_capacity, segmentation_strategy,
-                                        std::move(split_strategy), env_index_params->m_enveloping_params.m_pos_per_env);
+                                        std::move(split_strategy), env_index_params->m_pos_per_env);
     return sptr<IIndex<Envelope>>(index);
 }
 
@@ -199,12 +200,12 @@ sptr<IIndex<Envelope>> get_envelope_index(IndexFactoryParams &factory_params) {
     auto sax_index_params = dynamic_cast<SaxIndexParams *>(opts.m_index_params.get());
     if (discretize_flat_index && sax_index_params && sax_index_params->m_sax_params.m_num_bits > 0) {
         auto *index = new FlatEnvelopeIndex(factory_params.m_segmentation_strategy,
-                                            index_params->m_enveloping_params.m_pos_per_env,
+                                            index_params->m_pos_per_env,
                                             sax_index_params->m_sax_params.m_num_bits);
         return sptr<IIndex<Envelope>>(index);
     } else {
         auto *index = new FlatEnvelopeIndex(factory_params.m_segmentation_strategy,
-                                            index_params->m_enveloping_params.m_pos_per_env);
+                                            index_params->m_pos_per_env);
         return sptr<IIndex<Envelope>>(index);
     }
 }
@@ -216,7 +217,7 @@ sptr<IIndex<Envelope>> get_envelope_tree_index(IndexFactoryParams &factory_param
     auto grouper =
         new InvSaxSortingBucketingEnvelopeGrouper(index_params->m_sax_params.m_num_bits, index_params->m_bucket_size);
     auto *index =
-        new TreeEnvelopeIndex(factory_params.m_segmentation_strategy, index_params->m_enveloping_params.m_pos_per_env,
+        new TreeEnvelopeIndex(factory_params.m_segmentation_strategy, index_params->m_pos_per_env,
                               uptr<IEnvelopeGrouper>(grouper));
     return sptr<IIndex<Envelope>>(index);
 }
@@ -240,7 +241,7 @@ sptr<IIndex<Envelope>> get_two_stage_isax_envelope_index(IndexFactoryParams &fac
 template <typename T>
     requires DerivedFromEntryData<T>
 void construct_index(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_factory,
-                     uptr<IEntryGenerator<T>> generator, uptr<IEnvelopeEntryMerger> envelope_merger,
+                     uptr<IEntryGenerator<T>> generator, uptr<IEntryMerger<T>> merger,
                      IndexFactoryParams &factory_params,
                      uptr<ILengthGroupSegmentationStrategy> lg_segmentation_strategy) {
     auto &RS = RunSettings::get_instance();
@@ -267,7 +268,7 @@ void construct_index(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_
     }
 
     logger.start_timer(ISC::INDEXING_TIME_S);
-    index->construct(RS.get_dataset_path(), std::move(generator), std::move(envelope_merger), opts.m_inserter_type,
+    index->construct(RS.get_dataset_path(), std::move(generator), std::move(merger), opts.m_inserter_type,
                      opts.m_num_channels, opts.m_series_len, opts.m_adapt);
     auto finalized_index = index->finalize();
     finalized_index->save(RS.get_index_path(), opts.m_index_format);
@@ -305,10 +306,10 @@ int create_index(const IndexOptions &opts) {
         } else {
             throw std::runtime_error("SAX index method requires a positive number of bits");
         }
-    } else if (arr_contains(METHODS_W_ENVELOPE, opts.m_index_method)) {
-        auto *index_params = dynamic_cast<EnvelopeIndexParams *>(opts.m_index_params.get());
-        if (index_params && arr_contains(MERGERS_W_SAX, index_params->m_enveloping_params.m_entry_merger_type)) {
-            auto merger_sax_params = index_params->m_enveloping_params.m_merger_sax_params;
+    } else if (arr_contains(METHODS_W_PAA, opts.m_index_method)) {
+        auto *index_params = dynamic_cast<PaaIndexParams*>(opts.m_index_params.get());
+        if (index_params && arr_contains(MERGERS_W_SAX, index_params->m_merger_params.m_entry_merger_type)) {
+            auto merger_sax_params = index_params->m_merger_params.m_merger_sax_params;
             if (merger_sax_params && merger_sax_params->m_num_bits > 0) {
                 initialize_sax_breakpoints(*merger_sax_params, merger_sax_params->m_num_bits);
             } else {
@@ -322,15 +323,16 @@ int create_index(const IndexOptions &opts) {
 #define CONSTRUCT_INDEX(Type, index_factory)                                                                          \
     construct_index<Type>(                                                                                            \
         [](IndexFactoryParams &factory_params_in) -> sptr<IIndex<Type>> { return index_factory(factory_params_in); }, \
-        std::move(generator), std::move(envelope_merger), factory_params, std::move(lg_segmentation_strategy));
+        std::move(generator), std::move(merger), factory_params, std::move(lg_segmentation_strategy));
 
 #define CONSTRUCT_ENVELOPE_INDEX(index_factory)                                    \
     auto generator = get_envelope_generator(opts, lg_segmentation_strategy.get()); \
-    envelope_merger = get_envelope_merger(opts);                                   \
+    auto merger = get_entry_merger<Envelope>(opts);                                \
     CONSTRUCT_INDEX(Envelope, index_factory);
 
 #define CONSTRUCT_PAA_INDEX(index_factory)                                    \
     auto generator = get_paa_generator(opts, lg_segmentation_strategy.get()); \
+    auto merger = get_entry_merger<Paa>(opts);                                \
     CONSTRUCT_INDEX(Paa, index_factory);
 
     auto lg_segmentation_strategy = get_lg_segmentation_strategy(opts);
@@ -338,8 +340,6 @@ int create_index(const IndexOptions &opts) {
         .m_discretize_flat_index = false,
         .m_opts = opts,
     };
-
-    uptr<IEnvelopeEntryMerger> envelope_merger = nullptr;
 
     switch (opts.m_index_method) {
         case ISAX_ENVELOPE: {

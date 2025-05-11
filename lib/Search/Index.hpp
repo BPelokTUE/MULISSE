@@ -15,7 +15,7 @@
 #include "Search/Options/SearchOptions.hpp"
 #include "Summarization/IndexEntry.hpp"
 #include "Summarization/Envelope.hpp"
-#include "Summarization/EnvelopeEntryMerger.hpp"
+#include "Summarization/EntryMerger.hpp"
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/Paa.hpp"
 
@@ -199,14 +199,14 @@ class IIndex {
      * @tparam The type of entry to insert into the index
      * @param dataset_path Path to the dataset
      * @param generator Generator to produce the entries from the dataset
-     * @param envelope_merger Merger to merge Envelope entries if applicable, nullptr otherwise
+     * @param merger Merger to merge Envelope entries if applicable, nullptr otherwise
      * @param inserter_type The type of inserter to use
      * @param num_channels Number of channels in the dataset
      * @param series_len Length of the series
      * @param adapt Whether to adapt the index properties to the dataset
      */
     void construct(const str &dataset_path, uptr<IEntryGenerator<T>> generator,
-                   uptr<IEnvelopeEntryMerger> envelope_merger, EntryInserterType inserter_type,
+                   uptr<IEntryMerger<T>> merger, EntryInserterType inserter_type,
                    MtsNumChannelsT num_channels, uint series_len, bool adapt) {
         auto &logger = IndexLogger::get_instance();
 
@@ -229,10 +229,8 @@ class IIndex {
                                      static_cast<std::streamsize>(channel_size));
                 }
                 auto mts_entries = generator->get_entries(mts, U(i));
-                if constexpr (std::is_same_v<T, Envelope>) {
-                    for (uint l = 0; l < num_length_groups; ++l) {
-                        mts_entries[l] = envelope_merger->merge_entries(std::move(mts_entries[l]));
-                    }
+                for (uint l = 0; l < num_length_groups; ++l) {
+                    mts_entries[l] = merger->merge_entries(std::move(mts_entries[l]));
                 }
                 OMP_PRAGMA(omp critical) {
                     for (uint l = 0; l < num_length_groups; ++l) {
