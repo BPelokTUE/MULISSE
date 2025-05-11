@@ -1,25 +1,27 @@
-#include <filesystem>
-#include <fstream>
-#include <functional>
-
 #include "Modules/Indexing.hpp"
-#include "Search/Options/IndexOptions.hpp"
-#include "Search/Index.hpp"
-#include "Search/Envelope/FlatEnvelopeIndex.hpp"
-#include "Search/Envelope/TreeEnvelopeIndex.hpp"
-#include "Search/Envelope/EnvelopeGrouper.hpp"
-#include "Search/iSax/iSaxIndex.hpp"
-#include "Search/ChainIndex.hpp"
-#include "Search/LengthGroupingIndex.hpp"
-#include "Search/TopDownInserter.hpp"
-#include "Summarization/SegmentationStrategy.hpp"
-#include "Summarization/LengthGroupSegmentationStrategy.hpp"
-#include "Summarization/EntryMerger.hpp"
-#include "Serialization/SerializationRegistration.hpp"
-#include "Util/constants.hpp"
-#include "Util/typedefs.hpp"
-#include "Util/RunSettings.hpp"
+
+#include "Index/ChainIndex/ChainIndex.hpp"
+#include "Index/Entry/Envelope.hpp"
+#include "Index/Entry/Paa.hpp"
+#include "Index/EntryGenerator/EntryGenerator.hpp"
+#include "Index/EntryGenerator/EnvelopeEntryGenerator.hpp"
+#include "Index/EntryGenerator/PaaEntryGenerator.hpp"
+#include "Index/EntryMerger/EntryMerger.hpp"
+#include "Index/EnvelopeIndex/Flat/FlatEnvelopeIndex.hpp"
+#include "Index/EnvelopeIndex/Tree/TreeEnvelopeIndex.hpp"
+#include "Index/Index.hpp"
+#include "Index/IndexOptions.hpp"
+#include "Index/IndexParams.hpp"
+#include "Index/LengthGroupingIndex/LengthGroupingIndex.hpp"
+#include "Index/Sax/SaxBreakpointStrategy.hpp"
+#include "Index/Segmentation/LengthGroupSegmentationStrategy.hpp"
+#include "Index/Segmentation/SegmentationStrategy.hpp"
+#include "Index/iSaxIndex/iSaxIndex.hpp"
+#include "Index/iSaxIndex/iSaxSplitStrategy.hpp"
+#include "Util/Constants/Math.hpp"
 #include "Util/Logging/IndexLogger.hpp"
+#include "Util/RunSettings/RunSettings.hpp"
+#include "Util/Types/Pointers.hpp"
 
 // Strategies
 
@@ -199,13 +201,11 @@ sptr<IIndex<Envelope>> get_envelope_index(IndexFactoryParams &factory_params) {
 
     auto sax_index_params = dynamic_cast<SaxIndexParams *>(opts.m_index_params.get());
     if (discretize_flat_index && sax_index_params && sax_index_params->m_sax_params.m_num_bits > 0) {
-        auto *index = new FlatEnvelopeIndex(factory_params.m_segmentation_strategy,
-                                            index_params->m_pos_per_env,
+        auto *index = new FlatEnvelopeIndex(factory_params.m_segmentation_strategy, index_params->m_pos_per_env,
                                             sax_index_params->m_sax_params.m_num_bits);
         return sptr<IIndex<Envelope>>(index);
     } else {
-        auto *index = new FlatEnvelopeIndex(factory_params.m_segmentation_strategy,
-                                            index_params->m_pos_per_env);
+        auto *index = new FlatEnvelopeIndex(factory_params.m_segmentation_strategy, index_params->m_pos_per_env);
         return sptr<IIndex<Envelope>>(index);
     }
 }
@@ -216,9 +216,8 @@ sptr<IIndex<Envelope>> get_envelope_tree_index(IndexFactoryParams &factory_param
 
     auto grouper =
         new InvSaxSortingBucketingEnvelopeGrouper(index_params->m_sax_params.m_num_bits, index_params->m_bucket_size);
-    auto *index =
-        new TreeEnvelopeIndex(factory_params.m_segmentation_strategy, index_params->m_pos_per_env,
-                              uptr<IEnvelopeGrouper>(grouper));
+    auto *index = new TreeEnvelopeIndex(factory_params.m_segmentation_strategy, index_params->m_pos_per_env,
+                                        uptr<IEnvelopeGrouper>(grouper));
     return sptr<IIndex<Envelope>>(index);
 }
 
@@ -307,7 +306,7 @@ int create_index(const IndexOptions &opts) {
             throw std::runtime_error("SAX index method requires a positive number of bits");
         }
     } else if (arr_contains(METHODS_W_PAA, opts.m_index_method)) {
-        auto *index_params = dynamic_cast<PaaIndexParams*>(opts.m_index_params.get());
+        auto *index_params = dynamic_cast<PaaIndexParams *>(opts.m_index_params.get());
         if (index_params && arr_contains(MERGERS_W_SAX, index_params->m_merger_params.m_entry_merger_type)) {
             auto merger_sax_params = index_params->m_merger_params.m_merger_sax_params;
             if (merger_sax_params && merger_sax_params->m_num_bits > 0) {

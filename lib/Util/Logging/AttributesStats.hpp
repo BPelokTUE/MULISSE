@@ -1,8 +1,7 @@
 #ifndef ATTRIBUTE_STATS_HPP
 #define ATTRIBUTE_STATS_HPP
 
-#include "Util/typedefs.hpp"
-#include "Util/utilities.hpp"
+#include "Util/Types/Numbers.hpp"
 
 #define DEFINE_STAT_COLUMNS(ENUM_SUFFIX) MIN_##ENUM_SUFFIX, MAX_##ENUM_SUFFIX, MEAN_##ENUM_SUFFIX, STD_##ENUM_SUFFIX
 

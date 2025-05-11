@@ -1,9 +1,12 @@
 #ifndef INDEX_LOGGER_HPP
 #define INDEX_LOGGER_HPP
 
+#include <atomic>
+
+#include "Index/IndexOptions.hpp"
+#include "Util/HelperFuncs/Containers.hpp"
+#include "Util/HelperFuncs/Enums.hpp"
 #include "Util/Logging/Logger.hpp"
-#include "Util/typedefs.hpp"
-#include "Util/utilities.hpp"
 
 /** @brief Enum of the columns of the index settings log file */
 enum class IndexSettingsColumn {
@@ -15,7 +18,7 @@ enum class IndexSettingsColumn {
     L_MAX,                     // Maximum allowed query length
     L_PER_GROUP,               // Size of length groups
     POS_PER_ENV,               // Number of positions per envelope for envelope-based methods
-    ENTRY_MERGER_TYPE,        // Type of entry merger used
+    ENTRY_MERGER_TYPE,         // Type of entry merger used
     MERGER_NUM_BITS,           // Number of bits used for SAX-based entry merger, if applicable
     NORMALIZED,                // Whether the query and subsequences are normalized
     INDEX_TYPE,                // Type of index used

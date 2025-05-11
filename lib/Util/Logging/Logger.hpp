@@ -1,17 +1,14 @@
 #ifndef LOGGER_HPP
 #define LOGGER_HPP
 
+#include <filesystem>
 #include <fstream>
 
-#include "Util/typedefs.hpp"
-#include "Util/utilities.hpp"
-#include "Search/Options/DistanceType.hpp"
-#include "Search/Options/SearchType.hpp"
-#include "Search/Options/QuerySetOptions.hpp"
-#include "Search/Options/SearchOptions.hpp"
-#include "Search/Options/IndexOptions.hpp"
+#include "Util/Types/Containers.hpp"
 
 using std::to_string;
+
+namespace fs = std::filesystem;
 
 // Enums for statistics
 

@@ -1,5 +1,5 @@
-#ifndef QUERY_STATS_HPP
-#define QUERY_STATS_HPP
+#ifndef MODULES_QUERYSTATS_HPP
+#define MODULES_QUERYSTATS_HPP
 
 /**
  * @brief Calculate statistics of a query set
@@ -11,4 +11,4 @@
  */
 int calculate_query_stats(bool normalized);
 
-#endif  // QUERY_STATS_HPP
+#endif  // MODULES_QUERYSTATS_HPP

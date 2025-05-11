@@ -1,9 +1,10 @@
 #ifndef DATASET_LOGGER_HPP
 #define DATASET_LOGGER_HPP
 
+#include "Util/HelperFuncs/Enums.hpp"
 #include "Util/Logging/Logger.hpp"
-#include "Util/typedefs.hpp"
-#include "Util/utilities.hpp"
+#include "Util/Types/Numbers.hpp"
+#include "Util/Types/Pointers.hpp"
 
 /** @brief Enum of the columns of the dataset settings log file */
 enum class DatasetSettingsColumn {

@@ -1,17 +1,8 @@
-#include <filesystem>
+#include "Util/Logging/Logger.hpp"
+
 #include <fstream>
 
-#include "Util/typedefs.hpp"
-#include "Util/utilities.hpp"
-#include "Util/Logging/Logger.hpp"
-#include "Util/RunSettings.hpp"
-#include "Search/DistanceMeasure.hpp"
-#include "Search/Options/SearchOptions.hpp"
-#include "Search/Options/IndexOptions.hpp"
-
 using std::to_string;
-
-namespace fs = std::filesystem;
 
 // Logger
 uint Logger::determine_index(const str &file_path) {

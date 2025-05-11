@@ -1,11 +1,13 @@
-#ifndef SEARCH_METHOD_HPP
-#define SEARCH_METHOD_HPP
+#ifndef SEARCH_SEARCHMETHOD_HPP
+#define SEARCH_SEARCHMETHOD_HPP
 
-#include "Search/Options/SearchOptions.hpp"
-#include "Search/ResultSet.hpp"
-#include "Search/DistanceMeasure.hpp"
-#include "Util/typedefs.hpp"
-#include "Util/utilities.hpp"
+#include "Enums/DistanceType.hpp"
+#include "Enums/SearchType.hpp"
+#include "Index/Entry/Envelope.hpp"
+#include "Index/Entry/Paa.hpp"
+#include "Search/DistanceMeasure/DistanceMeasure.hpp"
+#include "Search/Results/SearchResult.hpp"
+#include "Search/SearchOptions.hpp"
 
 /**
  * @brief Interface for search methods
@@ -62,4 +64,4 @@ class ISearchMethod {
     }
 };
 
-#endif  // SEARCH_METHOD_HPP
+#endif  // SEARCH_SEARCHMETHOD.HPP

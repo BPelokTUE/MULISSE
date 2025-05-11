@@ -1,19 +1,29 @@
-#ifndef SEARCHING_HPP
-#define SEARCHING_HPP
+#ifndef MODULES_SEARCHING_HPP
+#define MODULES_SEARCHING_HPP
 
-#include "Util/typedefs.hpp"
-#include "Util/utilities.hpp"
-#include "Util/RunSettings.hpp"
-#include "Util/Logging/QueryLogger.hpp"
-#include "Serialization/SerializationRegistration.hpp"
-#include "Search/LengthGroupingIndex.hpp"
-#include "Search/Options/SearchOptions.hpp"
-#include "Search/Envelope/FlatEnvelopeIndex.hpp"
-#include "Search/Envelope/TreeEnvelopeIndex.hpp"
-#include "Search/iSax/iSaxFinalizedNode.hpp"
-#include "Search/iSax/iSaxFinalizedIndex.hpp"
-#include "Search/ChainIndex.hpp"
+#include "Enums/DistanceType.hpp"
+#include "Enums/SearchType.hpp"
+#include "Index/ChainIndex/ChainIndex.hpp"
+#include "Index/EnvelopeIndex/Flat/FinalizedFlatEnvelopeIndex.hpp"
+#include "Index/EnvelopeIndex/Tree/TreeEnvelopeIndex.hpp"
+#include "Index/FinalizedIndex.hpp"
+#include "Index/LengthGroupingIndex/FinalizedLengthGroupingIndex.hpp"
+#include "Index/Traits/FinalizedTraits.hpp"
+#include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
+#include "Search/ChainSearch.hpp"
+#include "Search/DistanceMeasure/DistanceMeasure.hpp"
+#include "Search/IndexSearch/FlatEnvelopeIndexSearch.hpp"
+#include "Search/IndexSearch/IndexSearchMethod.hpp"
+#include "Search/IndexSearch/LengthGroupingIndexSearch.hpp"
+#include "Search/IndexSearch/TreeEnvelopeIndexSearch.hpp"
+#include "Search/IndexSearch/iSaxIndexSearch.hpp"
+#include "Search/Results/ResultSet.hpp"
+#include "Search/SearchMethod.hpp"
+#include "Search/SearchOptions.hpp"
 #include "Search/SequentialScan.hpp"
+#include "Util/HelperFuncs/Math.hpp"
+#include "Util/Types/Numbers.hpp"
+#include "Util/Types/Pointers.hpp"
 
 /**
  * @brief Helper function for loading index-based search methods
@@ -44,7 +54,7 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
             group_indexes[l_ind] = finalized_index_factory();
         }
         index =
-            std::make_unique<LengthGroupingFinalizedIndex<FTag>>(std::move(group_indexes), opts.m_l_min, opts.m_l_max);
+            std::make_unique<FinalizedLengthGroupingIndex<FTag>>(std::move(group_indexes), opts.m_l_min, opts.m_l_max);
     } else {
         index = finalized_index_factory();
     }
@@ -53,8 +63,8 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
 
     if (opts.m_use_length_groups) {
         vec<uptr<ISearchMethod<S, D, QS>>> search_methods(num_len_groups);
-        auto grouping_index = uptr<LengthGroupingFinalizedIndex<FTag>>(
-            static_cast<LengthGroupingFinalizedIndex<FTag> *>(index.release()));
+        auto grouping_index = uptr<FinalizedLengthGroupingIndex<FTag>>(
+            static_cast<FinalizedLengthGroupingIndex<FTag> *>(index.release()));
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {
             search_methods[l_ind] =
                 search_method_factory(uptr<IFinalizedIndex<FTag>>(grouping_index->release_index(l_ind)));
@@ -79,11 +89,11 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
     switch (opts.m_search_method_type) {
         case ISAX_ENVELOPE:
             return load_index_based_method<EnvelopeTag, S, D, QS>(
-                []() { return std::make_unique<iSaxFinalizedIndex<EnvelopeTag>>(); },
+                []() { return std::make_unique<FinalizedISaxIndex<EnvelopeTag>>(); },
                 [](uptr<IFinalizedIndex<EnvelopeTag>> index) {
                     return std::make_unique<iSaxIndexSearch<EnvelopeTag, S, D, QS>>(
-                        uptr<iSaxFinalizedIndex<EnvelopeTag>>(
-                            static_cast<iSaxFinalizedIndex<EnvelopeTag> *>(index.release())));
+                        uptr<FinalizedISaxIndex<EnvelopeTag>>(
+                            static_cast<FinalizedISaxIndex<EnvelopeTag> *>(index.release())));
                 },
                 opts);
         case ISAX_ENV_W_ENV:
@@ -91,18 +101,18 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
             return load_index_based_method<EnvelopeTag, S, D, QS>(
                 []() {
                     vec<uptr<IFinalizedIndex<EnvelopeTag>>> approx_indexes(1);
-                    approx_indexes[0] = std::make_unique<iSaxFinalizedIndex<EnvelopeTag>>();
+                    approx_indexes[0] = std::make_unique<FinalizedISaxIndex<EnvelopeTag>>();
                     auto exact_index = uptr<IFinalizedIndex<EnvelopeTag>>(new FinalizedFlatEnvelopeIndex());
-                    return std::make_unique<ChainFinalizedIndex<EnvelopeTag>>(std::move(approx_indexes),
+                    return std::make_unique<FinalizedChainIndex<EnvelopeTag>>(std::move(approx_indexes),
                                                                               std::move(exact_index));
                 },
                 [](uptr<IFinalizedIndex<EnvelopeTag>> index) {
-                    auto chain_index = uptr<ChainFinalizedIndex<EnvelopeTag>>(
-                        static_cast<ChainFinalizedIndex<EnvelopeTag> *>(index.release()));
+                    auto chain_index = uptr<FinalizedChainIndex<EnvelopeTag>>(
+                        static_cast<FinalizedChainIndex<EnvelopeTag> *>(index.release()));
                     vec<uptr<ISearchMethod<S, D, QS>>> approx_methods(1);
                     approx_methods[0] =
-                        std::make_unique<iSaxIndexSearch<EnvelopeTag, S, D, QS>>(uptr<iSaxFinalizedIndex<EnvelopeTag>>(
-                            static_cast<iSaxFinalizedIndex<EnvelopeTag> *>(chain_index->release_approx_index(0))));
+                        std::make_unique<iSaxIndexSearch<EnvelopeTag, S, D, QS>>(uptr<FinalizedISaxIndex<EnvelopeTag>>(
+                            static_cast<FinalizedISaxIndex<EnvelopeTag> *>(chain_index->release_approx_index(0))));
                     auto exact_method =
                         std::make_unique<FlatEnvelopeIndexSearch<S, D, QS>>(uptr<FinalizedFlatEnvelopeIndex>(
                             static_cast<FinalizedFlatEnvelopeIndex *>(chain_index->release_exact_index())));
@@ -111,10 +121,10 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
                 opts);
         case ISAX:
             return load_index_based_method<PaaTag, S, D, QS>(
-                []() { return std::make_unique<iSaxFinalizedIndex<PaaTag>>(); },
+                []() { return std::make_unique<FinalizedISaxIndex<PaaTag>>(); },
                 [](uptr<IFinalizedIndex<PaaTag>> index) {
                     return std::make_unique<iSaxIndexSearch<PaaTag, S, D, QS>>(
-                        uptr<iSaxFinalizedIndex<PaaTag>>(static_cast<iSaxFinalizedIndex<PaaTag> *>(index.release())));
+                        uptr<FinalizedISaxIndex<PaaTag>>(static_cast<FinalizedISaxIndex<PaaTag> *>(index.release())));
                 },
                 opts);
         case ENVELOPE:
@@ -240,4 +250,4 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
     return 0;
 }
 
-#endif  // SEARCHING_HPP
+#endif  // MODULES_SEARCHING_HPP

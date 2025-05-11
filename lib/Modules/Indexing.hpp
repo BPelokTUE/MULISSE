@@ -1,8 +1,7 @@
-#ifndef INDEXING_HPP
-#define INDEXING_HPP
+#ifndef MODULES_INDEXING_HPP
+#define MODULES_INDEXING_HPP
 
-#include "Util/typedefs.hpp"
-#include "Search/Options/IndexOptions.hpp"
+#include "Index/IndexOptions.hpp"
 
 /**
  * @brief Create an index based on the specified options
@@ -15,4 +14,4 @@
  * */
 int create_index(const IndexOptions &index_options);
 
-#endif  // INDEXING_HPP
+#endif  // MODULES_INDEXING_HPP

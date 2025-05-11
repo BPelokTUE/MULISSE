@@ -1,9 +1,12 @@
 #ifndef QUERY_LOGGER_HPP
 #define QUERY_LOGGER_HPP
 
+#include "Search/Results/SearchResult.hpp"
+#include "Search/SearchOptions.hpp"
+#include "Util/HelperFuncs/Containers.hpp"
+#include "Util/HelperFuncs/Enums.hpp"
 #include "Util/Logging/Logger.hpp"
-#include "Util/typedefs.hpp"
-#include "Util/utilities.hpp"
+#include "Util/Types/Numbers.hpp"
 
 /** @brief Enum of the columns of the search settings log file */
 enum class SearchSettingsColumn {

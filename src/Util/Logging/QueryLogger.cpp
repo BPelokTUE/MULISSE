@@ -1,7 +1,9 @@
+#include "Util/Logging/QueryLogger.hpp"
+
 #include <sstream>
 
-#include "Util/typedefs.hpp"
-#include "Util/Logging/QueryLogger.hpp"
+#include "Util/HelperFuncs/Conversion.hpp"
+#include "Util/RunSettings/RunSettings.hpp"
 
 QueryLogger QueryLogger::instance = QueryLogger();
 bool QueryLogger::initialized = false;

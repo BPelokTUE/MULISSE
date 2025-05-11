@@ -1,6 +1,6 @@
-#include "Util/typedefs.hpp"
 #include "Util/Logging/IndexLogger.hpp"
-#include "Summarization/EntryMerger.hpp"
+
+#include "Util/RunSettings/RunSettings.hpp"
 
 IndexLogger IndexLogger::instance = IndexLogger();
 bool IndexLogger::initialized = false;

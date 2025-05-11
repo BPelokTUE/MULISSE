@@ -3,8 +3,7 @@
 
 #include "Util/Logging/Logger.hpp"
 #include "Util/Logging/AttributesStats.hpp"
-#include "Util/typedefs.hpp"
-#include "Util/utilities.hpp"
+#include "Util/HelperFuncs/Enums.hpp"
 
 /** @brief Enum of the columns of the index statistics log file */
 enum class IndexStatsColumn {

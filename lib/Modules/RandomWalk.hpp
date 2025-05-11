@@ -1,7 +1,7 @@
-#ifndef RANDOMWALK_HPP
-#define RANDOMWALK_HPP
+#ifndef MODULES_RANDOMWALK_HPP
+#define MODULES_RANDOMWALK_HPP
 
-#include "Util/typedefs.hpp"
+#include "Util/Types/Numbers.hpp"
 
 /**
  * @brief Creates random walks and writes them to a binary file
@@ -16,4 +16,4 @@
  */
 int create_random_walks(Real step_sigma, bool zero_start, uint seed);
 
-#endif  // RANDOMWALK_HPP
+#endif  // MODULES_RANDOMWALK_HPP

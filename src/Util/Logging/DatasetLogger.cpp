@@ -1,5 +1,10 @@
 #include "Util/Logging/DatasetLogger.hpp"
-#include "Util/typedefs.hpp"
+
+#include <filesystem>
+
+#include "Util/RunSettings/RunSettings.hpp"
+
+namespace fs = std::filesystem;
 
 // DatasetLogger
 RandomWalkLogAttributes::RandomWalkLogAttributes(Real noise, int seed) : m_noise(noise), m_seed(seed) {}

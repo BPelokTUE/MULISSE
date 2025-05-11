@@ -1,14 +1,11 @@
-#ifndef SEQUENTIAL_SCAN_HPP
-#define SEQUENTIAL_SCAN_HPP
+#ifndef SEARCH_SEQUENTIALSCAN_HPP
+#define SEARCH_SEQUENTIALSCAN_HPP
 
 #include <fstream>
 
-#include "Util/typedefs.hpp"
-#include "Util/RunSettings.hpp"
+#include "Enums/DistanceType.hpp"
+#include "Enums/SearchType.hpp"
 #include "Util/Logging/QueryLogger.hpp"
-#include "Search/SearchMethod.hpp"
-#include "Search/ResultSet.hpp"
-#include "Search/Options/SearchOptions.hpp"
 
 /**
  * @brief Class for sequential scan search method
@@ -50,4 +47,4 @@ class SequentialScan : public ISearchMethod<S, D, QS> {
     }
 };
 
-#endif  // SEQUENTIAL_SCAN_HPP
+#endif  // SEARCH_SEQUENTIALSCAN_HPP

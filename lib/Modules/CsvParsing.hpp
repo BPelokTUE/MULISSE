@@ -1,7 +1,8 @@
-#ifndef CSV_PARSING_HPP
-#define CSV_PARSING_HPP
+#ifndef MODULES_CSVPARSING_HPP
+#define MODULES_CSVPARSING_HPP
 
-#include "Util/typedefs.hpp"
+#include "Util/Types/Containers.hpp"
+#include "Util/Types/Numbers.hpp"
 
 /**
  * @brief Create a binary dataset from a CSV file
@@ -22,4 +23,4 @@
 int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, uint seed = 0,
                             char col_sep = ',');
 
-#endif  // CSV_PARSING_HPP
+#endif  // MODULES_CSVPARSING_HPP

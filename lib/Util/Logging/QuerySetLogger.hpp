@@ -1,9 +1,9 @@
 #ifndef QUERY_SET_LOGGER_HPP
 #define QUERY_SET_LOGGER_HPP
 
+#include "Search/QuerySetOptions.hpp"
+#include "Util/HelperFuncs/Enums.hpp"
 #include "Util/Logging/Logger.hpp"
-#include "Util/typedefs.hpp"
-#include "Util/utilities.hpp"
 
 /** @brief Enum of the columns of the query set settings log file */
 enum class QuerySetSettingsColumn {

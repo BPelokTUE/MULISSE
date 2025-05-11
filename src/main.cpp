@@ -1,23 +1,27 @@
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 #include "CLI11/CLI11.hpp"
-
-#include "Modules/RandomWalk.hpp"
+#include "Index/EntryMerger/EntryMerger.hpp"
+#include "Index/Segmentation/SegmentationStrategy.hpp"
+#include "Modules/CalcFfts.hpp"
 #include "Modules/CsvParsing.hpp"
+#include "Modules/IndexStats.hpp"
+#include "Modules/Indexing.hpp"
 #include "Modules/QueryGen.hpp"
 #include "Modules/QueryStats.hpp"
-#include "Modules/Indexing.hpp"
-#include "Modules/IndexStats.hpp"
-#include "Modules/CalcFfts.hpp"
+#include "Modules/RandomWalk.hpp"
 #include "Modules/Searching.hpp"
-#include "Search/DistanceMeasure.hpp"
-#include "Search/ResultSet.hpp"
-#include "Summarization/SegmentationStrategy.hpp"
-#include "Summarization/EntryMerger.hpp"
-#include "Util/constants.hpp"
-#include "Util/typedefs.hpp"
-#include "Util/RunSettings.hpp"
+#include "Search/DistanceMeasure/DistanceMeasure.hpp"
+#include "Search/DistanceMeasure/EuclideanDistance.hpp"
+#include "Search/DistanceMeasure/Mass.hpp"
+#include "Search/Results/ResultSet.hpp"
+#include "Util/Constants/Math.hpp"
+#include "Util/Constants/Sax.hpp"
+#include "Util/HelperFuncs/Containers.hpp"
+#include "Util/RunSettings/RunSettings.hpp"
+#include "Util/Types/Containers.hpp"
+#include "Util/Types/Numbers.hpp"
 
 int main(int argc, char **argv) {
     CLI::App app{"Run MULISSE"};

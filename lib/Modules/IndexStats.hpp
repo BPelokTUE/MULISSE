@@ -1,14 +1,17 @@
-#ifndef INDEX_STATS_HPP
-#define INDEX_STATS_HPP
+#ifndef MODULES_INDEXSTATS_HPP
+#define MODULES_INDEXSTATS_HPP
 
-#include "Search/Options/SearchMethodType.hpp"
-#include "Search/Options/IndexOptions.hpp"
-#include "Search/Index.hpp"
-#include "Search/iSax/iSaxFinalizedIndex.hpp"
-#include "Search/LengthGroupingIndex.hpp"
-#include "Util/typedefs.hpp"
+#include <type_traits>
+
+#include "Enums/ArchiveType.hpp"
+#include "Enums/SearchMethodType.hpp"
+#include "Index/FinalizedIndex.hpp"
+#include "Index/LengthGroupingIndex/LengthGroupingIndex.hpp"
+#include "Index/Segmentation/LengthGroupSegmentationStrategy.hpp"
+#include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
 #include "Util/Logging/IndexStatsLogger.hpp"
-#include "Util/RunSettings.hpp"
+#include "Util/RunSettings/RunSettings.hpp"
+#include "Util/Types/Pointers.hpp"
 
 template <typename IndexType, typename FTag>
 concept ValidIndexType = std::is_base_of<IFinalizedIndex<FTag>, IndexType>::value;
@@ -35,8 +38,8 @@ class IndexAnalyzer {
         if (num_l_groups > 0) {
             vec<uptr<IFinalizedIndex<FTag>>> group_indexes(num_l_groups);
             for (uint l_ind = 0; l_ind < num_l_groups; l_ind++) group_indexes[l_ind] = create_index();
-            auto index = std::make_unique<LengthGroupingFinalizedIndex<FTag>>(std::move(group_indexes), 1, 1);
-            IndexAnalyzer<LengthGroupingFinalizedIndex<FTag>, FTag>::load_index(index, index_format);
+            auto index = std::make_unique<FinalizedLengthGroupingIndex<FTag>>(std::move(group_indexes), 1, 1);
+            IndexAnalyzer<FinalizedLengthGroupingIndex<FTag>, FTag>::load_index(index, index_format);
 
             for (uint l_ind = 0; l_ind < num_l_groups; l_ind++) {
                 auto sub_index = uptr<IndexType>(static_cast<IndexType *>(index->release_index(l_ind)));
@@ -89,7 +92,7 @@ class IndexAnalyzer {
      * @param stats The statistics to update
      * @param height The height of the node in the index
      */
-    void analyze_isax_node(const iSaxFinalizedIndex<FTag> *index, const iSaxFinalizedNode<FTag> *node,
+    void analyze_isax_node(const FinalizedISaxIndex<FTag> *index, const FinalizedISaxNode<FTag> *node,
                            const vec<iSaxType> &isax_words, IndexStats &stats, size_t height) {
         if (node->is_leaf()) {
             size_t num_entries = node->get_subsequence_infos().size();
@@ -116,8 +119,8 @@ class IndexAnalyzer {
      * @param length_group_id The ID of the length group within the index (0 for non-length-grouped indexes)
      * */
     void analyze_isax(uint length_group_id = 0) {
-        const iSaxFinalizedIndex<FTag> *index = dynamic_cast<iSaxFinalizedIndex<FTag> *>(m_index.get());
-        if (!index) throw std::runtime_error("Could not cast index to iSaxFinalizedIndex");
+        const FinalizedISaxIndex<FTag> *index = dynamic_cast<FinalizedISaxIndex<FTag> *>(m_index.get());
+        if (!index) throw std::runtime_error("Could not cast index to FinalizedISaxIndex");
 
         const auto &first_layer_symbols = index->get_first_layer_symbols();
         if (first_layer_symbols.empty()) {
@@ -153,4 +156,4 @@ class IndexAnalyzer {
  */
 int calculate_index_stats(SearchMethodType method_type, uint num_l_groups, ArchiveType index_format);
 
-#endif  // INDEX_STATS_HPP
+#endif  // MODULES_INDEXSTATS_HPP

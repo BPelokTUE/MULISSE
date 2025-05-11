@@ -2,18 +2,16 @@
 #define SERIALIZATION_REGISTRATION_HPP
 
 #include <cereal/archives/binary.hpp>
-#include <cereal/types/polymorphic.hpp>
+#include <cereal/archives/json.hpp>
 #include <cereal/types/memory.hpp>
+#include <cereal/types/polymorphic.hpp>
 #include <cereal/types/vector.hpp>
 
-#include "Search/Index.hpp"
-#include "Search/iSax/iSaxFinalizedNode.hpp"
-#include "Search/iSax/iSaxFinalizedIndex.hpp"
-#include "Search/Envelope/EnvelopeNode.hpp"
-#include "Summarization/Paa.hpp"
-#include "Summarization/Envelope.hpp"
-#include "Summarization/IndexEntry.hpp"
-#include "Summarization/SegmentationStrategy.hpp"
+#include "Index/Entry/Envelope.hpp"
+#include "Index/Entry/Paa.hpp"
+#include "Index/EnvelopeIndex/Tree/EnvelopeNode.hpp"
+#include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
+#include "Index/iSaxIndex/FinalizedISaxNode.hpp"
 
 // Register archive types
 CEREAL_REGISTER_ARCHIVE(cereal::BinaryInputArchive)
@@ -37,13 +35,13 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxInternalNodeArgs<EnvelopeTag>, iSaxEnve
 
 CEREAL_REGISTER_TYPE(iSaxFinalizedInternal<PaaTag>)
 CEREAL_REGISTER_TYPE(iSaxFinalizedInternal<EnvelopeTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<PaaTag>, iSaxFinalizedInternal<PaaTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<EnvelopeTag>, iSaxFinalizedInternal<EnvelopeTag>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(FinalizedISaxNode<PaaTag>, iSaxFinalizedInternal<PaaTag>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(FinalizedISaxNode<EnvelopeTag>, iSaxFinalizedInternal<EnvelopeTag>)
 
 CEREAL_REGISTER_TYPE(iSaxFinalizedLeaf<PaaTag>)
 CEREAL_REGISTER_TYPE(iSaxFinalizedLeaf<EnvelopeTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<PaaTag>, iSaxFinalizedLeaf<PaaTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxFinalizedNode<EnvelopeTag>, iSaxFinalizedLeaf<EnvelopeTag>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(FinalizedISaxNode<PaaTag>, iSaxFinalizedLeaf<PaaTag>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(FinalizedISaxNode<EnvelopeTag>, iSaxFinalizedLeaf<EnvelopeTag>)
 
 // Register envelope node types
 CEREAL_REGISTER_TYPE(EnvelopeInternal)

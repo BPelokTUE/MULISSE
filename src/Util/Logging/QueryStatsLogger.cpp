@@ -1,5 +1,7 @@
-#include "Util/typedefs.hpp"
 #include "Util/Logging/QueryStatsLogger.hpp"
+
+#include "Util/HelperFuncs/Conversion.hpp"
+#include "Util/RunSettings/RunSettings.hpp"
 
 using QSTC = QueryStatsColumn;
 

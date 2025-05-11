@@ -1,27 +1,24 @@
 {
     "csv_data_dirs": [],
     "dataset_sizes": [100],
-    "series_lengths": [512],
+    "series_lengths": [512, 1024, 2048],
     "syn_num_channels": [1],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [10],
-    "l_range_ratios": [[0.25, 1.0]],
+    "l_range_ratios": [[0.125, 1.0]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {
         "scan": ["scan"],
-        "index": ["isax"],
         "index_w_merging": ["isax"]
     },
     "merger_types": {
-        "index": ["none"],
         "index_w_merging": ["sax"]
     },
     "merger_num_bit_numbers": {
         "index_w_merging": [1]
     },
     "isax_num_bits_limits": {
-        "index": [8],
         "index_w_merging": [2, 3, 4, 6, 8]
     },
     "isax_split_strategies": ["em"],
@@ -33,7 +30,6 @@
     "length_group_size_ratios": [0.05],
     "distance_measures": {
         "scan": ["mass", "ed"],
-        "index": ["ed"],
         "index_w_merging": ["ed"]
     },
     "early_abandon": [true],

@@ -1,8 +1,7 @@
-#ifndef QUERY_GEN_HPP
-#define QUERY_GEN_HPP
+#ifndef MODULES_QUERYGEN_HPP
+#define MODULES_QUERYGEN_HPP
 
-#include "Search/Options/QuerySetOptions.hpp"
-#include "Util/typedefs.hpp"
+#include "Search/QuerySetOptions.hpp"
 
 /**
  * @brief Create queries from dataset by extracting subsequences and adding noise
@@ -18,4 +17,4 @@
  */
 int create_queries(QuerySetOptions opts);
 
-#endif  // QUERY_GEN_HPP
+#endif  // MODULES_QUERYGEN_HPP

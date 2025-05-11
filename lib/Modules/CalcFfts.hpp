@@ -1,7 +1,5 @@
-#ifndef CALC_FFTS_HPP
-#define CALC_FFTS_HPP
-
-#include "Util/typedefs.hpp"
+#ifndef MODULES_CALCFFTS_HPP
+#define MODULES_CALCFFTS_HPP
 
 /**
  * @brief Calculate the FFTs of the dataset
@@ -13,4 +11,4 @@
  */
 int calculate_ffts(bool normalized);
 
-#endif  // CALC_FFTS_HPP
+#endif  // MODULES_CALCFFTS_HPP

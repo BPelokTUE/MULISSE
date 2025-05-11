@@ -1,0 +1,80 @@
+#ifndef INDEX_SAX_SAXBREAKPOINTSTRATEGY_HPP
+#define INDEX_SAX_SAXBREAKPOINTSTRATEGY_HPP
+
+#include <boost/math/distributions/normal.hpp>
+
+#include "Util/Types/Containers.hpp"
+#include "Util/Types/Numbers.hpp"
+#include "Util/Types/Pointers.hpp"
+
+/**
+ * @brief Interface for breakpoints strategies
+ *
+ * Interface for breakpoints strategies. Strategies should satisfy:
+ * (1) the returned vector should not include the first and last breakpoints, which are
+ * assumed to be -inf and inf respectively
+ * (2) doubling the size of the alphabet should result in a new set of breakpoints, such that
+ * beta_old[i] = beta_new[2*i + 1] for i = 0, 1, ..., alphabet_size_old - 1.
+ */
+class ISaxBreakpointStrategy {
+   public:
+    virtual ~ISaxBreakpointStrategy() = default;
+
+    /**
+     * @brief Get the breakpoints for the given alphabet size
+     * @param alphabet_size The size of the alphabet; assumed to be a power of two
+     * @return Vector of breakpoints
+     */
+    virtual vec<Real> get_breakpoints(SaxSymbolT alphabet_size) const = 0;
+
+    /**
+     * @brief Adapt the breakpoints based on dataset statistics
+     * @param mu Mean of the dataset entries
+     * @param sigma Standard deviation of the dataset entries
+     */
+    virtual void adapt_to_dataset(Real mu, Real sigma) {}
+};
+
+/**
+ * @brief Equiprobable breakpoints strategy
+ *
+ * Breakpoints strategy that returns breakpoints that divide the normal distribution into equal probability intervals
+ */
+class EquiprobableBreakpointStrategy : public ISaxBreakpointStrategy {
+   public:
+    /**
+     * @brief Constructor
+     *
+     * @param mean Mean of the normal distribution
+     * @param standard_deviation Standard deviation of the normal distribution
+     */
+    EquiprobableBreakpointStrategy(Real mean = 0.0, Real standard_deviation = 1.0);
+
+    vec<Real> get_breakpoints(SaxSymbolT alphabet_size) const override;
+
+    void adapt_to_dataset(Real mu, Real sigma) override;
+
+   private:
+    boost::math::normal_distribution<Real> m_distribution;
+};
+
+/**
+ * @brief Fixed breakpoints strategy
+ *
+ * Use fixed breakpoints loaded from an external file.
+ */
+class FixedBreakpointStrategy : public ISaxBreakpointStrategy {
+   public:
+    /**
+     * @brief Constructor
+     * @param file Path to plain text file containing the breakpoints
+     */
+    FixedBreakpointStrategy(const str& file);
+
+    vec<Real> get_breakpoints(SaxSymbolT alphabet_size) const override;
+
+   private:
+    vec<Real> m_breakpoints;
+};
+
+#endif  // INDEX_SAX_SAXBREAKPOINTSTRATEGY_HPP

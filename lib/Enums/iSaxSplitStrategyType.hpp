@@ -1,0 +1,11 @@
+#ifndef ENUMS_ISAXSPLITSTRATEGYTYPE_HPP
+#define ENUMS_ISAXSPLITSTRATEGYTYPE_HPP
+
+#include "Util/HelperFuncs/Enums.hpp"
+
+/** @brief Enum for IiSaxSplitStrategy implementations */
+enum iSaxSplitStrategyType { DOUBLE_ROUND_ROBIN, ENTROPY_MAXIMIZING, ULISSE_CLOSEST_TO_MEAN, CLOSEST_TO_MEAN };
+
+DEFINE_ENUM_CONSTS_NO_EXTRA(iSaxSplitStrategyType, ISAX_SPLIT_STRATEGY, true);
+
+#endif  // ENUMS_ISAXSPLITSTRATEGYTYPE_HPP

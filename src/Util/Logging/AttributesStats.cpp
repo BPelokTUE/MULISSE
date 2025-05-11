@@ -1,5 +1,10 @@
-#include "Util/typedefs.hpp"
 #include "Util/Logging/AttributesStats.hpp"
+
+#include <algorithm>
+
+#include "Util/Constants/Math.hpp"
+#include "Util/HelperFuncs/Conversion.hpp"
+#include "Util/HelperFuncs/Math.hpp"
 
 AttributeStats::AttributeStats() {
     m_min = INF;

@@ -1,12 +1,11 @@
-#include <algorithm>
-#include <fstream>
-
 #include "Modules/QueryStats.hpp"
-#include "Util/constants.hpp"
-#include "Util/utilities.hpp"
-#include "Util/typedefs.hpp"
+
+#include <algorithm>
+
+#include "Util/HelperFuncs/Conversion.hpp"
+#include "Util/HelperFuncs/Math.hpp"
 #include "Util/Logging/QueryStatsLogger.hpp"
-#include "Util/RunSettings.hpp"
+#include "Util/RunSettings/RunSettings.hpp"
 
 void update_query_stats(QueryStats &stats, const vec<vec<Real>> &query, const vec<vec<Real>> &mts, bool normalized) {
     int num_start_pos = 0;

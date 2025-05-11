@@ -1,14 +1,14 @@
-#include <algorithm>
+#include "Modules/QueryGen.hpp"
+
 #include <filesystem>
-#include <fstream>
-#include <iostream>
 #include <random>
 
-#include "Modules/QueryGen.hpp"
-#include "Util/typedefs.hpp"
-#include "Util/utilities.hpp"
+#include "Util/HelperFuncs/Conversion.hpp"
+#include "Util/HelperFuncs/Math.hpp"
+#include "Util/HelperFuncs/Path.hpp"
 #include "Util/Logging/QuerySetLogger.hpp"
-#include "Util/RunSettings.hpp"
+#include "Util/RunSettings/RunSettings.hpp"
+#include "Util/Types/SubsequenceInfo.hpp"
 
 struct QueryDescriptor {
     SubsequenceInfo subs_info;

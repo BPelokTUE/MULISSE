@@ -1,13 +1,12 @@
+#include "Modules/RandomWalk.hpp"
+
 #include <filesystem>
 #include <fstream>
-#include <iostream>
-#include <memory>
 #include <random>
+#include <sstream>
 
-#include "Modules/RandomWalk.hpp"
-#include "Util/typedefs.hpp"
 #include "Util/Logging/DatasetLogger.hpp"
-#include "Util/RunSettings.hpp"
+#include "Util/RunSettings/RunSettings.hpp"
 
 int create_random_walks(Real step_sigma, bool zero_start, uint seed) {
     auto &RS = RunSettings::get_instance();
