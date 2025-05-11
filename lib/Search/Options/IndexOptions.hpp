@@ -6,13 +6,15 @@
 #include "Summarization/SegmentationStrategy.hpp"
 #include "Summarization/LengthGroupSegmentationStrategy.hpp"
 #include "Summarization/iSaxBreakpointStrategy.hpp"
+#include "Summarization/EntryMerger.hpp"
 #include "Util/utilities.hpp"
 #include "Util/typedefs.hpp"
 
 /** @brief Enum for IEntryInserter implementations */
-enum EntryInserterType { TOP_DOWN, ISAX_PARALLEL };
+enum EntryInserterType { TOP_DOWN, PARALLEL };
 
-DEFINE_ENUM_CONSTS_NO_EXTRA(EntryInserterType, ENTRY_INSERTER_TYPE, false);
+DEFINE_ENUM_CONSTS(EntryInserterType, ENTRY_INSERTER_TYPE, false,
+                   (umap<str, EntryInserterType>{{"isax_parallel", PARALLEL}}));
 
 /** @brief Interface for index parameters */
 struct IIndexParams {
@@ -26,23 +28,58 @@ struct IIndexParams {
 };
 
 struct SegmentationParams {
+    /** @brief Number of segments to use */
+    SaxSegIndT m_num_segments;
     /** @brief Type of strategy to use for length group segmentation */
     LengthGroupSegmentationStrategyType m_lg_strategy_type;
     /** @brief Type of strategy to use for segmentation */
     SegmentationStrategyType m_strategy_type;
-    /** @brief Number of segments to use */
-    SaxSegIndT m_num_segments;
+};
+
+struct SaxParams {
+    /** @brief Number of symbols to use for the SAX representations */
+    SaxNumBitsT m_num_bits;
+    /** @brief Strategy for getting the breakpoints of the symbol intervals */
+    SaxBreakpointStrategyType m_breakpoint_strategy_type;
+    /** @brief Only used for FixedBreakpointStrategy: path to the plain text file to load the fixed breakpoints from */
+    str m_breakpoints_file;
+};
+
+struct MergerParams {
+    /** @brief Type of entry merger to use */
+    EntryMergerType m_entry_merger_type;
+    /** @brief SAX parameters for SAX-based mergers, nullptr for non-SAX-based mergers */
+    const SaxParams *m_merger_sax_params;
 };
 
 struct PaaIndexParams : virtual IIndexParams {
     /** @brief segmentation parameters */
     SegmentationParams m_segmentation_params;
+    /** @brief merger parameters */
+    MergerParams m_merger_params;
 
     /**
      * @brief Constructor
      * @param segmentation_params Segmentation parameters
+     * @param merger_params Merger parameters
      */
-    PaaIndexParams(SegmentationParams segmentation_params) : m_segmentation_params(segmentation_params) {}
+    PaaIndexParams(SegmentationParams segmentation_params, MergerParams merger_params)
+        : m_segmentation_params(segmentation_params), m_merger_params(merger_params) {}
+};
+
+/** @brief Parameters for indexes that use SAX */
+struct SaxIndexParams : virtual PaaIndexParams {
+    /** @brief SAX parameters */
+    SaxParams m_sax_params;
+
+    /**
+     * @brief Constructor
+     * @param segmentation_params Segmentation parameters
+     * @param merger_params Merger parameters
+     * @param sax_params SAX parameters
+     */
+    SaxIndexParams(SegmentationParams segmentation_params, MergerParams merger_params, SaxParams sax_params)
+        : PaaIndexParams(segmentation_params, merger_params), m_sax_params(sax_params) {}
 };
 
 /** @brief Parameters for indexes that use envelopes */
@@ -55,33 +92,11 @@ struct EnvelopeIndexParams : virtual PaaIndexParams {
     /**
      * @brief Constructor
      * @param segmentation_params Segmentation parameters
+     * @param merger_params Merger parameters
      * @param pos_per_env Size of the starting position groups
      */
-    EnvelopeIndexParams(SegmentationParams segmentation_params, uint pos_per_env)
-        : PaaIndexParams(segmentation_params), m_pos_per_env(pos_per_env) {}
-};
-
-struct SaxParams {
-    /** @brief Strategy for getting the breakpoints of the symbol intervals */
-    SaxBreakpointStrategyType m_breakpoint_strategy_type;
-    /** @brief Number of symbols to use for the SAX representations */
-    SaxNumBitsT m_num_bits;
-    /** @brief Only used for FixedBreakpointStrategy: path to the plain text file to load the fixed breakpoints from */
-    str m_breakpoints_file;
-};
-
-/** @brief Parameters for indexes that use SAX */
-struct SaxIndexParams : virtual PaaIndexParams {
-    /** @brief SAX parameters */
-    SaxParams m_sax_params;
-
-    /**
-     * @brief Constructor
-     * @param segmentation_params Segmentation parameters
-     * @param sax_params SAX parameters
-     */
-    SaxIndexParams(SegmentationParams segmentation_params, SaxParams sax_params)
-        : PaaIndexParams(segmentation_params), m_sax_params(sax_params) {}
+    EnvelopeIndexParams(SegmentationParams segmentation_params, MergerParams merger_params, uint pos_per_env)
+        : PaaIndexParams(segmentation_params, merger_params), m_pos_per_env(pos_per_env) {}
 };
 
 /** @brief Parameters for SAX Envelope indexes */
@@ -91,23 +106,25 @@ struct SaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual SaxIndexPar
     /**
      * @brief Constructor
      * @param segmentation_params Segmentation parameters
+     * @param merger_params Merger parameters
      * @param pos_per_env Size of the starting position groups
      * @param sax_params iSAX parameters
      */
-    SaxEnvelopeIndexParams(SegmentationParams segmentation_params, uint pos_per_env, SaxParams sax_params)
-        : PaaIndexParams(segmentation_params),
-          EnvelopeIndexParams(segmentation_params, pos_per_env),
-          SaxIndexParams(segmentation_params, sax_params) {}
+    SaxEnvelopeIndexParams(SegmentationParams segmentation_params, MergerParams merger_params, uint pos_per_env,
+                           SaxParams sax_params)
+        : PaaIndexParams(segmentation_params, merger_params),
+          EnvelopeIndexParams(segmentation_params, merger_params, pos_per_env),
+          SaxIndexParams(segmentation_params, merger_params, sax_params) {}
 };
 
 struct iSaxTrieParams {
     /** @brief Only used for EntropyMaximizingStrategy: whether to select the segment with the min number of bits in
      * case of a tie */
     bool m_min_num_bits_on_tie;
-    /** @brief Strategy for choosing the index to split on */
-    iSaxSplitStrategyType m_split_strategy_type;
     /** @brief Maximum number of bits per segment */
     SaxNumBitsT m_num_bits_limit;
+    /** @brief Strategy for choosing the index to split on */
+    iSaxSplitStrategyType m_split_strategy_type;
     /** @brief Maximum number of entries in a leaf */
     size_t m_leaf_capacity;
 };
@@ -125,12 +142,14 @@ struct iSaxIndexParams : virtual PaaIndexParams, virtual SaxIndexParams {
     /**
      * @brief Constructor
      * @param segmentation_params Segmentation parameters
+     * @param merger_params Merger parameters
      * @param sax_params SAX parameters
      * @param isax_trie_params iSAX trie parameters
      */
-    iSaxIndexParams(SegmentationParams segmentation_params, SaxParams sax_params, iSaxTrieParams isax_trie_params)
-        : PaaIndexParams(segmentation_params),
-          SaxIndexParams(segmentation_params, sax_params),
+    iSaxIndexParams(SegmentationParams segmentation_params, MergerParams merger_params, SaxParams sax_params,
+                    iSaxTrieParams isax_trie_params)
+        : PaaIndexParams(segmentation_params, merger_params),
+          SaxIndexParams(segmentation_params, merger_params, sax_params),
           m_isax_trie_params(isax_trie_params) {}
 };
 
@@ -141,16 +160,18 @@ struct iSaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual iSaxIndexP
     /**
      * @brief Constructor
      * @param segmentation_params Segmentation parameters
+     * @param merger_params Merger parameters
      * @param pos_per_env Size of the starting position groups
+     * @param enveloping_params Envelope parameters
      * @param sax_params SAX parameters
      * @param isax_trie_params iSAX trie parameters
      */
-    iSaxEnvelopeIndexParams(SegmentationParams segmentation_params, uint pos_per_env, SaxParams sax_params,
-                            iSaxTrieParams isax_trie_params)
-        : PaaIndexParams(segmentation_params),
-          EnvelopeIndexParams(segmentation_params, pos_per_env),
-          SaxIndexParams(segmentation_params, sax_params),
-          iSaxIndexParams(segmentation_params, sax_params, isax_trie_params) {}
+    iSaxEnvelopeIndexParams(SegmentationParams segmentation_params, MergerParams merger_params, uint pos_per_env,
+                            SaxParams sax_params, iSaxTrieParams isax_trie_params)
+        : PaaIndexParams(segmentation_params, merger_params),
+          EnvelopeIndexParams(segmentation_params, merger_params, pos_per_env),
+          SaxIndexParams(segmentation_params, merger_params, sax_params),
+          iSaxIndexParams(segmentation_params, merger_params, sax_params, isax_trie_params) {}
 };
 
 /** @brief Parameters for TreeEnvelopeIndex */
@@ -163,15 +184,16 @@ struct TreeEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual SaxIndexPa
     /**
      * @brief Constructor
      * @param segmentation_params Segmentation parameters
+     * @param merger_params Merger parameters
      * @param pos_per_env Size of the starting position groups
      * @param sax_params SAX parameters
      * @param bucket_size The size of each bucket in the tree
      */
-    TreeEnvelopeIndexParams(SegmentationParams segmentation_params, uint pos_per_env, SaxParams sax_params,
-                            size_t bucket_size)
-        : PaaIndexParams(segmentation_params),
-          EnvelopeIndexParams(segmentation_params, pos_per_env),
-          SaxIndexParams(segmentation_params, sax_params),
+    TreeEnvelopeIndexParams(SegmentationParams segmentation_params, MergerParams merger_params, uint pos_per_env,
+                            SaxParams sax_params, size_t bucket_size)
+        : PaaIndexParams(segmentation_params, merger_params),
+          EnvelopeIndexParams(segmentation_params, merger_params, pos_per_env),
+          SaxIndexParams(segmentation_params, merger_params, sax_params),
           m_bucket_size(bucket_size) {}
 };
 
@@ -214,14 +236,14 @@ struct IndexOptions {
     bool m_adapt;
     /** @brief Whether to use length groups */
     bool m_use_length_groups;
+    /** @brief Number of channels of each series */
+    MtsNumChannelsT m_num_channels;
     /** @brief The type of the index method to use */
     SearchMethodType m_index_method;
     /** @brief Format to save the index in */
     ArchiveType m_index_format;
     /** @brief Type of inserter to use */
     EntryInserterType m_inserter_type;
-    /** @brief Number of channels of each series */
-    MtsNumChannelsT m_num_channels;
     /** @brief Minimum accepted query length */
     uint m_l_min;
     /** @brief Maximum accepted query length */

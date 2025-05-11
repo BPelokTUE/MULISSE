@@ -29,18 +29,38 @@ struct PaaParams {
     const ILengthGroupSegmentationStrategy *m_lg_segmentation_strategy;
 };
 
-struct Paa : EntryData {
+struct Paa : IEntryData {
     vec<Real> m_paa_values;
 
+    /**
+     * @brief Construct a new Paa object
+     * @param paa_values The PAA values of the time series
+     */
     Paa(const vec<Real> &paa_values);
 
     Paa() = default;
+
+    /**
+     * @brief Equality operator
+     * @param other The other PAA to compare with
+     */
+    bool operator==(const Paa &other) const;
+
+    /**
+     * @brief Merge the Paa with another, by selecting the minimum of each segment
+     * @param other The other PAA to merge with
+     */
+    inline void merge(const Paa &other) {
+        for (size_t i = 0; i < m_paa_values.size(); ++i) {
+            m_paa_values[i] = std::min(m_paa_values[i], other.m_paa_values[i]);
+        }
+    }
 
     size_t size() const override;
 
     void resize(size_t new_size) override;
 
-    vec<Real> get_isax_input() const override;
+    const vec<Real> &get_isax_input() const override;
 
     template <class Archive>
     void serialize(Archive &ar) {

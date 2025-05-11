@@ -16,10 +16,7 @@
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/iSaxBreakpointStrategy.hpp"
 #include "Summarization/Paa.hpp"
-
-struct SaxSymbolsHash {
-    size_t operator()(const vec<vec<SaxSymbolT>> &symbols) const;
-};
+#include "Summarization/SaxHelpers.hpp"
 
 // Forward declarations
 
@@ -47,6 +44,7 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
     const vec<Real> *m_breakpoints;
     sptr<ISegmentationStrategy> m_segmentation_strategy;
     uptr<IiSaxSplitStrategy<T>> m_split_strategy;
+    iSaxWordFactory m_isax_word_factory;
 
     using m_first_layer_type = decltype(m_first_layer);
 
@@ -70,6 +68,11 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
         m_alphabet_num_bits = RS.get_breakpoint_props().m_breakpoint_num_bits;
         m_breakpoints = &RS.get_breakpoints();
 
+        m_isax_word_factory = [this](const vec<Real> &isax_input) {
+            return iSaxWord(isax_input, *m_breakpoints, m_alphabet_num_bits,
+                            vec<SaxNumBitsT>(isax_input.size(), m_first_layer_num_bits));
+        };
+
         assert(m_breakpoints->size() == (1 << m_alphabet_num_bits) - 1);
         assert(m_alphabet_num_bits >= m_first_layer_num_bits);
     }
@@ -79,15 +82,10 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
     ~iSaxIndex() = default;
 
     void insert(IndexEntry<T> &entry) override {
-        MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(entry.m_mts_summary.size());
-        SaxSegIndT num_seg_per_channel = m_segmentation_strategy->get_num_segments(U(entry.m_mts_summary[0].size()));
+        assert(entry.m_mts_summary.size() == static_cast<MtsNumChannelsT>(entry.m_mts_summary.size()));
+        assert(entry.m_mts_summary[0].size() == m_segmentation_strategy->get_num_segments(U(entry.m_mts_summary[0].size())));
 
-        assert(entry.m_mts_summary.size() == num_channels);
-        assert(entry.m_mts_summary[0].size() == num_seg_per_channel);
-
-        vec<iSaxWord> isax_words(num_channels);
-        vec<vec<SaxSymbolT>> symbols(num_channels, vec<SaxSymbolT>(num_seg_per_channel));
-        calculate_symbols_and_isax(entry, symbols, isax_words);
+        auto [symbols, isax_words] = get_entry_sax_symbols_and_isax(entry, m_isax_word_factory);
 
         auto node_it = m_first_layer.find(symbols);
         if (node_it == m_first_layer.end()) {
@@ -144,23 +142,8 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
     }
 
    private:
-    inline void calculate_isax_channel(const IndexEntry<T> &entry, MtsNumChannelsT c, iSaxWord &isax_word) {
-        auto isax_input = entry.m_mts_summary[c].get_isax_input();
-        isax_word = iSaxWord(isax_input, *m_breakpoints, m_alphabet_num_bits,
-                             vec<SaxNumBitsT>(isax_input.size(), m_first_layer_num_bits));
-    }
-
-    inline void calculate_isax(const IndexEntry<T> &entry, vec<iSaxWord> &isax_words) {
-        for (MtsNumChannelsT c = 0; c < isax_words.size(); ++c) calculate_isax_channel(entry, c, isax_words[c]);
-    }
-
-    inline void calculate_symbols_and_isax(const IndexEntry<T> &entry, vec<vec<SaxSymbolT>> &symbols,
-                                           vec<iSaxWord> &isax_words) {
-        for (MtsNumChannelsT c = 0; c < isax_words.size(); ++c) {
-            calculate_isax_channel(entry, c, isax_words[c]);
-            SaxSegIndT num_segments = static_cast<SaxSegIndT>(symbols[c].size());
-            for (SaxSegIndT s = 0; s < num_segments; ++s) symbols[c][s] = isax_words[c][s];
-        }
+    inline vec<iSaxWord> get_entry_isax(const IndexEntry<T> &entry) {
+        return ::get_entry_isax(entry, m_isax_word_factory);
     }
 
     inline void calculate_first_layer_symbols(const IndexEntry<T> &entry, vec<vec<SaxSymbolT>> &symbols) {
@@ -329,8 +312,7 @@ class iSaxParallelInserter : public IEntryInserter<iSaxIndex<T>> {
                 const auto &symbols = it->first;
                 auto first_layer_node_it = m_index->m_first_layer.find(symbols);
                 for (uint e_ind : it->second) {
-                    vec<iSaxWord> isax_words(num_channels);
-                    m_index->calculate_isax(entries[e_ind], isax_words);
+                    auto isax_words = m_index->get_entry_isax(entries[e_ind]);
                     m_index->insert_into_first_layer_node(isax_words, first_layer_node_it, entries[e_ind]);
                 }
             }
@@ -349,7 +331,7 @@ void iSaxIndex<T>::insert_entries(vec<IndexEntry<T>> &entries, EntryInserterType
         case TOP_DOWN:
             inserter = std::make_unique<TopDownInserter<iSaxIndex<T>>>(this->shared_from_this());
             break;
-        case ISAX_PARALLEL:
+        case PARALLEL:
             inserter = std::make_unique<iSaxParallelInserter<T>>(this->shared_from_this());
             break;
         default:

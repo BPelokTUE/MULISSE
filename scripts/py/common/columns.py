@@ -29,6 +29,8 @@ class IndexSettingsColumn(Enum):
     L_MAX = auto()
     L_PER_GROUP = auto()
     POS_PER_ENV = auto()
+    ENTRY_MERGER_TYPE = auto()
+    MERGER_NUM_BITS = auto()
     NORMALIZED = auto()
     INDEX_TYPE = auto()
     LG_SEGMENTATION_STRATEGY = auto()

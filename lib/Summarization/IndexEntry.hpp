@@ -5,9 +5,13 @@
 
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
+#include "Util/SubsequenceInfo.hpp"
+#include "Summarization/iSaxWord.hpp"
 
-struct EntryData {
-    virtual ~EntryData() = default;
+/** @brief Interface for data of IndexEntry objects */
+class IEntryData {
+   public:
+    virtual ~IEntryData() = default;
 
     /**
      * @brief Get the size (number of entries) of the envelope
@@ -25,12 +29,16 @@ struct EntryData {
      * @brief Get the input for the iSAX index
      * @return The input for the iSAX index
      * */
-    virtual vec<Real> get_isax_input() const = 0;
+    virtual const vec<Real> &get_isax_input() const = 0;
 };
 
 template <typename T>
-concept DerivedFromEntryData = std::is_base_of_v<EntryData, T>;
+concept DerivedFromEntryData = std::is_base_of_v<IEntryData, T>;
 
+/**
+ * @brief Entries of indexes
+ * @tparam T The type of data stored in the entries
+ */
 template <typename T>
     requires DerivedFromEntryData<T>
 struct IndexEntry {
@@ -38,6 +46,15 @@ struct IndexEntry {
     SubsequenceInfo m_subs_info;
     /** @brief Multivariate time series summary */
     vec<T> m_mts_summary;
+
+    /**
+     * @brief Equality operator
+     * @param other The other object to compare to
+     * @return True if the objects are equal, false otherwise
+     * */
+    bool operator==(const IndexEntry &other) const {
+        return m_subs_info == other.m_subs_info && m_mts_summary == other.m_mts_summary;
+    }
 
     template <class Archive>
     void serialize(Archive &ar) {

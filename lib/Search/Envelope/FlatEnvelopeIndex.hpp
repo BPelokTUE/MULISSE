@@ -4,6 +4,7 @@
 #include <queue>
 
 #include "Util/typedefs.hpp"
+#include "Util/SubsequenceInfo.hpp"
 #include "Search/Index.hpp"
 #include "Search/SearchMethod.hpp"
 #include "Search/TopDownInserter.hpp"
@@ -54,7 +55,7 @@ class FlatEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_t
     void insert_entries(vec<IndexEntry<Envelope>> &entries, EntryInserterType inserter_type) override {
         uptr<IEntryInserter<FlatEnvelopeIndex>> inserter;
         switch (inserter_type) {
-            case ISAX_PARALLEL:  // Temporary solution to support two-stage indexes
+            case PARALLEL:  // Temporary solution to support two-stage indexes
             case TOP_DOWN:
                 inserter = std::make_unique<TopDownInserter<FlatEnvelopeIndex>>(this->shared_from_this());
                 break;

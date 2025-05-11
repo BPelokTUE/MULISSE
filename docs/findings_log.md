@@ -208,3 +208,25 @@ TODO:
 ### Summarization after insertion
 
 To investigate the possibility of summarizing subsequences after insertion into an index, various combinations of $N_p$ and $N_l$ were tested. In the most extreme case, when there is a single length in each length group, and a single starting position in each envelope, all subsequences are inserted separately into the indexes. Bigger length groups and position groups lead to more summarization before insertion, therefore smaller indexes, but potentially suboptimal grouping. Too little pre-insertion summarization leads to prohibitively large index sizes and indexation times, e.g. methods without summarization failed due to memory issues in a locally run docker container, for $n=500, l\in[256,1204]$.
+
+Idea: merge envelopes progressively throughout insertion. Points to consider:
+- iSAX trie still has to support splitting leaves $\Rightarrow$ can't merge too aggressively
+- Merging can happen in the following cases:
+    - ~~After inserting any entry into a leaf, if the max granularity SAX representation matches~~
+        - It is better to do this immediately after summarization / entry calculation
+    - Immediately after entry calculation:
+        - Add a merger class, that takes a list of entries, and merges them. Technically, any correct merger that operates on overlapping entries will work, but to be semantically consistent with iSAX, the merger should only merge entries that have the same maximum granularity SAX representation.
+        - While this will lead to recalculating SAX representations if the index uses it as well, if needed, this can be optimized in the future by adding new `EntryData` types, such as `SaxPaa` and `SaxEnvelope`.
+    - After inserting all entries into the tree, if the iSAX representation at the granularity of the leaf matches
+        - Do this in an optional step in the `finalize` function
+- A SAX-based merger could work as follows:
+    - Calculate SAX representation of each entry at a given cardinality
+    - Put the entries / entry indexes into a SAX-to-entry map
+    - Go over each key, sort the associated entries by subsequence start position, iterate over them to merge overlapping ones
+- The SAX-based merger (or any other merger for that matter) could be easily used in flat envelope indexes as well
+- Plan:
+    - [ ] Create merger interface
+    - [ ] Implement SAX-based merger
+    - [ ] Test with `FlatEnvelopeIndex`
+    - [ ] Add merging option to `iSaxIndex`
+    - [ ] Test with `iSaxIndex<Envelope>`

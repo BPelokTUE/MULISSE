@@ -11,8 +11,8 @@ int calculate_ffts(bool normalized) {
     IndexLogger::initialize({
         .m_normalized = normalized,
         .m_adapt = false,
-        .m_index_format = ArchiveType::NONE,
         .m_num_channels = num_channels,
+        .m_index_format = ArchiveType::NONE,
         .m_l_min = 0,
         .m_l_max = 0,
         .m_series_len = series_len,

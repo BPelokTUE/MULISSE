@@ -7,15 +7,17 @@
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
 
+#include "Util/typedefs.hpp"
+#include "Util/SubsequenceInfo.hpp"
+#include "Util/Logging/IndexLogger.hpp"
 #include "Search/SearchMethod.hpp"
 #include "Search/Options/IndexOptions.hpp"
 #include "Search/Options/SearchOptions.hpp"
 #include "Summarization/IndexEntry.hpp"
 #include "Summarization/Envelope.hpp"
+#include "Summarization/EntryMerger.hpp"
 #include "Summarization/iSaxWord.hpp"
 #include "Summarization/Paa.hpp"
-#include "Util/typedefs.hpp"
-#include "Util/Logging/IndexLogger.hpp"
 
 template <typename T>
 struct IndexTraits;
@@ -197,12 +199,14 @@ class IIndex {
      * @tparam The type of entry to insert into the index
      * @param dataset_path Path to the dataset
      * @param generator Generator to produce the entries from the dataset
+     * @param merger Merger to merge Envelope entries if applicable, nullptr otherwise
      * @param inserter_type The type of inserter to use
      * @param num_channels Number of channels in the dataset
      * @param series_len Length of the series
      * @param adapt Whether to adapt the index properties to the dataset
      */
-    void construct(const str &dataset_path, uptr<IEntryGenerator<T>> generator, EntryInserterType inserter_type,
+    void construct(const str &dataset_path, uptr<IEntryGenerator<T>> generator,
+                   uptr<IEntryMerger<T>> merger, EntryInserterType inserter_type,
                    MtsNumChannelsT num_channels, uint series_len, bool adapt) {
         auto &logger = IndexLogger::get_instance();
 
@@ -225,17 +229,20 @@ class IIndex {
                                      static_cast<std::streamsize>(channel_size));
                 }
                 auto mts_entries = generator->get_entries(mts, U(i));
+                for (uint l = 0; l < num_length_groups; ++l) {
+                    mts_entries[l] = merger->merge_entries(std::move(mts_entries[l]));
+                }
                 OMP_PRAGMA(omp critical) {
                     for (uint l = 0; l < num_length_groups; ++l) {
-                        dataset_entry_groups[l].insert(dataset_entry_groups[l].end(), mts_entries[l].begin(),
-                                                       mts_entries[l].end());
+                        dataset_entry_groups[l].insert(dataset_entry_groups[l].end(),
+                                                       std::make_move_iterator(mts_entries[l].begin()),
+                                                       std::make_move_iterator(mts_entries[l].end()));
                     }
                 }
             }
         }
         logger.stop_timer(ISC::SUMMARIZATION_TIME_S);
 
-        // TODO: Reconsider if this is a valid approach
         logger.increment_count_col(ISC::NUM_ENTRIES, dataset_entry_groups[0].size());
 
         if (adapt) adapt_to_dataset_groups(dataset_entry_groups);
@@ -293,7 +300,8 @@ class IndexSearchMethod : public ISearchMethod<S, D, QS> {
      */
     inline bool skip_entry(const uint query_len, const uint series_len, const SubsequenceInfo &subs_info) const {
         if constexpr (std::is_same_v<FTag, PaaTag>) {
-            return subs_info.m_length != query_len;
+            // return subs_info.m_length != query_len; // TODO: check if distance matches in case of iSAX without merging
+            return subs_info.m_length < query_len;
         } else if constexpr (std::is_same_v<FTag, EnvelopeTag>) {
             return series_len - subs_info.m_start_pos < query_len;
         }

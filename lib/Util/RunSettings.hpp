@@ -7,6 +7,7 @@
 #include "Summarization/iSaxBreakpointStrategy.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
+#include "Util/SubsequenceInfo.hpp"
 #include "Util/FftArray.hpp"
 
 /** @brief Enumeration type for the command type */
@@ -120,6 +121,12 @@ class RunSettings {
 
     /** @brief Update the iSAX interval breakpoints */
     void update_breakpoints();
+
+    /**
+     * @brief Check if the iSAX breakpoints are set
+     * @return True if the breakpoints are set, false otherwise
+     */
+    bool breakpoints_set() const;
 
     /**
      * @brief Set the iSAX properties for the run

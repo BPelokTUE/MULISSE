@@ -4,6 +4,7 @@
 #include "Util/constants.hpp"
 #include "Util/typedefs.hpp"
 #include "Util/utilities.hpp"
+#include "Util/SubsequenceInfo.hpp"
 #include "Util/FftArray.hpp"
 #include "Util/Logging/QueryLogger.hpp"
 #include "Util/RunSettings.hpp"
