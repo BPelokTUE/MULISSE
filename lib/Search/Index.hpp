@@ -300,7 +300,8 @@ class IndexSearchMethod : public ISearchMethod<S, D, QS> {
      */
     inline bool skip_entry(const uint query_len, const uint series_len, const SubsequenceInfo &subs_info) const {
         if constexpr (std::is_same_v<FTag, PaaTag>) {
-            return subs_info.m_length != query_len;
+            // return subs_info.m_length != query_len; // TODO: check if distance matches in case of iSAX without merging
+            return subs_info.m_length < query_len;
         } else if constexpr (std::is_same_v<FTag, EnvelopeTag>) {
             return series_len - subs_info.m_start_pos < query_len;
         }

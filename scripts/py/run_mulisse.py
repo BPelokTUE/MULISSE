@@ -305,6 +305,9 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
                 **get_key_or_none(RK_SEGMENTATION_STRATEGY, CK_SEGMENTATION_STRATEGIES),
                 **get_key_or_none(RK_NUM_CHANNELS, CK_NUM_CHANNELS),
                 **get_key_or_none(RK_LENS_PER_GROUP, CK_LENGTH_GROUP_SIZE_RATIOS),
+                **get_key_or_none(RK_MERGER_TYPE, CK_MERGER_TYPES),
+                **get_key_or_none(RK_MERGER_NUM_BITS, CK_MERGER_NUM_BIT_NUMBERS),
+                **get_key_or_none(RK_INSERTER_TYPE, CK_INDEX_INSERTERS),
             }
             sax_settings = {
                 **common_settings,
@@ -323,8 +326,6 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
             envelope_settings = {
                 **common_settings,
                 RK_POS_PER_ENV: config.get(CK_ENVELOPE_SIZE_RATIOS, []),
-                **get_key_or_none(RK_MERGER_TYPE, CK_MERGER_TYPES),
-                **get_key_or_none(RK_MERGER_NUM_BITS, CK_MERGER_NUM_BIT_NUMBERS),
             }
             tree_envelope_settings = {
                 **envelope_settings,
@@ -364,7 +365,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
                     **{
                         RK_APPROX: config[CK_SEARCH_APPROX],
                         RK_RAW: config[CK_SEARCH_RAW],
-                        RK_MAX_LEAVES_TO_VISIT: config.get(CK_MAX_LEAVES_TO_VISIT, [0]),
+                        **get_key_or_none(RK_MAX_LEAVES_TO_VISIT, CK_MAX_LEAVES_TO_VISIT),
                     },
                 )
 
@@ -796,6 +797,8 @@ if __name__ == "__main__":
                             args += ["-M", index_setting_copy.pop(RK_MERGER_TYPE)]
                         if RK_MERGER_NUM_BITS in index_setting_copy:
                             args += ["--merger_num_bits", str(index_setting_copy.pop(RK_MERGER_NUM_BITS))]
+                        if RK_INSERTER_TYPE in index_setting_copy:
+                            args += ["-I", index_setting_copy.pop(RK_INSERTER_TYPE)]
                         pos_per_env = 1
                         if RK_POS_PER_ENV in index_setting_copy:
                             max_pos_per_env = series_len - l_min + 1

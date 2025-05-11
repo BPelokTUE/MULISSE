@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
         split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
-        distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(TOP_DOWN),
+        distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(PARALLEL),
         env_entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY);
     vec<str> csv_paths;
     Real step_sd = R(1.0), noise = R(0.1);
@@ -455,8 +455,8 @@ int main(int argc, char **argv) {
             auto env_entry_merger_type = STR_TO_ENTRY_MERGER_TYPE.at(env_entry_merger_type_str);
 
             uptr<SaxParams> merger_sax_params = nullptr;
-            if (env_entry_merger_type == SAX_BASED || env_entry_merger_type == LOWER_SAX_BASED) {
-                merger_sax_params = std::make_unique<SaxParams>(std::min(merger_num_bits, num_bits_limit),
+            if (arr_contains(MERGERS_W_SAX, env_entry_merger_type)) {
+                merger_sax_params = std::make_unique<SaxParams>(std::max(merger_num_bits, num_bits_limit),
                                                                 breakpoint_strategy_type, breakpoints_path);
             }
 

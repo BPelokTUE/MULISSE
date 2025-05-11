@@ -11,9 +11,10 @@
 #include "Util/typedefs.hpp"
 
 /** @brief Enum for IEntryInserter implementations */
-enum EntryInserterType { TOP_DOWN, ISAX_PARALLEL };
+enum EntryInserterType { TOP_DOWN, PARALLEL };
 
-DEFINE_ENUM_CONSTS_NO_EXTRA(EntryInserterType, ENTRY_INSERTER_TYPE, false);
+DEFINE_ENUM_CONSTS(EntryInserterType, ENTRY_INSERTER_TYPE, false,
+                   (umap<str, EntryInserterType>{{"isax_parallel", PARALLEL}}));
 
 /** @brief Interface for index parameters */
 struct IIndexParams {

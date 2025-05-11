@@ -331,7 +331,7 @@ void iSaxIndex<T>::insert_entries(vec<IndexEntry<T>> &entries, EntryInserterType
         case TOP_DOWN:
             inserter = std::make_unique<TopDownInserter<iSaxIndex<T>>>(this->shared_from_this());
             break;
-        case ISAX_PARALLEL:
+        case PARALLEL:
             inserter = std::make_unique<iSaxParallelInserter<T>>(this->shared_from_this());
             break;
         default:

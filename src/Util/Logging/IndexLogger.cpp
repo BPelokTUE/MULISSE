@@ -22,7 +22,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
     str lg_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "", method_type_str = "",
         entry_merger_type_str = "";
 
-    if (index_options.m_index_params) {
+    if (index_options.m_index_params && arr_contains(METHODS_W_PAA, index_options.m_index_method)) {
         auto method_type = index_options.m_index_params->get_type();
         method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(method_type);
 
@@ -30,6 +30,12 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         lg_ss_str = LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_lg_strategy_type);
         ss_str = SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_strategy_type);
         num_segments = paa_params->m_segmentation_params.m_num_segments;
+
+        auto entry_merger_type = paa_params->m_merger_params.m_entry_merger_type;
+        entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(entry_merger_type);
+        if (arr_contains(MERGERS_W_SAX, entry_merger_type)) {
+            merger_num_bits = paa_params->m_merger_params.m_merger_sax_params->m_num_bits;
+        }
 
         if (arr_contains(METHODS_W_SAX, method_type)) {
             auto *sax_index_params = dynamic_cast<SaxIndexParams *>(index_options.m_index_params.get());
@@ -54,12 +60,6 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         if (arr_contains(METHODS_W_ENVELOPE, method_type)) {
             auto *env_params = dynamic_cast<EnvelopeIndexParams *>(index_options.m_index_params.get());
             pos_per_env = env_params->m_pos_per_env;
-
-            auto entry_merger_type = env_params->m_merger_params.m_entry_merger_type;
-            entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(entry_merger_type);
-            if (arr_contains(MERGERS_W_SAX, entry_merger_type)) {
-                merger_num_bits = env_params->m_merger_params.m_merger_sax_params->m_num_bits;
-            }
         }
     }
 

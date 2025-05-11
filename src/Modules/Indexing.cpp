@@ -108,7 +108,7 @@ uptr<IEntryGenerator<Paa>> get_paa_generator(const IndexOptions &opts,
 
 uptr<IEntryGenerator<Envelope>> get_envelope_generator(
     const IndexOptions &opts, const ILengthGroupSegmentationStrategy *segmentation_strategies) {
-    auto *params = dynamic_cast<EnvelopeIndexParams *>(opts.m_index_params.get());
+    auto *params = dynamic_cast<const EnvelopeIndexParams *>(opts.m_index_params.get());
     EnvelopeParams env_params = {
         .m_l_min = opts.m_l_min,
         .m_l_max = opts.m_l_max,
@@ -125,15 +125,15 @@ uptr<IEntryGenerator<Envelope>> get_envelope_generator(
 template <typename T>
     requires DerivedFromEntryData<T>
 uptr<IEntryMerger<T>> get_entry_merger(const IndexOptions &opts) {
-    auto &params = dynamic_cast<EnvelopeIndexParams &>(*opts.m_index_params);
-    switch (params.m_merger_params.m_entry_merger_type) {
+    auto *params = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get());
+    switch (params->m_merger_params.m_entry_merger_type) {
         case DUMMY:
             return std::make_unique<DummyEntryMerger<T>>();
         case SAX_BASED:
-            return std::make_unique<SaxBasedEntryMerger<T>>(params.m_merger_params.m_merger_sax_params->m_num_bits);
+            return std::make_unique<SaxBasedEntryMerger<T>>(params->m_merger_params.m_merger_sax_params->m_num_bits);
         case LOWER_SAX_BASED:
             return std::make_unique<LowerSaxBasedEntryMerger<T>>(
-                params.m_merger_params.m_merger_sax_params->m_num_bits);
+                params->m_merger_params.m_merger_sax_params->m_num_bits);
     }
     return nullptr;
 }

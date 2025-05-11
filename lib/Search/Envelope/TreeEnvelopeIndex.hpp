@@ -63,7 +63,7 @@ class TreeEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_t
     void insert_entries(vec<IndexEntry<Envelope>> &entries, EntryInserterType inserter_type) override {
         uptr<IEntryInserter<TreeEnvelopeIndex>> inserter;
         switch (inserter_type) {
-            case ISAX_PARALLEL:  // Temporary solution to support two-stage indexes
+            case PARALLEL:  // Temporary solution to support two-stage indexes
             case TOP_DOWN:
                 inserter = std::make_unique<TopDownInserter<TreeEnvelopeIndex>>(this->shared_from_this());
                 break;
