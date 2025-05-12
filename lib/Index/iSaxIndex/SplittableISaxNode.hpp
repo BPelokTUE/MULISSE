@@ -1,11 +1,11 @@
 #ifndef INDEX_ISAXINDEX_ISAXSPLITTABLENODE_HPP
 #define INDEX_ISAXINDEX_ISAXSPLITTABLENODE_HPP
 
-#include "Util/Types/Pointers.hpp"
-#include "Index/iSaxIndex/FinalizedISaxNode.hpp"
 #include "Index/Entry/EntryData.hpp"
-#include "Index/Entry/Paa.hpp"
 #include "Index/Entry/Envelope.hpp"
+#include "Index/Entry/Paa.hpp"
+#include "Index/iSaxIndex/FinalizedISaxNode.hpp"
+#include "Util/Types/Pointers.hpp"
 
 struct FinalizationResult {
     virtual ~FinalizationResult() = default;
@@ -53,10 +53,10 @@ class SplittableISaxNode : public iSaxNode {
 
     /**
      * @brief Transform the node into a finalized node
-     * @param isax_word_settings The settings for the iSAX word
+     * @param merge Whether to merge overlapping subsequences in the same leaf
      * @return A unique pointer to the finalization result
      */
-    virtual uptr<FinalizationResult> finalize() = 0;
+    virtual uptr<FinalizationResult> finalize(bool merge) = 0;
 };
 
 /**
@@ -100,7 +100,7 @@ class iSaxSplittableInternal : public SplittableISaxNode<T> {
 
     vec<vec<T>> get_summaries() const override { return {}; }
 
-    uptr<FinalizationResult> finalize() override;
+    uptr<FinalizationResult> finalize(bool merge) override;
 
    protected:
     SaxSplitIndex m_split_ind;
@@ -139,16 +139,28 @@ class iSaxSplittableLeaf : public SplittableISaxNode<T> {
 
     vec<vec<T>> get_summaries() const override { return m_summaries; }
 
-    uptr<FinalizationResult> finalize() override;
+    uptr<FinalizationResult> finalize(bool merge) override;
 
    protected:
     vec<vec<T>> m_summaries;
     vec<SubsequenceInfo> m_subsequence_infos;
 };
 
-uptr<FinalizedISaxNode<PaaTag>> get_paa_node_finalization_result(uptr<SplittableISaxNode<Paa>> &node);
+/**
+ * @brief Get the finalization result of a Paa node
+ * @param node The node to finalize
+ * @param merge Whether to merge overlapping subsequences in the leaves of the tree
+ * @return The finalized node
+ */
+uptr<FinalizedISaxNode<PaaTag>> get_paa_node_finalization_result(uptr<SplittableISaxNode<Paa>> &node, bool merge);
 
+/**
+ * @brief Get the finalization result of an Envelope node
+ * @param node The node to finalize
+ * @param merge Whether to merge overlapping subsequences in the leaves of the tree
+ * @return The finalized node and the maximum iSAX words
+ */
 std::pair<uptr<FinalizedISaxNode<EnvelopeTag>>, vec<iSaxWord>> get_envelope_node_finalization_result(
-    uptr<SplittableISaxNode<Envelope>> &node);
+    uptr<SplittableISaxNode<Envelope>> &node, bool merge);
 
 #endif  // INDEX_ISAXINDEX_ISAXSPLITTABLENODE_HPP

@@ -1,13 +1,13 @@
 #ifndef INDEX_INDEXPARAMS_HPP
 #define INDEX_INDEXPARAMS_HPP
 
-#include "Util/Types/Numbers.hpp"
-#include "Enums/SearchMethodType.hpp"
-#include "Enums/LengthGroupSegmentationStrategyType.hpp"
-#include "Enums/SegmentationStrategyType.hpp"
-#include "Enums/SaxBreakpointStrategyType.hpp"
 #include "Enums/EntryMergerType.hpp"
+#include "Enums/LengthGroupSegmentationStrategyType.hpp"
+#include "Enums/SaxBreakpointStrategyType.hpp"
+#include "Enums/SearchMethodType.hpp"
+#include "Enums/SegmentationStrategyType.hpp"
 #include "Enums/iSaxSplitStrategyType.hpp"
+#include "Util/Types/Numbers.hpp"
 
 /** @brief Interface for index parameters */
 struct IIndexParams {
@@ -111,6 +111,8 @@ struct SaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual SaxIndexPar
 };
 
 struct iSaxTrieParams {
+    /** @brief Whether to merge entries in the leaves of the tree */
+    bool m_merge_in_leaves;
     /** @brief Only used for EntropyMaximizingStrategy: whether to select the segment with the min number of bits in
      * case of a tie */
     bool m_min_num_bits_on_tie;

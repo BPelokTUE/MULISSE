@@ -1,21 +1,22 @@
+#include "Index/iSaxIndex/SplittableISaxNode.hpp"
+
 #include <utility>
 
 #include "Index/Traits/FinalizedTraits.hpp"
 #include "Index/Traits/IndexTraits.hpp"
 #include "Index/iSaxIndex/FinalizedISaxNode.hpp"
-#include "Index/iSaxIndex/SplittableISaxNode.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 #include "Util/Types/Pointers.hpp"
 
-uptr<FinalizedISaxNode<PaaTag>> get_paa_node_finalization_result(uptr<SplittableISaxNode<Paa>> &node) {
-    auto finalization_result_ptr = node->finalize();
+uptr<FinalizedISaxNode<PaaTag>> get_paa_node_finalization_result(uptr<SplittableISaxNode<Paa>> &node, bool merge) {
+    auto finalization_result_ptr = node->finalize(merge);
     auto finalization_result = static_cast<PaaFinalizationResult *>(finalization_result_ptr.get());
     return std::move(finalization_result->m_finalized_node);
 }
 
 std::pair<uptr<FinalizedISaxNode<EnvelopeTag>>, vec<iSaxWord>> get_envelope_node_finalization_result(
-    uptr<SplittableISaxNode<Envelope>> &node) {
-    auto finalization_result_ptr = node->finalize();
+    uptr<SplittableISaxNode<Envelope>> &node, bool merge) {
+    auto finalization_result_ptr = node->finalize(merge);
     auto finalization_result = static_cast<EnvelopeFinalizationResult *>(finalization_result_ptr.get());
     auto finalized_node = std::move(finalization_result->m_finalized_node);
     auto isax_max = std::move(finalization_result->m_isax_max);
@@ -25,11 +26,11 @@ std::pair<uptr<FinalizedISaxNode<EnvelopeTag>>, vec<iSaxWord>> get_envelope_node
 // iSaxSplittableInternal<Paa>
 
 template <>
-uptr<FinalizationResult> iSaxSplittableInternal<Paa>::finalize() {
+uptr<FinalizationResult> iSaxSplittableInternal<Paa>::finalize(bool merge) {
     assert(m_left && m_right);
 
-    auto finalized_left = get_paa_node_finalization_result(m_left);
-    auto finalized_right = get_paa_node_finalization_result(m_right);
+    auto finalized_left = get_paa_node_finalization_result(m_left, merge);
+    auto finalized_right = get_paa_node_finalization_result(m_right, merge);
 
     auto args = std::make_unique<iSaxInternalNodeArgs<PaaTag>>(m_split_ind, std::move(finalized_left),
                                                                std::move(finalized_right));
@@ -39,7 +40,25 @@ uptr<FinalizationResult> iSaxSplittableInternal<Paa>::finalize() {
 }
 
 template <>
-uptr<FinalizationResult> iSaxSplittableLeaf<Paa>::finalize() {
+uptr<FinalizationResult> iSaxSplittableLeaf<Paa>::finalize(bool merge) {
+    if (merge) {
+        std::sort(m_subsequence_infos.begin(), m_subsequence_infos.end());
+        vec<SubsequenceInfo> merged_subsequence_infos;
+        uint ts_ind = 0, rightmost = 0;
+        for (auto &subs_info : m_subsequence_infos) {
+            uint subs_rightmost = subs_info.m_start_pos + subs_info.m_length - 1;
+            if (merged_subsequence_infos.empty() || subs_info.m_series_ind != ts_ind ||
+                subs_info.m_start_pos > rightmost + 1) {
+                merged_subsequence_infos.push_back(std::move(subs_info));
+                ts_ind = subs_info.m_series_ind;
+                rightmost = subs_rightmost;
+            } else if (subs_rightmost > rightmost) {
+                rightmost = subs_rightmost;
+                merged_subsequence_infos.back().m_length = rightmost - merged_subsequence_infos.back().m_start_pos + 1;
+            }
+        }
+        m_subsequence_infos = std::move(merged_subsequence_infos);
+    }
     uptr<FinalizedISaxLeaf<PaaTag>> finalized = std::make_unique<FinalizedISaxLeaf<PaaTag>>(m_subsequence_infos);
     return std::make_unique<PaaFinalizationResult>(std::move(finalized));
 }
@@ -47,11 +66,11 @@ uptr<FinalizationResult> iSaxSplittableLeaf<Paa>::finalize() {
 // iSaxSplittableInternal<Envelope>
 
 template <>
-uptr<FinalizationResult> iSaxSplittableInternal<Envelope>::finalize() {
+uptr<FinalizationResult> iSaxSplittableInternal<Envelope>::finalize(bool merge) {
     assert(m_left && m_right);
 
-    auto [finalized_left, isax_max_left] = get_envelope_node_finalization_result(m_left);
-    auto [finalized_right, isax_max_right] = get_envelope_node_finalization_result(m_right);
+    auto [finalized_left, isax_max_left] = get_envelope_node_finalization_result(m_left, merge);
+    auto [finalized_right, isax_max_right] = get_envelope_node_finalization_result(m_right, merge);
 
     bool left_empty = isax_max_left.empty(), right_empty = isax_max_right.empty();
 
@@ -82,10 +101,45 @@ uptr<FinalizationResult> iSaxSplittableInternal<Envelope>::finalize() {
 // iSaxSplittableLeaf<Envelope>
 
 template <>
-uptr<FinalizationResult> iSaxSplittableLeaf<Envelope>::finalize() {
+uptr<FinalizationResult> iSaxSplittableLeaf<Envelope>::finalize(bool merge) {
     if (m_summaries.size() > 0) {
         assert(m_summaries[0].size() > 0);
 
+        if (merge) {
+            vec<std::pair<SubsequenceInfo, vec<Envelope>>> merged_subsequences(m_subsequence_infos.size());
+            for (size_t i = 0; i < m_subsequence_infos.size(); ++i) {
+                merged_subsequences[i] = {std::move(m_subsequence_infos[i]), std::move(m_summaries[i])};
+            }
+            std::sort(merged_subsequences.begin(), merged_subsequences.end(),
+                      [](const auto &info_a, const auto &info_b) { return info_a.first < info_b.first; });
+
+            vec<SubsequenceInfo> merged_subsequence_infos;
+            vec<vec<Envelope>> merged_summaries;
+
+            uint ts_ind = 0, rightmost = 0;
+            for (auto &[subs_info, summary] : merged_subsequences) {
+                uint subs_rightmost = subs_info.m_start_pos + subs_info.m_length - 1;
+                if (merged_subsequence_infos.empty() || subs_info.m_series_ind != ts_ind ||
+                    subs_info.m_start_pos > rightmost + 1) {
+                    merged_subsequence_infos.push_back(std::move(subs_info));
+                    merged_summaries.push_back(std::move(summary));
+                    ts_ind = subs_info.m_series_ind;
+                    rightmost = subs_rightmost;
+                } else {
+                    auto &last_subs_info = merged_subsequence_infos.back();
+                    if (subs_rightmost > rightmost) {
+                        rightmost = subs_rightmost;
+                        last_subs_info.m_length = rightmost - last_subs_info.m_start_pos + 1;
+                    }
+                    auto &last_summary = merged_summaries.back();
+                    for (MtsNumChannelsT c = 0; c < summary.size(); ++c) last_summary[c].merge(summary[c]);
+                }
+            }
+            m_subsequence_infos = std::move(merged_subsequence_infos);
+            m_summaries = std::move(merged_summaries);
+        }
+
+        // Calculate the maximum iSAX symbols for each channel
         auto &breakpoint_props = RunSettings::get_instance().get_breakpoint_props();
         auto &breakpoints = breakpoint_props.m_breakpoints;
         auto alphabet_num_bits = breakpoint_props.m_breakpoint_num_bits;

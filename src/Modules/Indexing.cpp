@@ -149,7 +149,8 @@ sptr<IIndex<T>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *
                                sptr<ISegmentationStrategy> segmentation_strategy,
                                uptr<IiSaxSplitStrategy<T>> split_strategy) {
     auto *index = new iSaxIndex<T>(params->m_sax_params.m_num_bits, params->m_isax_trie_params.m_leaf_capacity,
-                                   segmentation_strategy, std::move(split_strategy));
+                                   segmentation_strategy, std::move(split_strategy),
+                                   params->m_isax_trie_params.m_merge_in_leaves);
     return sptr<IIndex<T>>(index);
 }
 

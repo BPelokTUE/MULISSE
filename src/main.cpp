@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
         distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(PARALLEL),
-        env_entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY);
+        entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY);
     vec<str> csv_paths;
     Real step_sd = R(1.0), noise = R(0.1);
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT, merger_num_bits = MAX_NUM_BITS_LIMIT;
@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
     MtsNumChannelsT num_channels, used_channels = 0;
     vec<bool> channel_mask;
     bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false, sort_query = false,
-         no_use_pq = false, adapt_index = false, prefer_first_in_em = false;
+         no_use_pq = false, adapt_index = false, merge_in_leaves = false, prefer_first_in_em = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -192,12 +192,13 @@ int main(int argc, char **argv) {
         ->add_option("-S,--segmentation_strategy", segmentation_strategy_str, "Segmentation strategy to use")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_SEGMENTATION_STRATEGY_STRS));
-    index_subcommand->add_option("--split_strategy", split_strategy_str, "Split strategy")
-        ->capture_default_str()
-        ->check(CLI::IsMember(ACCEPTED_ISAX_SPLIT_STRATEGY_STRS));
     index_subcommand->add_option("-B,--breakpoint_strategy", breakpoint_strategy_str, "Breakpoint strategy")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS));
+    index_subcommand->add_option("--split_strategy", split_strategy_str, "Split strategy")
+        ->capture_default_str()
+        ->check(CLI::IsMember(ACCEPTED_ISAX_SPLIT_STRATEGY_STRS));
+    index_subcommand->add_flag("--merge_in_leaves", merge_in_leaves, "Merge entries in the leaves of the iSAX trie.");
     index_subcommand->add_flag("--prefer_first_in_em", prefer_first_in_em,
                                "Prefer the first segment over the one with the minimum number of bits, in case of ties "
                                "in the split when using EntropyMaximizing strategy");
@@ -238,13 +239,13 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-I,--inserter_type", inserter_type_str, "Entry inserter type")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ENTRY_INSERTER_TYPE_STRS));
-    index_subcommand->add_option("-M,--merger", env_entry_merger_type_str, "Envelope entry merger type")
+    index_subcommand->add_option("-M,--merger", entry_merger_type_str, "Entry merger type")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ENTRY_MERGER_TYPE_STRS));
     index_subcommand
-        ->add_option("--merger_num_bits", merger_num_bits,
-                     "Number of bits to use for SAX-based envelope entry mergers. If not provided, takes the value of "
-                     "`--num_bits_limit`.")
+        ->add_option(
+            "--merger_num_bits", merger_num_bits,
+            "Number of bits to use for SAX-based entry mergers. If not provided, takes the value of `num_bits_limit`.")
         ->capture_default_str()
         ->check(positive_int);
     index_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
@@ -456,7 +457,7 @@ int main(int argc, char **argv) {
             auto segmentation_strategy_type = STR_TO_SEGMENTATION_STRATEGY.at(segmentation_strategy_str);
             auto breakpoint_strategy_type = STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str);
             auto split_strategy_type = STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str);
-            auto env_entry_merger_type = STR_TO_ENTRY_MERGER_TYPE.at(env_entry_merger_type_str);
+            auto env_entry_merger_type = STR_TO_ENTRY_MERGER_TYPE.at(entry_merger_type_str);
 
             uptr<SaxParams> merger_sax_params = nullptr;
             if (arr_contains(MERGERS_W_SAX, env_entry_merger_type)) {
@@ -479,6 +480,7 @@ int main(int argc, char **argv) {
                 .m_merger_sax_params = merger_sax_params.get(),
             };
             iSaxTrieParams isax_trie_params{
+                .m_merge_in_leaves = merge_in_leaves,
                 .m_min_num_bits_on_tie = !prefer_first_in_em,
                 .m_num_bits_limit = num_bits_limit,
                 .m_split_strategy_type = split_strategy_type,
