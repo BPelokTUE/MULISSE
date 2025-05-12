@@ -1,22 +1,22 @@
 #ifndef ISAX_INDEX_HPP
 #define ISAX_INDEX_HPP
 
-#include <unordered_map>
 #include <type_traits>
+#include <unordered_map>
 
-#include "Index/Index.hpp"
-#include "Index/FinalizedIndex.hpp"
-#include "Index/Entry/IndexEntry.hpp"
-#include "Index/Sax/SaxHelpers.hpp"
-#include "Index/Segmentation/SegmentationStrategy.hpp"
-#include "Index/iSaxIndex/iSaxSplitStrategy.hpp"
-#include "Index/iSaxIndex/SplittableISaxNode.hpp"
-#include "Index/iSaxIndex/FinalizedISaxNode.hpp"
-#include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
-#include "Index/Traits/IndexTraits.hpp"
 #include "Enums/EntryInserterType.hpp"
-#include "Util/Types/Pointers.hpp"
+#include "Index/Entry/IndexEntry.hpp"
+#include "Index/FinalizedIndex.hpp"
+#include "Index/Index.hpp"
+#include "Index/Sax/SaxHelpers.hpp"
+#include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
+#include "Index/Traits/IndexTraits.hpp"
+#include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
+#include "Index/iSaxIndex/FinalizedISaxNode.hpp"
+#include "Index/iSaxIndex/SplittableISaxNode.hpp"
+#include "Index/iSaxIndex/iSaxSplitStrategy.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
+#include "Util/Types/Pointers.hpp"
 
 /**
  * @brief iSAX index

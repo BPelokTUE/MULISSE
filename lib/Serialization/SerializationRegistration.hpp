@@ -10,6 +10,8 @@
 #include "Index/Entry/Envelope.hpp"
 #include "Index/Entry/Paa.hpp"
 #include "Index/EnvelopeIndex/Tree/EnvelopeNode.hpp"
+#include "Index/Segmentation/SegmentationStrategy/AdaptiveSegmentationStrategy.hpp"
+#include "Index/Segmentation/SegmentationStrategy/UniformSegmentationStrategy.hpp"
 #include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
 #include "Index/iSaxIndex/FinalizedISaxNode.hpp"
 
@@ -33,15 +35,15 @@ CEREAL_REGISTER_TYPE(iSaxEnvelopeInternalNodeArgs)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxInternalNodeArgs<PaaTag>, iSaxEnvelopeInternalNodeArgs)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(iSaxInternalNodeArgs<EnvelopeTag>, iSaxEnvelopeInternalNodeArgs)
 
-CEREAL_REGISTER_TYPE(iSaxFinalizedInternal<PaaTag>)
-CEREAL_REGISTER_TYPE(iSaxFinalizedInternal<EnvelopeTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(FinalizedISaxNode<PaaTag>, iSaxFinalizedInternal<PaaTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(FinalizedISaxNode<EnvelopeTag>, iSaxFinalizedInternal<EnvelopeTag>)
+CEREAL_REGISTER_TYPE(FinalizedISaxInternal<PaaTag>)
+CEREAL_REGISTER_TYPE(FinalizedISaxInternal<EnvelopeTag>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(FinalizedISaxNode<PaaTag>, FinalizedISaxInternal<PaaTag>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(FinalizedISaxNode<EnvelopeTag>, FinalizedISaxInternal<EnvelopeTag>)
 
-CEREAL_REGISTER_TYPE(iSaxFinalizedLeaf<PaaTag>)
-CEREAL_REGISTER_TYPE(iSaxFinalizedLeaf<EnvelopeTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(FinalizedISaxNode<PaaTag>, iSaxFinalizedLeaf<PaaTag>)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(FinalizedISaxNode<EnvelopeTag>, iSaxFinalizedLeaf<EnvelopeTag>)
+CEREAL_REGISTER_TYPE(FinalizedISaxLeaf<PaaTag>)
+CEREAL_REGISTER_TYPE(FinalizedISaxLeaf<EnvelopeTag>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(FinalizedISaxNode<PaaTag>, FinalizedISaxLeaf<PaaTag>)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(FinalizedISaxNode<EnvelopeTag>, FinalizedISaxLeaf<EnvelopeTag>)
 
 // Register envelope node types
 CEREAL_REGISTER_TYPE(EnvelopeInternal)

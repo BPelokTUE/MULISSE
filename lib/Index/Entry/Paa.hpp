@@ -2,8 +2,8 @@
 #define PAA_HPP
 
 #include "Index/EntryGenerator/EntryGenerator.hpp"
-#include "Index/Segmentation/LengthGroupSegmentationStrategy.hpp"
-#include "Index/Segmentation/SegmentationStrategy.hpp"
+#include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
+#include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
 #include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 

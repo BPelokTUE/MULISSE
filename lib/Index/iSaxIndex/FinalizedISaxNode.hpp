@@ -98,15 +98,15 @@ struct iSaxEnvelopeInternalNodeArgs : iSaxInternalNodeArgs<EnvelopeTag> {
  * */
 template <typename FTag>
     requires ValidEntryTraitsTag<FTag>
-class iSaxFinalizedInternal : public FinalizedISaxNode<FTag> {
+class FinalizedISaxInternal : public FinalizedISaxNode<FTag> {
    public:
-    iSaxFinalizedInternal() = default;
+    FinalizedISaxInternal() = default;
 
     /**
      * @brief Constructor
      * @param args Arguments for the internal node, dependent on the SAX traits
      */
-    iSaxFinalizedInternal(uptr<iSaxInternalNodeArgs<FTag>> args) : m_args(std::move(args)) {};
+    FinalizedISaxInternal(uptr<iSaxInternalNodeArgs<FTag>> args) : m_args(std::move(args)) {};
 
     virtual pair<const FinalizedISaxNode<FTag> *, const FinalizedISaxNode<FTag> *> get_children() const override {
         return {m_args->m_left.get(), m_args->m_right.get()};
@@ -139,15 +139,15 @@ class iSaxFinalizedInternal : public FinalizedISaxNode<FTag> {
  */
 template <typename T>
     requires ValidEntryTraitsTag<T>
-class iSaxFinalizedLeaf : public FinalizedISaxNode<T> {
+class FinalizedISaxLeaf : public FinalizedISaxNode<T> {
    public:
-    iSaxFinalizedLeaf() = default;
+    FinalizedISaxLeaf() = default;
 
     /**
      * @brief Construct a new leaf node with the provided file positions and summaries
      * @param subsequence_positions The position and length of the subsequences in the dataset
      */
-    iSaxFinalizedLeaf(vec<SubsequenceInfo> subsequence_positions) : m_subsequence_infos(subsequence_positions) {}
+    FinalizedISaxLeaf(vec<SubsequenceInfo> subsequence_positions) : m_subsequence_infos(subsequence_positions) {}
 
     virtual pair<const FinalizedISaxNode<T> *, const FinalizedISaxNode<T> *> get_children() const override {
         return {nullptr, nullptr};

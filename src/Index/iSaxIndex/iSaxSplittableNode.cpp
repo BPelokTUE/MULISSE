@@ -33,14 +33,14 @@ uptr<FinalizationResult> iSaxSplittableInternal<Paa>::finalize() {
 
     auto args = std::make_unique<iSaxInternalNodeArgs<PaaTag>>(m_split_ind, std::move(finalized_left),
                                                                std::move(finalized_right));
-    auto finalized = std::make_unique<iSaxFinalizedInternal<PaaTag>>(std::move(args));
+    auto finalized = std::make_unique<FinalizedISaxInternal<PaaTag>>(std::move(args));
 
     return std::make_unique<PaaFinalizationResult>(std::move(finalized));
 }
 
 template <>
 uptr<FinalizationResult> iSaxSplittableLeaf<Paa>::finalize() {
-    uptr<iSaxFinalizedLeaf<PaaTag>> finalized = std::make_unique<iSaxFinalizedLeaf<PaaTag>>(m_subsequence_infos);
+    uptr<FinalizedISaxLeaf<PaaTag>> finalized = std::make_unique<FinalizedISaxLeaf<PaaTag>>(m_subsequence_infos);
     return std::make_unique<PaaFinalizationResult>(std::move(finalized));
 }
 
@@ -61,7 +61,7 @@ uptr<FinalizationResult> iSaxSplittableInternal<Envelope>::finalize() {
 
     auto args = std::make_unique<iSaxEnvelopeInternalNodeArgs>(m_split_ind, max_symbol_left, max_symbol_right,
                                                                std::move(finalized_left), std::move(finalized_right));
-    auto finalized = std::make_unique<iSaxFinalizedInternal<EnvelopeTag>>(std::move(args));
+    auto finalized = std::make_unique<FinalizedISaxInternal<EnvelopeTag>>(std::move(args));
 
     // delete children
     m_left.reset();
@@ -100,12 +100,12 @@ uptr<FinalizationResult> iSaxSplittableLeaf<Envelope>::finalize() {
                 isax_max[c].select_max_symbols(iSaxWord(m_summaries[i][c].m_upper, breakpoints, alphabet_num_bits));
             }
         }
-        uptr<iSaxFinalizedLeaf<EnvelopeTag>> finalized =
-            std::make_unique<iSaxFinalizedLeaf<EnvelopeTag>>(m_subsequence_infos);
+        uptr<FinalizedISaxLeaf<EnvelopeTag>> finalized =
+            std::make_unique<FinalizedISaxLeaf<EnvelopeTag>>(m_subsequence_infos);
         return std::make_unique<EnvelopeFinalizationResult>(std::move(finalized), std::move(isax_max));
     } else {
-        uptr<iSaxFinalizedLeaf<EnvelopeTag>> finalized =
-            std::make_unique<iSaxFinalizedLeaf<EnvelopeTag>>(m_subsequence_infos);
+        uptr<FinalizedISaxLeaf<EnvelopeTag>> finalized =
+            std::make_unique<FinalizedISaxLeaf<EnvelopeTag>>(m_subsequence_infos);
         return std::make_unique<EnvelopeFinalizationResult>(std::move(finalized), vec<iSaxWord>{});
     }
 }

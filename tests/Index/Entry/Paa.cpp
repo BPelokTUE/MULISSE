@@ -6,7 +6,7 @@
 #include <iostream>
 
 #include "Index/EntryGenerator/PaaEntryGenerator.hpp"
-#include "Index/Segmentation/SegmentationStrategy.hpp"
+#include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
 #include "Util/Constants/Math.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/RunSettings/RunSettings.hpp"

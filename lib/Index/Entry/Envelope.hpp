@@ -3,7 +3,7 @@
 
 #include "Index/Entry/IndexEntry.hpp"
 #include "Index/EntryGenerator/EntryGenerator.hpp"
-#include "Index/Segmentation/LengthGroupSegmentationStrategy.hpp"
+#include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
 #include "Util/Constants/Math.hpp"
 
 /**

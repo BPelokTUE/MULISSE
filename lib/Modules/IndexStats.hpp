@@ -7,7 +7,7 @@
 #include "Enums/SearchMethodType.hpp"
 #include "Index/FinalizedIndex.hpp"
 #include "Index/LengthGroupingIndex/LengthGroupingIndex.hpp"
-#include "Index/Segmentation/LengthGroupSegmentationStrategy.hpp"
+#include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
 #include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
 #include "Util/Logging/IndexStatsLogger.hpp"
 #include "Util/RunSettings/RunSettings.hpp"

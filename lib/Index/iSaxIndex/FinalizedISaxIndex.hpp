@@ -5,7 +5,7 @@
 #include <queue>
 
 #include "Index/FinalizedIndex.hpp"
-#include "Index/Segmentation/SegmentationStrategy.hpp"
+#include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
 #include "Index/Traits/FinalizedTraits.hpp"
 #include "Index/iSaxIndex/FinalizedISaxNode.hpp"
 #include "Serialization/Macros.hpp"
