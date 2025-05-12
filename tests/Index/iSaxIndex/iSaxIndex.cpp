@@ -45,9 +45,9 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
     RunSettings::set_instance(sptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
 #endif
 
-    std::unique_ptr<iSaxEnvelopeIndex> index;
-    index = std::make_unique<iSaxEnvelopeIndex>(1, 2, sptr<ISegmentationStrategy>(&segmentation_strategy_mock.get()),
-                                                uptr<IiSaxSplitStrategy<Envelope>>(&split_strategy_mock.get()), 11);
+    std::unique_ptr<iSaxIndex<Envelope>> index;
+    index = std::make_unique<iSaxIndex<Envelope>>(1, 2, sptr<ISegmentationStrategy>(&segmentation_strategy_mock.get()),
+                                                  uptr<IiSaxSplitStrategy<Envelope>>(&split_strategy_mock.get()));
 
     SUBCASE("inserting first envelope works") {
         IndexEntry<Envelope> entry = {{13, 1, 7}, {{{R(-1.1), R(0.1), R(-3.9)}, {R(1.3), R(2.3), R(0.8)}}}};
@@ -305,9 +305,9 @@ TEST_CASE("iSaxIndex insert MTS envelope works") {
     RunSettings::set_instance(sptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
 #endif
 
-    std::unique_ptr<iSaxEnvelopeIndex> index;
-    index = std::make_unique<iSaxEnvelopeIndex>(1, 2, sptr<ISegmentationStrategy>(&segmentation_strategy_mock.get()),
-                                                uptr<IiSaxSplitStrategy<Envelope>>(&split_strategy_mock.get()), 11);
+    std::unique_ptr<iSaxIndex<Envelope>> index;
+    index = std::make_unique<iSaxIndex<Envelope>>(1, 2, sptr<ISegmentationStrategy>(&segmentation_strategy_mock.get()),
+                                                  uptr<IiSaxSplitStrategy<Envelope>>(&split_strategy_mock.get()));
 
     SUBCASE("inserting one envelope works") {
         IndexEntry<Envelope> entry = {{64, 37, 10},

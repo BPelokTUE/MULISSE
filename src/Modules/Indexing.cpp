@@ -147,26 +147,10 @@ template <typename T>
     requires DerivedFromEntryData<T>
 sptr<IIndex<T>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params,
                                sptr<ISegmentationStrategy> segmentation_strategy,
-                               uptr<IiSaxSplitStrategy<T>> split_strategy);
-
-template <>
-sptr<IIndex<Paa>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params,
-                                 sptr<ISegmentationStrategy> segmentation_strategy,
-                                 uptr<IiSaxSplitStrategy<Paa>> split_strategy) {
-    auto *index = new iSaxPaaIndex(params->m_sax_params.m_num_bits, params->m_isax_trie_params.m_leaf_capacity,
+                               uptr<IiSaxSplitStrategy<T>> split_strategy) {
+    auto *index = new iSaxIndex<T>(params->m_sax_params.m_num_bits, params->m_isax_trie_params.m_leaf_capacity,
                                    segmentation_strategy, std::move(split_strategy));
-    return sptr<IIndex<Paa>>(index);
-}
-
-template <>
-sptr<IIndex<Envelope>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params,
-                                      sptr<ISegmentationStrategy> segmentation_strategy,
-                                      uptr<IiSaxSplitStrategy<Envelope>> split_strategy) {
-    auto *env_index_params = dynamic_cast<iSaxEnvelopeIndexParams *>(opts.m_index_params.get());
-    auto *index = new iSaxEnvelopeIndex(env_index_params->m_sax_params.m_num_bits,
-                                        env_index_params->m_isax_trie_params.m_leaf_capacity, segmentation_strategy,
-                                        std::move(split_strategy), env_index_params->m_pos_per_env);
-    return sptr<IIndex<Envelope>>(index);
+    return sptr<IIndex<T>>(index);
 }
 
 // TODO: rewrite, pass breakpoints and number of bits to relevant classes directly
