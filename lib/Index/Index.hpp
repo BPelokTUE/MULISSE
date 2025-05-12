@@ -131,6 +131,7 @@ class IIndex {
         }
         logger.stop_timer(ISC::SUMMARIZATION_TIME_S);
 
+        // TODO: adapt for length groups
         logger.increment_count_col(ISC::NUM_ENTRIES, dataset_entry_groups[0].size());
 
         if (adapt) adapt_to_dataset_groups(dataset_entry_groups);

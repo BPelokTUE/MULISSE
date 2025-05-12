@@ -44,6 +44,7 @@ CK_CALCULATE_QUERY_STATS = "calculate_query_stats"
 CK_CALCULATE_INDEX_STATS = "calculate_index_stats"
 CK_ADAPT_INDEX = "adapt_index"
 CK_ISAX_BREAKPOINTS_FILE = "isax_breakpoints_file"
+CK_ISAX_MERGE_IN_LEAVES = "isax_merge_in_leaves"
 CK_ISAX_PREFER_FIRST_IN_EM = "isax_prefer_first_in_em"
 CK_ISAX_SPLIT_STRATEGIES = "isax_split_strategies"
 CK_ISAX_LEAF_CAP_RATIOS = "isax_leaf_cap_ratios"
@@ -81,6 +82,7 @@ RK_QUERY_SET_SEED = "query_set_seed"
 RK_FIRST_LAYER_BITS = "first_layer_bits"
 RK_ADAPT = "adapt"
 RK_ISAX_BREAKPOINTS_FILE = "isax_breakpoints_file"
+RK_ISAX_MERGE_IN_LEAVES = "isax_merge_in_leaves"
 RK_ISAX_PREFER_FIRST_IN_EM = "isax_prefer_first_in_em"
 RK_SPLIT_STRATEGY = "split_strategy"
 RK_LEAF_CAPACITY = "leaf_capacity"
@@ -321,6 +323,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
                 RK_LEAF_CAPACITY: config.get(CK_ISAX_LEAF_CAP_RATIOS, []),
                 **get_key_or_none(RK_SPLIT_STRATEGY, CK_ISAX_SPLIT_STRATEGIES),
                 **get_key_or_none(RK_ISAX_NUM_BITS_LIMIT, CK_ISAX_NUM_BITS_LIMITS),
+                **get_key_or_none(RK_ISAX_MERGE_IN_LEAVES, CK_ISAX_MERGE_IN_LEAVES),
                 **get_key_or_none(RK_ISAX_PREFER_FIRST_IN_EM, CK_ISAX_PREFER_FIRST_IN_EM),
             }
             envelope_settings = {
@@ -538,7 +541,7 @@ def run_command_with_logging(
         except subprocess.TimeoutExpired:
             f.write(f"Command timed out after {timeout} seconds\n")
             return False
-        f.write(f"\nTook: {time() - start_time:.2f} seconds\n")
+        f.write(f"Took: {time() - start_time:.2f} seconds\n\n")
         return True
 
 
@@ -819,6 +822,8 @@ if __name__ == "__main__":
                             breakpoints_file = index_setting_copy.pop(RK_ISAX_BREAKPOINTS_FILE, "")
                             if len(breakpoints_file) > 0:
                                 args += ["--breakpoints", breakpoints_file]
+                        if index_setting_copy.pop(RK_ISAX_MERGE_IN_LEAVES, False):
+                            args += ["--merge_in_leaves"]
                         if index_setting_copy.pop(RK_ISAX_PREFER_FIRST_IN_EM, False):
                             args += ["--prefer_first_in_em"]
                         if RK_ISAX_NUM_BITS_LIMIT in index_setting_copy:

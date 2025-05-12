@@ -27,6 +27,7 @@ enum class IndexSettingsColumn {
     NUM_SEGMENTS,              // The number of segments per channel used
     BREAKPOINT_STRATEGY,       // Strategy for getting the breakpoints of the symbol intervals for iSAX indexes
     SPLIT_STRATEGY,            // Strategy for choosing the index to split on for iSAX indexes
+    MERGE_IN_LEAVES,           // Whether to merge the entries int the leaves of iSAX indexes
     MIN_NUM_BITS_ON_TIE,       // Whether to choose the segment with the minimum number of bits when tied for
                                // EntropyMaximizing split strategy for iSAX indexes
     FIRST_LAYER_NUM_BITS,      // Number of bits per segment used in the first layer for iSAX indexes

@@ -19,8 +19,8 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
     uint num_segments = 0, pos_per_env = 0;
     SaxNumBitsT first_layer_num_bits = 0, num_bits_limit = 0, merger_num_bits = 0;
     size_t leaf_capacity = 0;
-    str lg_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "", method_type_str = "",
-        entry_merger_type_str = "";
+    str lg_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "", merge_in_leaves_str = "",
+        method_type_str = "", entry_merger_type_str = "";
 
     if (index_options.m_index_params && arr_contains(METHODS_W_PAA, index_options.m_index_method)) {
         auto method_type = index_options.m_index_params->get_type();
@@ -49,6 +49,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
                 auto split_strategy = isax_index_params->m_isax_trie_params.m_split_strategy_type;
                 sps_str = ISAX_SPLIT_STRATEGY_TO_STR.at(split_strategy);
 
+                merge_in_leaves_str = to_string(isax_index_params->m_isax_trie_params.m_merge_in_leaves);
                 if (split_strategy == ENTROPY_MAXIMIZING)
                     min_num_bits_on_tie_str = to_string(isax_index_params->m_isax_trie_params.m_min_num_bits_on_tie);
                 num_bits_limit = isax_index_params->m_isax_trie_params.m_num_bits_limit;
@@ -83,6 +84,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         {ISC::SEGMENTATION_STRATEGY, ss_str},
         {ISC::BREAKPOINT_STRATEGY, brs_str},
         {ISC::SPLIT_STRATEGY, sps_str},
+        {ISC::MERGE_IN_LEAVES, merge_in_leaves_str},
         {ISC::MIN_NUM_BITS_ON_TIE, min_num_bits_on_tie_str},
         {ISC::NUM_BITS_LIMIT, format_num_param(num_bits_limit)},
         {ISC::ADAPT_TO_DATASET, to_string(index_options.m_adapt)},

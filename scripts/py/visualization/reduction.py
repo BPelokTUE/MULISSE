@@ -91,6 +91,9 @@ class ExperimentResults(BaseModel):
         runs_header = pd.read_csv(os.path.join(logs_dir, CSV_FILES[ERD.RUNS_COLS]), nrows=0)
         if str(QC.NUM_ENTRIES_EXAMINED) in runs_header.columns:
             extra_cols[ERD.RUNS_COLS] += [str(QC.NUM_ENTRIES_EXAMINED), str(QC.QUERY_LENGTH)]
+            indexes_header = pd.read_csv(os.path.join(logs_dir, CSV_FILES[ERD.INDEXES_COLS]), nrows=0)
+            if str(ISC.NUM_ENTRIES) in indexes_header.columns:
+                extra_cols[ERD.INDEXES_COLS] += [str(ISC.NUM_ENTRIES)]
         else:  # Handle case for backward compatibility
             extra_cols[ERD.INDEXES_COLS] += [str(ISC.L_MIN), str(ISC.L_MAX)]
             extra_cols[ERD.RUNS_COLS] += [str(QC.NUM_TS_EXAMINED)]
@@ -101,26 +104,30 @@ class ExperimentResults(BaseModel):
         dsc_series_length = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.SERIES_LENGTH))
         ssc_search_method = get_merged_col_name(ERD.METHODS_COLS, str(SSC.SEARCH_METHOD))
         isc_pos_per_env = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.POS_PER_ENV))
+        isc_num_entries = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.NUM_ENTRIES))
 
         if str(QC.NUM_ENTRIES_EXAMINED) in self.runs_df.columns:
-            qc_query_length = get_merged_col_name(ERD.RUNS_COLS, str(QC.QUERY_LENGTH))
-            merged_df["num_relevant_entries"] = merged_df[dsc_num_series] * np.where(
-                merged_df[ssc_search_method].str.contains("env"),
-                (merged_df[dsc_series_length] - merged_df[qc_query_length] + merged_df[isc_pos_per_env])
-                // merged_df[isc_pos_per_env],
-                np.where(
-                    merged_df[ssc_search_method].str.contains("isax"),
-                    merged_df[dsc_series_length] - merged_df[qc_query_length] + 1,
-                    1,
-                ),
-            )
+            if str(ISC.NUM_ENTRIES) not in self.indexes_df.columns:  # Handle case for backward compatibility
+                qc_query_length = get_merged_col_name(ERD.RUNS_COLS, str(QC.QUERY_LENGTH))
+                merged_df["num_relevant_entries"] = merged_df[dsc_num_series] * np.where(
+                    merged_df[ssc_search_method].str.contains("env"),
+                    (merged_df[dsc_series_length] - merged_df[qc_query_length] + merged_df[isc_pos_per_env])
+                    // merged_df[isc_pos_per_env],
+                    np.where(
+                        merged_df[ssc_search_method].str.contains("isax"),
+                        merged_df[dsc_series_length] - merged_df[qc_query_length] + 1,
+                        1,
+                    ),
+                )
+            else:
+                merged_df["num_relevant_entries"] = merged_df[isc_num_entries]
+
             qc_num_entries_examined = get_merged_col_name(ERD.RUNS_COLS, str(QC.NUM_ENTRIES_EXAMINED))
             qc_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.ID))
 
             merged_df[str(QC.PRUNING_RATIO)] = np.clip(
                 1.0 - merged_df[qc_num_entries_examined] / merged_df["num_relevant_entries"], 0.0, 1.0
             )
-
         else:  # Handle case for backward compatibility
             isc_l_min = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MIN))
             isc_l_max = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MAX))

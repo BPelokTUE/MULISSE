@@ -38,6 +38,7 @@ class IndexSettingsColumn(Enum):
     NUM_SEGMENTS = auto()
     BREAKPOINT_STRATEGY = auto()
     SPLIT_STRATEGY = auto()
+    MERGE_IN_LEAVES = auto()
     MIN_NUM_BITS_ON_TIE = auto()
     FIRST_LAYER_NUM_BITS = auto()
     LEAF_CAPACITY = auto()

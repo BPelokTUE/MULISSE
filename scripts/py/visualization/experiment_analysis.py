@@ -320,7 +320,7 @@ experiment_num_channels_and_dataset(TargetArgs.PRUNING_RATIO)
 def experiment_envelope_parametrization(
     logs_dir: str = "EXPERIMENT_LOGS/envelope_size/LOGS_envelope_size_3",
     method_name_re: str = r".*",
-    bar_width_inches: float = 0.8,
+    bar_width_inches: float = 0.4,
     num_query_intervals: int = 1,
     target_args: TargetArgs = TargetArgs.QUERY_TIME,
 ):
@@ -636,28 +636,31 @@ def experiment_segmentation_strategy(target_args: TargetArgs):
         # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_3_num_segments_univariate"],
         # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_3_num_segments_univariate_long"],
         #
-        logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_multivariate"],
+        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_multivariate"],
+        #
+        logs_dirs=["LOGS"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
-            ERD.INDEXES_COLS: [ISC.ENTRY_MERGER_TYPE, ISC.MERGER_NUM_BITS, ISC.POS_PER_ENV, ISC.NUM_SEGMENTS],
+            ERD.INDEXES_COLS: [ISC.ENTRY_MERGER_TYPE, ISC.MERGER_NUM_BITS, ISC.MERGE_IN_LEAVES],
         },
         separate_plots_dict={
             (DSC.DATASET_FILE, DSC.NUM_CHANNELS): [],
             (QSC.L_MIN, QSC.L_MAX): [],
             # (ISC.SEGMENTATION_STRATEGY, ISC.LG_SEGMENTATION_STRATEGY): [],
         },
-        regex_dict={SSC.METHOD_NAME: r"envelope", ISC.NUM_SEGMENTS: r"4", ISC.POS_PER_ENV: r"7"},
+        # regex_dict={SSC.METHOD_NAME: r"envelope", ISC.NUM_SEGMENTS: r"4", ISC.POS_PER_ENV: r"7"},
         num_query_intervals=1,
         merge_csv_datasets=False,
-        bar_plot_color_attr=None,
+        y_scale="linear",
+        # bar_plot_color_attr=None,
         # line_plot_x_attr=ISC.NUM_SEGMENTS,
         # line_plot_included_cols={DSC.DATASET_FILE},
         # x_scale="log",
-        heat_map_x_attr=ISC.POS_PER_ENV,
-        heat_map_y_attr=ISC.L_PER_GROUP,
-        heat_map_included_cols={ISC.NUM_SEGMENTS},
+        # heat_map_x_attr=ISC.POS_PER_ENV,
+        # heat_map_y_attr=ISC.L_PER_GROUP,
+        # heat_map_included_cols={ISC.NUM_SEGMENTS},
         **target_args.value,
     )
 

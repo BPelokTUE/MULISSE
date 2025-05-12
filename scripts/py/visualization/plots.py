@@ -505,6 +505,9 @@ def get_x_label(
             case ISC.ENTRY_MERGER_TYPE:
                 if isinstance(val, str) and len(val) > 0:
                     label_parts.append(f"EMT={abbreviate(val)}")
+            case ISC.MERGE_IN_LEAVES:
+                if val == 1:
+                    label_parts.append("Merge leaves")
             case DSC.DATASET_FILE:
                 label_parts.append(val)
             case DSC.NUM_SERIES:
