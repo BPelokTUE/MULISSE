@@ -3,7 +3,6 @@
 
 #include "CLI11/CLI11.hpp"
 #include "Index/EntryMerger/EntryMerger.hpp"
-#include "Index/Segmentation/SegmentationStrategy.hpp"
 #include "Modules/CalcFfts.hpp"
 #include "Modules/CsvParsing.hpp"
 #include "Modules/IndexStats.hpp"
@@ -16,6 +15,7 @@
 #include "Search/DistanceMeasure/EuclideanDistance.hpp"
 #include "Search/DistanceMeasure/Mass.hpp"
 #include "Search/Results/ResultSet.hpp"
+#include "Serialization/SerializationRegistration.hpp"
 #include "Util/Constants/Math.hpp"
 #include "Util/Constants/Sax.hpp"
 #include "Util/HelperFuncs/Containers.hpp"
