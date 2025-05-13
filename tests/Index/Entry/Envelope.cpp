@@ -12,12 +12,12 @@
 class EnvelopeTest {
    public:
     static vec<Envelope> get_raw_envelope(const vec<Real> &ts, EnvelopeParams env_params) {
-        EnvelopeEntryGenerator generator(1, false, env_params);
+        EnvelopeEntryGenerator generator(false, env_params);
         return generator.get_raw_envelopes(ts)[0];
     }
 
     static vec<Envelope> get_normalized_envelope(const vec<Real> &ts, EnvelopeParams env_params) {
-        EnvelopeEntryGenerator generator(1, true, env_params);
+        EnvelopeEntryGenerator generator(true, env_params);
         return generator.get_normalized_envelopes(ts)[0];
     }
 };

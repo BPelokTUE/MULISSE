@@ -4,24 +4,21 @@
 #include "Index/Entry/Envelope.hpp"
 #include "Index/EntryGenerator/EntryGenerator.hpp"
 
-/** @brief Envelope generator for iSAX (ULISSE) envelopes */
+/** @brief Envelope generator for MULISSE envelopes */
 class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
    public:
     /**
      * @brief Construct a new EnvelopeEntryGenerator object
-     * @param num_channels Number of channels in each series
      * @param normalized Whether to normalize the subsequences
      * @param env_params Parameters for the ULISSE envelope computation
      * @param num_length_groups Number of length groups
      */
-    EnvelopeEntryGenerator(MtsNumChannelsT num_channels, bool normalized, const EnvelopeParams &env_params,
-                           uint num_length_groups = 1);
+    EnvelopeEntryGenerator(bool normalized, const EnvelopeParams &env_params, uint num_length_groups = 1);
 
     vec<vec<IndexEntry<Envelope>>> get_entries(const vec<vec<Real>> &mts, uint series_ind) override;
 
    private:
     bool m_normalized;
-    MtsNumChannelsT m_num_channels;
     uint m_num_len_groups;
     EnvelopeParams m_env_params;
 

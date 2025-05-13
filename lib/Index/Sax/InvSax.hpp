@@ -35,7 +35,7 @@ class InvSax {
             vec<SaxWord> sax_words;
             sax_words.reserve(entry_data.size());
             for (auto& entry_channel : entry_data)
-                sax_words.emplace_back(static_cast<Paa>(entry_channel).m_paa_values, segment_num_bits, breakpoints);
+                sax_words.emplace_back(static_cast<Paa>(entry_channel).m_paa_values, breakpoints, segment_num_bits);
 
             for (int bit = static_cast<int>(segment_num_bits) - 1; bit >= 0; --bit) {
                 for (SaxSegIndT s = 0; s < num_segments; ++s) {
@@ -49,8 +49,8 @@ class InvSax {
             sax_lowers.reserve(entry_data.size());
             sax_uppers.reserve(entry_data.size());
             for (auto& entry_channel : entry_data) {
-                sax_lowers.emplace_back(static_cast<Envelope>(entry_channel).m_lower, segment_num_bits, breakpoints);
-                sax_uppers.emplace_back(static_cast<Envelope>(entry_channel).m_upper, segment_num_bits, breakpoints);
+                sax_lowers.emplace_back(static_cast<Envelope>(entry_channel).m_lower, breakpoints, segment_num_bits);
+                sax_uppers.emplace_back(static_cast<Envelope>(entry_channel).m_upper, breakpoints, segment_num_bits);
             }
 
             for (int bit = static_cast<int>(segment_num_bits) - 1; bit >= 0; --bit) {

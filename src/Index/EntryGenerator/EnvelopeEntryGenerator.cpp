@@ -4,18 +4,14 @@
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
-EnvelopeEntryGenerator::EnvelopeEntryGenerator(MtsNumChannelsT num_channels, bool normalized,
-                                               const EnvelopeParams &uli_params, uint num_len_groups)
-    : m_num_channels(num_channels),
-      m_normalized(normalized),
-      m_env_params(uli_params),
-      m_num_len_groups(num_len_groups) {}
+EnvelopeEntryGenerator::EnvelopeEntryGenerator(bool normalized, const EnvelopeParams &uli_params, uint num_len_groups)
+    : m_normalized(normalized), m_env_params(uli_params), m_num_len_groups(num_len_groups) {}
 
 vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec<Real>> &mts, uint series_ind) {
     uint series_len = U(mts[0].size());
     vec<vec<IndexEntry<Envelope>>> entries(m_num_len_groups);
 
-    for (MtsNumChannelsT c = 0; c < m_num_channels; ++c) {
+    for (MtsNumChannelsT c = 0; c < mts.size(); ++c) {
         auto channel_envs_groups = m_normalized ? get_normalized_envelopes(mts[c]) : get_raw_envelopes(mts[c]);
         for (uint l = 0; l < m_num_len_groups; ++l) {
             auto &channel_envs = channel_envs_groups[l];
@@ -26,7 +22,7 @@ vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec
                 if (c == 0) {
                     entries[l].resize(channel_envs.size());
                     entries[l][i].m_subs_info = {series_ind, start_pos, num_start_pos};
-                    entries[l][i].m_mts_summary.resize(m_num_channels);
+                    entries[l][i].m_mts_summary.resize(mts.size());
                 }
                 entries[l][i].m_mts_summary[c] = std::move(channel_envs[i]);
             }
@@ -95,10 +91,10 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_normalized_envelopes(const vec<Re
         uint start_min = U(std::max(0, static_cast<int>(last_ind + 1 - l_max)));
         int start_max = static_cast<int>(last_ind + 1 - l_min);
 
-        for (uint start = start_min; static_cast<int>(start) <= start_max; ++start) {
-            uint subs_len = last_ind - start + 1;
-            auto [mu, sigma] = calculate_mu_and_sigma(sum_accs[last_ind + 1] - sum_accs[start],
-                                                      sq_sum_accs[last_ind + 1] - sq_sum_accs[start], subs_len);
+        for (uint first_ind = start_min; static_cast<int>(first_ind) <= start_max; ++first_ind) {
+            uint subs_len = last_ind - first_ind + 1;
+            auto [mu, sigma] = calculate_mu_and_sigma(sum_accs[last_ind + 1] - sum_accs[first_ind],
+                                                      sq_sum_accs[last_ind + 1] - sq_sum_accs[first_ind], subs_len);
 
             uint segment_len_sum = 0;
             uint length_group = RS.get_length_group(subs_len);
@@ -107,12 +103,13 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_normalized_envelopes(const vec<Re
             SaxSegIndT num_segments = segmentation_strategy->get_num_segments(subs_len);
             for (SaxSegIndT seg_ind = 0; seg_ind < num_segments; ++seg_ind) {
                 uint segment_len = segmentation_strategy->get_segment_len(seg_ind);
-                Real paa_val = (sum_accs[start + segment_len_sum + segment_len] - sum_accs[start + segment_len_sum]) /
-                               R(segment_len);
+                Real paa_val =
+                    (sum_accs[first_ind + segment_len_sum + segment_len] - sum_accs[first_ind + segment_len_sum]) /
+                    R(segment_len);
                 segment_len_sum += segment_len;
                 paa_val = (paa_val - mu) / sigma;
 
-                auto &envelope = envelope_groups[length_group][start / pos_per_env];
+                auto &envelope = envelope_groups[length_group][first_ind / pos_per_env];
                 envelope.m_lower[seg_ind] = std::min(envelope.m_lower[seg_ind], paa_val);
                 envelope.m_upper[seg_ind] = std::max(envelope.m_upper[seg_ind], paa_val);
             }

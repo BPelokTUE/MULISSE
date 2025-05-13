@@ -143,7 +143,7 @@ TEST_CASE("iSAX leaf finalization works with PAA") {
 
     SUBCASE("Finalization without merge") {
         auto finalization_result_ptr = leaf.finalize(false);
-        auto finalization_result = static_cast<EnvelopeFinalizationResult *>(finalization_result_ptr.get());
+        auto finalization_result = static_cast<PaaFinalizationResult *>(finalization_result_ptr.get());
         auto finalized = std::move(finalization_result->m_finalized_node);
 
         REQUIRE(finalized->is_leaf());
@@ -152,7 +152,7 @@ TEST_CASE("iSAX leaf finalization works with PAA") {
 
     SUBCASE("Finalization with merge") {
         auto finalization_result_ptr = leaf.finalize(true);
-        auto finalization_result = static_cast<EnvelopeFinalizationResult *>(finalization_result_ptr.get());
+        auto finalization_result = static_cast<PaaFinalizationResult *>(finalization_result_ptr.get());
         auto finalized = std::move(finalization_result->m_finalized_node);
 
         vec<SubsequenceInfo> merged_subs_infos = {{2, 51, 99}, {3, 26, 21}};
@@ -192,7 +192,7 @@ TEST_CASE("iSAX internal finalization works with Envelope") {
 
     SUBCASE("Finalization without merge") {
         auto finalization_result_ptr = internal.finalize(false);
-        auto finalization_result = static_cast<EnvelopeFinalizationResult *>(finalization_result_ptr.get());
+        auto finalization_result = static_cast<PaaFinalizationResult *>(finalization_result_ptr.get());
         auto finalized = std::move(finalization_result->m_finalized_node);
 
         REQUIRE(finalized->get_split_ind() == split_ind);
@@ -201,7 +201,7 @@ TEST_CASE("iSAX internal finalization works with Envelope") {
 
     SUBCASE("Finalization with merge") {
         auto finalization_result_ptr = internal.finalize(true);
-        auto finalization_result = static_cast<EnvelopeFinalizationResult *>(finalization_result_ptr.get());
+        auto finalization_result = static_cast<PaaFinalizationResult *>(finalization_result_ptr.get());
         auto finalized = std::move(finalization_result->m_finalized_node);
 
         REQUIRE(finalized->get_split_ind() == split_ind);

@@ -16,20 +16,23 @@
     },
     "merger_types": {
         "isax": ["sax"],
-        "isax_envelope": ["sax", "lower_sax"]
+        "isax_envelope": ["lower_sax"]
     },
     "merger_num_bit_numbers": [1],
     "isax_num_bits_limits": {
         "isax": [2, 4, 6],
         "isax_envelope": [2, 4, 6]
     },
-    "isax_merge_in_leaves": [true, false],
+    "isax_merge_in_leaves": [true],
     "isax_split_strategies": ["em"],
     "isax_breakpoint_strategies": ["equiprobable"],
     "isax_leaf_cap_ratios": [0.0128],
     "isax_start_bit_numbers": [1],
-    "num_segments": [8],
-    "envelope_size_ratios": [0.01, 0.05],
+    "num_segments": [8, 16, 24],
+    "envelope_size_ratios": {
+        "envelope": [0.05],
+        "isax_envelope": [0.01, 0.05]
+    },
     "length_group_size_ratios": [0.05],
     "distance_measures": {
         "scan": ["mass", "ed"],

@@ -6,7 +6,9 @@
 #include "Index/EntryGenerator/EntryGenerator.hpp"
 #include "Index/EntryGenerator/EnvelopeEntryGenerator.hpp"
 #include "Index/EntryGenerator/PaaEntryGenerator.hpp"
-#include "Index/EntryMerger/EntryMerger.hpp"
+#include "Index/EntryMerger/DummyEntryMerger.hpp"
+#include "Index/EntryMerger/LowerSaxBasedEntryMerger.hpp"
+#include "Index/EntryMerger/SaxBasedEntryMerger.hpp"
 #include "Index/EnvelopeIndex/Flat/FlatEnvelopeIndex.hpp"
 #include "Index/EnvelopeIndex/Tree/TreeEnvelopeIndex.hpp"
 #include "Index/Index.hpp"
@@ -108,7 +110,7 @@ uptr<IEntryGenerator<Paa>> get_paa_generator(const IndexOptions &opts,
     };
     uint num_len_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
 
-    return std::make_unique<PaaEntryGenerator>(opts.m_num_channels, paa_params, num_len_groups);
+    return std::make_unique<PaaEntryGenerator>(paa_params, num_len_groups);
 }
 
 uptr<IEntryGenerator<Envelope>> get_envelope_generator(
@@ -122,7 +124,7 @@ uptr<IEntryGenerator<Envelope>> get_envelope_generator(
     };
     uint num_len_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
 
-    return std::make_unique<EnvelopeEntryGenerator>(opts.m_num_channels, opts.m_normalized, env_params, num_len_groups);
+    return std::make_unique<EnvelopeEntryGenerator>(opts.m_normalized, env_params, num_len_groups);
 }
 
 // Mergers
@@ -137,8 +139,13 @@ uptr<IEntryMerger<T>> get_entry_merger(const IndexOptions &opts) {
         case SAX_BASED:
             return std::make_unique<SaxBasedEntryMerger<T>>(params->m_merger_params.m_merger_sax_params->m_num_bits);
         case LOWER_SAX_BASED:
-            return std::make_unique<LowerSaxBasedEntryMerger<T>>(
-                params->m_merger_params.m_merger_sax_params->m_num_bits);
+            if constexpr (std::is_same_v<T, Envelope>) {
+                return std::make_unique<LowerSaxBasedEntryMerger>(
+                    params->m_merger_params.m_merger_sax_params->m_num_bits);
+            } else {
+                throw std::runtime_error(
+                    "LowerSaxBasedEntryMerger is only available for indexes with Envelope entries");
+            }
     }
     return nullptr;
 }

@@ -22,7 +22,7 @@ class iSaxWord : public SaxWord {
      */
     inline iSaxWord(const vec<Real> &paa, const vec<Real> &breakpoints, const SaxNumBitsT alphabet_num_bits,
                     const vec<SaxNumBitsT> &num_bits)
-        : SaxWord(paa, alphabet_num_bits, breakpoints), m_num_bits(num_bits) {
+        : SaxWord(paa, breakpoints, alphabet_num_bits), m_num_bits(num_bits) {
         assert(paa.size() == m_num_bits.size());
         assert(m_alphabet_num_bits >= *std::max_element(m_num_bits.begin(), m_num_bits.end()));
     }
@@ -34,7 +34,7 @@ class iSaxWord : public SaxWord {
      * @param alphabet_num_bits The number of bits to used by the breakpoints
      */
     inline iSaxWord(const vec<Real> &paa, const vec<Real> &breakpoints, const SaxNumBitsT alphabet_num_bits)
-        : SaxWord(paa, alphabet_num_bits, breakpoints), m_num_bits(paa.size(), alphabet_num_bits) {}
+        : SaxWord(paa, breakpoints, alphabet_num_bits), m_num_bits(paa.size(), alphabet_num_bits) {}
 
     iSaxWord() = default;
 

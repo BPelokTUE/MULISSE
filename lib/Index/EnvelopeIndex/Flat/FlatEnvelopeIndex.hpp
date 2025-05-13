@@ -48,8 +48,8 @@ class FlatEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_t
             SaxSegIndT num_seg_per_channel = static_cast<SaxSegIndT>(entry.m_mts_summary[0].m_lower.size());
 
             for (MtsNumChannelsT c = 0; c < entry.m_mts_summary.size(); ++c) {
-                SaxWord sax_lower(entry.m_mts_summary[c].m_lower, m_sax_num_bits, breakpoints);
-                SaxWord sax_upper(entry.m_mts_summary[c].m_upper, m_sax_num_bits, breakpoints);
+                SaxWord sax_lower(entry.m_mts_summary[c].m_lower, breakpoints, m_sax_num_bits);
+                SaxWord sax_upper(entry.m_mts_summary[c].m_upper, breakpoints, m_sax_num_bits);
 
                 for (SaxSegIndT s = 0; s < num_seg_per_channel; ++s) {
                     entry.m_mts_summary[c].m_lower[s] = sax_lower[s] > 0 ? breakpoints[sax_lower[s] - 1] : -INF;

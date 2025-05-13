@@ -4,32 +4,40 @@
 #include <cassert>
 #include <functional>
 
+#include "Index/Entry/Paa.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 
 /** @brief Symbolic Aggregate approXimation (SAX) word */
 class SaxWord {
+    friend class SaxSymbolsFactory;
+
    public:
     virtual ~SaxWord() = default;
 
     /**
      * @brief Construct a new iSaxWord object from the PAA of a time series.
      * @param paa The Piecewise Aggregate Approximation (PAA) of a time series.
-     * @param num_bits The number of bits to use for the symbols.
      * @param breakpoints The breakpoints to use for the symbols.
+     * @param num_bits The number of bits to use for the symbols.
+     * @param alphabet_num_bits The number of bits used by the breakpoints. Defaults to 0 indicating that `num_bits ==
+     * alphabet_num_bits`.
      */
-    inline SaxWord(const vec<Real>& paa, SaxNumBitsT num_bits, const vec<Real>& breakpoints) {
+    inline SaxWord(const vec<Real>& paa, const vec<Real>& breakpoints, SaxNumBitsT num_bits,
+                   SaxNumBitsT alphabet_num_bits = 0) {
         assert(num_bits > 0);
-        assert(breakpoints.size() == (1 << num_bits) - 1);
+        alphabet_num_bits = alphabet_num_bits == 0 ? num_bits : alphabet_num_bits;
+        assert(breakpoints.size() == (1 << alphabet_num_bits) - 1);
 
         m_alphabet_num_bits = num_bits;
         uint paa_len = U(paa.size());
         m_symbols.resize(paa_len);
 
+        SaxNumBitsT shift = alphabet_num_bits - num_bits;
         for (uint i = 0; i < paa_len; ++i) {
             auto it = std::lower_bound(breakpoints.begin(), breakpoints.end(), paa[i]);
-            m_symbols[i] = static_cast<SaxSymbolT>(it - breakpoints.begin());
+            m_symbols[i] = static_cast<SaxSymbolT>((it - breakpoints.begin()) >> shift);
         }
     }
 

@@ -52,7 +52,25 @@ struct Paa : IEntryData {
      */
     Paa(const vec<Real> &paa_values);
 
+    /**
+     * @brief Construct a new Paa object
+     * @param num_segments The number of segments to use for the PAA
+     */
+    Paa(SaxSegIndT num_segments);
+
     Paa() = default;
+
+    /**
+     * @brief Index get operator
+     * @param i The index of the PAA value to access
+     */
+    inline Real operator[](size_t i) const { return m_paa_values[i]; }
+
+    /**
+     * @brief Index get reference operator
+     * @param i The index of the PAA value to access
+     */
+    inline Real &operator[](size_t i) { return m_paa_values[i]; }
 
     /**
      * @brief Equality operator

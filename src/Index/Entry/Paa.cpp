@@ -2,6 +2,8 @@
 
 Paa::Paa(const vec<Real> &paa_values) : m_paa_values(paa_values) {}
 
+Paa::Paa(SaxSegIndT num_segments) : m_paa_values(num_segments) {}
+
 bool Paa::operator==(const Paa &other) const { return m_paa_values == other.m_paa_values; }
 
 size_t Paa::size() const { return m_paa_values.size(); }

@@ -63,7 +63,7 @@ TEST_CASE("get_paa_entries_normalized works") {
 #endif
 
     PaaParams params = {l_min, l_max, &lg_segmentation_strategy_mock.get()};
-    PaaEntryGenerator generator(1, params);
+    PaaEntryGenerator generator(params);
 
     vec<vec<Real>> uts = {{3, 7, R(1.2), R(3.7), R(9.1), R(-3.5), R(-1.5), 0, R(0.8)}};
     vec<IndexEntry<Paa>> entries = generator.get_entries(uts, 0)[0];
