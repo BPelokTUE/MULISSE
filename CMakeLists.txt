@@ -138,6 +138,10 @@ if (NOT IGNORE_TESTS)
     # Add test executable
     set(TEST_NAME ${PROJECT_NAME}_tests)
     add_executable(${TEST_NAME} ${TEST_SOURCES})
+
+    # Add tests directory to include paths for test executable only
+    target_include_directories(${TEST_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/tests)
+
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
     target_compile_definitions(${TEST_NAME} PRIVATE ENABLE_TEST_CODE)
     set_up_target(${TEST_NAME})

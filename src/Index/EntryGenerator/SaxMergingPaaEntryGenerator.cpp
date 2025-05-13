@@ -19,7 +19,7 @@ vec<vec<IndexEntry<Paa>>> SaxMergingPaaEntryGenerator::get_entries(const vec<vec
         sq_sum_accs(num_channels, vec<Real>(series_len + 1, 0.0));
     for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
         auto &channel = mts[c];
-        for (uint ind = 0; ind < num_channels; ++ind) {
+        for (uint ind = 0; ind < series_len; ++ind) {
             sum_accs[c][ind + 1] = sum_accs[c][ind] + channel[ind];
             sq_sum_accs[c][ind + 1] = sq_sum_accs[c][ind] + channel[ind] * channel[ind];
         }
@@ -79,5 +79,13 @@ vec<vec<IndexEntry<Paa>>> SaxMergingPaaEntryGenerator::get_entries(const vec<vec
             }
         }
     }
+
+    // Add the remaining entries to the entry groups
+    for (uint lg_ind = 0; lg_ind < m_num_len_groups; ++lg_ind) {
+        for (auto &[symbols, entry] : symbols_to_entry[lg_ind]) {
+            entry_groups[lg_ind].push_back(std::move(entry));
+        }
+    }
+
     return entry_groups;
 }
