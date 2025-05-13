@@ -4,6 +4,8 @@
 #include "Index/EntryGenerator/EntryGenerator.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
 #include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
+#include "Util/HelperFuncs/Conversion.hpp"
+#include "Util/HelperFuncs/Math.hpp"
 #include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 
@@ -16,7 +18,20 @@
  * @param segmentation_strategy The segmentation strategy to use
  * @return The PAA of the time series
  */
-vec<Real> paa(const vec<Real> &ts, const ISegmentationStrategy *segmentation_strategy);
+inline vec<Real> paa(const vec<Real> &ts, const ISegmentationStrategy *segmentation_strategy) {
+    uint num_segments = segmentation_strategy->get_num_segments(U(ts.size()));
+    vec<Real> paa_values(num_segments);
+
+    Real sum;
+    uint ts_ind = 0;
+    for (SaxSegIndT s = 0; s < num_segments; ++s) {
+        sum = 0;
+        uint segment_len = segmentation_strategy->get_segment_len(s);
+        for (uint i = 0; i < segment_len; ++i, ++ts_ind) sum += ts[ts_ind];
+        paa_values[s] = sum / R(segment_len);
+    }
+    return paa_values;
+}
 
 struct PaaParams {
     /** @brief The minimum length of a subsequence */

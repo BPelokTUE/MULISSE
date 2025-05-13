@@ -35,8 +35,9 @@ class DistanceMeasure<S, MASS> {
                 break;
             }
         }
+        uint num_start_pos = mts_len - query_len + 1;
 
-        vec<Real> squared_dists(mts_len - query_len + 1, 0);
+        vec<Real> squared_dists(num_start_pos, 0);
         uint64_t points_examined = 0;
         for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
             if (query[c].empty()) continue;
@@ -60,7 +61,7 @@ class DistanceMeasure<S, MASS> {
             vec<MassT> dot_products = calculate_dot_products(q_channel, mts_channel, subs_info, c);
 
             if (c_normalized) {
-                for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
+                for (uint start_pos = 0; start_pos < num_start_pos; ++start_pos) {
                     MassT dot = dot_products[query_len - 1 + start_pos],
                           subs_sum = mts_sums[query_len + start_pos] - mts_sums[start_pos],
                           subs_sum_sq = mts_sum_sqs[query_len + start_pos] - mts_sum_sqs[start_pos];
@@ -72,7 +73,7 @@ class DistanceMeasure<S, MASS> {
                     squared_dists[start_pos] += std::max(R(0.0), R(2 * query_len_mt * (1 - corr)));
                 }
             } else {
-                for (uint start_pos = 0; start_pos < mts_len - query_len + 1; ++start_pos) {
+                for (uint start_pos = 0; start_pos < num_start_pos; ++start_pos) {
                     Real dot = R(dot_products[query_len - 1 + start_pos]);
                     squared_dists[start_pos] += std::max(
                         R(0.0),
@@ -93,6 +94,7 @@ class DistanceMeasure<S, MASS> {
 
         logger.increment_num_points_examined(points_examined);
         logger.increment_num_points_in_examined_entries(points_examined);
+        logger.increment_count_col(QC::NUM_SUBS_EXAMINED, num_start_pos);
 
         return updated;
     }

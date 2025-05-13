@@ -121,6 +121,7 @@ class DistanceMeasure<S, ED, QS> {
                 logger.increment_num_points_in_examined_entries(point_in_entry);
             }
         }
+        logger.increment_count_col(QC::NUM_SUBS_EXAMINED, num_start_pos);
 
         return updated;
     }

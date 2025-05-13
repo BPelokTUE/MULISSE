@@ -461,8 +461,14 @@ int main(int argc, char **argv) {
 
             uptr<SaxParams> merger_sax_params = nullptr;
             if (arr_contains(MERGERS_W_SAX, env_entry_merger_type)) {
-                merger_sax_params = std::make_unique<SaxParams>(std::max(merger_num_bits, num_bits_limit),
-                                                                breakpoint_strategy_type, breakpoints_path);
+                if (arr_contains(METHODS_W_ISAX, method_type) && merger_num_bits < num_bits_limit) {
+                    std::cout << "Warning: The number of bits for the SAX-based merger is less than the bit limit for "
+                                 "the iSAX trie. The merger will use "
+                              << U(num_bits_limit) << " bits (instead of " << U(merger_num_bits) << ").\n";
+                    merger_num_bits = num_bits_limit;
+                }
+                merger_sax_params =
+                    std::make_unique<SaxParams>(merger_num_bits, breakpoint_strategy_type, breakpoints_path);
             }
 
             SegmentationParams segmentation_params{

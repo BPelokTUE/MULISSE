@@ -120,8 +120,7 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
             }
         }
 
-        auto &RS = RunSettings::get_instance();
-        uint pos_per_env = RS.get_envelope_props().m_pos_per_env;
+        uint pos_per_env = RunSettings::get_instance().get_envelope_props().m_pos_per_env;
         return std::make_unique<FinalizedISaxIndex<FTag>>(m_segmentation_strategy, std::move(first_layer_symbols),
                                                           std::move(finalized_nodes), m_first_layer_num_bits,
                                                           m_alphabet_num_bits, *m_breakpoints, pos_per_env);

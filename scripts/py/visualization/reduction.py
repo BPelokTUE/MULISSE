@@ -82,13 +82,18 @@ class ExperimentResults(BaseModel):
         cls,
         logs_dir: str,
         extra_cols: dict[ERD, list[str]],
+        act_cols: dict[ERD, list[str]],
     ):
+        runs_header = pd.read_csv(os.path.join(logs_dir, CSV_FILES[ERD.RUNS_COLS]), nrows=0)
+        if str(QC.PRUNING_RATIO) in runs_header.columns:
+            return
+
         extra_cols[ERD.DATASETS_COLS] += [str(DSC.NUM_SERIES), str(DSC.SERIES_LENGTH)]
         extra_cols[ERD.INDEXES_COLS] += [str(ISC.POS_PER_ENV)]
         extra_cols[ERD.METHODS_COLS] += [str(SSC.SEARCH_METHOD)]
         extra_cols[ERD.RUNS_COLS] += [str(QC.ID)]
+        act_cols[ERD.RUNS_COLS].remove(str(QC.PRUNING_RATIO))
 
-        runs_header = pd.read_csv(os.path.join(logs_dir, CSV_FILES[ERD.RUNS_COLS]), nrows=0)
         if str(QC.NUM_ENTRIES_EXAMINED) in runs_header.columns:
             extra_cols[ERD.RUNS_COLS] += [str(QC.NUM_ENTRIES_EXAMINED), str(QC.QUERY_LENGTH)]
             indexes_header = pd.read_csv(os.path.join(logs_dir, CSV_FILES[ERD.INDEXES_COLS]), nrows=0)
@@ -99,6 +104,9 @@ class ExperimentResults(BaseModel):
             extra_cols[ERD.RUNS_COLS] += [str(QC.NUM_TS_EXAMINED)]
 
     def add_pruning_ratio_column(self):
+        if str(QC.PRUNING_RATIO) in self.runs_df.columns:
+            return
+
         merged_df = self.get_merged_df()
         dsc_num_series = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.NUM_SERIES))
         dsc_series_length = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.SERIES_LENGTH))
@@ -241,8 +249,7 @@ class ExperimentResults(BaseModel):
 
         # Handle pruning ratio column
         if str(QC.PRUNING_RATIO) in cols[ERD.RUNS_COLS]:
-            cls.add_extra_cols_for_pruning_ratio(logs_dir, extra_cols)
-            act_cols[ERD.RUNS_COLS].remove(str(QC.PRUNING_RATIO))
+            cls.add_extra_cols_for_pruning_ratio(logs_dir, extra_cols, act_cols)
 
         # Handle amortized prep time column
         if str(QC.AMORTIZED_PREP_TIME_S) in cols[ERD.RUNS_COLS]:

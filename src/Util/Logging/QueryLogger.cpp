@@ -114,7 +114,8 @@ str uint128_to_str(const __uint128_t &value) {
 };
 
 void QueryLogger::write_entry() {
-    str run_log_path = fs::path(RunSettings::get_instance().get_logs_path()) / instance.RUN_LOG_FILE;
+    auto &RS = RunSettings::get_instance();
+    str run_log_path = fs::path(RS.get_logs_path()) / instance.RUN_LOG_FILE;
     umap<QC, str> columns({
         {QC::ID, to_string(instance.determine_index(run_log_path))},
         {QC::SETTINGS_ID, m_search_settings_id_str},
@@ -133,6 +134,13 @@ void QueryLogger::write_entry() {
     bool abandoning_used = m_num_points_examined < m_num_points_in_examined_entries;
     columns[QC::ABANDONING_RATE] =
         to_string(abandoning_used ? 1.0 - R(m_num_points_examined) / R(m_num_points_in_examined_entries) : 0.0);
+
+    uint num_series = RS.get_dataset_props().m_num_series;
+    uint series_len = RS.get_dataset_props().m_series_len;
+    uint query_len = U(std::stoul(m_settable_cols[QC::QUERY_LENGTH]));
+    size_t subs_in_dataset = static_cast<size_t>(num_series * (series_len - query_len + 1));
+
+    columns[QC::PRUNING_RATIO] = to_string(1.0 - R(m_count_cols[QC::NUM_SUBS_EXAMINED]) / R(subs_in_dataset));
 
     write_row(run_log_path, columns, QUERY_COL_ENUMS);
 }

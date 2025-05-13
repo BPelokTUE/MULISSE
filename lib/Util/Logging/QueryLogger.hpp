@@ -49,12 +49,14 @@ enum class QueryColumn {
     NUM_MIN_DIST_CALCULATED,  // Number of minimum distance calculations performed during the search
     NUM_PTS_IN_EXAMINED_ENTRIES,  // Number of points in the examined entries
     NUM_PTS_EXAMINED,             // Number of points examined during the search
-    ABANDONING_RATE,              // The rate of early abandoning during the search
-    TOTAL_TIME_S,                 // Total time taken by the search in seconds
-    FIRST_LAYER_TIME_S,           // Time taken to process the first layer in the search in seconds
-    TREE_TRAVERSAL_TIME_S,        // Time taken to traverse the tree in seconds
-    IO_TIME_S,                    // Time taken to read the time series from the disk in seconds
-    TS_EXAMINATION_TIME_S,        // Time taken to examine the time series in seconds
+    NUM_SUBS_EXAMINED,            // Number of subsequences examined during the search
+    PRUNING_RATIO,       // One minus the # examined subsequences over the total # of subsequences of the query length
+    ABANDONING_RATE,     // The rate of early abandoning during the search
+    TOTAL_TIME_S,        // Total time taken by the search in seconds
+    FIRST_LAYER_TIME_S,  // Time taken to process the first layer in the search in seconds
+    TREE_TRAVERSAL_TIME_S,  // Time taken to traverse the tree in seconds
+    IO_TIME_S,              // Time taken to read the time series from the disk in seconds
+    TS_EXAMINATION_TIME_S,  // Time taken to examine the time series in seconds
 };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(QueryColumn, QUERY_COL, false);
@@ -64,7 +66,7 @@ using QC = QueryColumn;
 const vec<QC> QUERY_TIME_COLUMNS = {QC::TOTAL_TIME_S, QC::FIRST_LAYER_TIME_S, QC::TREE_TRAVERSAL_TIME_S, QC::IO_TIME_S,
                                     QC::TS_EXAMINATION_TIME_S},
               QUERY_COUNT_COLUMNS = {QC::NUM_LEAVES_VISITED, QC::NUM_NODES_VISITED, QC::NUM_ENTRIES_EXAMINED,
-                                     QC::NUM_MIN_DIST_CALCULATED},
+                                     QC::NUM_MIN_DIST_CALCULATED, QC::NUM_SUBS_EXAMINED},
               QUERY_COLLECTION_COLUMNS = {QC::RESULT_SET_TS_INDICES, QC::RESULT_SET_TS_POSITIONS,
                                           QC::RESULT_SET_DISTANCES, QC::QUERY_CHANNELS},
               QUERY_NUMBER_COLUMNS = {QC::QUERY_ID, QC::QUERY_LENGTH};

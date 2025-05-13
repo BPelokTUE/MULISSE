@@ -371,7 +371,7 @@ def plot_heat_map(
 
     for heat_map_key, heat_map_values in values.items():
         y_values = sorted(heat_map_values.keys())
-        x_values = list(set([x for y in y_values for x in heat_map_values[y].keys()]))
+        x_values = sorted(list(set([x for y in y_values for x in heat_map_values[y].keys()])))
 
         if only_max_points_x and len(x_values) != max_points_x:
             continue
@@ -485,6 +485,8 @@ def get_x_label(
             continue
 
         match col:
+            case SSC.METHOD_NAME:
+                label_parts.append(METHOD_LABELS.get(val, val))
             case DSC.L_MIN | ISC.L_MIN | QSC.L_MIN:
                 length_values["l_min"] = val
             case DSC.L_MAX | ISC.L_MAX | QSC.L_MAX:
@@ -499,6 +501,9 @@ def get_x_label(
                 label_parts.append(f"|Q|={int(val)}")
             case ISC.POS_PER_ENV:
                 label_parts.append(f"PPE={int(val)}")
+            case ISC.NUM_BITS_LIMIT:
+                if val is not None and val > 0:
+                    label_parts.append(f"BLim={int(val)}")
             case ISC.MERGER_NUM_BITS:
                 if val is not None and val > 0:
                     label_parts.append(f"EMB={int(val)}")
