@@ -12,7 +12,7 @@ Envelope-based indexes share the following three parameters:
 
 ## Setup
 
-Flat-envelope indexes were found to outperform both iSAX+envelope and pure iSAX indexes $[2]$, therefore parametrization was done on flat-envelope indexes, on sub-samples of 10 univariate datasets, with 1000 time series of length 1024, with three possible query ranges: $\text{range}_{|Q|}\in\{[128, 1024], [128, 768], [512, 1024]\}$, and $50$ queries per configuration.
+Flat-envelope indexes were found to outperform both iSAX+envelope and pure iSAX indexes $[2]$, therefore parametrization was done on flat-envelope indexes, on sub-samples of 10 univariate datasets, with 1000 time series of length 1024, with three possible query ranges: $\text{range}_{|Q|}\in\{[128, 1024], [128, 768], [512, 1024]\}$, and $100$ queries per configuration.
 
 |  | | Values |
 | - | - | - |
@@ -21,7 +21,7 @@ Flat-envelope indexes were found to outperform both iSAX+envelope and pure iSAX 
 | **No. series** | $n$ | $1000$ |
 | **Series length** | $m$ | $1024$ | 
 | **No. channels** | $\|C\|$ | $1$ |
-| **No. queries** | $N_q$ | $50$ |
+| **No. queries** | $N_q$ | $100$ |
 
 Parametrization was done in the following stages:
 1. Run *low resolution* grid search with all three parameters to determine bulpark / starting point
@@ -60,7 +60,7 @@ $N_p$: Larger query ranges prefer more positions groups: $N_p\approx 20$, while 
 
 ### No. Segments $N_s$
 
-$N_s$: Larger query ranges prefer more segments, $N_s\approx36$, while shorter ranges work best with $N_s\approx20$. However, for both cases, the range of $N_s$ values that lead to close to optimal query time is quite wide. $N_s=24$ is good default for all cases.
+$N_s$: Larger query ranges prefer more segments, $N_s\approx36$, while shorter ranges work best with $N_s\approx20$. However, for both cases, the range of $N_s$ values that lead to close to optimal query time is quite wide. $N_s=32$ is good default for all cases.
 
 | | | |
 |-|-|-|

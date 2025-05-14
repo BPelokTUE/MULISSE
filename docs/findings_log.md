@@ -196,7 +196,7 @@ TODO:
             - $N_p=10$ leads to the lowest query time in all cases
             - $N_s=32$ leads to the lowest query time in all cases
         - [ ] Multivariate
-    - [ ] Do grid search on the three separately ($(x,y,z)\to(\hat{x},y,z)\to(\hat{x},\hat{y},z)\to(\hat{x},\hat{y},\hat{z})$. This would give roughly $3x3x3+10+10+10=57$ runs per dataset and length-range combinations.
+    - [ ] Do grid search on the three separately ($(x,y,z)\to(\hat{x},y,z)\to(\hat{x},\hat{y},z)\to(\hat{x},\hat{y},\hat{z})$. This would give roughly $3\times3\times3+10+10+10=57$ runs per dataset and length-range combinations.
         - [x] Univariate:
             - [x] $N_l$: More length groups $\Rightarrow$ faster queries, but returns are diminishing, $N_l\approx20$ is not much slower (around $10-15\%$ slower) than $N_l\approx400$.
             - [x] $N_p$: Larger query ranges prefer more positions groups: $N_p\approx 20$, while shorter ranges work best with $N_p\approx 8$. Default values should be biased towards the long query range case, so $N_p=16$ is reasonable default.
@@ -232,10 +232,10 @@ Idea: merge envelopes progressively throughout insertion. Points to consider:
     - [x] Test with `iSaxIndex<Envelope>`
 
 - TODO:
-    - [ ] Confirm findings with randomized tests
+    - [ ] ~~Confirm findings with randomized tests~~
     - [ ] Analyze query time scaling with:
+        - [x] Dataset size (check if it scales linearly)
         - [ ] Series length (check if it scales linearly)
-        - [ ] Dataset size (check if it scales linearly)
         - [ ] Number of queries (check how amortized time changes)
     - [ ] Check if synthetic with different step standard deviation works differently
     - [ ] Produce report summary of experiments
@@ -243,3 +243,32 @@ Idea: merge envelopes progressively throughout insertion. Points to consider:
         - [ ] Without index size constraints
         - [ ] With index size constraints
             - [ ] E.g. prioritize some channels based on variance, by giving them more segments
+
+## Formalize constrained optimization
+
+$$
+\begin{array}{rcl}
+\text{Minimize} & \bar T \\
+\text{s.t.} & \\[4pt]
+\sum_{i=1}^{N_l}\left(\left\lceil\frac{m-l_{\min}^i+1}{\gamma}\right\rceil\sum_{c=1}^{|C|}\left\lfloor\frac{l_{\max}^i}{s^c}\right\rfloor\right) & < & B
+\end{array}
+$$
+Where the following are given:
+$$
+\begin{array}{rcl}
+m & : & \text{series length} \\[4pt]
+l_{\min} & : & \text{minimum query length} \\[4pt]
+l_{\max} & : & \text{maximum query length} \\[4pt]
+|C| & : & \text{number of channel per time series} \\[4pt]
+l_{\min}^i & := & l_{\min} + \frac{i}{N_l}\beta \\[4pt]
+l_{\max}^i & := & \min\left(l_{\max},l_{\min}^i+\beta-1\right) \\[4pt]
+\end{array}
+$$
+And the following can be chosen to achieve the highest performance (lowest average time $\bar T$):
+$$
+\begin{array}{rcl}
+\beta & : & \text{length group size} \\[4pt]
+\gamma & : & \text{position group (i.e. envelope) size} \\[4pt]
+\{s^c \mid c\in\{1,...,|C|\}\} & : & \text{segment sizes per channel}
+\end{array}
+$$
