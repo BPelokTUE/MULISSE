@@ -636,21 +636,21 @@ def experiment_segmentation_strategy(target_args_dict: dict):
         # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_3_num_segments_univariate"],
         # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_3_num_segments_univariate_long"],
         #
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_multivariate"],
+        logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_multivariate"],
         # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_multivariate_local"],
         #
-        logs_dirs=["EXPERIMENT_LOGS/entry_merging/LOGS_envelope_merging"],
+        # logs_dirs=["EXPERIMENT_LOGS/entry_merging/LOGS_envelope_merging"],
         #
         # logs_dirs=["LOGS"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
-            ERD.INDEXES_COLS: [ISC.ENTRY_MERGER_TYPE, ISC.MERGER_NUM_BITS, ISC.NUM_SEGMENTS],
-            # ERD.INDEXES_COLS: [ISC.POS_PER_ENV, ISC.L_PER_GROUP, ISC.NUM_SEGMENTS],
+            # ERD.INDEXES_COLS: [ISC.ENTRY_MERGER_TYPE, ISC.MERGER_NUM_BITS, ISC.NUM_SEGMENTS],
+            ERD.INDEXES_COLS: [ISC.POS_PER_ENV, ISC.L_PER_GROUP, ISC.NUM_SEGMENTS],
         },
         separate_plots_dict={
-            (DSC.DATASET_FILE,): [("weather",)],
+            (DSC.DATASET_FILE, DSC.NUM_CHANNELS): [],
             (QSC.L_MIN, QSC.L_MAX): [],
             # (ISC.SEGMENTATION_STRATEGY, ISC.LG_SEGMENTATION_STRATEGY): [],
         },
@@ -662,17 +662,17 @@ def experiment_segmentation_strategy(target_args_dict: dict):
         # line_plot_x_attr=ISC.NUM_SEGMENTS,
         # line_plot_included_cols={DSC.DATASET_FILE},
         # x_scale="log",
-        heat_map_x_attr=ISC.MERGER_NUM_BITS,
-        heat_map_y_attr=ISC.NUM_SEGMENTS,
-        heat_map_included_cols={SSC.METHOD_NAME, ISC.ENTRY_MERGER_TYPE},
+        heat_map_x_attr=ISC.POS_PER_ENV,
+        heat_map_y_attr=ISC.L_PER_GROUP,
+        heat_map_included_cols={ISC.NUM_SEGMENTS},
         **target_args_dict,
     )
 
 
 for target_args_dict in [
-    TargetArgs.QUERY_TIME.value,
-    TargetArgs.PRUNING_RATIO.value,
-    TargetArgs.INDEX_SIZE.value,
+    TargetArgs.QUERY_TIME.value
+    # TargetArgs.PRUNING_RATIO.value,
+    # TargetArgs.INDEX_SIZE.value,
     # {"targets_dict": {ERD.INDEXES_COLS: [ISC.NUM_ENTRIES]}},
 ]:
     experiment_segmentation_strategy(target_args_dict=target_args_dict)

@@ -6,6 +6,7 @@
 #include "Index/EntryGenerator/EntryGenerator.hpp"
 #include "Index/EntryGenerator/EnvelopeEntryGenerator.hpp"
 #include "Index/EntryGenerator/PaaEntryGenerator.hpp"
+#include "Index/EntryGenerator/SaxMergingPaaEntryGenerator.hpp"
 #include "Index/EntryMerger/DummyEntryMerger.hpp"
 #include "Index/EntryMerger/LowerSaxBasedEntryMerger.hpp"
 #include "Index/EntryMerger/SaxBasedEntryMerger.hpp"
@@ -102,25 +103,33 @@ uptr<ILengthGroupSegmentationStrategy> get_lg_segmentation_strategy(const IndexO
 // Generators
 
 uptr<IEntryGenerator<Paa>> get_paa_generator(const IndexOptions &opts,
-                                             const ILengthGroupSegmentationStrategy *segmentation_strategies) {
+                                             const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
     PaaParams paa_params = {
         .m_l_min = opts.m_l_min,
         .m_l_max = opts.m_l_max,
-        .m_lg_segmentation_strategy = segmentation_strategies,
+        .m_lg_segmentation_strategy = lg_segmentation_strategy,
     };
     uint num_len_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
 
+    auto index_params = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get());
+    if (index_params && index_params->m_merger_params.m_entry_merger_type == SAX_PAA_GENERATOR) {
+        auto merger_sax_params = index_params->m_merger_params.m_merger_sax_params;
+        if (!merger_sax_params || merger_sax_params->m_num_bits == 0) {
+            throw std::runtime_error("SAX-merging PAA generator requires positive number of bits");
+        }
+        return std::make_unique<SaxMergingPaaEntryGenerator>(paa_params, merger_sax_params->m_num_bits, num_len_groups);
+    }
     return std::make_unique<PaaEntryGenerator>(paa_params, num_len_groups);
 }
 
 uptr<IEntryGenerator<Envelope>> get_envelope_generator(
-    const IndexOptions &opts, const ILengthGroupSegmentationStrategy *segmentation_strategies) {
+    const IndexOptions &opts, const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
     auto *params = dynamic_cast<const EnvelopeIndexParams *>(opts.m_index_params.get());
     EnvelopeParams env_params = {
         .m_l_min = opts.m_l_min,
         .m_l_max = opts.m_l_max,
         .m_pos_per_env = params->m_pos_per_env,
-        .m_segmentation_strategies = segmentation_strategies,
+        .m_lg_segmentation_strategy = lg_segmentation_strategy,
     };
     uint num_len_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
 
@@ -139,12 +148,18 @@ uptr<IEntryMerger<T>> get_entry_merger(const IndexOptions &opts) {
         case SAX_BASED:
             return std::make_unique<SaxBasedEntryMerger<T>>(params->m_merger_params.m_merger_sax_params->m_num_bits);
         case LOWER_SAX_BASED:
-            if constexpr (std::is_same_v<T, Envelope>) {
-                return std::make_unique<LowerSaxBasedEntryMerger>(
-                    params->m_merger_params.m_merger_sax_params->m_num_bits);
-            } else {
+            if constexpr (std::is_same_v<T, Paa>) {
                 throw std::runtime_error(
                     "LowerSaxBasedEntryMerger is only available for indexes with Envelope entries");
+            } else {
+                return std::make_unique<LowerSaxBasedEntryMerger>(
+                    params->m_merger_params.m_merger_sax_params->m_num_bits);
+            }
+        case SAX_PAA_GENERATOR:
+            if constexpr (std::is_same_v<T, Paa>) {
+                return std::make_unique<DummyEntryMerger<Paa>>();
+            } else {
+                throw std::runtime_error("SAX-merging PAA generator is only available for indexes with Paa entries");
             }
     }
     return nullptr;

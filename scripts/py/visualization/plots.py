@@ -440,7 +440,8 @@ PQ_TIME_TARGETS = [QC.TS_EXAMINATION_TIME_S, QC.FIRST_LAYER_TIME_S]
 PQ_TIME_LABELS = ["TS examination time", "First layer time"]
 FIRST_LAYER_TIME_HATCH = "+++"
 
-TOTAL_TIME_Y_LABEL = "Query time (S)"
+QUERY_TIME_Y_LABEL = "Query time (S)"
+COMBINED_TIME_Y_LABEL = "Query + amortized prep. time (S)"
 AMORTIZED_PREP_TIME_Y_LABEL = "Amortized prep. time (S)"
 TS_EXAMINATION_TIME_Y_LABEL = "Time for TS examination (S)"
 FIRST_LAYER_TIME_S_Y_LABEL = "Time for first layer (S)"
@@ -451,7 +452,8 @@ NUM_PTS_EXAMINED_Y_LABEL = "Number of points examined"
 NUM_PTS_IN_EXAMINED_ENTRIES_Y_LABEL = "Number of points in examined entries"
 
 Y_LABELS = {
-    QC.TOTAL_TIME_S: TOTAL_TIME_Y_LABEL,
+    QC.TOTAL_TIME_S: QUERY_TIME_Y_LABEL,
+    (QC.TOTAL_TIME_S, QC.AMORTIZED_PREP_TIME_S): COMBINED_TIME_Y_LABEL,
     QC.AMORTIZED_PREP_TIME_S: AMORTIZED_PREP_TIME_Y_LABEL,
     QC.TS_EXAMINATION_TIME_S: TS_EXAMINATION_TIME_Y_LABEL,
     QC.FIRST_LAYER_TIME_S: FIRST_LAYER_TIME_S_Y_LABEL,
@@ -628,7 +630,6 @@ def get_x_labels(
 
 
 def get_y_label(targets: list[tuple[ERD, Column, Reducer]]) -> str:
-    col = targets[0][1]
     reducer_str = ""
     match targets[0][2]:
         case MeanReducer():
@@ -640,6 +641,8 @@ def get_y_label(targets: list[tuple[ERD, Column, Reducer]]) -> str:
         case MaxReducer():
             reducer_str = "max"
 
-    y_label = Y_LABELS.get(col, str(col))
+    columns = tuple([target[1] for target in targets])
+    columns = columns[0] if len(columns) == 1 else columns
+    y_label = Y_LABELS.get(columns, str(columns) if isinstance(columns, Column) else ", ".join(str(c) for c in columns))
     y_label = y_label[0].lower() + y_label[1:]
     return f"{reducer_str.capitalize()} {y_label}"

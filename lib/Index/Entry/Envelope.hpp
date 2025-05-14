@@ -68,7 +68,7 @@ struct EnvelopeParams {
     /** @brief The (max) number of master series in each envelope */
     uint m_pos_per_env;
     /** @brief The segmentation strategies to use for each length group. */
-    const ILengthGroupSegmentationStrategy *m_segmentation_strategies;
+    const ILengthGroupSegmentationStrategy *m_lg_segmentation_strategy;
 };
 
 #endif  // ENVELOPE_HPP

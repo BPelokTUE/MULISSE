@@ -1,8 +1,8 @@
 {
     "csv_data_dirs": [],
-    "dataset_sizes": [100],
+    "dataset_sizes": [1000],
     "series_lengths": [1024],
-    "syn_num_channels": [1],
+    "syn_num_channels": [1, 2],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [10],
     "l_range_ratios": [[0.125, 1.0]],
@@ -15,7 +15,7 @@
         "envelope": ["envelope"]
     },
     "merger_types": {
-        "isax": ["sax"],
+        "isax": ["in_paa_generator"],
         "isax_envelope": ["lower_sax"]
     },
     "merger_num_bit_numbers": [1],

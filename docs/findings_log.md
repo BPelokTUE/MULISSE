@@ -120,9 +120,9 @@ The following may be inferred from this investigation:
 - To optimize short query performance, focusing more on early segments (e.g. making these segments shorter) should be explored (decreasing segment length already show promising results, however this needlessly increases index size)
 
 - TODO:
-    - [ ] Run on raw
+    - [x] Run on raw
         - ULISSE fails on `malloc` errors. I could not run a single experiment with raw (unnormalized data). I suggest implementing raw search in MULISSE and running experiments there if needed.
-        - [ ] Implement raw
+        - [x] Implement raw
     - [x] Write down optimal PG ($N_p$) and LG ($N_l$) settings
         - $N_p^{\text{optimal}} \approx 20$
         - $N_l^{\text{optimal}} \approx 16$
@@ -225,8 +225,21 @@ Idea: merge envelopes progressively throughout insertion. Points to consider:
     - Go over each key, sort the associated entries by subsequence start position, iterate over them to merge overlapping ones
 - The SAX-based merger (or any other merger for that matter) could be easily used in flat envelope indexes as well
 - Plan:
-    - [ ] Create merger interface
-    - [ ] Implement SAX-based merger
-    - [ ] Test with `FlatEnvelopeIndex`
-    - [ ] Add merging option to `iSaxIndex`
-    - [ ] Test with `iSaxIndex<Envelope>`
+    - [x] Create merger interface
+    - [x] Implement SAX-based merger
+    - [x] Test with `FlatEnvelopeIndex`
+    - [x] Add merging option to `iSaxIndex`
+    - [x] Test with `iSaxIndex<Envelope>`
+
+- TODO:
+    - [ ] Confirm findings with randomized tests
+    - [ ] Analyze query time scaling with:
+        - [ ] Series length (check if it scales linearly)
+        - [ ] Dataset size (check if it scales linearly)
+        - [ ] Number of queries (check how amortized time changes)
+    - [ ] Check if synthetic with different step standard deviation works differently
+    - [ ] Produce report summary of experiments
+    - [ ] Optimize in two ways:
+        - [ ] Without index size constraints
+        - [ ] With index size constraints
+            - [ ] E.g. prioritize some channels based on variance, by giving them more segments
