@@ -221,6 +221,50 @@ class ExperimentResults(BaseModel):
         self.runs_df = self.runs_df.merge(merged_df, left_on=str(QC.ID), right_on=qc_id)
 
     @classmethod
+    def add_extra_cols_for_length_ratio(cls, length_col: QSC, extra_cols: dict[ERD, list[str]]):
+        extra_cols[ERD.QUERY_SETS_COLS] += [str(length_col), str(QSC.ID)]
+        extra_cols[ERD.DATASETS_COLS] += [str(DSC.SERIES_LENGTH)]
+
+    def add_length_ratio_column(self, ratio_col: QSC, length_col: QSC):
+        merged_df = self.get_merged_df()
+        qsc_id = get_merged_col_name(ERD.QUERY_SETS_COLS, str(QSC.ID))
+        merged_df = merged_df.drop_duplicates(subset=[qsc_id])
+        qsc_length_col = get_merged_col_name(ERD.QUERY_SETS_COLS, str(length_col))
+        dsc_series_length = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.SERIES_LENGTH))
+
+        merged_df[str(ratio_col)] = merged_df[qsc_length_col] / merged_df[dsc_series_length]
+        merged_df = merged_df[[str(ratio_col), qsc_id]]
+        self.query_sets_df = self.query_sets_df.merge(merged_df, left_on=str(QSC.ID), right_on=qsc_id)
+
+    def add_num_length_groups_column(self):
+        self.indexes_df[str(ISC.NUM_LEN_GROUPS)] = np.ceil(
+            (self.indexes_df[str(ISC.L_MAX)] - self.indexes_df[str(ISC.L_MIN)] + 1)
+            / self.indexes_df[str(ISC.L_PER_GROUP)]
+        )
+
+    @classmethod
+    def add_extra_cols_for_num_envelopes(cls, extra_cols: dict[ERD, list[str]]):
+        extra_cols[ERD.INDEXES_COLS] += [str(ISC.POS_PER_ENV), str(ISC.L_MIN)]
+        extra_cols[ERD.DATASETS_COLS] += [str(DSC.SERIES_LENGTH)]
+
+    def add_num_envelopes_column(self):
+        merged_df = self.get_merged_df()
+        isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
+        merged_df = merged_df.drop_duplicates(subset=[isc_index_file])
+        isc_pos_per_env = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.POS_PER_ENV))
+        isc_l_min = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MIN))
+        dsc_series_length = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.SERIES_LENGTH))
+
+        merged_df[str(ISC.NUM_ENVELOPES)] = np.ceil(
+            (merged_df[dsc_series_length] - merged_df[isc_l_min] + 1) / merged_df[isc_pos_per_env]
+        )
+        merged_df = merged_df[[str(ISC.NUM_ENVELOPES), isc_index_file]]
+        print(len(self.indexes_df), len(merged_df))
+        self.indexes_df = self.indexes_df.merge(
+            merged_df, left_on=str(ISC.INDEX_FILE), right_on=isc_index_file, how="left"
+        )
+
+    @classmethod
     def load_csv_if_exists(cls, path: str, cols: list[str]) -> pd.DataFrame:
         if os.path.exists(path):
             available_cols = pd.read_csv(path, nrows=0).columns
@@ -278,6 +322,22 @@ class ExperimentResults(BaseModel):
             extra_cols[ERD.QUERY_SETS_COLS] += [str(QSC.L_MIN), str(QSC.L_MAX)]
             act_cols[ERD.RUNS_COLS].remove(str(QC.QUERY_INTERVAL))
 
+        # Handle length ratio columns
+        for ratio_col, length_col in [(QSC.L_MIN_RATIO, QSC.L_MIN), (QSC.L_MAX_RATIO, QSC.L_MAX)]:
+            if str(ratio_col) in cols[ERD.QUERY_SETS_COLS]:
+                cls.add_extra_cols_for_length_ratio(length_col, extra_cols)
+                act_cols[ERD.QUERY_SETS_COLS].remove(str(ratio_col))
+
+        # Handle # length groups column
+        if str(ISC.NUM_LEN_GROUPS) in cols[ERD.INDEXES_COLS]:
+            extra_cols[ERD.INDEXES_COLS] += [str(ISC.L_MIN), str(ISC.L_MAX), str(ISC.L_PER_GROUP)]
+            act_cols[ERD.INDEXES_COLS].remove(str(ISC.NUM_LEN_GROUPS))
+
+        # Handle # envelopes column
+        if str(ISC.NUM_ENVELOPES) in cols[ERD.INDEXES_COLS]:
+            cls.add_extra_cols_for_num_envelopes(extra_cols)
+            act_cols[ERD.INDEXES_COLS].remove(str(ISC.NUM_ENVELOPES))
+
         extra_cols = {erd: list(set(extra_cols[erd]) - set(act_cols[erd])) for erd in ERD}
         cols_to_load = {erd: act_cols[erd] + extra_cols[erd] for erd in ERD}
         csv_paths = {erd: os.path.join(logs_dir, CSV_FILES[erd]) for erd in ERD}
@@ -319,6 +379,19 @@ class ExperimentResults(BaseModel):
         # Add query length group column
         if str(QC.QUERY_INTERVAL) in cols[ERD.RUNS_COLS] and num_query_intervals > 1:
             results.add_query_interval_column(num_query_intervals)
+
+        # Add length ratio columns
+        for ratio_col, length_col in [(QSC.L_MIN_RATIO, QSC.L_MIN), (QSC.L_MAX_RATIO, QSC.L_MAX)]:
+            if str(ratio_col) in cols[ERD.QUERY_SETS_COLS]:
+                results.add_length_ratio_column(ratio_col, length_col)
+
+        # Add # length groups column
+        if str(ISC.NUM_LEN_GROUPS) in cols[ERD.INDEXES_COLS]:
+            results.add_num_length_groups_column()
+
+        # Add # envelopes column
+        if str(ISC.NUM_ENVELOPES) in cols[ERD.INDEXES_COLS]:
+            results.add_num_envelopes_column()
 
         # Drop extra columns
         results.datasets_df = results.datasets_df.drop(columns=extra_cols[ERD.DATASETS_COLS])

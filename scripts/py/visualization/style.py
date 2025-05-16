@@ -85,6 +85,7 @@ CATEGORY_COLORS = [
     PALETTE["Yellows"][5],
     PALETTE["Purples"][6],
     PALETTE["Pinks"][4],
+    PALETTE["Blues"][4],
 ]
 
 COLDEST_COLOR = PALETTE["Blues"][5]
