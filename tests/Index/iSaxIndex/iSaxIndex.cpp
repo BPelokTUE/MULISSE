@@ -25,6 +25,7 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
     fakeit::Mock<RunSettings> run_settings_mock;
     fakeit::Mock<IiSaxSplitStrategy<Envelope>> split_strategy_mock;
     fakeit::Mock<ISegmentationStrategy> segmentation_strategy_mock;
+    fakeit::Mock<IChannelSegmentationStrategy> ch_segmentation_strategy_mock;
 
     vec<Real> breakpoints = {-2.0, 0.0, 2.0};
     SaxNumBitsT breakpoint_num_bits = 2;
@@ -40,14 +41,18 @@ TEST_CASE("iSaxIndex insert UTS envelope works") {
     fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).AlwaysReturn(3);
     fakeit::When(Method(segmentation_strategy_mock, get_type)).AlwaysReturn(UNIFORM);
 
+    fakeit::When(Method(ch_segmentation_strategy_mock, get_const_segmentation_strategy))
+        .AlwaysReturn(&segmentation_strategy_mock.get());
+
 #ifdef ENABLE_TEST_CODE
     // Pass empty deleter function, because fakeit manages the lifetime of the mock
     RunSettings::set_instance(sptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
 #endif
 
     std::unique_ptr<iSaxIndex<Envelope>> index;
-    index = std::make_unique<iSaxIndex<Envelope>>(1, 2, sptr<ISegmentationStrategy>(&segmentation_strategy_mock.get()),
-                                                  uptr<IiSaxSplitStrategy<Envelope>>(&split_strategy_mock.get()));
+    index = std::make_unique<iSaxIndex<Envelope>>(
+        1, 2, sptr<IChannelSegmentationStrategy>(&ch_segmentation_strategy_mock.get()),
+        uptr<IiSaxSplitStrategy<Envelope>>(&split_strategy_mock.get()));
 
     SUBCASE("inserting first envelope works") {
         IndexEntry<Envelope> entry = {{13, 1, 7}, {{{R(-1.1), R(0.1), R(-3.9)}, {R(1.3), R(2.3), R(0.8)}}}};
@@ -286,6 +291,7 @@ TEST_CASE("iSaxIndex insert MTS envelope works") {
     fakeit::Mock<RunSettings> run_settings_mock;
     fakeit::Mock<IiSaxSplitStrategy<Envelope>> split_strategy_mock;
     fakeit::Mock<ISegmentationStrategy> segmentation_strategy_mock;
+    fakeit::Mock<IChannelSegmentationStrategy> ch_segmentation_strategy_mock;
 
     vec<Real> breakpoints = {-2.0, 0.0, 2.0};
     SaxNumBitsT breakpoint_num_bits = 2;
@@ -300,14 +306,18 @@ TEST_CASE("iSaxIndex insert MTS envelope works") {
     fakeit::When(Method(run_settings_mock, get_breakpoints)).AlwaysReturn(breakpoints);
     fakeit::When(Method(split_strategy_mock, get_split_ind)).Return(split1, split2);
 
+    fakeit::When(Method(ch_segmentation_strategy_mock, get_const_segmentation_strategy))
+        .AlwaysReturn(&segmentation_strategy_mock.get());
+
 #ifdef ENABLE_TEST_CODE
     // Pass empty deleter function, because fakeit manages the lifetime of the mock
     RunSettings::set_instance(sptr<RunSettings>(&run_settings_mock.get(), [](RunSettings *) {}));
 #endif
 
     std::unique_ptr<iSaxIndex<Envelope>> index;
-    index = std::make_unique<iSaxIndex<Envelope>>(1, 2, sptr<ISegmentationStrategy>(&segmentation_strategy_mock.get()),
-                                                  uptr<IiSaxSplitStrategy<Envelope>>(&split_strategy_mock.get()));
+    index = std::make_unique<iSaxIndex<Envelope>>(
+        1, 2, sptr<IChannelSegmentationStrategy>(&ch_segmentation_strategy_mock.get()),
+        uptr<IiSaxSplitStrategy<Envelope>>(&split_strategy_mock.get()));
 
     SUBCASE("inserting one envelope works") {
         IndexEntry<Envelope> entry = {{64, 37, 10},

@@ -36,15 +36,18 @@ vec<vec<IndexEntry<Paa>>> SaxMergingPaaEntryGenerator::get_entries(const vec<vec
         uint max_ind = std::min(first_ind + l_max - 1, U(series_len - 1));
         for (uint last_ind = first_ind + l_min - 1; last_ind <= max_ind; ++last_ind) {
             uint subs_len = last_ind - first_ind + 1;
-            uint length_group = RS.get_length_group(subs_len);
-            auto segmentation_strategy = lg_segmentation_strategy->get_const_segmentation_strategy(length_group);
-            SaxSegIndT lg_num_segments = segmentation_strategy->get_num_segments(RS.get_lg_l_max(length_group));
+            uint lg_ind = RS.get_length_group(subs_len);
 
+            auto ch_segmentation_strategy = lg_segmentation_strategy->get_const_ch_segmentation_strategy(lg_ind);
             vec<vec<SaxSymbolT>> symbols(num_channels);
-            vec<Paa> paas(num_channels, Paa(lg_num_segments));
+            vec<Paa> paas(num_channels);
 
             // Calculate PAA values and SAX symbols
             for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+                auto segmentation_strategy = ch_segmentation_strategy->get_const_segmentation_strategy(c);
+                SaxSegIndT lg_num_segments = segmentation_strategy->get_num_segments(RS.get_lg_l_max(lg_ind));
+                paas[c] = Paa(lg_num_segments);
+
                 auto [mu, sigma] =
                     calculate_mu_and_sigma(sum_accs[c][last_ind + 1] - sum_accs[c][first_ind],
                                            sq_sum_accs[c][last_ind + 1] - sq_sum_accs[c][first_ind], subs_len);
@@ -64,15 +67,15 @@ vec<vec<IndexEntry<Paa>>> SaxMergingPaaEntryGenerator::get_entries(const vec<vec
             }
 
             // Merge
-            auto it = symbols_to_entry[length_group].find(symbols);
-            if (it == symbols_to_entry[length_group].end()) {
-                symbols_to_entry[length_group][symbols] = {{series_ind, first_ind, subs_len}, std::move(paas)};
+            auto it = symbols_to_entry[lg_ind].find(symbols);
+            if (it == symbols_to_entry[lg_ind].end()) {
+                symbols_to_entry[lg_ind][symbols] = {{series_ind, first_ind, subs_len}, std::move(paas)};
             } else {
                 auto &last_entry = it->second;
                 uint last_entry_rightmost = last_entry.m_subs_info.m_start_pos + last_entry.m_subs_info.m_length - 1;
                 if (first_ind > last_entry_rightmost + 1) {
-                    entry_groups[length_group].push_back(std::move(last_entry));
-                    symbols_to_entry[length_group][symbols] = {{series_ind, first_ind, subs_len}, std::move(paas)};
+                    entry_groups[lg_ind].push_back(std::move(last_entry));
+                    symbols_to_entry[lg_ind][symbols] = {{series_ind, first_ind, subs_len}, std::move(paas)};
                 } else if (last_entry_rightmost < last_ind) {
                     last_entry.m_subs_info.m_length = last_ind - last_entry.m_subs_info.m_start_pos + 1;
                 }

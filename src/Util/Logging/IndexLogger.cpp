@@ -19,8 +19,8 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
     uint num_segments = 0, pos_per_env = 0;
     SaxNumBitsT first_layer_num_bits = 0, num_bits_limit = 0, merger_num_bits = 0;
     size_t leaf_capacity = 0;
-    str lg_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "", merge_in_leaves_str = "",
-        method_type_str = "", entry_merger_type_str = "";
+    str lg_ss_str = "", ch_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "",
+        merge_in_leaves_str = "", method_type_str = "", entry_merger_type_str = "";
 
     if (index_options.m_index_params && arr_contains(METHODS_W_PAA, index_options.m_index_method)) {
         auto method_type = index_options.m_index_params->get_type();
@@ -28,6 +28,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
 
         auto *paa_params = dynamic_cast<PaaIndexParams *>(index_options.m_index_params.get());
         lg_ss_str = LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_lg_strategy_type);
+        ch_ss_str = CHANNEL_SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_ch_strategy_type);
         ss_str = SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_strategy_type);
         num_segments = paa_params->m_segmentation_params.m_num_segments;
 
@@ -81,6 +82,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         {ISC::FIRST_LAYER_NUM_BITS, format_num_param(first_layer_num_bits)},
         {ISC::LEAF_CAPACITY, format_num_param(leaf_capacity)},
         {ISC::LG_SEGMENTATION_STRATEGY, lg_ss_str},
+        {ISC::CH_SEGMENTATION_STRATEGY, ch_ss_str},
         {ISC::SEGMENTATION_STRATEGY, ss_str},
         {ISC::BREAKPOINT_STRATEGY, brs_str},
         {ISC::SPLIT_STRATEGY, sps_str},

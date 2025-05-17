@@ -72,7 +72,9 @@ int main(int argc, char **argv) {
     str dataset_path, query_path, index_path, ffts_path,
         breakpoints_path = "", logs_path = "../LOGS",
         search_method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(ISAX_ENVELOPE),
-        lg_segmentation_strategy_str = LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(SINGLE),
+        lg_segmentation_strategy_str =
+            LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(LengthGroupSegmentationStrategyType::SINGLE),
+        ch_segmentation_strategy_str = CHANNEL_SEGMENTATION_STRATEGY_TO_STR.at(ChannelSegmentationStrategyType::SINGLE),
         segmentation_strategy_str = SEGMENTATION_STRATEGY_TO_STR.at(UNIFORM),
         split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
@@ -188,6 +190,8 @@ int main(int argc, char **argv) {
                      "Length group segmentation strategy to use")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_LENGTH_GROUP_SEGMENTATION_STRATEGY_STRS));
+    index_subcommand->add_option("-C,--ch_segmentation_strategy", ch_segmentation_strategy_str,
+                                 "Channel segmentation strategy to use");
     index_subcommand
         ->add_option("-S,--segmentation_strategy", segmentation_strategy_str, "Segmentation strategy to use")
         ->capture_default_str()
@@ -222,7 +226,7 @@ int main(int argc, char **argv) {
         ->capture_default_str()
         ->check(positive_int);
     index_subcommand
-        ->add_option("-C,--leaf_capacity", leaf_capacity,
+        ->add_option("--bucket_size,--leaf_capacity", leaf_capacity,
                      "Leaf capacity or bucket size in case of tree envelope indexes")
         ->capture_default_str()
         ->check(positive_int);
@@ -454,6 +458,7 @@ int main(int argc, char **argv) {
 
             auto lg_segmentation_strategy_type =
                 STR_TO_LENGTH_GROUP_SEGMENTATION_STRATEGY.at(lg_segmentation_strategy_str);
+            auto ch_segmentation_strategy_type = STR_TO_CHANNEL_SEGMENTATION_STRATEGY.at(ch_segmentation_strategy_str);
             auto segmentation_strategy_type = STR_TO_SEGMENTATION_STRATEGY.at(segmentation_strategy_str);
             auto breakpoint_strategy_type = STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str);
             auto split_strategy_type = STR_TO_ISAX_SPLIT_STRATEGY.at(split_strategy_str);
@@ -474,6 +479,7 @@ int main(int argc, char **argv) {
             SegmentationParams segmentation_params{
                 .m_num_segments = num_segments,
                 .m_lg_strategy_type = lg_segmentation_strategy_type,
+                .m_ch_strategy_type = ch_segmentation_strategy_type,
                 .m_strategy_type = segmentation_strategy_type,
             };
             SaxParams sax_params{

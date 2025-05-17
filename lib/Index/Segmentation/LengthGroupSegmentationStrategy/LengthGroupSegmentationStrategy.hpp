@@ -2,8 +2,7 @@
 #define LENGTH_GROUP_SEGMENTATION_STRATEGY_HPP
 
 #include "Enums/LengthGroupSegmentationStrategyType.hpp"
-#include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
-#include "Util/RunSettings/LengthProperties.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"
 
@@ -17,14 +16,14 @@ class ILengthGroupSegmentationStrategy {
      * @param lg_ind The length group index.
      * @return The segmentation strategy for the specified length group.
      */
-    virtual sptr<ISegmentationStrategy> get_segmentation_strategy(uint lg_ind) const = 0;
+    virtual sptr<IChannelSegmentationStrategy> get_ch_segmentation_strategy(uint lg_ind) const = 0;
 
     /**
      * @brief Get a const pointer to the segmentation strategy for the specified length group.
      * @param lg_ind The length group index.
      * @return A const pointer to the segmentation strategy for the specified length group.
      */
-    virtual const ISegmentationStrategy *get_const_segmentation_strategy(uint lg_ind) const = 0;
+    virtual const IChannelSegmentationStrategy *get_const_ch_segmentation_strategy(uint lg_ind) const = 0;
 
     /**
      * @brief Get the type of length group segmentation strategy.

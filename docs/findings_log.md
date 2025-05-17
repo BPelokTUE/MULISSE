@@ -2,7 +2,7 @@
 
 ## 26-02-2025
 
-1. MULISSE as better on *synthetic data* regardless of the number of channels ( #7 )
+1. MULISSE is better on *synthetic data* regardless of the number of channels ( #7 )
     - Synthetic data leads to more balanced indexes: Why? **Analyze some indexes to find out**.
 2. Optimal envelope size is highly dependent on parameters e.g. the allowed query range ( #8 )
     - **Parametrization is needed**

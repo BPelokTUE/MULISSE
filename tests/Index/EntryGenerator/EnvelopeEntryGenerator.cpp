@@ -15,9 +15,10 @@ class EnvelopeTest {
         return generator.get_raw_envelopes(ts)[0];
     }
 
-    static vec<Envelope> get_normalized_envelope(const vec<Real> &ts, EnvelopeParams env_params) {
+    static vec<Envelope> get_normalized_envelope(const vec<Real> &ts, MtsNumChannelsT ch_ind,
+                                                 EnvelopeParams env_params) {
         EnvelopeEntryGenerator generator(true, env_params);
-        return generator.get_normalized_envelopes(ts)[0];
+        return generator.get_normalized_envelopes(ts, ch_ind)[0];
     }
 };
 
@@ -32,9 +33,13 @@ TEST_CASE("get_raw_envelope envelope happy-flow works") {
     fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).AlwaysReturn(segment_len);
     fakeit::When(Method(segmentation_strategy_mock, get_type)).AlwaysReturn(UNIFORM);
 
-    fakeit::Mock<ILengthGroupSegmentationStrategy> lg_segmentation_strategy_mock;
-    fakeit::When(Method(lg_segmentation_strategy_mock, get_const_segmentation_strategy))
+    fakeit::Mock<IChannelSegmentationStrategy> ch_segmentation_strategy_mock;
+    fakeit::When(Method(ch_segmentation_strategy_mock, get_const_segmentation_strategy))
         .AlwaysReturn(&segmentation_strategy_mock.get());
+
+    fakeit::Mock<ILengthGroupSegmentationStrategy> lg_segmentation_strategy_mock;
+    fakeit::When(Method(lg_segmentation_strategy_mock, get_const_ch_segmentation_strategy))
+        .AlwaysReturn(&ch_segmentation_strategy_mock.get());
     fakeit::When(Method(lg_segmentation_strategy_mock, get_type)).AlwaysReturn(SINGLE);
 
     fakeit::Mock<RunSettings> run_settings_mock;
@@ -83,9 +88,13 @@ TEST_CASE("get_normalized_envelope happy-flow works") {
     });
     fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).AlwaysReturn(segment_len);
 
-    fakeit::Mock<ILengthGroupSegmentationStrategy> lg_segmentation_strategy_mock;
-    fakeit::When(Method(lg_segmentation_strategy_mock, get_const_segmentation_strategy))
+    fakeit::Mock<IChannelSegmentationStrategy> ch_segmentation_strategy_mock;
+    fakeit::When(Method(ch_segmentation_strategy_mock, get_const_segmentation_strategy))
         .AlwaysReturn(&segmentation_strategy_mock.get());
+
+    fakeit::Mock<ILengthGroupSegmentationStrategy> lg_segmentation_strategy_mock;
+    fakeit::When(Method(lg_segmentation_strategy_mock, get_const_ch_segmentation_strategy))
+        .AlwaysReturn(&ch_segmentation_strategy_mock.get());
 
     fakeit::Mock<RunSettings> run_settings_mock;
     fakeit::When(Method(run_settings_mock, get_length_group)).AlwaysReturn(0);
@@ -109,7 +118,7 @@ TEST_CASE("get_normalized_envelope happy-flow works") {
     [0.6308598694087654, inf, inf]
     */
     auto envelopes =
-        EnvelopeTest::get_normalized_envelope(ts, {l_min, l_max, ms_per_env, &lg_segmentation_strategy_mock.get()});
+        EnvelopeTest::get_normalized_envelope(ts, 0, {l_min, l_max, ms_per_env, &lg_segmentation_strategy_mock.get()});
 
     vec<Envelope> expected = {{{R(-0.9486832980505138), R(-0.5449492609130661), R(-1.1111677990074318)},
                                {R(0.35355339059327384), R(1.1835854998978794), R(1.323448205074589)}},

@@ -19,6 +19,7 @@ CK_CSV_DATA_DIRS = "csv_data_dirs"
 CK_DATASET_SIZES = "dataset_sizes"
 CK_SERIES_LENGTHS = "series_lengths"
 CK_LG_SEGMENTATION_STRATEGIES = "lg_segmentation_strategies"
+CK_CH_SEGMENTATION_STRATEGIES = "ch_segmentation_strategies"
 CK_SEGMENTATION_STRATEGIES = "segmentation_strategies"
 CK_NUM_SEGMENTS = "num_segments"
 CK_NUM_CHANNELS = "num_channels"
@@ -68,6 +69,7 @@ RK_COMMAND = "command"
 RK_LOCATION = "location"
 RK_SIZE = "size"
 RK_LG_SEGMENTATION_STRATEGY = "lg_segmentation_strategy"
+RK_CH_SEGMENTATION_STRATEGY = "ch_segmentation_strategy"
 RK_SEGMENTATION_STRATEGY = "segmentation_strategy"
 RK_NUM_SEGMENTS = "num_segments"
 RK_NUM_CHANNELS = "num_channels"
@@ -304,6 +306,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
                 RK_NUM_SEGMENTS: config.get(CK_NUM_SEGMENTS, []),
                 **get_key_or_none(RK_RAW, CK_SEARCH_RAW),
                 **get_key_or_none(RK_LG_SEGMENTATION_STRATEGY, CK_LG_SEGMENTATION_STRATEGIES),
+                **get_key_or_none(RK_CH_SEGMENTATION_STRATEGY, CK_CH_SEGMENTATION_STRATEGIES),
                 **get_key_or_none(RK_SEGMENTATION_STRATEGY, CK_SEGMENTATION_STRATEGIES),
                 **get_key_or_none(RK_NUM_CHANNELS, CK_NUM_CHANNELS),
                 **get_key_or_none(RK_LENS_PER_GROUP, CK_LENGTH_GROUP_SIZE_RATIOS),
@@ -792,6 +795,8 @@ if __name__ == "__main__":
                                 num_l_groups = (l_range + lens_per_group - 1) // lens_per_group
                         if RK_LG_SEGMENTATION_STRATEGY in index_setting_copy:
                             args += ["-G", index_setting_copy.pop(RK_LG_SEGMENTATION_STRATEGY)]
+                        if RK_CH_SEGMENTATION_STRATEGY in index_setting_copy:
+                            args += ["-C", index_setting_copy.pop(RK_CH_SEGMENTATION_STRATEGY)]
                         if RK_SEGMENTATION_STRATEGY in index_setting_copy:
                             args += ["-S", index_setting_copy.pop(RK_SEGMENTATION_STRATEGY)]
                         if RK_NUM_SEGMENTS in index_setting_copy:
@@ -815,7 +820,7 @@ if __name__ == "__main__":
                                 num_entries = ((series_len - l_min + pos_per_env) // pos_per_env) * num_series
                             leaf_capacity = int(index_setting_copy.pop(RK_LEAF_CAPACITY) * num_entries)
                             leaf_capacity = max(1, leaf_capacity)
-                            args += ["-C", str(leaf_capacity)]
+                            args += ["--leaf_capacity", str(leaf_capacity)]
                         if index_setting_copy.pop(RK_ADAPT, False):
                             args += ["--adapt"]
                         if RK_ISAX_BREAKPOINTS_FILE in index_setting_copy:

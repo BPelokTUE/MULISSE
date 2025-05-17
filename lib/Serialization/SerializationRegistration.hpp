@@ -10,6 +10,7 @@
 #include "Index/Entry/Envelope.hpp"
 #include "Index/Entry/Paa.hpp"
 #include "Index/EnvelopeIndex/Tree/EnvelopeNode.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/SingleChSegmentationStrategy.hpp"
 #include "Index/Segmentation/SegmentationStrategy/AdaptiveSegmentationStrategy.hpp"
 #include "Index/Segmentation/SegmentationStrategy/UniformSegmentationStrategy.hpp"
 #include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
@@ -58,5 +59,9 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION(ISegmentationStrategy, UniformSegmentationS
 
 CEREAL_REGISTER_TYPE(AdaptiveSegmentationStrategy)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(ISegmentationStrategy, AdaptiveSegmentationStrategy)
+
+// Register channel segmentation strategies
+CEREAL_REGISTER_TYPE(SingleChSegmentationStrategy)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(IChannelSegmentationStrategy, SingleChSegmentationStrategy)
 
 #endif  // SERIALIZATION_REGISTRATION_HPP

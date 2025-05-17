@@ -16,9 +16,13 @@ TEST_CASE("get_entries works") {
     });
     fakeit::When(Method(segmentation_strategy_mock, get_segment_len)).AlwaysReturn(segment_len);
 
-    fakeit::Mock<ILengthGroupSegmentationStrategy> lg_segmentation_strategy_mock;
-    fakeit::When(Method(lg_segmentation_strategy_mock, get_const_segmentation_strategy))
+    fakeit::Mock<IChannelSegmentationStrategy> ch_segmentation_strategy_mock;
+    fakeit::When(Method(ch_segmentation_strategy_mock, get_const_segmentation_strategy))
         .AlwaysReturn(&segmentation_strategy_mock.get());
+
+    fakeit::Mock<ILengthGroupSegmentationStrategy> lg_segmentation_strategy_mock;
+    fakeit::When(Method(lg_segmentation_strategy_mock, get_const_ch_segmentation_strategy))
+        .AlwaysReturn(&ch_segmentation_strategy_mock.get());
 
     fakeit::Mock<RunSettings> run_settings_mock;
     fakeit::When(Method(run_settings_mock, get_length_group)).AlwaysReturn(0);

@@ -12,13 +12,13 @@ class FinalizedFlatEnvelopeIndex : public FinalizedEnvelopeIndex {
 
     /**
      * @brief Construct a new FinalizedFlatEnvelopeIndex instance
-     * @param segmentation_strategy The segmentation strategy to use
+     * @param ch_segmentation_strategy The channel segmentation strategy to use
      * @param pos_per_env The number of positions per envelope
      * @param entries The envelope entries in the index
      */
-    FinalizedFlatEnvelopeIndex(sptr<ISegmentationStrategy> segmentation_strategy, const uint pos_per_env,
+    FinalizedFlatEnvelopeIndex(sptr<IChannelSegmentationStrategy> ch_segmentation_strategy, const uint pos_per_env,
                                vec<IndexEntry<Envelope>> &&entries)
-        : FinalizedEnvelopeIndex(segmentation_strategy, pos_per_env), m_entries(std::move(entries)) {}
+        : FinalizedEnvelopeIndex(ch_segmentation_strategy, pos_per_env), m_entries(std::move(entries)) {}
 
     const vec<IndexEntry<Envelope>> &get_entries() const { return m_entries; }
 
@@ -29,7 +29,7 @@ class FinalizedFlatEnvelopeIndex : public FinalizedEnvelopeIndex {
    private:
     vec<IndexEntry<Envelope>> m_entries;
 
-    MAKE_SERIALIZABLE((m_segmentation_strategy, m_pos_per_env, m_entries));
+    MAKE_SERIALIZABLE((m_ch_segmentation_strategy, m_pos_per_env, m_entries));
 };
 
 #endif  // INDEX_ENVELOPEINDEX_FLAT_FINALIZEDFLATENVELOPEINDEX_HPP

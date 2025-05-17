@@ -20,13 +20,13 @@ class TreeEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_t
    public:
     /**
      * @brief Construct a new TreeEnvelopeIndex instance
-     * @param segmentation_strategy The segmentation strategy to use
+     * @param ch_segmentation_strategy The channel segmentation strategy to use
      * @param pos_per_env Number of positions per envelope
      * @param grouper The EnvelopeGrouper to use for grouping envelope entries
      */
-    TreeEnvelopeIndex(sptr<ISegmentationStrategy> segmentation_strategy, const uint pos_per_env,
+    TreeEnvelopeIndex(sptr<IChannelSegmentationStrategy> ch_segmentation_strategy, const uint pos_per_env,
                       uptr<IEnvelopeGrouper> grouper)
-        : EnvelopeIndex(segmentation_strategy, pos_per_env), m_grouper(std::move(grouper)) {}
+        : EnvelopeIndex(ch_segmentation_strategy, pos_per_env), m_grouper(std::move(grouper)) {}
 
     void insert_entries(vec<IndexEntry<Envelope>> &entries, EntryInserterType inserter_type) override {
         uptr<IEntryInserter<TreeEnvelopeIndex>> inserter;
@@ -48,7 +48,7 @@ class TreeEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_t
         // 2. Merge entries in leaves of the tree
 
         // 3. Return the finalized index (this)
-        return std::make_unique<FinalizedTreeEnvelopeIndex>(m_segmentation_strategy, m_pos_per_env,
+        return std::make_unique<FinalizedTreeEnvelopeIndex>(m_ch_segmentation_strategy, m_pos_per_env,
                                                             std::move(m_first_layer_nodes));
     }
 

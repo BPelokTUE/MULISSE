@@ -17,6 +17,7 @@
 #include "Index/IndexParams.hpp"
 #include "Index/LengthGroupingIndex/LengthGroupingIndex.hpp"
 #include "Index/Sax/SaxBreakpointStrategy.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/SingleChSegmentationStrategy.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/AdaptiveMultiLGSegmentationStrategy.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/MultiLGSegmentationStrategy.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/SingleLGSegmentationStrategy.hpp"
@@ -75,16 +76,29 @@ sptr<ISegmentationStrategy> get_segmentation_strategy(const IndexOptions &opts, 
     return nullptr;
 }
 
+using CHSS = ChannelSegmentationStrategyType;
+
+sptr<IChannelSegmentationStrategy> get_ch_segmentation_strategy(const IndexOptions &opts, uint l_min, uint l_max,
+                                                                SaxSegIndT num_segments) {
+    auto index_params = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get());
+    switch (index_params->m_segmentation_params.m_ch_strategy_type) {
+        case CHSS::SINGLE:
+            return std::make_unique<SingleChSegmentationStrategy>(
+                get_segmentation_strategy(opts, l_min, l_max, num_segments));
+    }
+    return nullptr;
+}
+
 uptr<ILengthGroupSegmentationStrategy> get_lg_segmentation_strategy(const IndexOptions &opts) {
     auto index_params = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get());
     switch (index_params->m_segmentation_params.m_lg_strategy_type) {
         case SINGLE:
-            return std::make_unique<SingleLGSegmentationStrategy>(get_segmentation_strategy(
+            return std::make_unique<SingleLGSegmentationStrategy>(get_ch_segmentation_strategy(
                 opts, opts.m_l_min, opts.m_l_max, index_params->m_segmentation_params.m_num_segments));
         case MULTI:
             return std::make_unique<MultiLGSegmentationStrategy>([&opts, index_params](uint lg_l_min, uint lg_l_max) {
-                return get_segmentation_strategy(opts, lg_l_min, lg_l_max,
-                                                 index_params->m_segmentation_params.m_num_segments);
+                return get_ch_segmentation_strategy(opts, lg_l_min, lg_l_max,
+                                                    index_params->m_segmentation_params.m_num_segments);
             });
         case ADAPTIVE_MULTI:
             uint pos_per_env = 0;
@@ -93,7 +107,7 @@ uptr<ILengthGroupSegmentationStrategy> get_lg_segmentation_strategy(const IndexO
             }
             return std::make_unique<AdaptiveMultiLGSegmentationStrategy>(
                 [&opts](uint lg_l_min, uint lg_l_max, SaxSegIndT num_segments) {
-                    return get_segmentation_strategy(opts, lg_l_min, lg_l_max, num_segments);
+                    return get_ch_segmentation_strategy(opts, lg_l_min, lg_l_max, num_segments);
                 },
                 index_params->m_segmentation_params.m_num_segments, pos_per_env);
     }
@@ -168,10 +182,10 @@ uptr<IEntryMerger<T>> get_entry_merger(const IndexOptions &opts) {
 template <typename T>
     requires DerivedFromEntryData<T>
 sptr<IIndex<T>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params,
-                               sptr<ISegmentationStrategy> segmentation_strategy,
+                               sptr<IChannelSegmentationStrategy> ch_segmentation_strategy,
                                uptr<IiSaxSplitStrategy<T>> split_strategy) {
     auto *index = new iSaxIndex<T>(params->m_sax_params.m_num_bits, params->m_isax_trie_params.m_leaf_capacity,
-                                   segmentation_strategy, std::move(split_strategy),
+                                   ch_segmentation_strategy, std::move(split_strategy),
                                    params->m_isax_trie_params.m_merge_in_leaves);
     return sptr<IIndex<T>>(index);
 }
@@ -190,7 +204,7 @@ void initialize_sax_breakpoints(const SaxParams &sax_params, SaxNumBitsT num_bit
 
 struct IndexFactoryParams {
     bool m_discretize_flat_index = false;
-    sptr<ISegmentationStrategy> m_segmentation_strategy;
+    sptr<IChannelSegmentationStrategy> m_ch_segmentation_strategy;
     const IndexOptions &m_opts;
 };
 
@@ -201,7 +215,7 @@ sptr<IIndex<T>> get_isax_index(IndexFactoryParams &factory_params) {
     auto *index_params = dynamic_cast<iSaxIndexParams *>(opts.m_index_params.get());
     auto split_strategy = get_split_strategy<T>(index_params, opts.m_num_channels);
 
-    return get_isax_index<T>(opts, index_params, factory_params.m_segmentation_strategy, std::move(split_strategy));
+    return get_isax_index<T>(opts, index_params, factory_params.m_ch_segmentation_strategy, std::move(split_strategy));
 }
 
 sptr<IIndex<Envelope>> get_envelope_index(IndexFactoryParams &factory_params) {
@@ -211,11 +225,11 @@ sptr<IIndex<Envelope>> get_envelope_index(IndexFactoryParams &factory_params) {
 
     auto sax_index_params = dynamic_cast<SaxIndexParams *>(opts.m_index_params.get());
     if (discretize_flat_index && sax_index_params && sax_index_params->m_sax_params.m_num_bits > 0) {
-        auto *index = new FlatEnvelopeIndex(factory_params.m_segmentation_strategy, index_params->m_pos_per_env,
+        auto *index = new FlatEnvelopeIndex(factory_params.m_ch_segmentation_strategy, index_params->m_pos_per_env,
                                             sax_index_params->m_sax_params.m_num_bits);
         return sptr<IIndex<Envelope>>(index);
     } else {
-        auto *index = new FlatEnvelopeIndex(factory_params.m_segmentation_strategy, index_params->m_pos_per_env);
+        auto *index = new FlatEnvelopeIndex(factory_params.m_ch_segmentation_strategy, index_params->m_pos_per_env);
         return sptr<IIndex<Envelope>>(index);
     }
 }
@@ -226,7 +240,7 @@ sptr<IIndex<Envelope>> get_envelope_tree_index(IndexFactoryParams &factory_param
 
     auto grouper =
         new InvSaxSortingBucketingEnvelopeGrouper(index_params->m_sax_params.m_num_bits, index_params->m_bucket_size);
-    auto *index = new TreeEnvelopeIndex(factory_params.m_segmentation_strategy, index_params->m_pos_per_env,
+    auto *index = new TreeEnvelopeIndex(factory_params.m_ch_segmentation_strategy, index_params->m_pos_per_env,
                                         uptr<IEnvelopeGrouper>(grouper));
     return sptr<IIndex<Envelope>>(index);
 }
@@ -265,14 +279,14 @@ void construct_index(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_
         for (uint lg_ind = 0; lg_ind < num_len_groups; lg_ind++) {
             IndexFactoryParams lg_factory_params{
                 .m_discretize_flat_index = factory_params.m_discretize_flat_index,
-                .m_segmentation_strategy = lg_segmentation_strategy->get_segmentation_strategy(lg_ind),
+                .m_ch_segmentation_strategy = lg_segmentation_strategy->get_ch_segmentation_strategy(lg_ind),
                 .m_opts = opts,
             };
             group_indexes[lg_ind] = index_factory(lg_factory_params);
         }
         index = std::make_shared<LengthGroupingIndex<T>>(std::move(group_indexes), opts.m_l_min, opts.m_l_max);
     } else {
-        factory_params.m_segmentation_strategy = lg_segmentation_strategy->get_segmentation_strategy(0);
+        factory_params.m_ch_segmentation_strategy = lg_segmentation_strategy->get_ch_segmentation_strategy(0);
         index = index_factory(factory_params);
     }
 

@@ -8,18 +8,18 @@ class SingleLGSegmentationStrategy : public ILengthGroupSegmentationStrategy {
    public:
     /**
      * @brief Construct a new SingleLGSegmentationStrategy with the given segmentation strategy.
-     * @param segmentation_strategy The segmentation strategy to use for all groups.
+     * @param ch_segmentation_strategy The channel segmentation strategy to use for all groups.
      */
-    SingleLGSegmentationStrategy(sptr<ISegmentationStrategy> &&segmentation_strategy);
+    SingleLGSegmentationStrategy(sptr<IChannelSegmentationStrategy> &&ch_segmentation_strategy);
 
-    sptr<ISegmentationStrategy> get_segmentation_strategy(uint lg_ind) const override;
+    sptr<IChannelSegmentationStrategy> get_ch_segmentation_strategy(uint lg_ind) const override;
 
-    const ISegmentationStrategy *get_const_segmentation_strategy(uint lg_ind) const override;
+    const IChannelSegmentationStrategy *get_const_ch_segmentation_strategy(uint lg_ind) const override;
 
     LengthGroupSegmentationStrategyType get_type() const override;
 
    private:
-    sptr<ISegmentationStrategy> m_segmentation_strategy;
+    sptr<IChannelSegmentationStrategy> m_ch_segmentation_strategy;
 };
 
 #endif  // INDEX_SEGMENTATION_LENGHTGROUPSEGMENTATIONSTRATEGY_SINGLESEGMENTATIONSTRATEGY_HPP

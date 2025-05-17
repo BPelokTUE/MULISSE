@@ -24,9 +24,10 @@ class PaaEntryGenerator : public IEntryGenerator<Paa> {
     /**
      * @brief Get the PAA entries for all normalized subsequences of a UTS, grouped by length
      * @param ts The time series
+     * @param ch_ind The channel index
      * @return The PAA entries, their time series index and their starting position
      */
-    vec<vec<std::tuple<Paa, uint, uint>>> get_paa_entries_normalized(const vec<Real> &ts);
+    vec<vec<std::tuple<Paa, uint, uint>>> get_paa_entries_normalized(const vec<Real> &ts, MtsNumChannelsT ch_ind);
 
    private:
     uint m_num_len_groups;

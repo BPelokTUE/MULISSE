@@ -22,7 +22,8 @@ enum class IndexSettingsColumn {
     MERGER_NUM_BITS,           // Number of bits used for SAX-based entry merger, if applicable
     NORMALIZED,                // Whether the query and subsequences are normalized
     INDEX_TYPE,                // Type of index used
-    LG_SEGMENTATION_STRATEGY,  // Strategy for varying the segmentation strategy for different length groups
+    LG_SEGMENTATION_STRATEGY,  // Strategy for varying the channel segmentation strategy for different length groups
+    CH_SEGMENTATION_STRATEGY,  // Strategy for varying the segmentation strategy for different channels
     SEGMENTATION_STRATEGY,     // Strategy for segmenting the time series channels
     NUM_SEGMENTS,              // The number of segments per channel used
     BREAKPOINT_STRATEGY,       // Strategy for getting the breakpoints of the symbol intervals for iSAX indexes
