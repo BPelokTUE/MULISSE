@@ -13,14 +13,15 @@ class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, QS> {
      * @param envelope The multivariate envelope
      * @param query_paa The query paa
      * @param distance_measure The distance measure to use
-     * @param segmentation_strategy The segmentation strategy to use
+     * @param ch_segmentation_strategy The segmentation strategy to use
      * @return The minimum bounding distance squared
      */
     inline Real get_min_dist_squared(const vec<Envelope> &envelope, const vec<vec<Real>> &query_paa,
                                      const DistanceMeasure<S, D, QS> &distance_measure,
-                                     const ISegmentationStrategy *segmentation_strategy) const {
+                                     const IChannelSegmentationStrategy *ch_segmentation_strategy) const {
         Real min_dist_squared = 0;
         for (MtsNumChannelsT c = 0; c < query_paa.size(); ++c) {
+            auto segmentation_strategy = ch_segmentation_strategy->get_segmentation_strategy(c);
             for (SaxSegIndT s = 0; s < query_paa[c].size(); ++s) {
                 Real segment_len_r = R(segmentation_strategy->get_segment_len(s));
                 min_dist_squared +=

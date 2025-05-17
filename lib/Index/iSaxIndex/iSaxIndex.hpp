@@ -9,7 +9,7 @@
 #include "Index/FinalizedIndex.hpp"
 #include "Index/Index.hpp"
 #include "Index/Sax/SaxHelpers.hpp"
-#include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 #include "Index/Traits/IndexTraits.hpp"
 #include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
 #include "Index/iSaxIndex/FinalizedISaxNode.hpp"
@@ -37,7 +37,7 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
     size_t m_leaf_capacity;
     umap_hash<vec<vec<SaxSymbolT>>, uptr<SplittableISaxNode<T>>, SaxSymbolsHash> m_first_layer;
     const vec<Real> *m_breakpoints;
-    sptr<ISegmentationStrategy> m_segmentation_strategy;
+    sptr<IChannelSegmentationStrategy> m_ch_segmentation_strategy;
     uptr<IiSaxSplitStrategy<T>> m_split_strategy;
     iSaxWordFactory m_isax_word_factory;
 
@@ -48,15 +48,16 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
      * @brief Construct a new iSaxIndex object
      * @param first_layer_num_bits Number of bits used for symbols in the first layer
      * @param leaf_capacity Capacity of the leaf nodes
-     * @param segmentation_strategy Segmentation strategy
+     * @param ch_segmentation_strategy Segmentation strategy
      * @param split_strategy Split strategy
      * @param merge_in_leaves Whether to merge entries in the leaves
      */
-    iSaxIndex(SaxNumBitsT first_layer_num_bits, size_t leaf_capacity, sptr<ISegmentationStrategy> segmentation_strategy,
-              uptr<IiSaxSplitStrategy<T>> split_strategy, bool merge_in_leaves = false)
+    iSaxIndex(SaxNumBitsT first_layer_num_bits, size_t leaf_capacity,
+              sptr<IChannelSegmentationStrategy> ch_segmentation_strategy, uptr<IiSaxSplitStrategy<T>> split_strategy,
+              bool merge_in_leaves = false)
         : m_first_layer_num_bits(first_layer_num_bits),
           m_leaf_capacity(leaf_capacity),
-          m_segmentation_strategy(segmentation_strategy),
+          m_ch_segmentation_strategy(ch_segmentation_strategy),
           m_split_strategy(std::move(split_strategy)),
           m_merge_in_leaves(merge_in_leaves) {
         assert(first_layer_num_bits > 0);
@@ -81,7 +82,7 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
     void insert(IndexEntry<T> &entry) override {
         assert(entry.m_mts_summary.size() == static_cast<MtsNumChannelsT>(entry.m_mts_summary.size()));
         assert(entry.m_mts_summary[0].size() ==
-               m_segmentation_strategy->get_num_segments(U(entry.m_mts_summary[0].size())));
+               m_ch_segmentation_strategy->get_num_segments(U(entry.m_mts_summary[0].size())));
 
         auto [symbols, isax_words] = get_entry_sax_symbols_and_isax(entry, m_isax_word_factory);
 
@@ -121,7 +122,7 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
         }
 
         uint pos_per_env = RunSettings::get_instance().get_envelope_props().m_pos_per_env;
-        return std::make_unique<FinalizedISaxIndex<FTag>>(m_segmentation_strategy, std::move(first_layer_symbols),
+        return std::make_unique<FinalizedISaxIndex<FTag>>(m_ch_segmentation_strategy, std::move(first_layer_symbols),
                                                           std::move(finalized_nodes), m_first_layer_num_bits,
                                                           m_alphabet_num_bits, *m_breakpoints, pos_per_env);
     }

@@ -1,6 +1,7 @@
 #ifndef INDEX_INDEXPARAMS_HPP
 #define INDEX_INDEXPARAMS_HPP
 
+#include "Enums/ChannelSegmentationStrategyType.hpp"
 #include "Enums/EntryMergerType.hpp"
 #include "Enums/LengthGroupSegmentationStrategyType.hpp"
 #include "Enums/SaxBreakpointStrategyType.hpp"
@@ -25,6 +26,8 @@ struct SegmentationParams {
     SaxSegIndT m_num_segments;
     /** @brief Type of strategy to use for length group segmentation */
     LengthGroupSegmentationStrategyType m_lg_strategy_type;
+    /** @brief Type of strategy to use for channel segmentation */
+    ChannelSegmentationStrategyType m_ch_strategy_type;
     /** @brief Type of strategy to use for segmentation */
     SegmentationStrategyType m_strategy_type;
 };

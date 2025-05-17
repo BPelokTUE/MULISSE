@@ -26,15 +26,15 @@ class TreeEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
         auto &logger = QueryLogger::get_instance();
 
         uint series_len = RunSettings::get_instance().get_dataset_props().m_series_len;
-        auto segmentation_strategy = m_index->get_segmentation_strategy();
-        auto [query_paa, query_len] = this->get_query_paa_and_len(query, segmentation_strategy, real_query_inds);
+        auto ch_segmentation_strategy = m_index->get_ch_segmentation_strategy();
+        auto [query_paa, query_len] = this->get_query_paa_and_len(query, ch_segmentation_strategy, real_query_inds);
 
         std::priority_queue<PQueueEnvelopeNodeEntry> pq;
 
         logger.start_timer(QC::FIRST_LAYER_TIME_S);
         for (auto &node : m_index->get_first_layer_nodes()) {
-            Real min_dist_squared =
-                this->get_min_dist_squared(node->get_envelopes(), query_paa, distance_measure, segmentation_strategy);
+            Real min_dist_squared = this->get_min_dist_squared(node->get_envelopes(), query_paa, distance_measure,
+                                                               ch_segmentation_strategy);
             pq.push({min_dist_squared, node});
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
@@ -51,7 +51,7 @@ class TreeEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
             if (!entry.m_node->is_leaf()) {
                 for (auto &child : entry.m_node->get_children()) {
                     Real min_dist_squared = this->get_min_dist_squared(child->get_envelopes(), query_paa,
-                                                                       distance_measure, segmentation_strategy);
+                                                                       distance_measure, ch_segmentation_strategy);
                     logger.increment_count_col(QC::NUM_MIN_DIST_CALCULATED);
                     if (min_dist_squared < lb) pq.push({min_dist_squared, child});
                 }

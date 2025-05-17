@@ -9,20 +9,22 @@ class MultiLGSegmentationStrategy : public ILengthGroupSegmentationStrategy {
    public:
     /**
      * @brief Construct a new MultiLGSegmentationStrategy with the given a segmentation strategy factory.
-     * @param segmentation_strategy_factory The factory function to create segmentation strategies for each group.
+     * @param ch_segmentation_strategy_factory The factory function to create channel segmentation strategies for each
+     * group.
      */
-    MultiLGSegmentationStrategy(std::function<sptr<ISegmentationStrategy>(uint, uint)> segmentation_strategy_factory);
+    MultiLGSegmentationStrategy(
+        std::function<sptr<IChannelSegmentationStrategy>(uint, uint)> ch_segmentation_strategy_factory);
 
     MultiLGSegmentationStrategy() = default;
 
-    sptr<ISegmentationStrategy> get_segmentation_strategy(uint lg_ind) const override;
+    sptr<IChannelSegmentationStrategy> get_ch_segmentation_strategy(uint lg_ind) const override;
 
-    const ISegmentationStrategy *get_const_segmentation_strategy(uint lg_ind) const override;
+    const IChannelSegmentationStrategy *get_const_ch_segmentation_strategy(uint lg_ind) const override;
 
     LengthGroupSegmentationStrategyType get_type() const override;
 
    protected:
-    vec<sptr<ISegmentationStrategy>> m_segmentation_strategies;
+    vec<sptr<IChannelSegmentationStrategy>> m_ch_segmentation_strategies;
 };
 
 #endif  // INDEX_SEGMENTATION_LENGHTGROUPSEGMENTATIONSTRATEGY_MULTISEGMENTATIONSTRATEGY_HPP

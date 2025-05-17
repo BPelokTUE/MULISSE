@@ -5,7 +5,7 @@
 #include <queue>
 
 #include "Index/FinalizedIndex.hpp"
-#include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 #include "Index/Traits/FinalizedTraits.hpp"
 #include "Index/iSaxIndex/FinalizedISaxNode.hpp"
 #include "Serialization/Macros.hpp"
@@ -43,7 +43,7 @@ class FinalizedISaxIndex : public IFinalizedIndex<FTag> {
     /**
      * @brief Construct a new FinalizedISaxIndex object
      *
-     * @param segmentation_strategy The segmentation strategy to use
+     * @param ch_segmentation_strategy The channel segmentation strategy to use
      * @param first_layer_symbols Symbols of the first layer
      * @param first_layer_nodes First layer nodes
      * @param first_layer_num_bits Number of bits used for symbols in the first layer
@@ -52,10 +52,11 @@ class FinalizedISaxIndex : public IFinalizedIndex<FTag> {
      *        does not include `-inf` and `inf`
      * @param pos_per_env Number of positions per envelope. 0 if not applicable.
      */
-    FinalizedISaxIndex(sptr<ISegmentationStrategy> segmentation_strategy, vec<vec<vec<SymbolType>>> first_layer_symbols,
+    FinalizedISaxIndex(sptr<IChannelSegmentationStrategy> ch_segmentation_strategy,
+                       vec<vec<vec<SymbolType>>> first_layer_symbols,
                        vec<uptr<FinalizedISaxNode<FTag>>> first_layer_nodes, SaxNumBitsT first_layer_num_bits,
                        SaxNumBitsT alphabet_num_bits, vec<Real> breakpoints, uint pos_per_env = 0)
-        : m_segmentation_strategy(segmentation_strategy),
+        : m_ch_segmentation_strategy(ch_segmentation_strategy),
           m_pos_per_env(pos_per_env),
           m_first_layer_symbols(std::move(first_layer_symbols)),
           m_first_layer_nodes(std::move(first_layer_nodes)),
@@ -68,12 +69,12 @@ class FinalizedISaxIndex : public IFinalizedIndex<FTag> {
     ~FinalizedISaxIndex() = default;
 
     /**
-     * @brief Get the lower and upper segment limits of the given symbol
+     * @brief Get the lower and upper interval limits of the given symbol
      * @param num_bits Number of bits used for the symbol
      * @param symbol The symbol to get the limits for
-     * @return A pair of lower and upper limits for the segment
+     * @return A pair of lower and upper limits for the interval
      */
-    std::pair<Real, Real> get_segment_limits(SaxNumBitsT num_bits, SymbolType symbol) const {
+    std::pair<Real, Real> get_interval_limits(SaxNumBitsT num_bits, SymbolType symbol) const {
         uint num_shift = m_alphabet_num_bits - num_bits;
         auto [lower_ind, upper_ind] = get_limit_breakpoint_indexes(symbol, num_shift);
         return {
@@ -114,22 +115,24 @@ class FinalizedISaxIndex : public IFinalizedIndex<FTag> {
     const FinalizedISaxNode<FTag>* get_first_layer_node(size_t ind) const { return m_first_layer_nodes[ind].get(); }
 
     /**
-     * @brief Get the segmentation strategy
-     * @return The segmentation strategy
+     * @brief Get the channel segmentation strategy
+     * @return The channel segmentation strategy
      */
-    const ISegmentationStrategy* get_segmentation_strategy() const { return m_segmentation_strategy.get(); }
+    const IChannelSegmentationStrategy* get_ch_segmentation_strategy() const {
+        return m_ch_segmentation_strategy.get();
+    }
 
    private:
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
     uint m_pos_per_env;
-    sptr<ISegmentationStrategy> m_segmentation_strategy;
+    sptr<IChannelSegmentationStrategy> m_ch_segmentation_strategy;
     vec<vec<vec<SymbolType>>> m_first_layer_symbols;
     vec<uptr<FinalizedISaxNode<FTag>>> m_first_layer_nodes;
     vec<Real> m_breakpoints;
 
     std::pair<int, int> get_limit_breakpoint_indexes(SymbolType symbol, uint num_shift) const;
 
-    MAKE_SERIALIZABLE((m_first_layer_num_bits, m_alphabet_num_bits, m_pos_per_env, m_segmentation_strategy,
+    MAKE_SERIALIZABLE((m_first_layer_num_bits, m_alphabet_num_bits, m_pos_per_env, m_ch_segmentation_strategy,
                        m_first_layer_symbols, m_first_layer_nodes, m_breakpoints));
 };
 

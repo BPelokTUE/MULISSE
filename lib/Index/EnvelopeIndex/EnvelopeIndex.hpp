@@ -13,11 +13,11 @@ class EnvelopeIndex : public IIndex<Envelope> {
 
     /**
      * @brief Initialize the parameters of the EnvelopeIndex
-     * @param segmentation_strategy The segmentation strategy to use
+     * @param ch_segmentation_strategy The segmentation strategy to use
      * @param pos_per_env The number of positions per envelope
      */
-    EnvelopeIndex(sptr<ISegmentationStrategy> segmentation_strategy, const uint pos_per_env)
-        : m_segmentation_strategy(segmentation_strategy), m_pos_per_env(pos_per_env) {}
+    EnvelopeIndex(sptr<IChannelSegmentationStrategy> ch_segmentation_strategy, const uint pos_per_env)
+        : m_ch_segmentation_strategy(ch_segmentation_strategy), m_pos_per_env(pos_per_env) {}
 
     void insert(IndexEntry<Envelope> &entry) override { m_entries.push_back(entry); }
 
@@ -29,7 +29,7 @@ class EnvelopeIndex : public IIndex<Envelope> {
 
    protected:
     uint m_pos_per_env;
-    sptr<ISegmentationStrategy> m_segmentation_strategy;
+    sptr<IChannelSegmentationStrategy> m_ch_segmentation_strategy;
     vec<IndexEntry<Envelope>> m_entries;
 };
 

@@ -42,9 +42,10 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
      * given range of start indices WITH normalization. The envelopes are not discretized with iSAX.
      *
      * @param ts The (subsequence of the) univariate time series / channel
+     * @param ch_ind The channel index
      * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively
      */
-    vec<vec<Envelope>> get_normalized_envelopes(const vec<Real> &ts);
+    vec<vec<Envelope>> get_normalized_envelopes(const vec<Real> &ts, MtsNumChannelsT ch_ind);
 
     /**
      * @brief Declare the envelope groups with optimal size
@@ -52,10 +53,12 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
      * @param l_min Minimum length of a query
      * @param l_max Maximum length of a query
      * @param lg_segmentation_strategy ILengthGroupSegmentationStrategy to use
+     * @param ch_ind The channel index
      */
     vec<vec<Envelope>> get_envelope_groups(const uint series_len, const uint pos_per_env, const uint l_min,
                                            const uint l_max,
-                                           const ILengthGroupSegmentationStrategy *lg_segmentation_strategies);
+                                           const ILengthGroupSegmentationStrategy *lg_segmentation_strategies,
+                                           MtsNumChannelsT ch_ind);
 
     /**
      * @brief Helper function to flip the values of envelope segments without data

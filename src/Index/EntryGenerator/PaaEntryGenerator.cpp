@@ -12,7 +12,7 @@ vec<vec<IndexEntry<Paa>>> PaaEntryGenerator::get_entries(const vec<vec<Real>> &m
     vec<vec<IndexEntry<Paa>>> entry_groups(m_num_len_groups);
 
     for (MtsNumChannelsT c = 0; c < mts.size(); ++c) {
-        auto entry_tuple_groups = get_paa_entries_normalized(mts[c]);
+        auto entry_tuple_groups = get_paa_entries_normalized(mts[c], c);
         for (uint l_ind = 0; l_ind < m_num_len_groups; ++l_ind) {
             auto &entry_tuples = entry_tuple_groups[l_ind];
             auto &entry_group = entry_groups[l_ind];
@@ -31,7 +31,8 @@ vec<vec<IndexEntry<Paa>>> PaaEntryGenerator::get_entries(const vec<vec<Real>> &m
     return entry_groups;
 }
 
-vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normalized(const vec<Real> &ts) {
+vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normalized(const vec<Real> &ts,
+                                                                                    MtsNumChannelsT ch_ind) {
     auto &RS = RunSettings::get_instance();
     auto [l_min, l_max, lg_segmentation_strategy] = m_paa_params;
 
@@ -53,7 +54,8 @@ vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normali
 
             uint length_group = RS.get_length_group(subs_len);
             uint lg_l_max = RS.get_lg_l_max(length_group);
-            auto segmentation_strategy = lg_segmentation_strategy->get_const_segmentation_strategy(length_group);
+            auto segmentation_strategy = lg_segmentation_strategy->get_const_ch_segmentation_strategy(length_group)
+                                             ->get_const_segmentation_strategy(ch_ind);
 
             SaxSegIndT num_segments = segmentation_strategy->get_num_segments(subs_len),
                        max_num_segments = segmentation_strategy->get_num_segments(lg_l_max);

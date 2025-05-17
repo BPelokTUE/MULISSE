@@ -29,7 +29,7 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
                          const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
                          const vec<uint> *real_query_inds) const override {
         auto [query_paa, query_len] =
-            this->get_query_paa_and_len(query, m_index->get_segmentation_strategy(), real_query_inds);
+            this->get_query_paa_and_len(query, m_index->get_ch_segmentation_strategy(), real_query_inds);
 
         if (m_use_priority_queue) {
             return search_with_priority_queue(query, query_paa, query_len, result_set, distance_measure, dataset_ifs,
@@ -50,14 +50,14 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
         auto &logger = QueryLogger::get_instance();
 
         std::priority_queue<PQueueEnvelopeEntry> pq;
-        auto segmentation_strategy = m_index->get_segmentation_strategy();
+        auto ch_segmentation_strategy = m_index->get_ch_segmentation_strategy();
 
         logger.start_timer(QC::FIRST_LAYER_TIME_S);
         for (auto entry : m_index->get_entries()) {
             if (this->skip_entry(query_len, series_len, entry.m_subs_info)) continue;
 
             Real min_dist_squared =
-                this->get_min_dist_squared(entry.m_mts_summary, query_paa, distance_measure, segmentation_strategy);
+                this->get_min_dist_squared(entry.m_mts_summary, query_paa, distance_measure, ch_segmentation_strategy);
             pq.push({min_dist_squared, entry.m_subs_info});
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
@@ -84,14 +84,14 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
                                              std::ifstream &dataset_ifs, const vec<uint> *real_query_inds) const {
         auto &logger = QueryLogger::get_instance();
         uint series_len = RunSettings::get_instance().get_dataset_props().m_series_len;
-        auto segmentation_strategy = m_index->get_segmentation_strategy();
+        auto ch_segmentation_strategy = m_index->get_ch_segmentation_strategy();
 
         logger.start_timer(QC::TREE_TRAVERSAL_TIME_S);
         for (auto entry : m_index->get_entries()) {
             if (this->skip_entry(query_len, series_len, entry.m_subs_info)) continue;
 
             Real min_dist_squared =
-                this->get_min_dist_squared(entry.m_mts_summary, query_paa, distance_measure, segmentation_strategy);
+                this->get_min_dist_squared(entry.m_mts_summary, query_paa, distance_measure, ch_segmentation_strategy);
             logger.increment_count_col(QC::NUM_MIN_DIST_CALCULATED);
             if (min_dist_squared >= result_set.get_distance_lb()) continue;
 

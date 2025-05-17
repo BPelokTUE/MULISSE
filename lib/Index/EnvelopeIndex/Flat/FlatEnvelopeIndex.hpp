@@ -19,13 +19,14 @@ class FlatEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_t
    public:
     /**
      * @brief Construct a new FlatEnvelopeIndex instance
-     * @param segmentation_strategy The segmentation strategy to use
+     * @param ch_segmentation_strategy The channel segmentation strategy to use
      * @param pos_per_env Number of positions per envelope
      * @param sax_num_bits Number of bits used for SAX discretization. Defaults to 0, indicating no discretization.
      * If greater than 0, the breakpoints are assumed to have the same cardinality.
      */
-    FlatEnvelopeIndex(sptr<ISegmentationStrategy> segmentation_strategy, uint pos_per_env, SaxNumBitsT sax_num_bits = 0)
-        : EnvelopeIndex(segmentation_strategy, pos_per_env), m_sax_num_bits(sax_num_bits) {}
+    FlatEnvelopeIndex(sptr<IChannelSegmentationStrategy> ch_segmentation_strategy, uint pos_per_env,
+                      SaxNumBitsT sax_num_bits = 0)
+        : EnvelopeIndex(ch_segmentation_strategy, pos_per_env), m_sax_num_bits(sax_num_bits) {}
 
     FlatEnvelopeIndex() = default;
 
@@ -62,7 +63,7 @@ class FlatEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_t
     }
 
     uptr<IFinalizedIndex<EnvelopeTag>> finalize() override {
-        return std::make_unique<FinalizedFlatEnvelopeIndex>(m_segmentation_strategy, m_pos_per_env,
+        return std::make_unique<FinalizedFlatEnvelopeIndex>(m_ch_segmentation_strategy, m_pos_per_env,
                                                             std::move(m_entries));
     }
 

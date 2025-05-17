@@ -5,7 +5,7 @@
 #include "Util/RunSettings/RunSettings.hpp"
 
 AdaptiveMultiLGSegmentationStrategy::AdaptiveMultiLGSegmentationStrategy(
-    std::function<sptr<ISegmentationStrategy>(uint, uint, SaxSegIndT)> segmentation_strategy_factory,
+    std::function<sptr<IChannelSegmentationStrategy>(uint, uint, SaxSegIndT)> ch_segmentation_strategy_factory,
     SaxSegIndT avg_num_segments, uint pos_per_env) {
     auto &RS = RunSettings::get_instance();
     auto &length_props = RS.get_length_props();
@@ -14,14 +14,14 @@ AdaptiveMultiLGSegmentationStrategy::AdaptiveMultiLGSegmentationStrategy(
         throw std::runtime_error("AdaptiveMultiLGSegmentationStrategy requires length-based grouping.");
     }
 
-    m_segmentation_strategies.reserve(length_props.m_num_l_groups);
+    m_ch_segmentation_strategies.reserve(length_props.m_num_l_groups);
     auto num_segments_per_lg = calculate_num_segments_per_lg(length_props, pos_per_env, avg_num_segments);
 
     for (uint lg_ind = 0; lg_ind < length_props.m_num_l_groups; ++lg_ind) {
         uint lg_l_min = RS.get_lg_l_min(lg_ind);
         uint lg_l_max = RS.get_lg_l_max(lg_ind);
-        m_segmentation_strategies.push_back(
-            segmentation_strategy_factory(lg_l_min, lg_l_max, num_segments_per_lg[lg_ind]));
+        m_ch_segmentation_strategies.push_back(
+            ch_segmentation_strategy_factory(lg_l_min, lg_l_max, num_segments_per_lg[lg_ind]));
     }
 }
 

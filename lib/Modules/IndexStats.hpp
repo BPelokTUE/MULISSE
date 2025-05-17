@@ -101,7 +101,7 @@ class IndexAnalyzer {
                 auto channel_num_bits = isax_words[c].get_num_bits();
                 for (SaxSegIndT s = 0; s < isax_words[c].size(); ++s) {
                     auto [lower, upper] =
-                        index->get_segment_limits(channel_num_bits[s], isax_words[c].symbol_no_shift(s));
+                        index->get_interval_limits(channel_num_bits[s], isax_words[c].symbol_no_shift(s));
                     stats.update_seg_stats(lower, upper, c, s, num_entries);
                 }
             }

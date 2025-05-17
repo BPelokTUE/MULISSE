@@ -2,6 +2,7 @@
 #define INDEX_SEGMENTATION_LENGHTGROUPSEGMENTATIONSTRATEGY_ADAPTIVEMULTISEGMENTATIONSTRATEGY_HPP
 
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/MultiLGSegmentationStrategy.hpp"
+#include "Util/RunSettings/LengthProperties.hpp"
 
 /** @brief ILengthGroupSegmentationStrategy implementation that uses different SegmentationStrategy for each group,
  * parametrized by the length range of the group, and adapted based on the total "presence" of the group. */
@@ -9,12 +10,13 @@ class AdaptiveMultiLGSegmentationStrategy : public MultiLGSegmentationStrategy {
    public:
     /**
      * @brief Construct a new AdaptiveMultiLGSegmentationStrategy with the given segmentation strategy factory.
-     * @param segmentation_strategy_factory The factory function to create segmentation strategies for each group.
+     * @param ch_segmentation_strategy_factory The factory function to create channel segmentation strategies for each
+     * group.
      * @param avg_num_segments The average number of segments for each group.
      * @param pos_per_env The number of positions per envelope.
      */
     AdaptiveMultiLGSegmentationStrategy(
-        std::function<sptr<ISegmentationStrategy>(uint, uint, SaxSegIndT)> segmentation_strategy_factory,
+        std::function<sptr<IChannelSegmentationStrategy>(uint, uint, SaxSegIndT)> ch_segmentation_strategy_factory,
         SaxSegIndT avg_num_segments, uint pos_per_env);
 
     LengthGroupSegmentationStrategyType get_type() const override;
