@@ -1,6 +1,8 @@
 #ifndef INDEX_ENTRYMERGER_SAXBASEDENTRYMERGER_HPP
 #define INDEX_ENTRYMERGER_SAXBASEDENTRYMERGER_HPP
 
+#include <algorithm>
+
 #include "Index/EntryMerger/EntryMerger.hpp"
 #include "Index/Sax/SaxSymbolsFactory.hpp"
 #include "Util/RunSettings/RunSettings.hpp"

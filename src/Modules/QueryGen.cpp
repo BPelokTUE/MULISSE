@@ -1,5 +1,6 @@
 #include "Modules/QueryGen.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <random>
 

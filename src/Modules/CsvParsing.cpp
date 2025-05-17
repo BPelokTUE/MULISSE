@@ -1,5 +1,6 @@
 #include "Modules/CsvParsing.hpp"
 
+#include <algorithm>
 #include <random>
 
 #include "Util/Constants/Math.hpp"

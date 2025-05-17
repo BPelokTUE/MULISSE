@@ -1,6 +1,6 @@
-#include <doctest/doctest.h>
+#include "Index/Sax/BreakpointStrategy/EquiprobableBreakpointStrategy.hpp"
 
-#include "Index/Sax/SaxBreakpointStrategy.hpp"
+#include <doctest/doctest.h>
 
 TEST_CASE("Equiprobable strategy works for standard normal") {
     EquiprobableBreakpointStrategy strategy(0.0, 1.0);

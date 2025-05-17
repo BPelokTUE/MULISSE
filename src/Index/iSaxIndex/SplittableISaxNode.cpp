@@ -1,5 +1,6 @@
 #include "Index/iSaxIndex/SplittableISaxNode.hpp"
 
+#include <algorithm>
 #include <utility>
 
 #include "Index/Traits/FinalizedTraits.hpp"

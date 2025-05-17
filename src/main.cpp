@@ -6,7 +6,7 @@
 #include "Modules/CalcFfts.hpp"
 #include "Modules/CsvParsing.hpp"
 #include "Modules/IndexStats.hpp"
-#include "Modules/Indexing.hpp"
+#include "Modules/Indexing/Indexing.hpp"
 #include "Modules/QueryGen.hpp"
 #include "Modules/QueryStats.hpp"
 #include "Modules/RandomWalk.hpp"

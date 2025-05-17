@@ -13,8 +13,8 @@
 #include "Index/Traits/IndexTraits.hpp"
 #include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
 #include "Index/iSaxIndex/FinalizedISaxNode.hpp"
+#include "Index/iSaxIndex/SplitStrategy/iSaxSplitStrategy.hpp"
 #include "Index/iSaxIndex/SplittableISaxNode.hpp"
-#include "Index/iSaxIndex/iSaxSplitStrategy.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 #include "Util/Types/Pointers.hpp"
 

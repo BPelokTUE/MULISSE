@@ -10,14 +10,9 @@
     "query_noise_stdevs": [0.1],
     "search_methods": {
         "scan": ["scan"],
-        "index": ["envelope", "isax_envelope"]
+        "index": ["envelope"]
     },
-    "isax_split_strategies": ["em"],
-    "isax_breakpoint_strategies": ["equiprobable"],
-    "isax_leaf_cap_ratios": [0.0128],
-    "isax_start_bit_numbers": [1],
-    "segmentation_strategies": ["uniform"],
-    "num_segments": [24],
+    "num_segments": [32],
     "envelope_size_ratios": [0.05],
     "length_group_size_ratios": [0.05],
     "distance_measures": {
@@ -27,7 +22,6 @@
     "early_abandon": [true],
     "precalculate_ffts": [false],
     "adapt_index": [false],
-    "index_inserters": ["isax_parallel"],
     "search_types": ["knn"],
     "search_ks": [1],
     "search_rs": [1.0],

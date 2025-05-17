@@ -116,8 +116,8 @@ struct SaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual SaxIndexPar
 struct iSaxTrieParams {
     /** @brief Whether to merge entries in the leaves of the tree */
     bool m_merge_in_leaves;
-    /** @brief Only used for EntropyMaximizingStrategy: whether to select the segment with the min number of bits in
-     * case of a tie */
+    /** @brief Only used for EntropyMaximizingSplitStrategy: whether to select the segment with the min number of bits
+     * in case of a tie */
     bool m_min_num_bits_on_tie;
     /** @brief Maximum number of bits per segment */
     SaxNumBitsT m_num_bits_limit;
