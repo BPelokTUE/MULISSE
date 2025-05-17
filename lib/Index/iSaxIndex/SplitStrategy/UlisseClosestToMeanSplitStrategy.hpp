@@ -1,6 +1,8 @@
 #ifndef INDEX_ISAXINDEX_SPLITSTRATEGY_ULISSECLOSESTTOMEANSPLITSTRATEGY_HPP
 #define INDEX_ISAXINDEX_SPLITSTRATEGY_ULISSECLOSESTTOMEANSPLITSTRATEGY_HPP
 
+#include <cmath>
+
 #include "Index/iSaxIndex/SplitStrategy/iSaxSplitStrategy.hpp"
 
 /**
@@ -46,7 +48,7 @@ class UlisseClosestToMeanStrategy : public IiSaxSplitStrategy<T> {
                 auto [mu, sigma] = calculate_mu_and_sigma(sum, sum_sq, count);
 
                 if ((*mid_breakpoint - mu) / sigma <= m_max_std_dist &&
-                    (!split_ind_set || (abs(*mid_breakpoint - mu) < abs(split_breakpoint - mu)))) {
+                    (!split_ind_set || (std::abs(*mid_breakpoint - mu) < std::abs(split_breakpoint - mu)))) {
                     split_ind = {s, c};
                     split_breakpoint = *mid_breakpoint;
                 }

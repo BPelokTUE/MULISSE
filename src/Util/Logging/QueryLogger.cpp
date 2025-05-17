@@ -1,5 +1,6 @@
 #include "Util/Logging/QueryLogger.hpp"
 
+#include <cmath>
 #include <sstream>
 
 #include "Util/HelperFuncs/Conversion.hpp"
