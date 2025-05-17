@@ -493,6 +493,10 @@ def get_x_label(
                 length_values["l_min"] = val
             case DSC.L_MAX | ISC.L_MAX | QSC.L_MAX:
                 length_values["l_max"] = val
+            case QSC.L_MIN_RATIO:
+                length_values["l_min_ratio"] = val
+            case QSC.L_MAX_RATIO:
+                length_values["l_max_ratio"] = val
             case QC.QUERY_INTERVAL:
                 length_values["l_q_interval"] = val
             case ISC.L_PER_GROUP:
@@ -577,6 +581,17 @@ def get_x_label(
             label_parts.append(f"{int(l_min)}≤l")
     elif "l_max" in length_values:
         label_parts.append(f"l<{int(length_values['l_max'])}")
+
+    if "l_min_ratio" in length_values:
+        l_min_ratio = length_values["l_min_ratio"] * 100
+        if "l_max_ratio" in length_values:
+            l_max_ratio = length_values["l_max_ratio"] * 100
+            label_parts.append(f"{l_min_ratio:.0f}%≤l≤{l_max_ratio:.0f}%")
+        else:
+            label_parts.append(f"l>{l_min_ratio:.0f}%")
+    elif "l_max_ratio" in length_values:
+        l_max_ratio = length_values["l_max_ratio"] * 100
+        label_parts.append(f"l<{l_max_ratio:.0f}%")
 
     label = sep.join(label_parts)
     if "\n" not in label:
