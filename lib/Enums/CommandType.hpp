@@ -4,7 +4,17 @@
 #include "Util/HelperFuncs/Enums.hpp"
 
 /** @brief Enumeration type for the command type */
-enum CommandType { CREATE_DS, PARSE_CSV, CREATE_QS, CALC_Q_STATS, INDEX, CALC_I_STATS, CALC_FFTS, SEARCH };
+enum CommandType {
+    CREATE_DS,
+    PARSE_CSV,
+    CREATE_QS,
+    CALC_D_STATS,
+    CALC_Q_STATS,
+    INDEX,
+    CALC_I_STATS,
+    CALC_FFTS,
+    SEARCH
+};
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(CommandType, CMD_TYPE, false);
 

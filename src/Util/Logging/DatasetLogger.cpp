@@ -17,13 +17,16 @@ CsvDatasetLogAttributes::CsvDatasetLogAttributes(const vec<str> &source_csvs, ui
 
 DatasetType CsvDatasetLogAttributes::get_type() { return CSV; }
 
+const str DatasetLogger::DATASET_SETTINGS_FILE = "dataset_settings.csv";
+
 using DSC = DatasetSettingsColumn;
 
 void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
 #ifndef DISABLE_LOGGING
     DatasetLogger instance;
 
-    str dataset_settings_path = fs::path(RunSettings::get_instance().get_logs_path()) / instance.DATASET_SETTINGS_FILE;
+    str dataset_settings_path =
+        fs::path(RunSettings::get_instance().get_logs_path()) / DatasetLogger::DATASET_SETTINGS_FILE;
     instance.file_setup(dataset_settings_path, DATASET_SETTINGS_COL_STRS);
 
     // Append entry

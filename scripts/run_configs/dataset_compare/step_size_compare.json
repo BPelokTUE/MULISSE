@@ -1,11 +1,11 @@
 {
     "csv_data_dirs": [],
-    "dataset_sizes": [1000],
+    "dataset_sizes": [5000],
     "series_lengths": [1024],
     "syn_num_channels": [1],
     "syn_step_stdevs": [0.1, 1.0, 10.0],
-    "query_set_sizes": [100],
-    "l_range_ratios": [[0.25, 1.0]],
+    "query_set_sizes": [250],
+    "l_range_ratios": [[0.125, 1.0]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {

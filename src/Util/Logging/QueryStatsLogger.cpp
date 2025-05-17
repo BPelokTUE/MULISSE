@@ -3,6 +3,8 @@
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
+const str QueryStatsLogger::QUERY_STATS_FILE = "query_stats.csv";
+
 using QSTC = QueryStatsColumn;
 
 void QueryStats::calculate() {
@@ -28,7 +30,7 @@ void QueryStatsLogger::write_entry(uint query_id, const vec<vec<Real>> &query, Q
     }
     str query_len_str = to_string(query_len);
 
-    str query_stats_path = fs::path(RS.get_logs_path()) / instance.QUERY_STATS_FILE;
+    str query_stats_path = fs::path(RS.get_logs_path()) / QueryStatsLogger::QUERY_STATS_FILE;
     instance.file_setup(query_stats_path, QUERY_STATS_COL_STRS);
     instance.write_row(query_stats_path,
                        {

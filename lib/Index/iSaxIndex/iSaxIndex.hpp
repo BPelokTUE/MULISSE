@@ -81,8 +81,6 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
 
     void insert(IndexEntry<T> &entry) override {
         assert(entry.m_mts_summary.size() == static_cast<MtsNumChannelsT>(entry.m_mts_summary.size()));
-        assert(entry.m_mts_summary[0].size() ==
-               m_ch_segmentation_strategy->get_num_segments(U(entry.m_mts_summary[0].size())));
 
         auto [symbols, isax_words] = get_entry_sax_symbols_and_isax(entry, m_isax_word_factory);
 

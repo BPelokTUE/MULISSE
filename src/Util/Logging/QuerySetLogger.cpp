@@ -4,13 +4,15 @@
 
 using QSC = QuerySetSettingsColumn;
 
+const str QuerySetLogger::QUERY_SET_SETTINGS_FILE = "query_set_settings.csv";
+
 void QuerySetLogger::write_entry(QuerySetOptions &opts) {
 #ifndef DISABLE_LOGGING
     QuerySetLogger instance;
 
     auto &RS = RunSettings::get_instance();
 
-    str query_settings_path = fs::path(RS.get_logs_path()) / instance.QUERY_SET_SETTINGS_FILE;
+    str query_settings_path = fs::path(RS.get_logs_path()) / QuerySetLogger::QUERY_SET_SETTINGS_FILE;
     instance.file_setup(query_settings_path, QUERY_SET_SETTINGS_COL_STRS);
 
     instance.write_row(query_settings_path,

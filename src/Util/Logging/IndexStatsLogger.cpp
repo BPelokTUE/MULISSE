@@ -87,13 +87,15 @@ void IndexStats::calculate() {
                 (*seg_list_stats)[c][s].calculate(U(m_seg_count_list[c][s]));
 }
 
+const str IndexStatsLogger::INDEX_STATS_FILE = "index_stats.csv";
+
 void IndexStatsLogger::write_entry(const IndexStats &stats, uint length_group_id, uint sub_index_id) {
 #ifndef DISABLE_LOGGING
     IndexStatsLogger instance;
     auto &RS = RunSettings::get_instance();
 
     str index_file = RS.m_index_file;
-    str index_stats_path = fs::path(RS.get_logs_path()) / instance.INDEX_STATS_FILE;
+    str index_stats_path = fs::path(RS.get_logs_path()) / IndexStatsLogger::INDEX_STATS_FILE;
 
     vec<size_t> flat_seg_count_list(stats.m_seg_count_list.size() * stats.m_seg_count_list[0].size());
     for (MtsNumChannelsT c = 0; c < stats.m_seg_count_list.size(); ++c)

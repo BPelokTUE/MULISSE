@@ -85,15 +85,6 @@ class Logger {
 
     // Separators
     const char COL_SEP = ',', ROW_SEP = '\n', ITEM_SEP = ';';
-
-    // Paths
-    const str DATASET_SETTINGS_FILE = "dataset_settings.csv";
-    const str QUERY_SET_SETTINGS_FILE = "query_set_settings.csv";
-    const str QUERY_STATS_FILE = "query_stats.csv";
-    const str INDEX_SETTINGS_FILE = "index_settings.csv";
-    const str INDEX_STATS_FILE = "index_stats.csv";
-    const str SEARCH_SETTINGS_FILE = "search_settings.csv";
-    const str RUN_LOG_FILE = "runs.csv";
 };
 
 #endif  // LOGGER_HPP

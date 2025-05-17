@@ -108,6 +108,8 @@ class IndexLogger : public Logger {
     // Static
     static IndexLogger instance;
     static bool initialized;
+
+    static const str INDEX_SETTINGS_FILE;
 };
 
 #endif  // INDEX_LOGGER_HPP

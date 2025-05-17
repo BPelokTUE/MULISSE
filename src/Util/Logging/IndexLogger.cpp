@@ -7,6 +7,8 @@ bool IndexLogger::initialized = false;
 
 using ISC = IndexSettingsColumn;
 
+const str IndexLogger::INDEX_SETTINGS_FILE = "index_settings.csv";
+
 void IndexLogger::initialize(const IndexOptions &index_options) {
     if (initialized) return;
     initialized = true;

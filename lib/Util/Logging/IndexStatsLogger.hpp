@@ -1,9 +1,9 @@
 #ifndef INDEX_STATS_LOGGER_HPP
 #define INDEX_STATS_LOGGER_HPP
 
-#include "Util/Logging/Logger.hpp"
-#include "Util/Logging/AttributesStats.hpp"
 #include "Util/HelperFuncs/Enums.hpp"
+#include "Util/Logging/AttributesStats.hpp"
+#include "Util/Logging/Logger.hpp"
 
 /** @brief Enum of the columns of the index statistics log file */
 enum class IndexStatsColumn {
@@ -67,6 +67,8 @@ class IndexStatsLogger : public Logger {
 
    private:
     IndexStatsLogger() = default;
+
+    static const str INDEX_STATS_FILE;
 };
 
 #endif  // INDEX_STATS_LOGGER_HPP

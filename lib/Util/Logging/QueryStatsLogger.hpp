@@ -48,6 +48,8 @@ class QueryStatsLogger : public Logger {
 
    private:
     QueryStatsLogger() = default;
+
+    static const str QUERY_STATS_FILE;
 };
 
 #endif  // QUERY_STATSS_LOGGER_HPP

@@ -171,6 +171,9 @@ class QueryLogger : public Logger {
     // Static
     static QueryLogger instance;
     static bool initialized;
+
+    static const str SEARCH_SETTINGS_FILE;
+    static const str RUN_LOG_FILE;
 };
 
 #endif  // QUERY_LOGGER_HPP

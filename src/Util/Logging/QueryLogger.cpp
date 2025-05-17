@@ -12,6 +12,9 @@ bool QueryLogger::initialized = false;
 using QC = QueryColumn;
 using SSC = SearchSettingsColumn;
 
+const str QueryLogger::SEARCH_SETTINGS_FILE = "search_settings.csv";
+const str QueryLogger::RUN_LOG_FILE = "runs.csv";
+
 void QueryLogger::initialize(const SearchOptions &search_options) {
     if (initialized) return;
     initialized = true;

@@ -38,6 +38,8 @@ class QuerySetLogger : public Logger {
 
    private:
     QuerySetLogger() = default;
+
+    static const str QUERY_SET_SETTINGS_FILE;
 };
 
 #endif  // QUERY_SET_LOGGER_HPP

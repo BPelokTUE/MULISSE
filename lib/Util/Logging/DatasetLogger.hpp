@@ -67,6 +67,8 @@ class DatasetLogger : public Logger {
 
    private:
     DatasetLogger() = default;
+
+    static const str DATASET_SETTINGS_FILE;
 };
 
 #endif  // DATASET_LOGGER_HPP

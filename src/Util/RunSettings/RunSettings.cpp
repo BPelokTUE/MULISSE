@@ -65,9 +65,9 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
 
     switch (instance->m_command_type) {
         case CREATE_DS:
-            break;
         case PARSE_CSV:
             break;
+        case CALC_D_STATS:
         case CREATE_QS:
             check_path_exists(instance->get_dataset_path(), "Dataset");
             break;

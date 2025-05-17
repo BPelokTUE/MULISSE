@@ -526,7 +526,7 @@ def get_x_label(
             case DSC.NUM_CHANNELS:
                 label_parts.append(f"|C|={int(val)}")
             case DSC.SD:
-                label_parts.append(f"SD={int(val)}")
+                label_parts.append(f"SD={val}")
             case ISC.FIRST_LAYER_NUM_BITS:
                 if val is not None and val > 0:
                     label_parts.append(f"FLB={int(val)}")

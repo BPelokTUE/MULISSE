@@ -5,6 +5,7 @@
 #include "Index/EntryMerger/EntryMerger.hpp"
 #include "Modules/CalcFfts.hpp"
 #include "Modules/CsvParsing.hpp"
+#include "Modules/DatasetStats.hpp"
 #include "Modules/IndexStats.hpp"
 #include "Modules/Indexing/Indexing.hpp"
 #include "Modules/QueryGen.hpp"
@@ -29,6 +30,7 @@ int main(int argc, char **argv) {
     // Add subcommands
     auto rw_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_DS), "Create random walk dataset");
     auto csv_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(PARSE_CSV), "Create dataset from CSV");
+    auto d_stats_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CALC_D_STATS), "Calculate dataset statistics");
     auto qs_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_QS), "Create queries from dataset");
     auto q_stats_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CALC_Q_STATS), "Calculate query statistics");
     auto index_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(INDEX), "Construct MULISSE index");
@@ -122,6 +124,13 @@ int main(int argc, char **argv) {
     csv_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
     csv_subcommand->add_option("-S,--seed", seed, "Random seed")->capture_default_str();
     csv_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
+
+    // Options for calculating dataset statistics
+    d_stats_subcommand->add_option("-d,--dataset", dataset_path, "Dataset path relative to `DATA`")->required();
+    d_stats_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
+    d_stats_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
+        ->required()
+        ->check(positive_int);
 
     // Options for creating queries
     qs_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required();
@@ -446,6 +455,9 @@ int main(int argc, char **argv) {
         }
         case PARSE_CSV: {
             return create_dataset_from_csv(csv_paths, num_series, l_min, l_max, seed);
+        }
+        case CALC_D_STATS: {
+            return calculate_dataset_stats();
         }
         case CREATE_QS: {
             return create_queries({noise, num_queries, exact_lengths, l_min, l_max, used_channels, channel_mask, seed});

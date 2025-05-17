@@ -243,7 +243,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
         config,
         required = [
             CK_CSV_DATA_DIRS, CK_DATASET_SIZES, CK_SERIES_LENGTHS, CK_SYN_NUM_CHANNELS, CK_QUERY_SET_SIZES,
-            CK_SYN_STEP_STDEVS, CK_L_RANGE_RATIOS, CK_USED_CHANNEL_RATIOS, CK_QUERY_NOISE_STDEVS, CK_SEARCH_METHODS,
+            CK_L_RANGE_RATIOS, CK_USED_CHANNEL_RATIOS, CK_QUERY_NOISE_STDEVS, CK_SEARCH_METHODS,
             CK_DISTANCE_MEASURES, CK_SEARCH_TYPES, CK_SEARCH_APPROX, CK_SEARCH_RAW
         ],
     )
@@ -257,15 +257,14 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
             return [{RK_SERIES_LEN: config[CK_SERIES_LENGTHS], RK_L_RANGE: config[CK_L_RANGE_RATIOS]}]
 
         def get_dataset_settings() -> Settings:
-            dataset_seeds = config.get(CK_DATASET_SEEDS, [0])
             dataset_settings = [
                 {
                     RK_COMMAND: SUB_CREATE_DS,
                     RK_LOCATION: LOC_SYNTHETIC,
                     RK_SIZE: config[CK_DATASET_SIZES],
                     RK_NUM_CHANNELS: config[CK_SYN_NUM_CHANNELS],
-                    RK_STEP_STDEV: config[CK_SYN_STEP_STDEVS],
-                    RK_DATASET_SEED: dataset_seeds,
+                    **get_key_or_none(RK_STEP_STDEV, CK_SYN_STEP_STDEVS),
+                    **get_key_or_none(RK_DATASET_SEED, CK_DATASET_SEEDS),
                 }
             ]
 
@@ -279,7 +278,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
                     RK_LOCATION: os.path.basename(path),
                     RK_SIZE: config[CK_DATASET_SIZES],
                     RK_NUM_CHANNELS: [len(os.listdir(path))],
-                    RK_DATASET_SEED: dataset_seeds,
+                    **get_key_or_none(RK_DATASET_SEED, CK_DATASET_SEEDS),
                 }
                 if not separate_csv_datasets:
                     dataset_settings.append(item)
@@ -651,12 +650,13 @@ if __name__ == "__main__":
                 command = dataset_setting[RK_COMMAND]
                 num_series = dataset_setting[RK_SIZE]
                 num_channels = dataset_setting[RK_NUM_CHANNELS]
-                seed = dataset_setting[RK_DATASET_SEED]
 
                 data_file = os.path.join(dataset_setting[RK_LOCATION], f"data-{dataset_counter}.bin")
                 dataset_counter += 1
 
-                args = [command, "-d", data_file, "-n", str(num_series), "-m", str(series_len), "-S", str(seed)]
+                args = [command, "-d", data_file, "-n", str(num_series), "-m", str(series_len)]
+                if RK_DATASET_SEED in dataset_setting:
+                    args += ["-S", str(dataset_setting[RK_DATASET_SEED])]
                 if command == SUB_PARSE_CSV:
                     args += ["-l", str(l_min), "-L", str(l_max)]
                     csv_location = os.path.join(local_settings[LS_CSV_PATH], dataset_setting[RK_LOCATION])
@@ -666,7 +666,8 @@ if __name__ == "__main__":
                         args += ["-i", csv_location]
                 if command == SUB_CREATE_DS:
                     args += ["-c", str(num_channels)]
-                    args += ["-s", str(dataset_setting[RK_STEP_STDEV])]
+                    if RK_STEP_STDEV in dataset_setting:
+                        args += ["-s", str(dataset_setting[RK_STEP_STDEV])]
 
                 if not run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout):
                     continue
@@ -708,7 +709,6 @@ if __name__ == "__main__":
                 ):
                     num_queries = query_setting[RK_SIZE]
                     used_channels = int(num_channels * query_setting[RK_USED_CHANNEL_RATIO])
-                    noise_stdev = query_setting[RK_NOISE_STDEV]
                     exact_query_lengths = query_setting.get(RK_EXACT_QUERY_LENGTHS, [])
 
                     query_file = os.path.join(dataset_setting[RK_LOCATION], f"queries-{query_counter}.txt")
@@ -716,8 +716,10 @@ if __name__ == "__main__":
                     # fmt: off
                     args = [
                         SUB_CREATE_QS, "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
-                        "-Q", str(num_queries), "-u", str(used_channels), "--noise", str(noise_stdev)
+                        "-Q", str(num_queries), "-u", str(used_channels),
                     ]
+                    if RK_NOISE_STDEV in query_setting:
+                        args += ["--noise", str(query_setting[RK_NOISE_STDEV])]
                     if RK_QUERY_SET_SEED in query_setting:
                         args += ["-S", str(query_setting[RK_QUERY_SET_SEED])]
                     if len(exact_query_lengths) > 0:
@@ -730,8 +732,7 @@ if __name__ == "__main__":
                     if queries_created and calculate_query_stats:
                         # fmt: off
                         args = [
-                            SUB_CALC_Q_STATS, "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
-                            "--noise", str(noise_stdev)
+                            SUB_CALC_Q_STATS, "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len)
                         ]
                         # fmt: on
                         run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
