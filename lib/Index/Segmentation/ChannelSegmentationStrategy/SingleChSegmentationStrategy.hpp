@@ -12,6 +12,8 @@ class SingleChSegmentationStrategy : public IChannelSegmentationStrategy {
      */
     SingleChSegmentationStrategy(sptr<ISegmentationStrategy> segmentation_strategy);
 
+    SingleChSegmentationStrategy() = default;
+
     sptr<ISegmentationStrategy> get_segmentation_strategy(uint ch_ind) const override;
 
     const ISegmentationStrategy *get_const_segmentation_strategy(uint ch_ind) const override;
