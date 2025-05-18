@@ -11,7 +11,7 @@
 #include "Index/EntryGenerator/EntryGenerator.hpp"
 #include "Index/EntryMerger/EntryMerger.hpp"
 #include "Index/FinalizedIndex.hpp"
-#include "Index/Traits/FinalizedTraits.hpp"
+#include "Index/Traits/EntryTags.hpp"
 #include "Index/Traits/IndexTraits.hpp"
 #include "Util/Logging/IndexLogger.hpp"
 #include "Util/RunSettings/RunSettings.hpp"

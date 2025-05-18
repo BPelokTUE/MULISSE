@@ -3,7 +3,7 @@
 
 #include "Index/Entry/Envelope.hpp"
 #include "Index/Entry/Paa.hpp"
-#include "Index/Traits/FinalizedTraits.hpp"
+#include "Index/Traits/EntryTags.hpp"
 
 template <typename T>
 struct IndexTraits;

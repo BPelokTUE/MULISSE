@@ -1,4 +1,3 @@
-
 #include "Index/EnvelopeIndex/Flat/FlatEnvelopeIndex.hpp"
 
 #include "Enums/EntryInserterType.hpp"
@@ -6,6 +5,7 @@
 #include "Index/Entry/IndexEntry.hpp"
 #include "Index/EntryInserter/TopDownInserter.hpp"
 #include "Index/EnvelopeIndex/Flat/FinalizedFlatEnvelopeIndex.hpp"
+#include "Index/Sax/SaxWord.hpp"
 #include "Serialization/Macros.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 

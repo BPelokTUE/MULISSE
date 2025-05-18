@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <utility>
 
-#include "Index/Traits/FinalizedTraits.hpp"
+#include "Index/Traits/EntryTags.hpp"
 #include "Index/Traits/IndexTraits.hpp"
 #include "Index/iSaxIndex/FinalizedISaxNode.hpp"
 #include "Util/RunSettings/RunSettings.hpp"

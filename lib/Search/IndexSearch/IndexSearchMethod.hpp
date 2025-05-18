@@ -3,7 +3,7 @@
 
 #include "Enums/DistanceType.hpp"
 #include "Enums/SearchType.hpp"
-#include "Index/Traits/FinalizedTraits.hpp"
+#include "Index/Traits/EntryTags.hpp"
 #include "Search/SearchMethod.hpp"
 
 /**

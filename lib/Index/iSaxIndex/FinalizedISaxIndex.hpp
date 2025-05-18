@@ -6,7 +6,8 @@
 
 #include "Index/FinalizedIndex.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
-#include "Index/Traits/FinalizedTraits.hpp"
+#include "Index/Traits/EntryTags.hpp"
+#include "Index/Traits/SaxTraits.hpp"
 #include "Index/iSaxIndex/FinalizedISaxNode.hpp"
 #include "Serialization/Macros.hpp"
 #include "Util/Constants/Math.hpp"

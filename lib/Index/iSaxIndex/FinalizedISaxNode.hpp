@@ -5,7 +5,7 @@
 #include <cereal/types/base_class.hpp>
 #include <vector>
 
-#include "Index/Traits/FinalizedTraits.hpp"
+#include "Index/Traits/EntryTags.hpp"
 #include "Index/iSaxIndex/iSaxNode.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"

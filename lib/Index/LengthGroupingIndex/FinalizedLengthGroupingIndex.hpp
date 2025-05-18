@@ -2,7 +2,7 @@
 #define INDEX_LENGTHGROUPINGINDEX_FINALIZEDLENGTHGROUPINGINDEX_HPP
 
 #include "Index/FinalizedIndex.hpp"
-#include "Index/Traits/FinalizedTraits.hpp"
+#include "Index/Traits/EntryTags.hpp"
 
 /**
  * @brief Group of finalized indexes each containing entries summarizing data about subsequences in different length

@@ -3,7 +3,7 @@
 #include "Index/EntryInserter/EntryInserter.hpp"
 #include "Index/EntryInserter/ParallelInserter.hpp"
 #include "Index/EntryInserter/TopDownInserter.hpp"
-#include "Index/Traits/FinalizedTraits.hpp"
+#include "Index/Traits/EntryTags.hpp"
 #include "Index/Traits/IndexTraits.hpp"
 #include "Index/iSaxIndex/FinalizedISaxNode.hpp"
 

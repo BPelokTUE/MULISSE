@@ -3,7 +3,7 @@
 
 #include "Index/FinalizedIndex.hpp"
 #include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
-#include "Index/Traits/FinalizedTraits.hpp"
+#include "Index/Traits/EntryTags.hpp"
 #include "Util/Types/Pointers.hpp"
 
 /** @brief Abstract base class for envelope-based finalized indexes */

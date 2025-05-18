@@ -8,7 +8,7 @@
 #include "Index/EnvelopeIndex/Tree/TreeEnvelopeIndex.hpp"
 #include "Index/FinalizedIndex.hpp"
 #include "Index/LengthGroupingIndex/FinalizedLengthGroupingIndex.hpp"
-#include "Index/Traits/FinalizedTraits.hpp"
+#include "Index/Traits/EntryTags.hpp"
 #include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
 #include "Search/ChainSearch.hpp"
 #include "Search/DistanceMeasure/DistanceMeasure.hpp"

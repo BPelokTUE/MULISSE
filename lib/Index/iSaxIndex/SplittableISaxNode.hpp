@@ -4,6 +4,7 @@
 #include "Index/Entry/EntryData.hpp"
 #include "Index/Entry/Envelope.hpp"
 #include "Index/Entry/Paa.hpp"
+#include "Index/Sax/iSaxWord.hpp"
 #include "Index/iSaxIndex/FinalizedISaxNode.hpp"
 #include "Util/Types/Pointers.hpp"
 

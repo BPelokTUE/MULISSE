@@ -1,5 +1,7 @@
 #include "Index/iSaxIndex/FinalizedISaxNode.hpp"
 
+#include "Index/Traits/SaxTraits.hpp"
+
 // PaaISax
 
 PaaISax::PaaISax(vec<PaaSaxSymbol> paa_sax_symbol, SaxNumBitsT num_bits) {

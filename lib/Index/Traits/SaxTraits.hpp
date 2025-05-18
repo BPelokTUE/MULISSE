@@ -1,10 +1,9 @@
-#ifndef INDEX_TRAITS_FINALIZEDTRAITS_HPP
-#define INDEX_TRAITS_FINALIZEDTRAITS_HPP
+#ifndef INDEX_TRAITS_SAXTRAITS_HPP
+#define INDEX_TRAITS_SAXTRAITS_HPP
 
 #include <cereal/access.hpp>
 
 #include "Index/Sax/iSaxWord.hpp"
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 
 struct EntrySaxSymbol {
@@ -92,11 +91,4 @@ struct SaxTraits<struct EnvelopeTag> {
     using SymbolType = EnvelopeSaxSymbol;
 };
 
-/**
- * @brief Concept to check if the entry type is valid for the index; TODO: this can be achieved without a concept
- * @tparam FTag The finalized traits tag
- */
-template <typename FTag>
-concept ValidEntryTraitsTag = std::is_same_v<FTag, PaaTag> || std::is_same_v<FTag, EnvelopeTag>;
-
-#endif  // INDEX_TRAITS_FINALIZEDTRAITS_HPP
+#endif  // INDEX_TRAITS_SAXTRAITS_HPP

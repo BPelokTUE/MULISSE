@@ -4,7 +4,7 @@
 #include <filesystem>
 
 #include "Enums/ArchiveType.hpp"
-#include "Index/Traits/FinalizedTraits.hpp"
+#include "Index/Traits/EntryTags.hpp"
 #include "Util/Types/Containers.hpp"
 
 namespace fs = std::filesystem;

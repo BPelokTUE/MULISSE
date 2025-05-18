@@ -2,7 +2,8 @@
 #define INDEX_CHAININDEX_FINALIZEDCHAININDEX_HPP
 
 #include "Index/FinalizedIndex.hpp"
-#include "Index/Traits/FinalizedTraits.hpp"
+#include "Index/Traits/EntryTags.hpp"
+#include "Util/Types/Pointers.hpp"
 
 /**
  * @brief Set of finalized indexes, intended to be used in a chain, with the approximate indexes being used first and
@@ -10,41 +11,21 @@
  * @tparam FTag The traits of the entries in the index
  */
 template <typename FTag>
-    requires ValidEntryTraitsTag<FTag>
 class FinalizedChainIndex : public IFinalizedIndex<FTag> {
    public:
     FinalizedChainIndex() = default;
 
-    FinalizedChainIndex(vec<uptr<IFinalizedIndex<FTag>>> approx_indexes, uptr<IFinalizedIndex<FTag>> exact_index)
-        : m_approx_indexes(std::move(approx_indexes)), m_exact_index(std::move(exact_index)) {}
+    FinalizedChainIndex(vec<uptr<IFinalizedIndex<FTag>>> approx_indexes, uptr<IFinalizedIndex<FTag>> exact_index);
 
-    void save(const str &out_file, ArchiveType ar_type) override {
-        for (uint approx_ind = 0; approx_ind < m_approx_indexes.size(); ++approx_ind)
-            m_approx_indexes[approx_ind]->save(get_index_file_path(out_file, false, ar_type, approx_ind), ar_type);
-        m_exact_index->save(get_index_file_path(out_file, true, ar_type), ar_type);
-    }
+    void save(const str &out_file, ArchiveType ar_type) override;
 
-    void load(const str &in_file, ArchiveType ar_type) override {
-        for (uint approx_ind = 0; approx_ind < m_approx_indexes.size(); ++approx_ind)
-            m_approx_indexes[approx_ind]->load(get_index_file_path(in_file, false, ar_type, approx_ind), ar_type);
-        m_exact_index->load(get_index_file_path(in_file, true, ar_type), ar_type);
-    }
+    void load(const str &in_file, ArchiveType ar_type) override;
 
-    size_t get_size_on_disk(const str &index_file, const ArchiveType ar_type) const override {
-        size_t size = 0;
-        for (uint approx_ind = 0; approx_ind < m_approx_indexes.size(); ++approx_ind)
-            size += m_approx_indexes[approx_ind]->get_size_on_disk(
-                get_index_file_path(index_file, false, ar_type, approx_ind));
-        size += m_exact_index->get_size_on_disk(get_index_file_path(index_file, true, ar_type));
-        return size;
-    }
+    size_t get_size_on_disk(const str &index_file, const ArchiveType ar_type) const override;
 
-    IFinalizedIndex<FTag> *release_approx_index(uint index) {
-        assert(index < m_approx_indexes.size());
-        return m_approx_indexes[index].release();
-    }
+    IFinalizedIndex<FTag> *release_approx_index(uint index);
 
-    IFinalizedIndex<FTag> *release_exact_index() { return m_exact_index.release(); }
+    IFinalizedIndex<FTag> *release_exact_index();
 
    private:
     vec<uptr<IFinalizedIndex<FTag>>> m_approx_indexes;

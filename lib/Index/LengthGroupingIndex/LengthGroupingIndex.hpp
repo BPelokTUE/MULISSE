@@ -8,7 +8,7 @@
 #include "Index/Entry/EntryData.hpp"
 #include "Index/Index.hpp"
 #include "Index/LengthGroupingIndex/FinalizedLengthGroupingIndex.hpp"
-#include "Index/Traits/FinalizedTraits.hpp"
+#include "Index/Traits/EntryTags.hpp"
 #include "Index/Traits/IndexTraits.hpp"
 
 namespace fs = std::filesystem;
