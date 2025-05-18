@@ -14,5 +14,6 @@
     "distance_measures": ["ed"],
     "early_abandon": [true],
     "separate_csv_datasets": true,
-    "calculate_dataset_stats": true
+    "calculate_dataset_stats": true,
+    "calculate_index_stats": true
 }

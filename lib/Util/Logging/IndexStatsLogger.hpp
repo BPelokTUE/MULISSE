@@ -25,9 +25,9 @@ enum class IndexStatsColumn {
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(IndexStatsColumn, INDEX_STATS_COL, false);
 
-// IndexStats class
-
 struct IndexStats {
+    bool m_separate_segment_stats = false;
+
     AttributeStats m_leaf_size_stats;
     AttributeStats m_leaf_height_stats;
     AttributeStats m_seg_range_stats;
@@ -43,7 +43,7 @@ struct IndexStats {
 
     IndexStats() = default;
 
-    IndexStats(MtsNumChannelsT num_channels, SaxSegIndT num_segments_per_channel);
+    IndexStats(MtsNumChannelsT num_channels, SaxSegIndT num_segments_per_channel, bool separate_segment_stats = false);
 
     void update_leaf_stats(size_t num_entries, size_t height);
 
@@ -62,8 +62,10 @@ class IndexStatsLogger : public Logger {
      * @param stats The statistics of the index
      * @param length_group_id The ID of the length group within the index
      * @param sub_index_id The ID of the sub-index within the index
+     * @param separate_segment_stats Whether to calculate segment statistics for each segment separately
      */
-    static void write_entry(const IndexStats &stats, uint length_group_id = 0, uint sub_index_id = 0);
+    static void write_entry(const IndexStats &stats, uint length_group_id = 0, uint sub_index_id = 0,
+                            bool separate_segment_stats = false);
 
    private:
     IndexStatsLogger() = default;

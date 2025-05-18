@@ -26,15 +26,18 @@ class IndexAnalyzer {
     /**
      * @brief Analyze the index, write the results into the log file
      * @param length_group_id The ID of the length group within the index (0 for non-length-grouped indexes)
+     * @param separate_segment_stats Whether to calculate segment statistics for each segment separately
      */
-    void analyze(uint length_group_id = 0);
+    void analyze(uint length_group_id = 0, bool separate_segment_stats = false);
 
     /**
      * @brief Analyze the index of the current run, write the results into the log file
      * @param index_format The format of the index
      * @param num_l_groups The number of length groups to use (0 for non-length-grouped indexes)
+     * @param separate_segment_stats Whether to calculate segment statistics for each segment separately
      */
-    static void analyze_run_index(ArchiveType index_format, uint num_l_groups = 0) {
+    static void analyze_run_index(ArchiveType index_format, uint num_l_groups = 0,
+                                  bool separate_segment_stats = false) {
         if (num_l_groups > 0) {
             vec<uptr<IFinalizedIndex<FTag>>> group_indexes(num_l_groups);
             for (uint l_ind = 0; l_ind < num_l_groups; l_ind++) group_indexes[l_ind] = create_index();
@@ -43,12 +46,12 @@ class IndexAnalyzer {
 
             for (uint l_ind = 0; l_ind < num_l_groups; l_ind++) {
                 auto sub_index = uptr<IndexType>(static_cast<IndexType *>(index->release_index(l_ind)));
-                IndexAnalyzer<IndexType, FTag>(std::move(sub_index)).analyze(l_ind);
+                IndexAnalyzer<IndexType, FTag>(std::move(sub_index)).analyze(l_ind, separate_segment_stats);
             }
         } else {
             auto index = create_index();
             load_index(index, index_format);
-            IndexAnalyzer<IndexType, FTag>(std::move(index)).analyze();
+            IndexAnalyzer<IndexType, FTag>(std::move(index)).analyze(0, separate_segment_stats);
         }
     }
 
@@ -117,8 +120,9 @@ class IndexAnalyzer {
     /**
      * @brief Analyze the iSAX index
      * @param length_group_id The ID of the length group within the index (0 for non-length-grouped indexes)
+     * @param separate_segment_stats Whether to calculate segment statistics for each segment separately
      * */
-    void analyze_isax(uint length_group_id = 0) {
+    void analyze_isax(uint length_group_id = 0, bool separate_segment_stats = false) {
         const FinalizedISaxIndex<FTag> *index = dynamic_cast<FinalizedISaxIndex<FTag> *>(m_index.get());
         if (!index) throw std::runtime_error("Could not cast index to FinalizedISaxIndex");
 
@@ -153,7 +157,9 @@ class IndexAnalyzer {
  * @param method_type The type of index to use
  * @param num_l_groups The number of length groups to use
  * @param index_format The format of the index
+ * @param separate_segment_stats Whether to calculate segment statistics for each segment separately
  */
-int calculate_index_stats(SearchMethodType method_type, uint num_l_groups, ArchiveType index_format);
+int calculate_index_stats(SearchMethodType method_type, uint num_l_groups, ArchiveType index_format,
+                          bool separate_segment_stats = false);
 
 #endif  // MODULES_INDEXSTATS_HPP

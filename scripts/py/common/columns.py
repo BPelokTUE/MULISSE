@@ -233,4 +233,5 @@ Column = (
     | IndexStatsColumn
     | SearchSettingsColumn
     | QueryColumn
+    | StatsColumn
 )

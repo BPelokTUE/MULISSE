@@ -647,11 +647,13 @@ Experiment: Segmentation strategy
 
 def experiment_segmentation_strategy(target_args_dict: dict):
     visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/dataset_compare/LOGS_dataset_stats"],
+        logs_dirs=["LOGS"],
+        # logs_dirs=["EXPERIMENT_LOGS/dataset_compare/LOGS_dataset_stats"],
         # logs_dirs=["EXPERIMENT_LOGS/relative_contrast/LOGS_relative_contrast_univariate"],
         groups_dict={
             # ERD.METHODS_COLS: [SSC.METHOD_NAME],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+            # ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+            ERD.INDEXES_COLS: [ISC.INDEX_FILE],
         },
         separate_plots_dict={
             # (DSC.DATASET_FILE, DSC.SD): [],
@@ -660,22 +662,25 @@ def experiment_segmentation_strategy(target_args_dict: dict):
         num_query_intervals=1,
         merge_csv_datasets=False,
         y_scale="log",
-        bar_plot_color_attr=DSC.DATASET_FILE,
+        bar_plot_color_attr=ISC.INDEX_FILE,
         # line_plot_x_attr=DSC.SERIES_LENGTH,
         # line_plot_included_cols={DSC.DATASET_FILE},
         # x_scale="linear",
         # heat_map_x_attr=ISC.NUM_ENVELOPES,
         # heat_map_y_attr=ISC.NUM_LEN_GROUPS,
         # heat_map_included_cols={ISC.NUM_SEGMENTS},
-        reducer=StdReducer(),
+        reducer=MeanReducer(),
         **target_args_dict,
     )
 
 
 for target_args_dict in [
     TargetArgs.QUERY_TIME.value,
-    # {"targets_dict": {ERD.QUERY_STATS_COLS: [QSTC.RC_USING_MEAN]}},
-    # {"targets_dict": {ERD.QUERY_STATS_COLS: [QSTC.RC_USING_MAX]}},
+    # TargetArgs.PRUNING_RATIO.value,
+    # {"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.STD)]}},
+    {"targets_dict": {ERD.DATASET_STATS_COLS: [DSTC.VARIANCE]}},
+    {"targets_dict": {ERD.DATASET_STATS_COLS: [DSTC.SKEWNESS]}},
+    {"targets_dict": {ERD.DATASET_STATS_COLS: [DSTC.KURTOSIS]}},
 ]:
     experiment_segmentation_strategy(target_args_dict=target_args_dict)
 

@@ -7,26 +7,26 @@
 #include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
 #include "Util/Logging/IndexStatsLogger.hpp"
 
-// Utility
-
 // iSAX
 
 template <>
-void IndexAnalyzer<FinalizedISaxIndex<PaaTag>, PaaTag>::analyze(uint length_group_id) {
-    analyze_isax(length_group_id);
+void IndexAnalyzer<FinalizedISaxIndex<PaaTag>, PaaTag>::analyze(uint length_group_id, bool separate_segment_stats) {
+    analyze_isax(length_group_id, separate_segment_stats);
 }
 
 // iSAX + envelope
 
 template <>
-void IndexAnalyzer<FinalizedISaxIndex<EnvelopeTag>, EnvelopeTag>::analyze(uint length_group_id) {
-    analyze_isax(length_group_id);
+void IndexAnalyzer<FinalizedISaxIndex<EnvelopeTag>, EnvelopeTag>::analyze(uint length_group_id,
+                                                                          bool separate_segment_stats) {
+    analyze_isax(length_group_id, separate_segment_stats);
 }
 
 // Envelope / SAX envelope
 
 template <>
-void IndexAnalyzer<FinalizedFlatEnvelopeIndex, EnvelopeTag>::analyze(uint length_group_id) {
+void IndexAnalyzer<FinalizedFlatEnvelopeIndex, EnvelopeTag>::analyze(uint length_group_id,
+                                                                     bool separate_segment_stats) {
     const FinalizedFlatEnvelopeIndex *index = dynamic_cast<FinalizedFlatEnvelopeIndex *>(m_index.get());
     if (!index) throw std::runtime_error("Could not cast index to FinalizedFlatEnvelopeIndex");
 
@@ -42,7 +42,7 @@ void IndexAnalyzer<FinalizedFlatEnvelopeIndex, EnvelopeTag>::analyze(uint length
     if (num_segments == 0) {
         std::cout << "Warning: Number of segments is 0\n";
     }
-    IndexStats stats(num_channels, num_segments);
+    IndexStats stats(num_channels, num_segments, separate_segment_stats);
 
     for (const IndexEntry<Envelope> &entry : index->get_entries()) {
         stats.update_leaf_stats(1, 1);
@@ -55,7 +55,7 @@ void IndexAnalyzer<FinalizedFlatEnvelopeIndex, EnvelopeTag>::analyze(uint length
         }
     }
     stats.calculate();
-    IndexStatsLogger::write_entry(stats, length_group_id, m_sub_index_id);
+    IndexStatsLogger::write_entry(stats, length_group_id, m_sub_index_id, separate_segment_stats);
 }
 
 // iSAX + envelope / SAX envelope
@@ -69,36 +69,44 @@ uptr<FinalizedChainIndex<EnvelopeTag>> IndexAnalyzer<FinalizedChainIndex<Envelop
 }
 
 template <>
-void IndexAnalyzer<FinalizedChainIndex<EnvelopeTag>, EnvelopeTag>::analyze(uint length_group_id) {
+void IndexAnalyzer<FinalizedChainIndex<EnvelopeTag>, EnvelopeTag>::analyze(uint length_group_id,
+                                                                           bool separate_segment_stats) {
     auto approx_index = uptr<FinalizedISaxIndex<EnvelopeTag>>(
         static_cast<FinalizedISaxIndex<EnvelopeTag> *>(m_index->release_approx_index(0)));
-    IndexAnalyzer<FinalizedISaxIndex<EnvelopeTag>, EnvelopeTag>(std::move(approx_index), 0u).analyze(length_group_id);
+    IndexAnalyzer<FinalizedISaxIndex<EnvelopeTag>, EnvelopeTag>(std::move(approx_index), 0u)
+        .analyze(length_group_id, separate_segment_stats);
 
     auto exact_index =
         uptr<FinalizedFlatEnvelopeIndex>(static_cast<FinalizedFlatEnvelopeIndex *>(m_index->release_exact_index()));
-    IndexAnalyzer<FinalizedFlatEnvelopeIndex, EnvelopeTag>(std::move(exact_index), 1u).analyze(length_group_id);
+    IndexAnalyzer<FinalizedFlatEnvelopeIndex, EnvelopeTag>(std::move(exact_index), 1u)
+        .analyze(length_group_id, separate_segment_stats);
 }
 
 // Main
 
-int calculate_index_stats(SearchMethodType method_type, uint num_l_groups, ArchiveType index_format) {
+int calculate_index_stats(SearchMethodType method_type, uint num_l_groups, ArchiveType index_format,
+                          bool separate_segment_stats) {
     switch (method_type) {
         case ISAX: {
-            IndexAnalyzer<FinalizedISaxIndex<PaaTag>, PaaTag>::analyze_run_index(index_format, num_l_groups);
+            IndexAnalyzer<FinalizedISaxIndex<PaaTag>, PaaTag>::analyze_run_index(index_format, num_l_groups,
+                                                                                 separate_segment_stats);
             break;
         }
         case ISAX_ENVELOPE: {
-            IndexAnalyzer<FinalizedISaxIndex<EnvelopeTag>, EnvelopeTag>::analyze_run_index(index_format, num_l_groups);
+            IndexAnalyzer<FinalizedISaxIndex<EnvelopeTag>, EnvelopeTag>::analyze_run_index(index_format, num_l_groups,
+                                                                                           separate_segment_stats);
             break;
         }
         case ENVELOPE:
         case SAX_ENVELOPE: {
-            IndexAnalyzer<FinalizedFlatEnvelopeIndex, EnvelopeTag>::analyze_run_index(index_format, num_l_groups);
+            IndexAnalyzer<FinalizedFlatEnvelopeIndex, EnvelopeTag>::analyze_run_index(index_format, num_l_groups,
+                                                                                      separate_segment_stats);
             break;
         }
         case ISAX_ENV_W_ENV:
         case ISAX_ENV_W_SAX_ENV: {
-            IndexAnalyzer<FinalizedChainIndex<EnvelopeTag>, EnvelopeTag>::analyze_run_index(index_format, num_l_groups);
+            IndexAnalyzer<FinalizedChainIndex<EnvelopeTag>, EnvelopeTag>::analyze_run_index(index_format, num_l_groups,
+                                                                                            separate_segment_stats);
             break;
         }
         default:
