@@ -1,6 +1,6 @@
 #include "Index/ChainIndex/FinalizedChainIndex.hpp"
 
-#include "Util/HelperFuncs/EntryDataTemplate.hpp"
+#include "Index/Traits/EntryTags.hpp"
 
 template <typename FTag>
 FinalizedChainIndex<FTag>::FinalizedChainIndex(vec<uptr<IFinalizedIndex<FTag>>> approx_indexes,
@@ -42,4 +42,4 @@ IFinalizedIndex<FTag> *FinalizedChainIndex<FTag>::release_exact_index() {
     return m_exact_index.release();
 }
 
-DECLARE_FINALIZED_TAG_SPECS(FinalizedChainIndex)
+DECLARE_ENTRY_TAG_SPECS(FinalizedChainIndex)

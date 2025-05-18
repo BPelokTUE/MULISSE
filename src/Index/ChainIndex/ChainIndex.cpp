@@ -1,7 +1,8 @@
 #include "Index/ChainIndex/ChainIndex.hpp"
 
+#include "Index/ChainIndex/FinalizedChainIndex.hpp"
 #include "Index/Entry/IndexEntry.hpp"
-#include "Util/HelperFuncs/EntryDataTemplate.hpp"
+#include "Index/Traits/EntryDataSpec.hpp"
 
 template <typename T>
 ChainIndex<T>::ChainIndex(vec<sptr<IIndex<T>>> approx_indexes, sptr<IIndex<T>> exact_index)

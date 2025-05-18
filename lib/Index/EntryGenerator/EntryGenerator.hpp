@@ -6,7 +6,6 @@
 #include "Util/Types/Numbers.hpp"
 
 template <typename T>
-    requires DerivedFromEntryData<T>
 class IndexEntry;
 
 /**
@@ -14,7 +13,6 @@ class IndexEntry;
  * @tparam The type of entry to generate, must extend IndexEntry
  * */
 template <typename T>
-    requires DerivedFromEntryData<T>
 class IEntryGenerator {
    public:
     virtual ~IEntryGenerator() = default;

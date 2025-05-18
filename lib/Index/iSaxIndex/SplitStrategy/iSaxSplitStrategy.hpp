@@ -1,17 +1,17 @@
 #ifndef ISAX_SPLIT_STRATEGY_HPP
 #define ISAX_SPLIT_STRATEGY_HPP
 
-#include <cstdlib>
+#include "Util/Types/Containers.hpp"
 
-#include "Index/Entry/EntryData.hpp"
-#include "Index/iSaxIndex/SplittableISaxNode.hpp"
-#include "Util/HelperFuncs/Math.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
-#include "Util/Types/SaxSplitIndex.hpp"
+template <typename T>
+class iSaxSplittableLeaf;
+
+class iSaxWord;
+
+class SaxSplitIndex;
 
 /** @brief Interface for iSAX split strategies */
 template <typename T>
-    requires DerivedFromEntryData<T>
 class IiSaxSplitStrategy {
    public:
     virtual ~IiSaxSplitStrategy() {}

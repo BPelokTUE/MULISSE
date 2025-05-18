@@ -9,7 +9,6 @@
 #include "Util/Types/SubsequenceInfo.hpp"
 
 template <typename T>
-    requires DerivedFromEntryData<T>
 class IndexEntry;
 
 /** @brief Base class for envelope nodes */

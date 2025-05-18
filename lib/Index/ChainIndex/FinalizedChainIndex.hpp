@@ -2,7 +2,6 @@
 #define INDEX_CHAININDEX_FINALIZEDCHAININDEX_HPP
 
 #include "Index/FinalizedIndex.hpp"
-#include "Index/Traits/EntryTags.hpp"
 #include "Util/Types/Pointers.hpp"
 
 /**

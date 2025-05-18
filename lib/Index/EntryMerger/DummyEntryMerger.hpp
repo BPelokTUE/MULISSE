@@ -8,10 +8,9 @@
  * @tparam T the type of data stored in the entries
  */
 template <typename T>
-    requires DerivedFromEntryData<T>
 class DummyEntryMerger : public IEntryMerger<T> {
    public:
-    vec<IndexEntry<T>> merge_entries(vec<IndexEntry<T>> &&entries) override { return entries; }
+    vec<IndexEntry<T>> merge_entries(vec<IndexEntry<T>> &&entries) override;
 };
 
 #endif  // INDEX_ENTRYMERGER_DUMMYENTRYMERGER_HPP

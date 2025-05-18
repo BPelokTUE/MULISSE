@@ -33,7 +33,6 @@ struct EnvelopeFinalizationResult : public FinalizationResult {
  * Derived classes of SplittableISaxNode contain information for facilitating insertion into the iSAX index
  * */
 template <typename T>
-    requires DerivedFromEntryData<T>
 class SplittableISaxNode : public iSaxNode {
    public:
     virtual ~SplittableISaxNode() = default;
@@ -65,10 +64,8 @@ class SplittableISaxNode : public iSaxNode {
  * @tparam T The type of data stored in the index
  * */
 template <typename T>
-    requires DerivedFromEntryData<T>
 class iSaxSplittableInternal : public SplittableISaxNode<T> {
     template <typename U>
-        requires DerivedFromEntryData<U>
     friend class iSaxIndex;
 
    public:
@@ -113,10 +110,8 @@ class iSaxSplittableInternal : public SplittableISaxNode<T> {
 
 /** @brief Splittable leaf node */
 template <typename T>
-    requires DerivedFromEntryData<T>
 class iSaxSplittableLeaf : public SplittableISaxNode<T> {
     template <typename U>
-        requires DerivedFromEntryData<U>
     friend class iSaxIndex;
 
    public:

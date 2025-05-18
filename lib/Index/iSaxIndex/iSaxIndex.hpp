@@ -23,13 +23,11 @@
  * @tparam T Type data stored in the index
  */
 template <typename T>
-    requires DerivedFromEntryData<T>
 class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxIndex<T>> {
     using FTag = typename IndexTraits<T>::FinalizedTag;
     using SymbolType = typename SaxTraits<FTag>::SymbolType;
 
     template <typename U>
-        requires DerivedFromEntryData<U>
     friend class iSaxParallelInserter;
 
     bool m_merge_in_leaves;

@@ -9,7 +9,6 @@
  * @tparam T The type of data stored in the entries
  */
 template <typename T>
-    requires DerivedFromEntryData<T>
 struct IndexEntry {
     /** @brief Position within the dataset and length of the subsequence summarized in the entry */
     SubsequenceInfo m_subs_info;

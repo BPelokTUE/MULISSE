@@ -2,7 +2,7 @@
 #define INDEX_ENVELOPEINDEX_FINALIZEDENVELOPEINDEX_HPP
 
 #include "Index/FinalizedIndex.hpp"
-#include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 #include "Index/Traits/EntryTags.hpp"
 #include "Util/Types/Pointers.hpp"
 

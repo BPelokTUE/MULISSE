@@ -1,10 +1,7 @@
 #ifndef INDEX_CHAININDEX_HPP
 #define INDEX_CHAININDEX_HPP
 
-#include "Index/ChainIndex/FinalizedChainIndex.hpp"
-#include "Index/Entry/EntryData.hpp"
 #include "Index/Index.hpp"
-#include "Index/Traits/EntryTags.hpp"
 
 /**
  * @brief Set of indexes intended to be used in a chain, with the approximate indexes being used first and the exact

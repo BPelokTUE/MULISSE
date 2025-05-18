@@ -4,6 +4,7 @@
 
 #include <fakeit/fakeit.hpp>
 
+#include "Util/RunSettings/RunSettings.hpp"
 #include "common.hpp"
 
 TEST_CASE("LowerSaxBasedEntryMerger with Envelope type") {

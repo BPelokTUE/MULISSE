@@ -8,6 +8,14 @@ struct PaaTag {};
 struct EnvelopeTag {};
 
 /**
+ * @brief Declare template specializations for the Entry tags
+ * @param CLASS The class to declare the specializations for
+ */
+#define DECLARE_ENTRY_TAG_SPECS(CLASS) \
+    template class CLASS<PaaTag>;      \
+    template class CLASS<EnvelopeTag>;
+
+/**
  * @brief Concept to check if the entry type is valid for the index; TODO: this can be achieved without a concept
  * @tparam FTag The finalized traits tag
  */

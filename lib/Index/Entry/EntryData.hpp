@@ -1,8 +1,6 @@
 #ifndef INDEX_ENTRY_ENTRYDATA_HPP
 #define INDEX_ENTRY_ENTRYDATA_HPP
 
-#include <type_traits>
-
 #include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 

@@ -1,6 +1,6 @@
 #include "Modules/IndexStats.hpp"
 
-#include "Index/ChainIndex/ChainIndex.hpp"
+#include "Index/ChainIndex/FinalizedChainIndex.hpp"
 #include "Index/EnvelopeIndex/Flat/FinalizedFlatEnvelopeIndex.hpp"
 #include "Index/Index.hpp"
 #include "Index/LengthGroupingIndex/LengthGroupingIndex.hpp"

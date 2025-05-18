@@ -1,10 +1,9 @@
 #ifndef ENTRY_MERGER_HPP
 #define ENTRY_MERGER_HPP
 
-#include "Index/Entry/EntryData.hpp"
+#include "Util/Types/Containers.hpp"
 
 template <typename T>
-    requires DerivedFromEntryData<T>
 struct IndexEntry;
 
 /**
@@ -12,7 +11,6 @@ struct IndexEntry;
  * @tparam T the type of data stored in the entries
  */
 template <typename T>
-    requires DerivedFromEntryData<T>
 class IEntryMerger {
    public:
     virtual ~IEntryMerger() = default;
