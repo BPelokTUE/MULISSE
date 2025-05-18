@@ -159,14 +159,21 @@ def plot_bars(
     seen_labels = set()
     seen_hatches = set()
 
+    replacement_colors = CATEGORY_COLORS
+    replacement_color_ind = 0
+
     for bar_group_key, bars in bar_groups.items():
         bars_values = [bar[1] for bar in bars]
 
         colors = []
         for bar in bars:
-            color = color_map[bar[0]]
+            if bar[0] in color_map:
+                color = color_map[bar[0]]
+            else:
+                color = replacement_colors[replacement_color_ind]
+                replacement_color_ind = (replacement_color_ind + 1) % len(replacement_colors)
             colors.append(color)
-            label = label_map[bar[0]]
+            label = label_map.get(bar[0], bar[0])
             if label not in seen_labels:
                 seen_labels.add(label)
                 ax.bar(0, 0, color=color, label=label, edgecolor="black")
@@ -493,6 +500,8 @@ def get_x_label(
                 length_values["l_min"] = val
             case DSC.L_MAX | ISC.L_MAX | QSC.L_MAX:
                 length_values["l_max"] = val
+            case DSC.SD:
+                label_parts.append(f"Step={val}")
             case QSC.L_MIN_RATIO:
                 length_values["l_min_ratio"] = val
             case QSC.L_MAX_RATIO:

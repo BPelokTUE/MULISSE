@@ -28,6 +28,7 @@ if True:
 
 from scripts.py.common.columns import Column, StatsColumn
 from scripts.py.common.columns import DatasetSettingsColumn as DSC
+from scripts.py.common.columns import DatasetStatsColumn as DSTC
 from scripts.py.common.columns import IndexSettingsColumn as ISC
 from scripts.py.common.columns import IndexStatsColumn as ISTC
 from scripts.py.common.columns import QueryColumn as QC
@@ -57,7 +58,14 @@ from scripts.py.visualization.plots import (
     plot_heat_map,
     plot_lines,
 )
-from scripts.py.visualization.reduction import ERD, ExperimentResults, MeanReducer, Reducer, execute_reduction
+from scripts.py.visualization.reduction import (
+    ERD,
+    ExperimentResults,
+    MeanReducer,
+    Reducer,
+    StdReducer,
+    execute_reduction,
+)
 from scripts.py.visualization.style import COLD_TO_HOT_COLORS, PALETTE
 
 # %%[markdown]
@@ -139,6 +147,8 @@ def visualize_experiments(
         columns[erd] = target_cols + groups_dict.get(erd, [])
 
     add_runs = any([len(d.get(ERD.RUNS_COLS, [])) > 0 for d in [groups_dict, targets_dict]])
+    add_dataset_stats = any([len(d.get(ERD.DATASET_STATS_COLS, [])) > 0 for d in [groups_dict, targets_dict]])
+    add_query_stats = any([len(d.get(ERD.QUERY_STATS_COLS, [])) > 0 for d in [groups_dict, targets_dict]])
     add_index_stats = any([len(d.get(ERD.INDEX_STATS_COLS, [])) > 0 for d in [groups_dict, targets_dict]])
 
     results_list = [
@@ -147,6 +157,8 @@ def visualize_experiments(
             cols=columns,
             num_query_intervals=num_query_intervals,
             add_runs=add_runs,
+            add_dataset_stats=add_dataset_stats,
+            add_query_stats=add_query_stats,
             add_index_stats=add_index_stats,
         )
         for logs_dir in logs_dirs
@@ -212,19 +224,26 @@ def visualize_experiments(
 
             if bar_plot_color_attr is not None:
                 bar_plot_color_attr_ind = get_col_index(bar_plot_color_attr, groups)
-                method_keys_list = list(METHOD_LABELS.keys())
-                reduced_values_subset = sort_dict(
-                    reduced_values_subset,
-                    lambda x: (
-                        method_keys_list.index(x[0][bar_plot_color_attr_ind]),
-                        *x[0][:bar_plot_color_attr_ind],
-                        *x[0][1 + bar_plot_color_attr_ind :],
-                    ),
-                )
+                if bar_plot_color_attr == SSC.METHOD_NAME:
+                    method_keys_list = list(METHOD_LABELS.keys())
+                    reduced_values_subset = sort_dict(
+                        reduced_values_subset,
+                        lambda x: (
+                            method_keys_list.index(x[0][bar_plot_color_attr_ind]),
+                            *x[0][:bar_plot_color_attr_ind],
+                            *x[0][1 + bar_plot_color_attr_ind :],
+                        ),
+                    )
+
                 plot_bars(
                     reduced_values_subset,
                     bar_plot_color_attr_ind,
-                    x_labels=get_x_labels(reduced_values_subset, groups_dict, padding_rows=padding_rows),
+                    x_labels=get_x_labels(
+                        reduced_values_subset,
+                        groups_dict,
+                        discard_cols={bar_plot_color_attr},
+                        padding_rows=padding_rows,
+                    ),
                     y_label=y_label,
                     y_lim=y_lim,
                     title=title,
@@ -628,58 +647,35 @@ Experiment: Segmentation strategy
 
 def experiment_segmentation_strategy(target_args_dict: dict):
     visualize_experiments(
-        # logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_num_segments_univariate_large"],
-        #
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_univariate_ts_len"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_1_length_group_univariate"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_2_position_group_univariate"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_3_num_segments_univariate"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_3_num_segments_univariate_long"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_4_num_series"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_5_series_length"],
-        #
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_multivariate"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_multivariate_local"],
-        #
-        # logs_dirs=["EXPERIMENT_LOGS/entry_merging/LOGS_envelope_merging"],
-        #
-        logs_dirs=["EXPERIMENT_LOGS/dataset_compare/LOGS_step_size_compare"],
-        #
-        # logs_dirs=["LOGS"],
+        logs_dirs=["EXPERIMENT_LOGS/dataset_compare/LOGS_dataset_stats"],
+        # logs_dirs=["EXPERIMENT_LOGS/relative_contrast/LOGS_relative_contrast_univariate"],
         groups_dict={
-            ERD.METHODS_COLS: [SSC.METHOD_NAME],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SD],
-            # ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
-            # ERD.INDEXES_COLS: [ISC.ENTRY_MERGER_TYPE, ISC.MERGER_NUM_BITS, ISC.NUM_SEGMENTS],
-            # ERD.INDEXES_COLS: [ISC.NUM_LEN_GROUPS, ISC.NUM_ENVELOPES, ISC.NUM_SEGMENTS],
-            # ERD.INDEXES_COLS: [ISC.NUM_ENVELOPES],
+            # ERD.METHODS_COLS: [SSC.METHOD_NAME],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE],
         },
         separate_plots_dict={
             # (DSC.DATASET_FILE, DSC.SD): [],
-            # (DSC.SERIES_LENGTH,): [(2048,)],
-            # (QSC.L_MIN, QSC.L_MAX): [(256, 1536), (256, 2048)],
-            # (ISC.SEGMENTATION_STRATEGY, ISC.LG_SEGMENTATION_STRATEGY): [],
         },
         # regex_dict={SSC.METHOD_NAME: r"envelope", ISC.NUM_SEGMENTS: r"4", ISC.POS_PER_ENV: r"7"},
         num_query_intervals=1,
-        merge_csv_datasets=True,
-        y_scale="linear",
-        # bar_plot_color_attr=None,
+        merge_csv_datasets=False,
+        y_scale="log",
+        bar_plot_color_attr=DSC.DATASET_FILE,
         # line_plot_x_attr=DSC.SERIES_LENGTH,
         # line_plot_included_cols={DSC.DATASET_FILE},
         # x_scale="linear",
         # heat_map_x_attr=ISC.NUM_ENVELOPES,
         # heat_map_y_attr=ISC.NUM_LEN_GROUPS,
         # heat_map_included_cols={ISC.NUM_SEGMENTS},
+        reducer=StdReducer(),
         **target_args_dict,
     )
 
 
 for target_args_dict in [
-    TargetArgs.QUERY_TIME.value
-    # TargetArgs.PRUNING_RATIO.value,
-    # TargetArgs.INDEX_SIZE.value,
-    # {"targets_dict": {ERD.INDEXES_COLS: [ISC.NUM_ENTRIES]}},
+    TargetArgs.QUERY_TIME.value,
+    # {"targets_dict": {ERD.QUERY_STATS_COLS: [QSTC.RC_USING_MEAN]}},
+    # {"targets_dict": {ERD.QUERY_STATS_COLS: [QSTC.RC_USING_MAX]}},
 ]:
     experiment_segmentation_strategy(target_args_dict=target_args_dict)
 

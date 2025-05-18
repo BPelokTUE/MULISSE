@@ -20,6 +20,23 @@ class DatasetSettingsColumn(Enum):
         return "dataset_settings.csv"
 
 
+class DatasetStatsColumn(Enum):
+    DATASET_FILE = auto()
+    TS_IND = auto()
+    CHANNEL = auto()
+    MEAN = auto()
+    VARIANCE = auto()
+    SKEWNESS = auto()
+    KURTOSIS = auto()
+
+    def __str__(self):
+        return self.name.lower()
+
+    @classmethod
+    def get_csv_name(cls) -> str:
+        return "dataset_stats.csv"
+
+
 class IndexSettingsColumn(Enum):
     ID = auto()
     DATASET_FILE = auto()
@@ -210,6 +227,7 @@ class StatsColumn:
 Column = (
     IndexSettingsColumn
     | DatasetSettingsColumn
+    | DatasetStatsColumn
     | QuerySetSettingsColumn
     | QueryStatsColumn
     | IndexStatsColumn

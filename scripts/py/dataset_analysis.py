@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 from common.ulisse_envelopes import ulisse_envelope_normalized
 
-LOGS_DIR = "../../LOGS"
+LOGS_DIR = "../../EXPERIMENT_LOGS/dataset_compare/LOGS_dataset_stats"
 DATA_DIR = "../../DATA"
 DATASET_SETTINGS_CSV = "dataset_settings.csv"
 

@@ -8,6 +8,7 @@ import os
 import shutil
 import subprocess
 from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
 from time import time
 from typing import Any, Iterator, Optional
 
@@ -41,6 +42,7 @@ CK_SEARCH_RAW = "search_raw"
 CK_DATASET_SEEDS = "dataset_seeds"
 CK_QUERY_SET_SEEDS = "query_set_seeds"
 CK_SEPARATE_CSV_DATASETS = "separate_csv_datasets"
+CK_CALCULATE_DATASET_STATS = "calculate_dataset_stats"
 CK_CALCULATE_QUERY_STATS = "calculate_query_stats"
 CK_CALCULATE_INDEX_STATS = "calculate_index_stats"
 CK_ADAPT_INDEX = "adapt_index"
@@ -110,11 +112,13 @@ RK_PRIORITY_QUEUE = "priority_queue"
 # MULISSE subcommands
 SUB_CREATE_DS = "create_ds"
 SUB_PARSE_CSV = "parse_csv"
+SUB_CALC_D_STATS = "calc_d_stats"
 SUB_CALC_FFTS = "calc_ffts"
 SUB_CREATE_QS = "create_qs"
 SUB_CALC_Q_STATS = "calc_q_stats"
 SUB_INDEX = "index"
 SUB_CALC_I_STATS = "calc_i_stats"
+SUB_SEARCH = "search"
 
 # Data locations
 LOC_SYNTHETIC = "synthetic"
@@ -236,15 +240,21 @@ def combine_parsed_configs(parsed_configs: dict[str, ParsedConfig]) -> ParsedCon
     )
 
 
-def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
+@dataclass
+class CalculateStats:
+    dataset: bool
+    query: bool
+    index: bool
+
+
+def parse_config_file(input_config) -> tuple[ParsedConfig, CalculateStats]:
     config = json.load(open(input_config))
     # fmt: off
     check_config_keys(
         config,
         required = [
             CK_CSV_DATA_DIRS, CK_DATASET_SIZES, CK_SERIES_LENGTHS, CK_SYN_NUM_CHANNELS, CK_QUERY_SET_SIZES,
-            CK_L_RANGE_RATIOS, CK_USED_CHANNEL_RATIOS, CK_QUERY_NOISE_STDEVS, CK_SEARCH_METHODS,
-            CK_DISTANCE_MEASURES, CK_SEARCH_TYPES, CK_SEARCH_APPROX, CK_SEARCH_RAW
+            CK_L_RANGE_RATIOS, CK_SEARCH_METHODS, CK_DISTANCE_MEASURES, 
         ],
     )
     # fmt: on
@@ -292,12 +302,11 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
         def get_query_set_settings() -> Settings:
             setting = {
                 RK_SIZE: config[CK_QUERY_SET_SIZES],
-                RK_USED_CHANNEL_RATIO: config[CK_USED_CHANNEL_RATIOS],
-                RK_NOISE_STDEV: config[CK_QUERY_NOISE_STDEVS],
+                **get_key_or_none(RK_USED_CHANNEL_RATIO, CK_USED_CHANNEL_RATIOS),
+                **get_key_or_none(RK_NOISE_STDEV, CK_QUERY_NOISE_STDEVS),
                 **get_key_or_none(RK_QUERY_SET_SEED, CK_QUERY_SET_SEEDS),
+                **get_key_or_none(RK_EXACT_QUERY_LENGTHS, CK_EXACT_QUERY_LENGTH_SETS),
             }
-            if CK_EXACT_QUERY_LENGTH_SETS in config:
-                setting[RK_EXACT_QUERY_LENGTHS] = config[CK_EXACT_QUERY_LENGTH_SETS]
             return [setting]
 
         def get_index_settings() -> Settings:
@@ -359,19 +368,21 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
 
         def get_method_settings(index_settings: Settings) -> tuple[Settings, Settings]:
             method_settings_base = []
-            if TYPE_KNN in config[CK_SEARCH_TYPES]:
-                method_settings_base.append({RK_SEARCH_TYPE: TYPE_KNN, RK_K: config.get(CK_SEARCH_KS, [])})
-            if TYPE_R_RANGE in config[CK_SEARCH_TYPES]:
-                method_settings_base.append({RK_SEARCH_TYPE: TYPE_R_RANGE, RK_R: config.get(CK_SEARCH_RS, [])})
+            search_types = config.get(CK_SEARCH_TYPES, [])
+            if TYPE_KNN in search_types or RK_K in config:
+                method_settings_base.append({RK_SEARCH_TYPE: TYPE_KNN, **get_key_or_none(RK_K, CK_SEARCH_KS)})
+            if TYPE_R_RANGE in search_types or RK_R in config:
+                method_settings_base.append({RK_SEARCH_TYPE: TYPE_R_RANGE, **get_key_or_none(RK_R, CK_SEARCH_RS)})
+
+            if len(method_settings_base) == 0:
+                method_settings_base.append({})
 
             for i, settings in enumerate(method_settings_base):
                 method_settings_base[i] = dict(
                     settings,
-                    **{
-                        RK_APPROX: config[CK_SEARCH_APPROX],
-                        RK_RAW: config[CK_SEARCH_RAW],
-                        **get_key_or_none(RK_MAX_LEAVES_TO_VISIT, CK_MAX_LEAVES_TO_VISIT),
-                    },
+                    **get_key_or_none(RK_APPROX, CK_SEARCH_APPROX),
+                    **get_key_or_none(RK_RAW, CK_SEARCH_RAW),
+                    **get_key_or_none(RK_MAX_LEAVES_TO_VISIT, CK_MAX_LEAVES_TO_VISIT),
                 )
 
             def combine_settings(settings1, settings2):
@@ -403,8 +414,11 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
             for distance_measure, settings in distance_measures_settings.items():
                 if distance_measure in config[CK_DISTANCE_MEASURES]:
                     for base_setting in index_method_settings_base:
-                        if any(method in base_setting[RK_METHOD_TYPE] for method in METHODS_W_FLAT_INDEX):
-                            base_setting[RK_PRIORITY_QUEUE] = config.get(CK_PRIORITY_QUEUE, [True])
+                        if (
+                            any(method in base_setting[RK_METHOD_TYPE] for method in METHODS_W_FLAT_INDEX)
+                            and CK_PRIORITY_QUEUE in config
+                        ):
+                            base_setting[RK_PRIORITY_QUEUE] = config[CK_PRIORITY_QUEUE]
                         index_method_settings.append(dict(base_setting, **settings))
                     for base_setting in scan_method_settings_base:
                         scan_method_settings.append(dict(base_setting, **settings))
@@ -422,6 +436,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
             scan_method_settings=scan_method_settings,
         )
 
+    calculate_dataset_stats = config.get(CK_CALCULATE_DATASET_STATS, False)
     calculate_query_stats = config.get(CK_CALCULATE_QUERY_STATS, False)
     calculate_index_stats = config.get(CK_CALCULATE_INDEX_STATS, False)
 
@@ -431,7 +446,10 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
             profiles.update(val.keys())
 
     if len(profiles) == 0:
-        return (parse_flat_config(config), calculate_query_stats, calculate_index_stats)
+        return (
+            parse_flat_config(config),
+            CalculateStats(calculate_dataset_stats, calculate_query_stats, calculate_index_stats),
+        )
 
     parsed_configs: dict[str, ParsedConfig] = {}
     for profile in profiles:
@@ -445,7 +463,10 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, bool, bool]:
 
         parsed_configs[profile] = parse_flat_config(profile_config)
 
-    return (combine_parsed_configs(parsed_configs), calculate_query_stats, calculate_index_stats)
+    return (
+        combine_parsed_configs(parsed_configs),
+        CalculateStats(calculate_dataset_stats, calculate_query_stats, calculate_index_stats),
+    )
 
 
 class SettingIterator:
@@ -620,7 +641,7 @@ if __name__ == "__main__":
             else:
                 shutil.rmtree(data_path)
 
-    parsed_config, calculate_query_stats, calculate_index_stats = parse_config_file(input_args.input_config)
+    parsed_config, calculate_stats = parse_config_file(input_args.input_config)
 
     if input_args.print_settings:
         print(parsed_config)
@@ -671,6 +692,14 @@ if __name__ == "__main__":
 
                 if not run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout):
                     continue
+
+                if calculate_stats.dataset:
+                    # fmt: off
+                    run_command_with_logging([
+                        EXECUTABLE_PATH, SUB_CALC_D_STATS, "-d", data_file, "-c", str(num_channels), "-m", str(series_len),
+                    ])
+                    # fmt: on
+
                 ffts_required = any(
                     method.get(RK_PRECALCULATE_FFTS, False)
                     for _profile, method in itertools.chain(
@@ -689,7 +718,7 @@ if __name__ == "__main__":
                     # fmt: on
 
                 def get_method_args(setting):
-                    args = ["search"]
+                    args = [SUB_SEARCH]
                     for key, value in setting.items():
                         if key in [RK_RAW, RK_APPROX, RK_EARLY_ABANDON, RK_SORT_QUERY]:
                             if value:
@@ -729,7 +758,7 @@ if __name__ == "__main__":
                     # fmt: on
                     queries_created = run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
 
-                    if queries_created and calculate_query_stats:
+                    if queries_created and calculate_stats.query:
                         # fmt: off
                         args = [
                             SUB_CALC_Q_STATS, "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len)
@@ -841,7 +870,7 @@ if __name__ == "__main__":
                             args += [f"--{key}", str(value)]
 
                         if run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout):
-                            if calculate_index_stats:
+                            if calculate_stats.index:
                                 # fmt: off
                                 args = [
                                     SUB_CALC_I_STATS, "-i", index_file, "-c", str(num_channels), "-t", index_method,

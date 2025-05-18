@@ -7,6 +7,7 @@ import pandas as pd
 from pydantic import BaseModel
 from scripts.py.common.columns import Column, StatsColumn
 from scripts.py.common.columns import DatasetSettingsColumn as DSC
+from scripts.py.common.columns import DatasetStatsColumn as DSTC
 from scripts.py.common.columns import IndexSettingsColumn as ISC
 from scripts.py.common.columns import IndexStatsColumn as ISTC
 from scripts.py.common.columns import QueryColumn as QC
@@ -19,6 +20,7 @@ from scripts.py.common.utils import COLS_FOR_METHOD_NAME, define_method_name_col
 
 class ExperimentResultDataframe(Enum):
     DATASETS_COLS = auto()
+    DATASET_STATS_COLS = auto()
     QUERY_SETS_COLS = auto()
     INDEXES_COLS = auto()
     METHODS_COLS = auto()
@@ -34,6 +36,7 @@ ERD = ExperimentResultDataframe
 
 REQUIRED_COLS = {
     ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
+    ERD.DATASET_STATS_COLS: [str(DSTC.DATASET_FILE)],
     ERD.QUERY_SETS_COLS: [str(QSC.DATASET_FILE)],
     ERD.INDEXES_COLS: [str(ISC.DATASET_FILE), str(ISC.INDEX_FILE), str(ISC.FFTS_FILE)],
     ERD.METHODS_COLS: [str(SSC.DATASET_FILE), str(SSC.INDEX_FILE), str(SSC.FFTS_FILE), str(SSC.ID)],
@@ -41,14 +44,16 @@ REQUIRED_COLS = {
     ERD.INDEX_STATS_COLS: [str(ISTC.INDEX_FILE)],
     ERD.QUERY_STATS_COLS: [str(QSTC.DATASET_FILE)],
 }
+
 CSV_FILES = {
-    ERD.DATASETS_COLS: "dataset_settings.csv",
-    ERD.QUERY_SETS_COLS: "query_set_settings.csv",
-    ERD.INDEXES_COLS: "index_settings.csv",
-    ERD.METHODS_COLS: "search_settings.csv",
-    ERD.RUNS_COLS: "runs.csv",
-    ERD.INDEX_STATS_COLS: "index_stats.csv",
-    ERD.QUERY_STATS_COLS: "query_stats.csv",
+    ERD.DATASETS_COLS: DSC.get_csv_name(),
+    ERD.DATASET_STATS_COLS: DSTC.get_csv_name(),
+    ERD.QUERY_SETS_COLS: QSC.get_csv_name(),
+    ERD.INDEXES_COLS: ISC.get_csv_name(),
+    ERD.METHODS_COLS: SSC.get_csv_name(),
+    ERD.RUNS_COLS: QC.get_csv_name(),
+    ERD.INDEX_STATS_COLS: ISTC.get_csv_name(),
+    ERD.QUERY_STATS_COLS: QSTC.get_csv_name(),
 }
 
 MERGED_COL_NAME_SEP = "::"
@@ -65,6 +70,7 @@ def rename_df_columns(df: pd.DataFrame, df_name: ERD) -> pd.DataFrame:
 class ExperimentResults(BaseModel):
     logs_dir: str
     datasets_df: pd.DataFrame
+    dataset_stats_df: pd.DataFrame
     query_sets_df: pd.DataFrame
     indexes_df: pd.DataFrame
     methods_df: pd.DataFrame
@@ -72,6 +78,8 @@ class ExperimentResults(BaseModel):
     index_stats_df: pd.DataFrame
     query_stats_df: pd.DataFrame
     add_runs: bool = True
+    add_dataset_stats: bool = False
+    add_query_stats: bool = False
     add_index_stats: bool = False
 
     class Config:
@@ -278,6 +286,8 @@ class ExperimentResults(BaseModel):
         logs_dir: str,
         cols: dict[ERD, list[Column]],
         add_runs: bool = True,
+        add_dataset_stats: bool = False,
+        add_query_stats: bool = False,
         add_index_stats: bool = False,
         num_query_intervals: int = 1,
     ):  # -> ExperimentResults:
@@ -346,6 +356,7 @@ class ExperimentResults(BaseModel):
         results = cls(
             logs_dir=logs_dir,
             datasets_df=dfs[ERD.DATASETS_COLS],
+            dataset_stats_df=dfs[ERD.DATASET_STATS_COLS],
             query_sets_df=dfs[ERD.QUERY_SETS_COLS],
             indexes_df=dfs[ERD.INDEXES_COLS],
             methods_df=dfs[ERD.METHODS_COLS],
@@ -353,6 +364,8 @@ class ExperimentResults(BaseModel):
             index_stats_df=dfs[ERD.INDEX_STATS_COLS],
             query_stats_df=dfs[ERD.QUERY_STATS_COLS],
             add_runs=add_runs,
+            add_dataset_stats=add_dataset_stats,
+            add_query_stats=add_query_stats,
             add_index_stats=add_index_stats,
         )
 
@@ -395,6 +408,7 @@ class ExperimentResults(BaseModel):
 
         # Drop extra columns
         results.datasets_df = results.datasets_df.drop(columns=extra_cols[ERD.DATASETS_COLS])
+        results.dataset_stats_df = results.dataset_stats_df.drop(columns=extra_cols[ERD.DATASET_STATS_COLS])
         results.query_sets_df = results.query_sets_df.drop(columns=extra_cols[ERD.QUERY_SETS_COLS])
         results.indexes_df = results.indexes_df.drop(columns=extra_cols[ERD.INDEXES_COLS])
         results.methods_df = results.methods_df.drop(columns=extra_cols[ERD.METHODS_COLS])
@@ -410,6 +424,16 @@ class ExperimentResults(BaseModel):
 
         columns_to_drop = []
         merged_df = rename_df_columns(self.datasets_df, ERD.DATASETS_COLS)
+
+        if self.add_dataset_stats and os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.DATASET_STATS_COLS])):
+            dstc_dataset_file = get_merged_col_name(ERD.DATASET_STATS_COLS, str(DSTC.DATASET_FILE))
+
+            merged_df = merged_df.merge(
+                rename_df_columns(self.dataset_stats_df, ERD.DATASET_STATS_COLS),
+                left_on=dsc_dataset_file,
+                right_on=dstc_dataset_file,
+                how="left",
+            )
 
         if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.QUERY_SETS_COLS])):
             qsc_dataset_file = get_merged_col_name(ERD.QUERY_SETS_COLS, str(QSC.DATASET_FILE))
@@ -481,7 +505,7 @@ class ExperimentResults(BaseModel):
                 )
                 columns_to_drop.append(ssc_id)
 
-        if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.QUERY_STATS_COLS])):
+        if self.add_query_stats and os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.QUERY_STATS_COLS])):
             qstc_dataset_file = get_merged_col_name(ERD.QUERY_STATS_COLS, str(QSTC.DATASET_FILE))
 
             merged_df = merged_df.merge(
