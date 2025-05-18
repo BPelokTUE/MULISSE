@@ -3,6 +3,7 @@
 #include <tbb/parallel_sort.h>
 #endif
 
+#include "Index/Entry/IndexEntry.hpp"
 #include "Index/EnvelopeIndex/EnvelopeGrouper.hpp"
 #include "Index/EnvelopeIndex/Tree/EnvelopeNode.hpp"
 #include "Index/Sax/InvSax.hpp"

@@ -5,7 +5,12 @@
 
 #include "Index/Entry/Envelope.hpp"
 #include "Util/Types/Containers.hpp"
+#include "Util/Types/Pointers.hpp"
 #include "Util/Types/SubsequenceInfo.hpp"
+
+template <typename T>
+    requires DerivedFromEntryData<T>
+class IndexEntry;
 
 /** @brief Base class for envelope nodes */
 class EnvelopeNode {

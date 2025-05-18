@@ -2,6 +2,7 @@
 #define RESULT_SET_HPP
 
 #include "Enums/SearchType.hpp"
+#include "Search/Results/SearchResult.hpp"
 #include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 

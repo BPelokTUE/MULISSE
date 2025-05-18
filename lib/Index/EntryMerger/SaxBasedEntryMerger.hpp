@@ -3,7 +3,10 @@
 
 #include <algorithm>
 
+#include "Index/Entry/Envelope.hpp"
+#include "Index/Entry/Paa.hpp"
 #include "Index/EntryMerger/EntryMerger.hpp"
+#include "Index/Sax/SaxHelpers.hpp"
 #include "Index/Sax/SaxSymbolsFactory.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 

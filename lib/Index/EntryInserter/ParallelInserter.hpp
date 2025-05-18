@@ -2,10 +2,7 @@
 #define INDEX_ENTRYINSERTER_PARALLELINSERTER_HPP
 
 #include "Index/Entry/EntryData.hpp"
-#include "Index/EntryInserter/TopDownInserter.hpp"
 #include "Index/iSaxIndex/iSaxIndex.hpp"
-#include "Util/Types/Containers.hpp"
-#include "Util/Types/Numbers.hpp"
 
 template <typename T>
     requires DerivedFromEntryData<T>

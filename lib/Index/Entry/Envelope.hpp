@@ -1,10 +1,10 @@
 #ifndef ENVELOPE_HPP
 #define ENVELOPE_HPP
 
-#include "Index/Entry/IndexEntry.hpp"
-#include "Index/EntryGenerator/EntryGenerator.hpp"
-#include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
+#include "Index/Entry/EntryData.hpp"
 #include "Util/Constants/Math.hpp"
+
+class ILengthGroupSegmentationStrategy;
 
 /**
  * @brief Envelope of a multivariate time series

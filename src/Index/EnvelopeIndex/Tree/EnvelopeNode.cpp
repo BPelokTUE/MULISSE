@@ -1,5 +1,10 @@
 #include "Index/EnvelopeIndex/Tree/EnvelopeNode.hpp"
 
+#include <cassert>
+
+#include "Index/Entry/IndexEntry.hpp"
+#include "Util/Types/Pointers.hpp"
+
 EnvelopeInternal::EnvelopeInternal(vec<uptr<EnvelopeNode>> &&children) : m_children(std::move(children)) {
     assert(!m_children.empty());
 

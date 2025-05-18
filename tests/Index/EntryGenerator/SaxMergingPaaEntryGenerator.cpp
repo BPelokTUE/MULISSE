@@ -4,6 +4,9 @@
 
 #include <fakeit/fakeit.hpp>
 
+#include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
+#include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
+#include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 #include "common.hpp"
 

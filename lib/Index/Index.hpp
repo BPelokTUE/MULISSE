@@ -8,6 +8,7 @@
 #include "Enums/EntryInserterType.hpp"
 #include "Enums/SearchType.hpp"
 #include "Index/Entry/EntryData.hpp"
+#include "Index/EntryGenerator/EntryGenerator.hpp"
 #include "Index/EntryMerger/EntryMerger.hpp"
 #include "Index/FinalizedIndex.hpp"
 #include "Index/Traits/FinalizedTraits.hpp"

@@ -3,11 +3,8 @@
 
 #include <tuple>
 
-#include "Index/Entry/IndexEntry.hpp"
 #include "Index/Entry/Paa.hpp"
 #include "Index/EntryGenerator/EntryGenerator.hpp"
-#include "Util/Types/Containers.hpp"
-#include "Util/Types/Numbers.hpp"
 
 /** @brief PAA generator for iSAX index */
 class PaaEntryGenerator : public IEntryGenerator<Paa> {

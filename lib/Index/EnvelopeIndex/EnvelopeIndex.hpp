@@ -1,10 +1,11 @@
 #ifndef INDEX_ENVELOPEINDEX_ENVELOPEINDEX_HPP
 #define INDEX_ENVELOPEINDEX_ENVELOPEINDEX_HPP
 
-#include <memory>
-
 #include "Index/Entry/Envelope.hpp"
+#include "Index/Entry/IndexEntry.hpp"
 #include "Index/Index.hpp"
+
+class IChannelSegmentationStrategy;
 
 /** @brief Abstract base class for envelope-based indexes */
 class EnvelopeIndex : public IIndex<Envelope> {
@@ -16,16 +17,15 @@ class EnvelopeIndex : public IIndex<Envelope> {
      * @param ch_segmentation_strategy The segmentation strategy to use
      * @param pos_per_env The number of positions per envelope
      */
-    EnvelopeIndex(sptr<IChannelSegmentationStrategy> ch_segmentation_strategy, const uint pos_per_env)
-        : m_ch_segmentation_strategy(ch_segmentation_strategy), m_pos_per_env(pos_per_env) {}
+    EnvelopeIndex(sptr<IChannelSegmentationStrategy> ch_segmentation_strategy, const uint pos_per_env);
 
-    void insert(IndexEntry<Envelope> &entry) override { m_entries.push_back(entry); }
+    void insert(IndexEntry<Envelope> &entry) override;
 
     /**
      * @brief Get the entries of the index
      * @return The entries of the index
      */
-    const vec<IndexEntry<Envelope>> &get_entries() const { return m_entries; }
+    const vec<IndexEntry<Envelope>> &get_entries() const;
 
    protected:
     uint m_pos_per_env;

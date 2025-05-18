@@ -1,6 +1,9 @@
 #include "Index/EntryGenerator/SaxMergingPaaEntryGenerator.hpp"
 
 #include "Index/Sax/SaxHelpers.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
+#include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
+#include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
 SaxMergingPaaEntryGenerator::SaxMergingPaaEntryGenerator(const PaaParams &paa_params, SaxNumBitsT merger_num_bits,

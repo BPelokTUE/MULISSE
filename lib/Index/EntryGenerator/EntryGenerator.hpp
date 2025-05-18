@@ -2,9 +2,12 @@
 #define INDEX_ENTRYGENERATOR_ENTRYGENERATOR_HPP
 
 #include "Index/Entry/EntryData.hpp"
-#include "Index/Entry/IndexEntry.hpp"
 #include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+
+template <typename T>
+    requires DerivedFromEntryData<T>
+class IndexEntry;
 
 /**
  * @brief Interface for index entry generators

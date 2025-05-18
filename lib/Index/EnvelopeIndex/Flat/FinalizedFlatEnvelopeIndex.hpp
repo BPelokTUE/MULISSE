@@ -4,6 +4,7 @@
 #include "Index/Entry/Envelope.hpp"
 #include "Index/Entry/IndexEntry.hpp"
 #include "Index/EnvelopeIndex/FinalizedEnvelopeIndex.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 #include "Serialization/Macros.hpp"
 
 class FinalizedFlatEnvelopeIndex : public FinalizedEnvelopeIndex {

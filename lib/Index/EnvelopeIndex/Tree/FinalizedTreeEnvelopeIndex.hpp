@@ -3,6 +3,7 @@
 
 #include "Index/EnvelopeIndex/FinalizedEnvelopeIndex.hpp"
 #include "Index/EnvelopeIndex/Tree/EnvelopeNode.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 #include "Serialization/Macros.hpp"
 
 class FinalizedTreeEnvelopeIndex : public FinalizedEnvelopeIndex {

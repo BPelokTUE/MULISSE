@@ -4,6 +4,7 @@
 #include "Enums/DistanceType.hpp"
 #include "Enums/SearchType.hpp"
 #include "Index/EnvelopeIndex/Tree/EnvelopeNode.hpp"
+#include "Index/EnvelopeIndex/Tree/FinalizedTreeEnvelopeIndex.hpp"
 #include "Search/IndexSearch/EnvelopeIndexSearch.hpp"
 #include "Util/Types/Numbers.hpp"
 

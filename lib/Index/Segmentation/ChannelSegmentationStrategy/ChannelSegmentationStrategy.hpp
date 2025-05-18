@@ -4,8 +4,9 @@
 #include <cereal/access.hpp>
 
 #include "Enums/ChannelSegmentationStrategyType.hpp"
-#include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
 #include "Util/Types/Pointers.hpp"
+
+class ISegmentationStrategy;
 
 class IChannelSegmentationStrategy {
    public:

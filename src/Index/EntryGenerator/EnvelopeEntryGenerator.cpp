@@ -1,5 +1,9 @@
 #include "Index/EntryGenerator/EnvelopeEntryGenerator.hpp"
 
+#include "Index/Entry/IndexEntry.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
+#include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
+#include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
@@ -147,4 +151,17 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_envelope_groups(
                                                  vec<Real>(segments_per_env_lg, -INF));
     }
     return envelope_groups;
+}
+
+void EnvelopeEntryGenerator::flip_env_infinities(vec<vec<Envelope>> &envelope_groups) {
+    for (auto &envelope_group : envelope_groups) {
+        for (auto &envelope : envelope_group) {
+            for (SaxSegIndT s = 0; s < envelope.m_lower.size(); ++s) {
+                if (envelope.m_lower[s] > envelope.m_upper[s]) {
+                    envelope.m_lower[s] = -INF;
+                    envelope.m_upper[s] = INF;
+                }
+            }
+        }
+    }
 }

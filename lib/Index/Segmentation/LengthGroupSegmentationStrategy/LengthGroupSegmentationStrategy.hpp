@@ -2,9 +2,10 @@
 #define LENGTH_GROUP_SEGMENTATION_STRATEGY_HPP
 
 #include "Enums/LengthGroupSegmentationStrategyType.hpp"
-#include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"
+
+class IChannelSegmentationStrategy;
 
 /** @brief Interface for length group segmentation strategies. */
 class ILengthGroupSegmentationStrategy {

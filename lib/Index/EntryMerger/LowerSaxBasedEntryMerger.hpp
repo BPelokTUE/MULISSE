@@ -1,7 +1,9 @@
 #ifndef INDEX_ENTRYMERGER_LOWERSAXBASEDENTRYMERGER_HPP
 #define INDEX_ENTRYMERGER_LOWERSAXBASEDENTRYMERGER_HPP
 
+#include "Index/Entry/Envelope.hpp"
 #include "Index/EntryMerger/SaxBasedEntryMerger.hpp"
+#include "Index/Sax/SaxHelpers.hpp"
 
 /**
  * @brief Class that merges overlapping IndexEntry<T> objects if the SAX representation of their lower bounds is

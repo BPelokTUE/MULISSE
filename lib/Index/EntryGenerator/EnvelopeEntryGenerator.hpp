@@ -64,18 +64,7 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
      * @brief Helper function to flip the values of envelope segments without data
      * @param envelope_groups Vector of envelope groups
      */
-    inline void flip_env_infinities(vec<vec<Envelope>> &envelope_groups) {
-        for (auto &envelope_group : envelope_groups) {
-            for (auto &envelope : envelope_group) {
-                for (SaxSegIndT s = 0; s < envelope.m_lower.size(); ++s) {
-                    if (envelope.m_lower[s] > envelope.m_upper[s]) {
-                        envelope.m_lower[s] = -INF;
-                        envelope.m_upper[s] = INF;
-                    }
-                }
-            }
-        }
-    }
+    void flip_env_infinities(vec<vec<Envelope>> &envelope_groups);
 
     friend class EnvelopeTest;
 };

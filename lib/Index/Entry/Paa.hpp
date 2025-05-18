@@ -1,13 +1,14 @@
 #ifndef PAA_HPP
 #define PAA_HPP
 
-#include "Index/EntryGenerator/EntryGenerator.hpp"
-#include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
+#include "Index/Entry/EntryData.hpp"
 #include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+
+class ILengthGroupSegmentationStrategy;
 
 /**
  * @brief Piecewise Aggregate Approximation (PAA) of a time series

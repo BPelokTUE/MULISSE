@@ -3,6 +3,7 @@
 
 #include "Index/Index.hpp"
 #include "Index/LengthGroupingIndex/LengthGroupingIndex.hpp"
+#include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
 #include "Modules/Indexing/IndexFactory/IndexFactoryParams.hpp"
 
 template <typename T>

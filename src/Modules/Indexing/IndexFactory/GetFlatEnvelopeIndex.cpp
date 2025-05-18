@@ -1,5 +1,6 @@
 #include "Modules/Indexing/IndexFactory/GetFlatEnvelopeIndex.hpp"
 
+#include "Index/Entry/IndexEntry.hpp"
 #include "Index/EnvelopeIndex/Flat/FlatEnvelopeIndex.hpp"
 
 sptr<IIndex<Envelope>> get_flat_envelope_index(IndexFactoryParams &factory_params) {

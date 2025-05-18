@@ -1,5 +1,9 @@
 #include "Index/EntryGenerator/PaaEntryGenerator.hpp"
 
+#include "Index/Entry/IndexEntry.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
+#include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
+#include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/RunSettings/RunSettings.hpp"

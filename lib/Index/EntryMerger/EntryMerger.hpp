@@ -2,12 +2,10 @@
 #define ENTRY_MERGER_HPP
 
 #include "Index/Entry/EntryData.hpp"
-#include "Index/Entry/Envelope.hpp"
-#include "Index/Entry/IndexEntry.hpp"
-#include "Index/Entry/Paa.hpp"
-#include "Index/Sax/SaxHelpers.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
-#include "Util/Types/Numbers.hpp"
+
+template <typename T>
+    requires DerivedFromEntryData<T>
+struct IndexEntry;
 
 /**
  * @brief Interface for merging IndexEntry objects

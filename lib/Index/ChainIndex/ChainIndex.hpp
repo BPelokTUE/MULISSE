@@ -5,9 +5,6 @@
 #include "Index/Entry/EntryData.hpp"
 #include "Index/Index.hpp"
 #include "Index/Traits/FinalizedTraits.hpp"
-#include "Search/Results/SearchResult.hpp"
-#include "Search/SearchMethod.hpp"
-#include "Search/SearchOptions.hpp"
 
 /**
  * @brief Set of indexes intended to be used in a chain, with the approximate indexes being used first and the exact
