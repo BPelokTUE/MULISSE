@@ -272,3 +272,17 @@ $$
 \{s^c \mid c\in\{1,...,|C|\}\} & : & \text{segment sizes per channel}
 \end{array}
 $$
+
+## Ideas for incorporating multivariate aspect
+
+### Different segmentation across channels
+- Runtime (and pruning ratio) are very different between univariate datasets, meaning that some channels are harder than others
+- More segments could be given to channels which are estimated as hard. How?
+    - [x] Use statistics describing the shape of channels and try to predict the runtime. I tried this, using the first four order moments, as well as total variance and autocorrelation at different lags. I then tried different regression models, but none of them work. More work could be spent on this, but I find it unlikely that we could predict the run-time based on dataset statistics alone, even if it was possible to do so, this would be a whole separate thesis project.
+    - [x] Split and merge envelope segments at query time based on channel difficulty approximated by min-dist contribution. I don't think this would help much, because it goes against having limited resources, as each channel would not to be transformable to the maximum granularity representation.
+        - min-dist does not seem to be a good predictor of query time
+    - [x] At query time, keep track of the min-dist contribution of each channel, and periodically / at certain thresholds / etc., redistribute segment count across channels, and recalculate the index (or parts of the index, in case of flat envelope).
+        - min-dist does not seem to be a good predictor of query time
+    - [ ] Before indexation, take a subset of the dataset, create queries for it, create separate univariate indexes for each channel (from the subset), measure the runtime, and distribute segment count across the channels accordingly.
+    - [x] The same idea as above, but only creating a single multivariate index on the subset, and using min-dist contribution to inform segment count.
+        - min-dist does not seem to be a good predictor of query time
