@@ -19,7 +19,7 @@ void DatasetStatsLogger::write_entry(const str &dataset_file, uint ts_ind, MtsNu
                         {DSTC::TS_IND, to_string(ts_ind)},
                         {DSTC::CHANNEL, to_string(channel)},
                         {DSTC::MEAN, to_string(stats.m_mean)},
-                        {DSTC::VARIANCE, to_string(stats.m_variance)},
+                        {DSTC::STD, to_string(stats.m_std)},
                         {DSTC::SKEWNESS, to_string(stats.m_skewness)},
                         {DSTC::KURTOSIS, to_string(stats.m_kurtosis)},
                         {DSTC::TOTAL_VAR_MEANS, instance.get_collection_str(stats.m_total_var_means)},

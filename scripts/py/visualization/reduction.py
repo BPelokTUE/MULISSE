@@ -4,7 +4,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from scripts.py.common.columns import Column, StatsColumn
 from scripts.py.common.columns import DatasetSettingsColumn as DSC
 from scripts.py.common.columns import DatasetStatsColumn as DSTC
@@ -531,7 +531,7 @@ class Reducer(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    def __call__(self, value: np.ndarray) -> float:
+    def __call__(self, value: np.ndarray) -> float | np.ndarray:
         raise NotImplementedError
 
 
@@ -541,7 +541,7 @@ class MeanReducer(Reducer):
 
 
 class RobustMeanReducer(Reducer):
-    discard_quantile: float = 0.05
+    discard_quantile: float = Field(0.05, ge=0.0, le=1.0)
 
     def __call__(self, value: np.ndarray) -> float:
         quantiles = np.quantile(value, [self.discard_quantile, 1 - self.discard_quantile])
@@ -561,6 +561,21 @@ class MinReducer(Reducer):
 class MaxReducer(Reducer):
     def __call__(self, value: np.ndarray) -> float:
         return np.max(value)
+
+
+class CollectionReducer(Reducer):
+    reducer: Reducer
+    separator: str = Field(";")
+
+    def __call__(self, value: np.ndarray) -> np.ndarray:
+        """
+        Takes something like ["1;2;3", "4;5;6"] and returns per column reduction. E.g. with mean reducer:
+        ["1", "4"] -> 2.5
+        ["2", "5"] -> 3.5
+        ["3", "6"] -> 4.5
+        """
+        split_arrays = np.array([np.fromstring(v, sep=self.separator) for v in value])
+        return np.apply_along_axis(self.reducer, 0, split_arrays)
 
 
 # %%[markdown]
@@ -588,9 +603,13 @@ def execute_reduction(
     :return: The reduction result.
     """
 
-    merged_targets = {
-        get_merged_col_name(target_df, str(target_col)): reducer for target_df, target_col, reducer in targets
-    }
+    merged_targets: dict[str, list[Reducer]] = {}
+    for target_df, target_col, reducer in targets:
+        merged_col_name = get_merged_col_name(target_df, str(target_col))
+        if merged_col_name not in merged_targets:
+            merged_targets[merged_col_name] = []
+        merged_targets[merged_col_name].append(reducer)
+
     merged_groups = [get_merged_col_name(group, str(group_col)) for group, group_col in groups]
     reduction_result = {}
 
@@ -602,10 +621,11 @@ def execute_reduction(
     for group_keys, group_df in grouped:
         if not isinstance(group_keys, tuple):
             group_keys = (group_keys,)
-        for target, reducer in merged_targets.items():
-            reduced_value = reducer(group_df[target])
-            if group_keys not in reduction_result:
-                reduction_result[group_keys] = []
-            reduction_result[group_keys].append(reduced_value)
+        for target, reducers in merged_targets.items():
+            for reducer in reducers:
+                reduced_value = reducer(group_df[target])
+                if group_keys not in reduction_result:
+                    reduction_result[group_keys] = []
+                reduction_result[group_keys].append(reduced_value)
 
     return reduction_result

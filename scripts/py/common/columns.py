@@ -25,9 +25,13 @@ class DatasetStatsColumn(Enum):
     TS_IND = auto()
     CHANNEL = auto()
     MEAN = auto()
-    VARIANCE = auto()
+    STD = auto()
     SKEWNESS = auto()
     KURTOSIS = auto()
+    TOTAL_VAR_MEANS = auto()
+    TOTAL_VAR_STDS = auto()
+    AUTOCORR_MEANS = auto()
+    AUTOCORR_STDS = auto()
 
     def __str__(self):
         return self.name.lower()
