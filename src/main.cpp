@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT, merger_num_bits = MAX_NUM_BITS_LIMIT;
     SaxSegIndT num_segments;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
-         num_l_groups = 0, knn_k = 1, seed = 0;
+         num_l_groups = 0, knn_k = 1, seed = 0, num_lags = 5;
     Real r_range_r = 1.0;
     size_t leaf_capacity = 0, max_leaves_to_visit = 0;
     vec<uint> exact_lengths = {};
@@ -130,6 +130,10 @@ int main(int argc, char **argv) {
     d_stats_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
     d_stats_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
         ->required()
+        ->check(positive_int);
+    d_stats_subcommand
+        ->add_option("--num_lags", num_lags, "Number of lags to calculate for autocorrelation and total variance")
+        ->capture_default_str()
         ->check(positive_int);
 
     // Options for creating queries
@@ -457,7 +461,7 @@ int main(int argc, char **argv) {
             return create_dataset_from_csv(csv_paths, num_series, l_min, l_max, seed);
         }
         case CALC_D_STATS: {
-            return calculate_dataset_stats();
+            return calculate_dataset_stats(num_lags);
         }
         case CREATE_QS: {
             return create_queries({noise, num_queries, exact_lengths, l_min, l_max, used_channels, channel_mask, seed});

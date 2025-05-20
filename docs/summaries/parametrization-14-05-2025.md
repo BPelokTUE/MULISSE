@@ -80,6 +80,12 @@ The results are very similar to the univariate case:
 
 ![](images/Parametrization/0_low_res_multi_weather4_128-768.png)
 
+## Effect of dataset size and series length
+
+TODO
+- [ ] Dataset size: scales linearly
+- [ ] Series length: scaling is not linear, low resolution search shows similar optimal values for $N_l$ and $N_s$, however larger $N_p$ works better with longer time series. The difference is not large and $N_p\approx 32$ tends to work well across the board. Approximating the optimal value by linearly scaling between the optimal values found at different values of $m$ can also work.
+
 ___
 ### Experiments to include:
 

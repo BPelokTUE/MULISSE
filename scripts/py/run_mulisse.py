@@ -540,7 +540,12 @@ check_config_keys(local_settings, [LS_DEFAULT_RUN_CONFIG, LS_CSV_PATH, LS_REPO_P
 
 DATA_DIR = os.path.join(local_settings[LS_REPO_PATH], "DATA")
 LOGS_DIR = os.path.join(local_settings[LS_REPO_PATH], "LOGS")
-BUILD_PATH = os.path.join(local_settings[LS_REPO_PATH], "build")
+for build_dir in ["build", "buildRelease", "buildDebug"]:
+    BUILD_PATH = os.path.join(local_settings[LS_REPO_PATH], build_dir)
+    if os.path.exists(BUILD_PATH):
+        break
+if not os.path.exists(BUILD_PATH):
+    raise FileNotFoundError("No build directory found")
 EXECUTABLE_PATH = os.path.join(BUILD_PATH, "mulisse")
 
 dataset_counter = 0

@@ -1,5 +1,7 @@
 # Build files
 build/*
+buildRelease/*
+buildDebug/*
 **/build/*
 xcode/*
 
