@@ -30,6 +30,8 @@ struct SegmentationParams {
     ChannelSegmentationStrategyType m_ch_strategy_type;
     /** @brief Type of strategy to use for segmentation */
     SegmentationStrategyType m_strategy_type;
+    /** @brief File containing the weights to use for WeightedScoreFunc in ScoreBasedChSegmentationStrategy */
+    str m_ch_score_based_weights_file;
 };
 
 struct SaxParams {

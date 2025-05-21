@@ -60,6 +60,7 @@ void IndexStatsLogger::write_entry(const IndexStats &stats, uint length_group_id
         ADD_STATS_TO_ROW(ISTC, SEG_RANGE, stats.m_seg_range_stats),
         ADD_STATS_TO_ROW(ISTC, SEG_LOWER, stats.m_seg_lower_stats),
         ADD_STATS_TO_ROW(ISTC, SEG_UPPER, stats.m_seg_upper_stats),
+        ADD_STATS_TO_ROW(ISTC, SEG_MID, stats.m_seg_mid_stats),
         {ISTC::NUM_INF_LOWER, to_string(stats.m_num_inf_lower)},
         {ISTC::NUM_INF_UPPER, to_string(stats.m_num_inf_upper)},
     };
@@ -72,6 +73,7 @@ void IndexStatsLogger::write_entry(const IndexStats &stats, uint length_group_id
         umap<IndexStatsColumn, str> seg_list_map = {
             ADD_STATS_LIST_TO_ROW(ISTC, SEG_LOWER_LIST, FlatStatsList(stats.m_seg_lower_list_stats)),
             ADD_STATS_LIST_TO_ROW(ISTC, SEG_UPPER_LIST, FlatStatsList(stats.m_seg_upper_list_stats)),
+            ADD_STATS_LIST_TO_ROW(ISTC, SEG_MID_LIST, FlatStatsList(stats.m_seg_mid_list_stats)),
             ADD_STATS_LIST_TO_ROW(ISTC, SEG_RANGE_LIST, FlatStatsList(stats.m_seg_range_list_stats)),
             {ISTC::SEGMENT_COUNT_LIST, instance.get_collection_str(flat_seg_count_list)},
         };

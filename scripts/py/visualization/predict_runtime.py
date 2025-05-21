@@ -58,11 +58,13 @@ for col in shape_stat_cols:
     targets.append((ERD.DATASET_STATS_COLS, col, CollectionReducer(reducer=StdReducer())))
 
 index_stat_cols_and_reducers = [
-    (ISTC.SEG_RANGE_STATS, SCP.MEAN, MeanReducer()),
+    # (ISTC.SEG_RANGE_STATS, SCP.MEAN, MeanReducer()),
     (ISTC.SEG_LOWER_STATS, SCP.MEAN, StdReducer()),
     (ISTC.SEG_LOWER_STATS, SCP.STD, StdReducer()),
     (ISTC.SEG_UPPER_STATS, SCP.MEAN, StdReducer()),
     (ISTC.SEG_UPPER_STATS, SCP.STD, StdReducer()),
+    (ISTC.SEG_MID_STATS, SCP.MEAN, StdReducer()),
+    (ISTC.SEG_MID_STATS, SCP.STD, StdReducer()),
 ]
 for col_base, prefix, reducer in index_stat_cols_and_reducers:
     targets.append((ERD.INDEX_STATS_COLS, SC(col_base, prefix), reducer))
@@ -160,6 +162,7 @@ DATASETS = ["weather", "stocks", "synthetic"]
 
 def print_model_coefs(model):
     print(json.dumps(model.coef_.tolist(), indent=4))
+    print(model.intercept_)
 
 
 def cross_validation(
@@ -282,11 +285,14 @@ plt.show()
 
 # %%
 
-cross_validation(xs, ys, value_datasets, models["ridge_a=10.0"], verbose=True)
+# cross_validation(xs, ys, value_datasets, models["ridge_a=10.0"], verbose=True)
 
-# coef_labels = labels[1 + len(groups) - 1 :]
-# weights = dict(zip(coef_labels, models["ridge_a=1.0"].coef_))
-# print(json.dumps(weights, indent=4))
+model = models["ridge_a=1.0"]
+model.fit(xs, ys)
+coef_labels = labels[1 + len(groups) - 1 :]
+weights = dict(zip(coef_labels, model.coef_))
+weights["intercept"] = model.intercept_
+print(json.dumps(weights, indent=4))
 
 # %%
 

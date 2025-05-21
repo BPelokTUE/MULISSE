@@ -3,7 +3,7 @@
 
 struct IndexStats;
 class IScoreFunc;
-class IndexStatsExtractor;
+class IIndexStatsExtractor;
 
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"
@@ -16,13 +16,13 @@ class IndexStatsScoreFunc {
      * @param stats_extractor The function to extract the relevant index statistics
      * @param score_func The score function to use
      */
-    IndexStatsScoreFunc(uptr<IndexStatsExtractor> stats_extractor, uptr<IScoreFunc> score_func);
+    IndexStatsScoreFunc(uptr<IIndexStatsExtractor> stats_extractor, uptr<IScoreFunc> score_func);
 
     Real calculate_score(const IndexStats &stats) const;
 
    private:
     uptr<IScoreFunc> m_score_func;
-    uptr<IndexStatsExtractor> m_stats_extractor;
+    uptr<IIndexStatsExtractor> m_stats_extractor;
 };
 
 #endif  // UTIL_STATS_INDEXSTATSSCOREFUNC_HPP

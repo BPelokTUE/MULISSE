@@ -5,8 +5,9 @@
 
 class WeightedScoreFunc : public IScoreFunc {
    public:
-    WeightedScoreFunc(vec<Real> coefficients, Real intercept = 1.0)
-        : m_coefficients(std::move(coefficients)), m_intercept(intercept) {}
+    WeightedScoreFunc(vec<Real> coefficients, Real intercept);
+
+    WeightedScoreFunc(const str &weights_file);
 
     Real calculate_score(const vec<Real> &input) const override;
 

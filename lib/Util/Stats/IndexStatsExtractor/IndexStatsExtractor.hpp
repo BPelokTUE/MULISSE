@@ -6,9 +6,9 @@
 
 struct IndexStats;
 
-class IndexStatsExtractor {
+class IIndexStatsExtractor {
    public:
-    virtual ~IndexStatsExtractor() = default;
+    virtual ~IIndexStatsExtractor() = default;
 
     /**
      * @brief Extract the statistics from the index
@@ -18,4 +18,4 @@ class IndexStatsExtractor {
     virtual vec<Real> extract(const IndexStats &stats) const = 0;
 };
 
-#endif UTIL_STATS_SCOREFUNC_INDEXSTATSEXTRACTOR_HPP
+#endif  // UTIL_STATS_SCOREFUNC_INDEXSTATSEXTRACTOR_HPP

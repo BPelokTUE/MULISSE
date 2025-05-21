@@ -15,9 +15,11 @@ enum class IndexStatsColumn {
     DEFINE_STAT_COLUMNS(SEG_RANGE),       // Statistics of the range of the segments
     DEFINE_STAT_COLUMNS(SEG_LOWER),       // Statistics of the lower bound of the segments
     DEFINE_STAT_COLUMNS(SEG_UPPER),       // Statistics of the upper bound of the segments
+    DEFINE_STAT_COLUMNS(SEG_MID),         // Statistics of the (lower+upper)/2 of the segments
     DEFINE_STAT_COLUMNS(SEG_RANGE_LIST),  // Statistics of the range of the segments, per segment position
     DEFINE_STAT_COLUMNS(SEG_LOWER_LIST),  // Statistics of the lower bound of the segments, per segment position
     DEFINE_STAT_COLUMNS(SEG_UPPER_LIST),  // Statistics of the upper bound of the segments, per segment position
+    DEFINE_STAT_COLUMNS(SEG_MID_LIST),    // Statistics of the (lower+upper)/2 of the segments, per segment position
     SEGMENT_COUNT_LIST,                   // Number of entries per segment x channel
     NUM_INF_LOWER,                        // Number of segments with `-INF` as the lower bound
     NUM_INF_UPPER,                        // Number of segments with `INF` as the upper bound

@@ -7,7 +7,7 @@
  * @brief Extracts the cross-dataset standard deviations of the within-series means and stds of the lower and upper
  * envelope bounds and of mid=(lower+upper)/2, that is [mu_l, sigma_l, mu_u, sigma_u, mu_m, sigma_m]
  */
-class EnvelopeStdExtractor : public IndexStatsExtractor {
+class EnvelopeStdExtractor : public IIndexStatsExtractor {
    public:
     /**
      * @brief Get stats describing the shape of the envelopes in the index
