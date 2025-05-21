@@ -12,9 +12,11 @@ struct IndexStats {
     AttributeStats m_seg_range_stats;
     AttributeStats m_seg_lower_stats;
     AttributeStats m_seg_upper_stats;
+    AttributeStats m_seg_mid_stats;
     vec<vec<AttributeStats>> m_seg_range_list_stats;
     vec<vec<AttributeStats>> m_seg_lower_list_stats;
     vec<vec<AttributeStats>> m_seg_upper_list_stats;
+    vec<vec<AttributeStats>> m_seg_mid_list_stats;
 
     size_t m_leaf_count = 0, m_seg_count = 0;
     vec<vec<size_t>> m_seg_count_list;
