@@ -50,6 +50,7 @@ enum class QueryColumn {
     NUM_PTS_IN_EXAMINED_ENTRIES,  // Number of points in the examined entries
     NUM_PTS_EXAMINED,             // Number of points examined during the search
     NUM_SUBS_EXAMINED,            // Number of subsequences examined during the search
+    MIN_DIST_TOTAL,               // TODO: only for testing, remove later
     PRUNING_RATIO,       // One minus the # examined subsequences over the total # of subsequences of the query length
     ABANDONING_RATE,     // The rate of early abandoning during the search
     TOTAL_TIME_S,        // Total time taken by the search in seconds
@@ -69,7 +70,7 @@ const vec<QC> QUERY_TIME_COLUMNS = {QC::TOTAL_TIME_S, QC::FIRST_LAYER_TIME_S, QC
                                      QC::NUM_MIN_DIST_CALCULATED, QC::NUM_SUBS_EXAMINED},
               QUERY_COLLECTION_COLUMNS = {QC::RESULT_SET_TS_INDICES, QC::RESULT_SET_TS_POSITIONS,
                                           QC::RESULT_SET_DISTANCES, QC::QUERY_CHANNELS},
-              QUERY_NUMBER_COLUMNS = {QC::QUERY_ID, QC::QUERY_LENGTH};
+              QUERY_NUMBER_COLUMNS = {QC::QUERY_ID, QC::QUERY_LENGTH, QC::MIN_DIST_TOTAL};
 
 // QueryLogger class
 

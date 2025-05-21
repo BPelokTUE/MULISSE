@@ -203,10 +203,11 @@ class RunSettings {
 
     // Friend classes
     friend class DatasetLogger;
-    friend class QueryLogger;
+    friend class QuerySetLogger;
     friend class QueryStatsLogger;
     friend class IndexLogger;
     friend class IndexStatsLogger;
+    friend class QueryLogger;
 };
 
 #endif  // UTIL_RUNSETTINGS_HPP

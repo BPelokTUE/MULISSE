@@ -82,9 +82,36 @@ The results are very similar to the univariate case:
 
 ## Effect of dataset size and series length
 
-TODO
-- [ ] Dataset size: scales linearly
-- [ ] Series length: scaling is not linear, low resolution search shows similar optimal values for $N_l$ and $N_s$, however larger $N_p$ works better with longer time series. The difference is not large and $N_p\approx 32$ tends to work well across the board. Approximating the optimal value by linearly scaling between the optimal values found at different values of $m$ can also work.
+Query time scales close to linearly with dataset size ($n$):
+
+| | |
+|-|-|
+| ![](images/Parametrization/4_n_merged_channels.png) | ![](images/Parametrization/4_n_separate_channels.png) |
+
+Series length: scaling is not linear, low resolution search shows similar optimal values for $N_l$ and $N_s$, however larger $N_p$ works better with longer time series. The difference is not large and $N_p\approx 32$ tends to work well across the board. Approximating the optimal value by linearly scaling between the optimal values found at different values of $m$ can also work.
+
+| | |
+|-|-|
+| ![](images/Parametrization/5_m_merged_channels.png) | ![](images/Parametrization/5_m_separate_channels.png) |
+
+Low resolution grid search shows similar optima for short time series or short query ranges on any time series length:
+
+![](images/Parametrization/0_low_res_stocks_m512_long.png)
+
+![](images/Parametrization/0_low_res_weather_m2048_short.png) 
+
+However for long time series ($m\ge2048$) and long query range ($l\in[0.125m,1.0m]$), the optima uses more envelope ($N_p$):
+
+![](images/Parametrization//0_low_res_synthetic_m2048_long.png)
+
+Optimal value of $N_p$ slowly goes up with $m$, however $N_p\approx32$ is always near optimal:
+
+| | |
+|-|-|
+| ![](images/Parametrization/2_Np_256-2048.png) | ![](images/Parametrization/2_Np_512-4096.png) |
+
+- TODO:
+    - [ ] Parametrize with exact number of positions per envelope
 
 ___
 ### Experiments to include:

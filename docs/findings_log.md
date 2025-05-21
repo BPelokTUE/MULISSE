@@ -286,3 +286,6 @@ $$
     - [ ] Before indexation, take a subset of the dataset, create queries for it, create separate univariate indexes for each channel (from the subset), measure the runtime, and distribute segment count across the channels accordingly.
     - [x] The same idea as above, but only creating a single multivariate index on the subset, and using min-dist contribution to inform segment count.
         - min-dist does not seem to be a good predictor of query time
+    - [ ] Assess channel difficulty based on **inter-variation** and **intra-variation**:
+        - Low inter-variation $=$ small average envelope ranges $\Leftrightarrow$ tighter and therefore more discriminative envelope $\Leftrightarrow$ higher pruning power $\Leftrightarrow$ lower runtime
+        - High intra-variation $=$ more distinct envelopes, measured e.g. through cross-dataset variance of the mean and variance of lower and upper envelope bounds $\Leftrightarrow$ highly distinguishable envelopes $\Leftrightarrow$ higher pruning power $\Leftrightarrow$ lower runtime

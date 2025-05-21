@@ -144,6 +144,7 @@ class QueryColumn(Enum):
     RESULT_SET_TS_INDICES = auto()
     RESULT_SET_TS_POSITIONS = auto()
     RESULT_SET_DISTANCES = auto()
+    MIN_DIST_TOTAL = auto()
     NUM_LEAVES_VISITED = auto()
     NUM_NODES_VISITED = auto()
     NUM_TS_EXAMINED = auto()  # For backward compatibility

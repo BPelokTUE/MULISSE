@@ -63,6 +63,7 @@ from scripts.py.visualization.reduction import (
     ExperimentResults,
     MeanReducer,
     Reducer,
+    RobustMeanReducer,
     StdReducer,
     execute_reduction,
 )
@@ -212,7 +213,6 @@ def visualize_experiments(
                         for key, values in reduced_values_subset.items()
                         if all(key[col_ind] == val[i] for i, col_ind in enumerate(col_inds))
                     }
-
                     create_plots(next_title, next_remaining_separate_plots_dict, next_reduced_values_subset)
         else:
             y_label = get_y_label(targets)
@@ -647,31 +647,38 @@ Experiment: Segmentation strategy
 
 def experiment_segmentation_strategy(target_args_dict: dict):
     visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_univariate_ts_len"],
+        logs_dirs=["EXPERIMENT_LOGS/dataset_compare/LOGS_subsets"],
+        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_4_num_series"],
+        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_5_series_length"],
+        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_univariate"],
+        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_multivariate"],
+        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_univariate_ts_len"],
+        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_2_position_group_univariate_2048"],
         # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_2_position_group_univariate_4096"],
         # logs_dirs=["EXPERIMENT_LOGS/dataset_compare/LOGS_dataset_stats"],
         # logs_dirs=["EXPERIMENT_LOGS/relative_contrast/LOGS_relative_contrast_univariate"],
         groups_dict={
-            ERD.METHODS_COLS: [SSC.METHOD_NAME],
+            # ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
-            ERD.INDEXES_COLS: [ISC.NUM_ENVELOPES, ISC.NUM_LEN_GROUPS, ISC.NUM_SEGMENTS],
+            ERD.INDEXES_COLS: [ISC.NUM_ENVELOPES],
         },
         separate_plots_dict={
-            (DSC.DATASET_FILE,): [],
+            # (DSC.NUM_SERIES, QSC.NUM_QUERIES): [(2000, 500), (200, 50)],
+            # (DSC.DATASET_FILE,): [],
             (QSC.L_MIN, QSC.L_MAX): [],
         },
         # regex_dict={SSC.METHOD_NAME: r"envelope", ISC.NUM_SEGMENTS: r"4", ISC.POS_PER_ENV: r"7"},
         num_query_intervals=1,
         merge_csv_datasets=True,
-        # y_scale="log",
+        y_scale="linear",
         bar_plot_color_attr=None,
-        # line_plot_x_attr=ISC.NUM_ENVELOPES,
-        # line_plot_included_cols={DSC.DATASET_FILE},
-        # x_scale="log",
-        heat_map_x_attr=ISC.NUM_ENVELOPES,
-        heat_map_y_attr=ISC.NUM_LEN_GROUPS,
-        heat_map_included_cols={ISC.NUM_SEGMENTS},
+        line_plot_x_attr=ISC.NUM_ENVELOPES,
+        line_plot_included_cols={DSC.DATASET_FILE},
+        x_scale="log",
+        # heat_map_x_attr=ISC.NUM_ENVELOPES,
+        # heat_map_y_attr=ISC.NUM_LEN_GROUPS,
+        # heat_map_included_cols={ISC.NUM_SEGMENTS},
         reducer=MeanReducer(),
         **target_args_dict,
     )
@@ -679,6 +686,7 @@ def experiment_segmentation_strategy(target_args_dict: dict):
 
 for target_args_dict in [
     TargetArgs.QUERY_TIME.value,
+    # {"targets_dict": {ERD.RUNS_COLS: [QC.MIN_DIST_TOTAL]}},
     # TargetArgs.PRUNING_RATIO.value,
     # {"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.STD)]}},
     # {"targets_dict": {ERD.DATASET_STATS_COLS: [DSTC.VARIANCE]}},

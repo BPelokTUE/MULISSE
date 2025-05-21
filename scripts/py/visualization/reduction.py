@@ -37,9 +37,15 @@ ERD = ExperimentResultDataframe
 REQUIRED_COLS = {
     ERD.DATASETS_COLS: [str(DSC.DATASET_FILE)],
     ERD.DATASET_STATS_COLS: [str(DSTC.DATASET_FILE)],
-    ERD.QUERY_SETS_COLS: [str(QSC.DATASET_FILE)],
+    ERD.QUERY_SETS_COLS: [str(QSC.DATASET_FILE), str(QSC.QUERY_FILE)],
     ERD.INDEXES_COLS: [str(ISC.DATASET_FILE), str(ISC.INDEX_FILE), str(ISC.FFTS_FILE)],
-    ERD.METHODS_COLS: [str(SSC.DATASET_FILE), str(SSC.INDEX_FILE), str(SSC.FFTS_FILE), str(SSC.ID)],
+    ERD.METHODS_COLS: [
+        str(SSC.DATASET_FILE),
+        str(QSC.QUERY_FILE),
+        str(SSC.INDEX_FILE),
+        str(SSC.FFTS_FILE),
+        str(SSC.ID),
+    ],
     ERD.RUNS_COLS: [str(QC.SETTINGS_ID)],
     ERD.INDEX_STATS_COLS: [str(ISTC.INDEX_FILE)],
     ERD.QUERY_STATS_COLS: [str(QSTC.DATASET_FILE)],
@@ -369,6 +375,12 @@ class ExperimentResults(BaseModel):
             add_index_stats=add_index_stats,
         )
 
+        # Apply duck-tape fix to the query file column of query sets
+        if str(QSC.QUERY_FILE) in results.query_sets_df.columns:
+            results.query_sets_df[str(QSC.QUERY_FILE)] = results.query_sets_df[str(QSC.QUERY_FILE)].str.replace(
+                "../DATA/", "", regex=False
+            )
+
         # Add method name column
         if str(SSC.METHOD_NAME) in cols[ERD.METHODS_COLS]:
             results.methods_df = define_method_name_col(results.methods_df)
@@ -446,15 +458,17 @@ class ExperimentResults(BaseModel):
             )
 
         if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.METHODS_COLS])):
+            qsc_query_file = get_merged_col_name(ERD.QUERY_SETS_COLS, str(QSC.QUERY_FILE))
             ssc_dataset_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.DATASET_FILE))
+            ssc_query_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.QUERY_FILE))
 
             merged_df = merged_df.merge(
                 rename_df_columns(self.methods_df, ERD.METHODS_COLS),
-                left_on=dsc_dataset_file,
-                right_on=ssc_dataset_file,
+                left_on=[dsc_dataset_file, qsc_query_file],
+                right_on=[ssc_dataset_file, ssc_query_file],
                 how="left",
             )
-            columns_to_drop.append(ssc_dataset_file)
+            columns_to_drop += [ssc_dataset_file, ssc_query_file]
 
             if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEXES_COLS])):
                 ssc_index_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.INDEX_FILE))

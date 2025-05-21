@@ -53,14 +53,19 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
         auto ch_segmentation_strategy = m_index->get_ch_segmentation_strategy();
 
         logger.start_timer(QC::FIRST_LAYER_TIME_S);
+
+        Real min_dist_total = 0;
         for (auto entry : m_index->get_entries()) {
             if (this->skip_entry(query_len, series_len, entry.m_subs_info)) continue;
 
             Real min_dist_squared =
                 this->get_min_dist_squared(entry.m_mts_summary, query_paa, distance_measure, ch_segmentation_strategy);
             pq.push({min_dist_squared, entry.m_subs_info});
+            min_dist_total += min_dist_squared;
         }
         logger.stop_timer(QC::FIRST_LAYER_TIME_S);
+
+        logger.set_number_col(QC::MIN_DIST_TOTAL, min_dist_total);
 
         logger.increment_count_col(QC::NUM_MIN_DIST_CALCULATED, U(pq.size()));
 
