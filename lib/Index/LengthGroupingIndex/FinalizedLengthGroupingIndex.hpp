@@ -3,6 +3,7 @@
 
 #include "Index/FinalizedIndex.hpp"
 #include "Index/Traits/EntryTags.hpp"
+#include "Util/Types/Pointers.hpp"
 
 /**
  * @brief Group of finalized indexes each containing entries summarizing data about subsequences in different length

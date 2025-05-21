@@ -1,4 +1,4 @@
-#include "Modules/QueryStats.hpp"
+#include "Modules/CalcQueryStats.hpp"
 
 #include <algorithm>
 

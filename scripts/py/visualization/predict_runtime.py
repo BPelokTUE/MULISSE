@@ -289,3 +289,12 @@ cross_validation(xs, ys, value_datasets, models["ridge_a=10.0"], verbose=True)
 # print(json.dumps(weights, indent=4))
 
 # %%
+
+
+# stats = {
+#     "inter-var": np.mean(np.mean(ranges, axis=1), axis=0),
+#     "lower-std-mean": np.std(np.mean(lower, axis=1), axis=0),
+#     "lower-std-std": np.std(np.std(upper, axis=1), axis=0),
+#     "upper-std-mean": np.std(np.mean(lower, axis=1), axis=0),
+#     "upper-std-std": np.std(np.std(upper, axis=1), axis=0),
+# }

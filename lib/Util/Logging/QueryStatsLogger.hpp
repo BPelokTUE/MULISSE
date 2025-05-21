@@ -2,8 +2,8 @@
 #define QUERY_STATSS_LOGGER_HPP
 
 #include "Util/HelperFuncs/Enums.hpp"
-#include "Util/Logging/AttributesStats.hpp"
 #include "Util/Logging/Logger.hpp"
+#include "Util/Stats/AttributesStats.hpp"
 
 /** @brief Enum of the columns of the query statistics log file */
 enum class QueryStatsColumn {

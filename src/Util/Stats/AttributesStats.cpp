@@ -1,4 +1,4 @@
-#include "Util/Logging/AttributesStats.hpp"
+#include "Util/Stats/AttributesStats.hpp"
 
 #include <algorithm>
 

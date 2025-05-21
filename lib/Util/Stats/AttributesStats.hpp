@@ -1,5 +1,5 @@
-#ifndef ATTRIBUTE_STATS_HPP
-#define ATTRIBUTE_STATS_HPP
+#ifndef UTIL_STATS_ATTRIBUTESSTATS_HPP
+#define UTIL_STATS_ATTRIBUTESSTATS_HPP
 
 #include "Util/Types/Numbers.hpp"
 
@@ -33,4 +33,4 @@ struct AttributeStats {
     void calculate(uint count);
 };
 
-#endif  // ATTRIBUTE_STATS_HPP
+#endif  // UTIL_STATS_ATTRIBUTESSTATS_HPP

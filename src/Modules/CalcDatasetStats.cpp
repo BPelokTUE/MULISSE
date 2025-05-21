@@ -1,4 +1,4 @@
-#include "Modules/DatasetStats.hpp"
+#include "Modules/CalcDatasetStats.hpp"
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
