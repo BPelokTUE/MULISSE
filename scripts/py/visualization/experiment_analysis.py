@@ -645,7 +645,7 @@ Experiment: Segmentation strategy
 # %%
 
 
-def experiment_segmentation_strategy(target_args_dict: dict):
+def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/dataset_compare/LOGS_subsets"],
         # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_4_num_series"],
@@ -659,33 +659,38 @@ def experiment_segmentation_strategy(target_args_dict: dict):
         # logs_dirs=["EXPERIMENT_LOGS/relative_contrast/LOGS_relative_contrast_univariate"],
         groups_dict={
             # ERD.METHODS_COLS: [SSC.METHOD_NAME],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SD, DSC.NUM_SERIES],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX, QSC.NUM_QUERIES],
             ERD.INDEXES_COLS: [ISC.NUM_ENVELOPES],
         },
         separate_plots_dict={
-            # (DSC.NUM_SERIES, QSC.NUM_QUERIES): [(2000, 500), (200, 50)],
+            (DSC.NUM_SERIES, QSC.NUM_QUERIES): [(2000, 500)],
             # (DSC.DATASET_FILE,): [],
             (QSC.L_MIN, QSC.L_MAX): [],
         },
         # regex_dict={SSC.METHOD_NAME: r"envelope", ISC.NUM_SEGMENTS: r"4", ISC.POS_PER_ENV: r"7"},
         num_query_intervals=1,
-        merge_csv_datasets=True,
+        merge_csv_datasets=False,
         y_scale="linear",
-        bar_plot_color_attr=None,
-        line_plot_x_attr=ISC.NUM_ENVELOPES,
-        line_plot_included_cols={DSC.DATASET_FILE},
-        x_scale="log",
+        bar_plot_color_attr=DSC.DATASET_FILE,
+        # line_plot_x_attr=ISC.NUM_ENVELOPES,
+        # line_plot_included_cols={DSC.DATASET_FILE},
+        # x_scale="log",
         # heat_map_x_attr=ISC.NUM_ENVELOPES,
         # heat_map_y_attr=ISC.NUM_LEN_GROUPS,
         # heat_map_included_cols={ISC.NUM_SEGMENTS},
-        reducer=MeanReducer(),
+        reducer=reducer,
         **target_args_dict,
     )
 
 
-for target_args_dict in [
-    TargetArgs.QUERY_TIME.value,
+for target_args_dict, reducer in [
+    (TargetArgs.QUERY_TIME.value, MeanReducer()),
+    # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.MEAN)]}}, MeanReducer()),
+    # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_LOWER_STATS, SCP.MEAN)]}}, StdReducer()),
+    # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_UPPER_STATS, SCP.MEAN)]}}, StdReducer()),
+    # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_LOWER_STATS, SCP.STD)]}}, StdReducer()),
+    ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_UPPER_STATS, SCP.STD)]}}, StdReducer()),
     # {"targets_dict": {ERD.RUNS_COLS: [QC.MIN_DIST_TOTAL]}},
     # TargetArgs.PRUNING_RATIO.value,
     # {"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.STD)]}},
@@ -693,7 +698,7 @@ for target_args_dict in [
     # {"targets_dict": {ERD.DATASET_STATS_COLS: [DSTC.SKEWNESS]}},
     # {"targets_dict": {ERD.DATASET_STATS_COLS: [DSTC.KURTOSIS]}},
 ]:
-    experiment_segmentation_strategy(target_args_dict=target_args_dict)
+    experiment_segmentation_strategy(target_args_dict=target_args_dict, reducer=reducer)
 
 # %%[markdown]
 """

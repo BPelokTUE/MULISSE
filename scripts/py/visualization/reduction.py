@@ -273,7 +273,6 @@ class ExperimentResults(BaseModel):
             (merged_df[dsc_series_length] - merged_df[isc_l_min] + 1) / merged_df[isc_pos_per_env]
         )
         merged_df = merged_df[[str(ISC.NUM_ENVELOPES), isc_index_file]]
-        print(len(self.indexes_df), len(merged_df))
         self.indexes_df = self.indexes_df.merge(
             merged_df, left_on=str(ISC.INDEX_FILE), right_on=isc_index_file, how="left"
         )

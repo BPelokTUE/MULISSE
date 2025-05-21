@@ -11,7 +11,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scripts.py.common.columns import DatasetSettingsColumn as DSC
 from scripts.py.common.columns import DatasetStatsColumn as DSTC
+from scripts.py.common.columns import IndexStatsColumn as ISTC
 from scripts.py.common.columns import QueryColumn as QC
+from scripts.py.common.columns import StatsColumn as SC
+from scripts.py.common.columns import StatsColumnPrefix as SCP
 from scripts.py.visualization.helpers import dict_to_tuples
 from scripts.py.visualization.reduction import (
     ERD,
@@ -23,34 +26,52 @@ from scripts.py.visualization.reduction import (
     execute_reduction,
 )
 from sklearn.decomposition import PCA
-from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from sklearn.ensemble import AdaBoostRegressor, GradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import ElasticNet, Lasso, Ridge
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
 
 # %%
 
-LOGS_DIR = "LOGS"
+# LOGS_DIR = "EXPERIMENT_LOGS/dataset_compare/LOGS_dataset_stats_large"
+LOGS_DIR = "EXPERIMENT_LOGS/segmentation/LOGS_max_envelopes"
 
 groups_dict = {ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH, DSC.NUM_SERIES]}
 groups = dict_to_tuples(groups_dict)
 targets = [(ERD.RUNS_COLS, QC.TOTAL_TIME_S, MeanReducer())]
 
-summary_stat_cols = [DSTC.MEAN, DSTC.STD, DSTC.SKEWNESS, DSTC.KURTOSIS]
+# summary_stat_cols = [DSTC.MEAN, DSTC.STD, DSTC.SKEWNESS, DSTC.KURTOSIS]
+summary_stat_cols = []
 for col in summary_stat_cols:
     targets.append((ERD.DATASET_STATS_COLS, col, MeanReducer()))
     targets.append((ERD.DATASET_STATS_COLS, col, StdReducer()))
 
-shape_stat_cols = [DSTC.TOTAL_VAR_MEANS, DSTC.TOTAL_VAR_STDS, DSTC.AUTOCORR_MEANS, DSTC.AUTOCORR_STDS]
+# shape_stat_cols = [DSTC.TOTAL_VAR_MEANS, DSTC.TOTAL_VAR_STDS, DSTC.AUTOCORR_MEANS, DSTC.AUTOCORR_STDS]
+shape_stat_cols = []
 for col in shape_stat_cols:
     targets.append((ERD.DATASET_STATS_COLS, col, CollectionReducer(reducer=MeanReducer())))
     targets.append((ERD.DATASET_STATS_COLS, col, CollectionReducer(reducer=StdReducer())))
+
+index_stat_cols_and_reducers = [
+    # (ISTC.SEG_RANGE_STATS, SCP.MEAN, MeanReducer()),
+    (ISTC.SEG_LOWER_STATS, SCP.MEAN, StdReducer()),
+    (ISTC.SEG_LOWER_STATS, SCP.STD, StdReducer()),
+    (ISTC.SEG_UPPER_STATS, SCP.MEAN, StdReducer()),
+    (ISTC.SEG_UPPER_STATS, SCP.STD, StdReducer()),
+]
+for col_base, prefix, reducer in index_stat_cols_and_reducers:
+    targets.append((ERD.INDEX_STATS_COLS, SC(col_base, prefix), reducer))
 
 columns = groups_dict.copy()
 for erd, col, _ in targets:
     columns[erd] = columns.get(erd, []) + [col]
 
-results = ExperimentResults.load(logs_dir=LOGS_DIR, cols=columns, add_runs=True, add_dataset_stats=True)
+add_dataset_stats = len(summary_stat_cols) > 0 or len(shape_stat_cols) > 0
+add_index_stats = len(index_stat_cols_and_reducers) > 0
+
+results = ExperimentResults.load(
+    logs_dir=LOGS_DIR, cols=columns, add_runs=True, add_dataset_stats=add_dataset_stats, add_index_stats=add_index_stats
+)
 reduced_values = execute_reduction([results], targets, groups)
 
 # %%
@@ -179,6 +200,7 @@ models = {
     "svr_rbf": SVR(kernel="rbf"),
     "random_forest_n=100": RandomForestRegressor(n_estimators=100, random_state=42),
     "gradient_boosting_n=100": GradientBoostingRegressor(n_estimators=100, random_state=42),
+    "adaboost_n=100": AdaBoostRegressor(n_estimators=100, random_state=42),
 }
 metrics_dict = {}
 
@@ -215,24 +237,36 @@ plt.title("Percentage Error by Model and Dataset")
 plt.xticks(x + width, model_names, rotation=45, ha="right")
 plt.legend()
 plt.tight_layout()
-plt.yscale("log")
+plt.yscale("linear")
 plt.grid(axis="y", linestyle="--", alpha=0.7)
 plt.show()
 
 # %%
 
-json_name = "scripts/local/ols_metrics_no_summary.json"
-with open(json_name, "w") as f:
-    json.dump(metrics_dict, f, indent=4)
+# json_name = "scripts/local/ols_metrics_no_summary.json"
+# with open(json_name, "w") as f:
+#     json.dump(metrics_dict, f, indent=4)
 
 # %%
 
 # Visualize model coefficients
-for name, model in models.items():
-    plt.figure(figsize=(10, 8))
-    plt.barh(range(len(model.coef_)), model.coef_)
-    plt.yticks(range(len(model.coef_)), labels[1:])
-    plt.xlabel("Coefficient Value")
-    plt.title(f"Model Coefficients for {name}")
-    plt.tight_layout()
-    plt.show()
+# for name, model in models.items():
+#     plt.figure(figsize=(10, 8))
+#     plt.barh(range(len(model.coef_)), model.coef_)
+#     plt.yticks(range(len(model.coef_)), labels[1:])
+#     plt.xlabel("Coefficient Value")
+#     plt.title(f"Model Coefficients for {name}")
+#     plt.tight_layout()
+#     plt.show()
+
+# %%
+
+coef_labels = labels[1 + len(groups) - 1 :]
+weights = dict(zip(coef_labels, models["ridge_a=1.0"].coef_))
+
+weight_sum = sum(v for v in weights.values())
+weight_abs_sum = sum(abs(v) for v in weights.values())
+scaled_weights = {k: v / weight_abs_sum for k, v in weights.items()}
+print(json.dumps(scaled_weights, indent=4))
+
+# %%
