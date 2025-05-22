@@ -34,11 +34,16 @@ from sklearn.svm import SVR
 # %%
 
 # LOGS_DIR = "EXPERIMENT_LOGS/dataset_compare/LOGS_dataset_stats_large"
-LOGS_DIR = "EXPERIMENT_LOGS/segmentation/LOGS_max_envelopes"
+LOGS_DIR_TIME = "EXPERIMENT_LOGS/segmentation/LOGS_max_envelopes"
+LOGS_DIR = "EXPERIMENT_LOGS/segmentation/LOGS_max_envelopes_simple"
 
 groups_dict = {ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH, DSC.NUM_SERIES]}
 groups = dict_to_tuples(groups_dict)
-targets = [(ERD.RUNS_COLS, QC.TOTAL_TIME_S, MeanReducer())]
+targets_time = [(ERD.RUNS_COLS, QC.TOTAL_TIME_S, MeanReducer())]
+columns_time = groups_dict.copy()
+columns_time[ERD.RUNS_COLS] = [targets_time[0][1]]
+
+targets = []
 
 # summary_stat_cols = [DSTC.MEAN, DSTC.STD, DSTC.SKEWNESS, DSTC.KURTOSIS]
 summary_stat_cols = []
@@ -53,7 +58,7 @@ for col in shape_stat_cols:
     targets.append((ERD.DATASET_STATS_COLS, col, CollectionReducer(reducer=StdReducer())))
 
 index_stat_cols_and_reducers = [
-    # (ISTC.SEG_RANGE_STATS, SCP.MEAN, MeanReducer()),
+    (ISTC.SEG_RANGE_STATS, SCP.MEAN, MeanReducer()),
     (ISTC.SEG_LOWER_STATS, SCP.MEAN, StdReducer()),
     (ISTC.SEG_LOWER_STATS, SCP.STD, StdReducer()),
     (ISTC.SEG_UPPER_STATS, SCP.MEAN, StdReducer()),
@@ -69,13 +74,19 @@ for erd, col, _ in targets:
 add_dataset_stats = len(summary_stat_cols) > 0 or len(shape_stat_cols) > 0
 add_index_stats = len(index_stat_cols_and_reducers) > 0
 
+results_time = ExperimentResults.load(logs_dir=LOGS_DIR_TIME, cols=columns_time)
 results = ExperimentResults.load(
     logs_dir=LOGS_DIR, cols=columns, add_runs=True, add_dataset_stats=add_dataset_stats, add_index_stats=add_index_stats
 )
+
+reduced_values_time = execute_reduction([results_time], targets_time, groups)
 reduced_values = execute_reduction([results], targets, groups)
 
-# %%
+targets = targets_time + targets
+for group in reduced_values:
+    reduced_values[group] = reduced_values_time[group] + reduced_values[group]
 
+# %%
 
 first_row = []
 labels = []
@@ -147,7 +158,13 @@ Cross validation
 DATASETS = ["weather", "stocks", "synthetic"]
 
 
-def cross_validation(xs: np.ndarray, ys: np.ndarray, value_datasets: list[str], model) -> dict[str, list[float]]:
+def print_model_coefs(model):
+    print(json.dumps(model.coef_.tolist(), indent=4))
+
+
+def cross_validation(
+    xs: np.ndarray, ys: np.ndarray, value_datasets: list[str], model, verbose: bool = False
+) -> dict[str, list[float]]:
     subsets = ["train", "val"]
     metrics = {ds: {s: {metric: 0 for metric in ["rmse", "percent_error"]} for s in subsets} for ds in DATASETS}
     for dataset in DATASETS:
@@ -162,6 +179,10 @@ def cross_validation(xs: np.ndarray, ys: np.ndarray, value_datasets: list[str], 
         model.fit(train_xs, train_ys)
         train_predictions = model.predict(train_xs)
         val_predictions = model.predict(val_xs)
+
+        if verbose:
+            print(f"Dataset: {dataset}")
+            print_model_coefs(model)
 
         for subset, subs_metrics in metrics[dataset].items():
             if subset == "train":
@@ -261,12 +282,10 @@ plt.show()
 
 # %%
 
-coef_labels = labels[1 + len(groups) - 1 :]
-weights = dict(zip(coef_labels, models["ridge_a=1.0"].coef_))
+cross_validation(xs, ys, value_datasets, models["ridge_a=10.0"], verbose=True)
 
-weight_sum = sum(v for v in weights.values())
-weight_abs_sum = sum(abs(v) for v in weights.values())
-scaled_weights = {k: v / weight_abs_sum for k, v in weights.items()}
-print(json.dumps(scaled_weights, indent=4))
+# coef_labels = labels[1 + len(groups) - 1 :]
+# weights = dict(zip(coef_labels, models["ridge_a=1.0"].coef_))
+# print(json.dumps(weights, indent=4))
 
 # %%

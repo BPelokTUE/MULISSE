@@ -32,6 +32,8 @@
     "search_rs": [1.0],
     "search_approx": [false],
     "search_raw": [false],
+    "dataset_seeds": [0],
+    "query_set_seeds": [0],
     "separate_csv_datasets": true,
     "calculate_index_stats": false
 }
