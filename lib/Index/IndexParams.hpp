@@ -21,6 +21,13 @@ struct IIndexParams {
     virtual SearchMethodType get_type() const = 0;
 };
 
+struct ScoreBasedChSSParams {
+    /** @brief The exponent to use in ScoreToProportionalNumSegments */
+    Real m_proportional_exp;
+    /** @brief File containing the weights to use for WeightedScoreFunc */
+    str m_weights_file;
+};
+
 struct SegmentationParams {
     /** @brief Number of segments to use */
     SaxSegIndT m_num_segments;
@@ -30,8 +37,8 @@ struct SegmentationParams {
     ChannelSegmentationStrategyType m_ch_strategy_type;
     /** @brief Type of strategy to use for segmentation */
     SegmentationStrategyType m_strategy_type;
-    /** @brief File containing the weights to use for WeightedScoreFunc in ScoreBasedChSegmentationStrategy */
-    str m_ch_score_based_weights_file;
+    /** @brief Parameters of ScoreBasedChSegmentationStrategy */
+    const ScoreBasedChSSParams *m_ch_score_based_params;
 };
 
 struct SaxParams {

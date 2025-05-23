@@ -24,6 +24,7 @@ CK_CH_SEGMENTATION_STRATEGIES = "ch_segmentation_strategies"
 CK_SEGMENTATION_STRATEGIES = "segmentation_strategies"
 CK_NUM_SEGMENTS = "num_segments"
 CK_SCORE_BASED_WEIGHTS_FILES = "score_based_weights_files"
+CK_SCORE_BASED_PROPORTIONAL_EXPS = "score_based_proportional_exps"
 CK_NUM_CHANNELS = "num_channels"
 CK_SYN_NUM_CHANNELS = "syn_num_channels"
 CK_QUERY_SET_SIZES = "query_set_sizes"
@@ -76,6 +77,7 @@ RK_CH_SEGMENTATION_STRATEGY = "ch_segmentation_strategy"
 RK_SEGMENTATION_STRATEGY = "segmentation_strategy"
 RK_NUM_SEGMENTS = "num_segments"
 RK_SCORE_BASED_WEIGHTS_FILE = "score_based_weights_file"
+RK_SCORE_BASED_PROPORTIONAL_EXP = "score_based_proportional_exp"
 RK_NUM_CHANNELS = "num_channels"
 RK_STEP_STDEV = "step_stdev"
 RK_USED_CHANNEL_RATIO = "used_channel_ratio"
@@ -319,6 +321,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, CalculateStats]:
                 **get_key_or_none(RK_CH_SEGMENTATION_STRATEGY, CK_CH_SEGMENTATION_STRATEGIES),
                 **get_key_or_none(RK_SEGMENTATION_STRATEGY, CK_SEGMENTATION_STRATEGIES),
                 **get_key_or_none(RK_SCORE_BASED_WEIGHTS_FILE, CK_SCORE_BASED_WEIGHTS_FILES),
+                **get_key_or_none(RK_SCORE_BASED_PROPORTIONAL_EXP, CK_SCORE_BASED_PROPORTIONAL_EXPS),
                 **get_key_or_none(RK_NUM_CHANNELS, CK_NUM_CHANNELS),
                 **get_key_or_none(RK_LENS_PER_GROUP, CK_LENGTH_GROUP_SIZE_RATIOS),
                 **get_key_or_none(RK_MERGER_TYPE, CK_MERGER_TYPES),
@@ -824,8 +827,10 @@ if __name__ == "__main__":
                         lens_per_group = 0
                         num_l_groups = 0
 
+                        index_raw = False
                         if index_setting_copy.pop(RK_RAW, False):
                             args += ["--raw"]
+                            index_raw = True
                         if RK_LENS_PER_GROUP in index_setting_copy:
                             lens_per_group = max(1, int(math.ceil(l_range * index_setting_copy.pop(RK_LENS_PER_GROUP))))
                             if lens_per_group > 0:
@@ -896,7 +901,10 @@ if __name__ == "__main__":
                                         desc="Indexing method settings", leave=False
                                     )
                                 ):
-                                    if index_method_setting[RK_METHOD_TYPE] != index_method:
+                                    if (
+                                        index_method_setting[RK_METHOD_TYPE] != index_method
+                                        or index_method_setting.get(RK_RAW, False) != index_raw
+                                    ):
                                         continue
                                     # fmt: off
                                     args = get_method_args(index_method_setting) + [

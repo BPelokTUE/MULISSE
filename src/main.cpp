@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
         distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(PARALLEL),
         entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY);
     vec<str> csv_paths;
-    Real step_sd = R(1.0), noise = R(0.1);
+    Real step_sd = R(1.0), noise = R(0.1), score_based_proportional_exp = R(1.0);
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT, merger_num_bits = MAX_NUM_BITS_LIMIT;
     SaxSegIndT num_segments;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
@@ -213,6 +213,11 @@ int main(int argc, char **argv) {
         ->check(CLI::IsMember(ACCEPTED_SEGMENTATION_STRATEGY_STRS));
     index_subcommand->add_option("-w,--score_based_weights_file", score_based_weights_file,
                                  "Path to the file containing the weights for the ScoreBasedChSegmentationStrategy");
+    index_subcommand
+        ->add_option("-e,--score_based_proportional_exp", score_based_proportional_exp,
+                     "Exponent to use for the ScoreToProportionalNumSegments in ScoreBasedChSegmentationStrategy")
+        ->capture_default_str()
+        ->check(positive_real);
     index_subcommand->add_option("-B,--breakpoint_strategy", breakpoint_strategy_str, "Breakpoint strategy")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS));
@@ -496,12 +501,17 @@ int main(int argc, char **argv) {
                     std::make_unique<SaxParams>(merger_num_bits, breakpoint_strategy_type, breakpoints_path);
             }
 
+            uptr<ScoreBasedChSSParams> score_based_ch_ss_params = nullptr;
+            if (ch_segmentation_strategy_type == ChannelSegmentationStrategyType::SCORE_BASED) {
+                score_based_ch_ss_params =
+                    std::make_unique<ScoreBasedChSSParams>(score_based_proportional_exp, score_based_weights_file);
+            }
             SegmentationParams segmentation_params{
                 .m_num_segments = num_segments,
                 .m_lg_strategy_type = lg_segmentation_strategy_type,
                 .m_ch_strategy_type = ch_segmentation_strategy_type,
                 .m_strategy_type = segmentation_strategy_type,
-                .m_ch_score_based_weights_file = score_based_weights_file,
+                .m_ch_score_based_params = score_based_ch_ss_params.get(),
             };
             SaxParams sax_params{
                 .m_num_bits = first_layer_num_bits,

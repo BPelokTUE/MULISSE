@@ -45,6 +45,7 @@ from scripts.py.visualization.helpers import (
 )
 from scripts.py.visualization.plots import (
     FIRST_LAYER_TIME_HATCH,
+    METHOD_COLORS,
     METHOD_LABELS,
     ORDERED_DATASETS,
     PQ_TIME_LABELS,
@@ -133,6 +134,7 @@ def visualize_experiments(
     bar_plot_label_padding: bool = True,
     bar_width_inches: float = 0.4,
     bar_plot_color_attr: Column | None = SSC.METHOD_NAME,
+    bar_plot_color_map: dict[str, str] = METHOD_COLORS,
     # Line plots
     line_plot_x_attr: Column | None = None,
     line_plot_included_cols: set[Column] | None = None,
@@ -251,6 +253,7 @@ def visualize_experiments(
                     hatch_labels=hatch_labels,
                     y_scale=y_scale,
                     bar_width_inches=bar_width_inches,
+                    color_map=bar_plot_color_map,
                 )
 
             if line_plot_x_attr is not None:
@@ -647,32 +650,30 @@ Experiment: Segmentation strategy
 
 def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
     visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/dataset_compare/LOGS_subsets"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_4_num_series"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_5_series_length"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_univariate"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_multivariate"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_0_low_res_univariate_ts_len"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_2_position_group_univariate_2048"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_2_position_group_univariate_4096"],
-        # logs_dirs=["EXPERIMENT_LOGS/dataset_compare/LOGS_dataset_stats"],
-        # logs_dirs=["EXPERIMENT_LOGS/relative_contrast/LOGS_relative_contrast_univariate"],
+        logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_score_based_chss"],
         groups_dict={
-            # ERD.METHODS_COLS: [SSC.METHOD_NAME],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SD, DSC.NUM_SERIES],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX, QSC.NUM_QUERIES],
-            ERD.INDEXES_COLS: [ISC.NUM_ENVELOPES],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS],
+            ERD.INDEXES_COLS: [
+                ISC.CH_SEGMENTATION_STRATEGY,
+                ISC.CH_PROPORTIONAL_EXP,
+                ISC.NUM_SEGMENTS,
+            ],
         },
         separate_plots_dict={
-            (DSC.NUM_SERIES, QSC.NUM_QUERIES): [(2000, 500)],
-            # (DSC.DATASET_FILE,): [],
-            (QSC.L_MIN, QSC.L_MAX): [],
+            # (DSC.DATASET_FILE, DSC.NUM_CHANNELS): [],
+            (ISC.NUM_SEGMENTS,): [],
+            # (DSC.SERIES_LENGTH,): [],
         },
         # regex_dict={SSC.METHOD_NAME: r"envelope", ISC.NUM_SEGMENTS: r"4", ISC.POS_PER_ENV: r"7"},
+        regex_dict={ISC.CH_PROPORTIONAL_EXP: r"(0\.0|1\.0)"},
         num_query_intervals=1,
         merge_csv_datasets=False,
         y_scale="linear",
-        bar_plot_color_attr=DSC.DATASET_FILE,
+        bar_plot_color_attr=ISC.CH_SEGMENTATION_STRATEGY,
+        bar_plot_color_map={
+            "single": PALETTE["Oranges"][2],
+            "score_based": PALETTE["Blues"][4],
+        },
         # line_plot_x_attr=ISC.NUM_ENVELOPES,
         # line_plot_included_cols={DSC.DATASET_FILE},
         # x_scale="log",
@@ -686,11 +687,12 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
 
 for target_args_dict, reducer in [
     (TargetArgs.QUERY_TIME.value, MeanReducer()),
+    # (TargetArgs.QUERY_TIME.value, MeanReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.MEAN)]}}, MeanReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_LOWER_STATS, SCP.MEAN)]}}, StdReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_UPPER_STATS, SCP.MEAN)]}}, StdReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_LOWER_STATS, SCP.STD)]}}, StdReducer()),
-    ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_UPPER_STATS, SCP.STD)]}}, StdReducer()),
+    # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_UPPER_STATS, SCP.STD)]}}, StdReducer()),
     # {"targets_dict": {ERD.RUNS_COLS: [QC.MIN_DIST_TOTAL]}},
     # TargetArgs.PRUNING_RATIO.value,
     # {"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.STD)]}},

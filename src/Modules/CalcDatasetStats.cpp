@@ -30,7 +30,7 @@ int calculate_dataset_stats(uint num_lags) {
                 ac_lags.push_back(series_len * (li + 1) / (num_lags + 1));
             }
 
-            Real mu = mean(channel_stats), sigma = sqrt(variance(channel_stats));
+            Real mu = mean(channel_stats), sigma = std::sqrt(variance(channel_stats));
             vec<accumulator_set<Real, stats<tag::mean, tag::variance>>> total_var_stats(num_lags);
             vec<accumulator_set<Real, stats<tag::mean, tag::variance>>> autocorr_stats(num_lags);
             for (uint j = 0; j < series_len; ++j) {
@@ -44,9 +44,9 @@ int calculate_dataset_stats(uint num_lags) {
                 autocorr_stds(num_lags);
             for (uint li = 0; li < num_lags; ++li) {
                 total_var_means[li] = mean(total_var_stats[li]);
-                total_var_stds[li] = sqrt(variance(total_var_stats[li]));
+                total_var_stds[li] = std::sqrt(variance(total_var_stats[li]));
                 autocorr_means[li] = mean(autocorr_stats[li]);
-                autocorr_stds[li] = sqrt(variance(autocorr_stats[li]));
+                autocorr_stds[li] = std::sqrt(variance(autocorr_stats[li]));
             }
 
             DatasetStats stats{mu,

@@ -13,7 +13,7 @@ local_path=$(cat local_settings.json | jq '.["REPO_PATH"]' | tr -d '"')
 remote_url=$(cat local_settings.json | jq '.["REMOTE_URL"]' | tr -d '"')
 remote_path=$(cat local_settings.json | jq '.["REMOTE_PATH"]' | tr -d '"')
 
-include=(lib src extern tests CMakeLists.txt scripts/py scripts/sh BREAKPOINTS)
+include=(lib src extern tests CMakeLists.txt scripts/py scripts/sh BREAKPOINTS SCORE_FUNC_PARAMS)
 run_configs=$(ls scripts/run_configs | grep -v "local")
 for file in $run_configs; do
     include+=(scripts/run_configs/$file)

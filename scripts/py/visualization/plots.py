@@ -559,6 +559,11 @@ def get_x_label(
             case ISC.LG_SEGMENTATION_STRATEGY:
                 if isinstance(val, str) and len(val) > 0:
                     label_parts.append(f"LGS={abbreviate(val)}")
+            case ISC.CH_SEGMENTATION_STRATEGY:
+                if isinstance(val, str) and len(val) > 0:
+                    label_parts.append(f"CHS={abbreviate(val)}")
+            case ISC.CH_PROPORTIONAL_EXP:
+                label_parts.append(f"CPE={val:.2f}")
             case ISC.SEGMENTATION_STRATEGY:
                 if isinstance(val, str) and len(val) > 0:
                     label_parts.append(f"SEG={abbreviate(val)}")

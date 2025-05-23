@@ -1,5 +1,7 @@
 #include "Index/Segmentation/ScoreToSegmentationStrategy/ScoreToProportionalNumSegments.hpp"
 
+#include <cmath>
+
 #include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 

@@ -22,6 +22,7 @@ int create_index(const IndexOptions &opts) {
 
     IndexLogger::initialize(opts);
     auto &logger = IndexLogger::get_instance();
+    logger.start_timer(ISC::INDEXING_TIME_S);
 
     // Initialized SAX breakpoints
 
@@ -102,6 +103,7 @@ int create_index(const IndexOptions &opts) {
         default:
             break;
     }
+    logger.stop_timer(ISC::INDEXING_TIME_S);
 
     if (RS.ffts_supported()) {
         logger.start_timer(ISC::FFT_CALC_TIME_S);
