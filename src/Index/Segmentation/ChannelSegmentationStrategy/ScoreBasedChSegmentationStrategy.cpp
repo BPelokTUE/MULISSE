@@ -73,7 +73,10 @@ ScoreBasedChSegmentationStrategy::ScoreBasedChSegmentationStrategy(
     // 4. Get scores for each channel
     vec<Real> scores;
     scores.reserve(num_channels);
-    for (auto &ch_stat : channel_stats) scores.push_back(index_stats_score_func->calculate_score(ch_stat));
+    for (auto &ch_stat : channel_stats) {
+        ch_stat.calculate();
+        scores.push_back(index_stats_score_func->calculate_score(ch_stat));
+    }
 
     // 5. Get segmentation strategy for each channel
     m_segmentation_strategies = score_to_segmentation_strategy->get_segmentation_strategy(scores);

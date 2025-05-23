@@ -10,40 +10,41 @@
 
 /** @brief Enum of the columns of the index settings log file */
 enum class IndexSettingsColumn {
-    ID,                        // Index of the setting within the log file
-    DATASET_FILE,              // Name of the indexed dataset file
-    INDEX_FILE,                // Name of the index file
-    FFTS_FILE,                 // Name of the FFTs file, empty if not used
-    L_MIN,                     // Minimum allowed query length
-    L_MAX,                     // Maximum allowed query length
-    L_PER_GROUP,               // Size of length groups
-    POS_PER_ENV,               // Number of positions per envelope for envelope-based methods
-    ENTRY_MERGER_TYPE,         // Type of entry merger used
-    MERGER_NUM_BITS,           // Number of bits used for SAX-based entry merger, if applicable
-    NORMALIZED,                // Whether the query and subsequences are normalized
-    INDEX_TYPE,                // Type of index used
-    LG_SEGMENTATION_STRATEGY,  // Strategy for varying the channel segmentation strategy for different length groups
-    CH_SEGMENTATION_STRATEGY,  // Strategy for varying the segmentation strategy for different channels
-    SEGMENTATION_STRATEGY,     // Strategy for segmenting the time series channels
-    NUM_SEGMENTS,              // The number of segments per channel used
-    BREAKPOINT_STRATEGY,       // Strategy for getting the breakpoints of the symbol intervals for iSAX indexes
-    SPLIT_STRATEGY,            // Strategy for choosing the index to split on for iSAX indexes
-    MERGE_IN_LEAVES,           // Whether to merge the entries int the leaves of iSAX indexes
-    MIN_NUM_BITS_ON_TIE,       // Whether to choose the segment with the minimum number of bits when tied for
-                               // EntropyMaximizing split strategy for iSAX indexes
-    FIRST_LAYER_NUM_BITS,      // Number of bits per segment used in the first layer for iSAX indexes
-    LEAF_CAPACITY,             // Maximum number of entries in a leaves (if applicable)
-    NUM_BITS_LIMIT,            // Maximum number of bits per segment for iSAX indexes
-    ADAPT_TO_DATASET,          // Whether to adapt the index properties to the dataset
-    INSERTER_TYPE,             // Type of inserter used for the index
-    NUM_LEAVES,                // Number of leaves in the index
-    NUM_NODES,                 // Number of nodes in the index, excluding the root
-    NUM_ENTRIES,               // Number of entries in the index
-    INDEXING_TIME_S,           // Time taken to index the dataset in seconds
-    SUMMARIZATION_TIME_S,      // Time taken to summarize the subsequences in the dataset in seconds
-    INSERTION_TIME_S,          // Time taken to insert the subsequence summaries into the index in seconds
-    FFT_CALC_TIME_S,           // Time taken to calculate the FFTs in seconds
-    SIZE_ON_DISK_B,            // Size of the index on disk in bytes
+    ID,                           // Index of the setting within the log file
+    DATASET_FILE,                 // Name of the indexed dataset file
+    INDEX_FILE,                   // Name of the index file
+    FFTS_FILE,                    // Name of the FFTs file, empty if not used
+    L_MIN,                        // Minimum allowed query length
+    L_MAX,                        // Maximum allowed query length
+    L_PER_GROUP,                  // Size of length groups
+    POS_PER_ENV,                  // Number of positions per envelope for envelope-based methods
+    ENTRY_MERGER_TYPE,            // Type of entry merger used
+    MERGER_NUM_BITS,              // Number of bits used for SAX-based entry merger, if applicable
+    NORMALIZED,                   // Whether the query and subsequences are normalized
+    INDEX_TYPE,                   // Type of index used
+    LG_SEGMENTATION_STRATEGY,     // Strategy for varying the channel segmentation strategy for different length groups
+    CH_SEGMENTATION_STRATEGY,     // Strategy for varying the segmentation strategy for different channels
+    SEGMENTATION_STRATEGY,        // Strategy for segmenting the time series channels
+    NUM_SEGMENTS,                 // The number of segments per channel used
+    CH_SCORE_BASED_WEIGHTS_FILE,  // The file containing the weights for ScoreBasedChSegmentationStrategy
+    BREAKPOINT_STRATEGY,          // Strategy for getting the breakpoints of the symbol intervals for iSAX indexes
+    SPLIT_STRATEGY,               // Strategy for choosing the index to split on for iSAX indexes
+    MERGE_IN_LEAVES,              // Whether to merge the entries int the leaves of iSAX indexes
+    MIN_NUM_BITS_ON_TIE,          // Whether to choose the segment with the minimum number of bits when tied for
+                                  // EntropyMaximizing split strategy for iSAX indexes
+    FIRST_LAYER_NUM_BITS,         // Number of bits per segment used in the first layer for iSAX indexes
+    LEAF_CAPACITY,                // Maximum number of entries in a leaves (if applicable)
+    NUM_BITS_LIMIT,               // Maximum number of bits per segment for iSAX indexes
+    ADAPT_TO_DATASET,             // Whether to adapt the index properties to the dataset
+    INSERTER_TYPE,                // Type of inserter used for the index
+    NUM_LEAVES,                   // Number of leaves in the index
+    NUM_NODES,                    // Number of nodes in the index, excluding the root
+    NUM_ENTRIES,                  // Number of entries in the index
+    INDEXING_TIME_S,              // Time taken to index the dataset in seconds
+    SUMMARIZATION_TIME_S,         // Time taken to summarize the subsequences in the dataset in seconds
+    INSERTION_TIME_S,             // Time taken to insert the subsequence summaries into the index in seconds
+    FFT_CALC_TIME_S,              // Time taken to calculate the FFTs in seconds
+    SIZE_ON_DISK_B,               // Size of the index on disk in bytes
 };
 
 using ISC = IndexSettingsColumn;

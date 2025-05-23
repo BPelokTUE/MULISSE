@@ -1,5 +1,6 @@
 #include "Util/Stats/ScoreFunc/WeightedScoreFunc.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <stdexcept>
 
@@ -7,6 +8,10 @@ WeightedScoreFunc::WeightedScoreFunc(vec<Real> coefficients, Real intercept)
     : m_coefficients(std::move(coefficients)), m_intercept(intercept) {}
 
 WeightedScoreFunc::WeightedScoreFunc(const str &weights_file) {
+    if (!std::filesystem::exists(weights_file)) {
+        throw std::invalid_argument("Weights file does not exist");
+    }
+
     std::ifstream weights_ifs(weights_file);
     Real coef;
     while (weights_ifs >> coef) m_coefficients.push_back(coef);

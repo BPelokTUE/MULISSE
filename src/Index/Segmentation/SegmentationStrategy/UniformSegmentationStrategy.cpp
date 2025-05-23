@@ -2,7 +2,7 @@
 
 UniformSegmentationStrategy::UniformSegmentationStrategy(uint l_max, SaxSegIndT num_segments)
     : m_segment_len(l_max / num_segments), m_l_max(l_max) {
-    assert(l_max > num_segments);
+    assert(l_max >= num_segments);
 }
 
 SaxSegIndT UniformSegmentationStrategy::get_num_segments(uint subs_len) const {

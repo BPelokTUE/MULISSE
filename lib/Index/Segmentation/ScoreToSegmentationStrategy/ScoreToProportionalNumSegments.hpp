@@ -13,8 +13,10 @@ class ScoreToProportionalNumSegments : public IScoreToSegmentationStrategy {
      * @brief Construct a new ScoreToProportionalNumSegments object
      * @param num_segments_total The total number of segments to use
      * @param strategy_factory The function to use for creating segmentation strategies
+     * @param score_exponent The exponent to use for the scores
      */
-    ScoreToProportionalNumSegments(uint num_segments_total, const NumSegToSegmentationStrategy &strategy_factory);
+    ScoreToProportionalNumSegments(uint num_segments_total, const NumSegToSegmentationStrategy &strategy_factory,
+                                   Real score_exponent = 2.0);
 
     /**
      * @brief Construct a new ScoreToProportionalNumSegments object
@@ -23,13 +25,14 @@ class ScoreToProportionalNumSegments : public IScoreToSegmentationStrategy {
      * @param strategy_factory The function to use for creating segmentation strategies
      */
     ScoreToProportionalNumSegments(SaxSegIndT num_channels_avg, MtsNumChannelsT num_channels,
-                                   const NumSegToSegmentationStrategy &strategy_factory);
+                                   const NumSegToSegmentationStrategy &strategy_factory, Real score_exponent = 2.0);
 
     vec<sptr<ISegmentationStrategy>> get_segmentation_strategy(const vec<Real> &scores) const override;
 
    private:
     uint m_num_segments_total;
     NumSegToSegmentationStrategy m_strategy_factory;
+    Real m_score_exponent;
 };
 
 #endif  // INDEX_SEGMENTATION_SCORETOSEGMENTATIONSTRATEGY_SCORETOPROPORTIONALNUMSEGMENTS_HPP

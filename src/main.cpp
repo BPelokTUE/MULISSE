@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
         lg_segmentation_strategy_str =
             LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(LengthGroupSegmentationStrategyType::SINGLE),
         ch_segmentation_strategy_str = CHANNEL_SEGMENTATION_STRATEGY_TO_STR.at(ChannelSegmentationStrategyType::SINGLE),
-        segmentation_strategy_str = SEGMENTATION_STRATEGY_TO_STR.at(UNIFORM),
+        segmentation_strategy_str = SEGMENTATION_STRATEGY_TO_STR.at(UNIFORM), score_based_weights_file = "",
         split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
@@ -203,12 +203,16 @@ int main(int argc, char **argv) {
                      "Length group segmentation strategy to use")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_LENGTH_GROUP_SEGMENTATION_STRATEGY_STRS));
-    index_subcommand->add_option("-C,--ch_segmentation_strategy", ch_segmentation_strategy_str,
-                                 "Channel segmentation strategy to use");
+    index_subcommand
+        ->add_option("-C,--ch_segmentation_strategy", ch_segmentation_strategy_str,
+                     "Channel segmentation strategy to use")
+        ->capture_default_str();
     index_subcommand
         ->add_option("-S,--segmentation_strategy", segmentation_strategy_str, "Segmentation strategy to use")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_SEGMENTATION_STRATEGY_STRS));
+    index_subcommand->add_option("-w,--score_based_weights_file", score_based_weights_file,
+                                 "Path to the file containing the weights for the ScoreBasedChSegmentationStrategy");
     index_subcommand->add_option("-B,--breakpoint_strategy", breakpoint_strategy_str, "Breakpoint strategy")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS));
@@ -497,6 +501,7 @@ int main(int argc, char **argv) {
                 .m_lg_strategy_type = lg_segmentation_strategy_type,
                 .m_ch_strategy_type = ch_segmentation_strategy_type,
                 .m_strategy_type = segmentation_strategy_type,
+                .m_ch_score_based_weights_file = score_based_weights_file,
             };
             SaxParams sax_params{
                 .m_num_bits = first_layer_num_bits,

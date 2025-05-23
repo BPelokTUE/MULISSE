@@ -1,0 +1,26 @@
+
+{
+    "csv_data_dirs": ["weather", "stocks"],
+    "dataset_sizes": [1000],
+    "series_lengths": [1024],
+    "syn_num_channels": [10],
+    "syn_step_stdevs": [1.0],
+    "query_set_sizes": [100],
+    "l_range_ratios": [[0.125, 1.0]],
+    "used_channel_ratios": [1.0],
+    "search_methods": ["envelope"],
+    "ch_segmentation_strategies": {
+        "score_based": ["score_based"],
+        "single": ["single"]
+    },
+    "score_based_weights_files": {
+        "score_based": ["../SCORE_FUNC_PARAMS/weighted_score_func.txt"]
+    },
+    "num_segments": [32],
+    "envelope_size_ratios": [1.0],
+    "length_group_size_ratios": [1.0],
+    "distance_measures": ["ed"],
+    "early_abandon": [true],
+    "dataset_seeds": [0],
+    "query_set_seeds": [0]
+}
