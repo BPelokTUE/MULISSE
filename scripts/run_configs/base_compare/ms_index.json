@@ -1,0 +1,37 @@
+{
+    "csv_data_dirs": ["stocks"],
+    "dataset_sizes": [2000],
+    "series_lengths": {
+        "2048": [2048],
+        "5500": [5500],
+        "10000": [10000]
+    },
+    "syn_num_channels": [],
+    "syn_step_stdevs": [],
+    "query_set_sizes": [100],
+    "l_range_ratios": {
+        "2048": [[0.3565, 0.3565]],
+        "5500": [[0.1328, 0.1328]],
+        "10000": [[0.073 ,0.073]]
+    },
+    "used_channel_ratios": [1.0],
+    "query_noise_stdevs": [0.1],
+    "search_methods": ["isax_envelope"],
+    "isax_split_strategies": ["em"],
+    "isax_breakpoint_strategies": ["equiprobable"],
+    "isax_leaf_cap_ratios": [0.05],
+    "isax_start_bit_numbers": [1],
+    "num_segments": [32],
+    "envelope_size_ratios": [1.0],
+    "distance_measures": ["mass"],
+    "precalculate_ffts": [false],
+    "adapt_index": [false],
+    "index_inserters": ["top_down"],
+    "search_types": ["knn"],
+    "search_ks": [1],
+    "search_rs": [1.0],
+    "search_approx": [false],
+    "search_raw": [false, true],
+    "dataset_seeds": [42],
+    "query_set_seeds": [42]
+}

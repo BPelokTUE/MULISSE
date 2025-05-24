@@ -688,6 +688,7 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
 for target_args_dict, reducer in [
     # (TargetArgs.QUERY_TIME.value, MeanReducer()),
     (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
+    # (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
     # (TargetArgs.QUERY_TIME.value, MeanReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.MEAN)]}}, MeanReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_LOWER_STATS, SCP.MEAN)]}}, StdReducer()),

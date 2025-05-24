@@ -8,7 +8,6 @@ import os
 import shutil
 import subprocess
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
 from time import time
 from typing import Any, Iterator, Optional
 
@@ -19,6 +18,7 @@ from pydantic import BaseModel
 CK_CSV_DATA_DIRS = "csv_data_dirs"
 CK_DATASET_SIZES = "dataset_sizes"
 CK_SERIES_LENGTHS = "series_lengths"
+CK_INDEX_SAMPLE_FRACS = "index_sample_fracs"
 CK_LG_SEGMENTATION_STRATEGIES = "lg_segmentation_strategies"
 CK_CH_SEGMENTATION_STRATEGIES = "ch_segmentation_strategies"
 CK_SEGMENTATION_STRATEGIES = "segmentation_strategies"
@@ -49,6 +49,7 @@ CK_SEPARATE_CSV_DATASETS = "separate_csv_datasets"
 CK_CALCULATE_DATASET_STATS = "calculate_dataset_stats"
 CK_CALCULATE_QUERY_STATS = "calculate_query_stats"
 CK_CALCULATE_INDEX_STATS = "calculate_index_stats"
+CK_SEPARATE_SEGMENT_STATS = "separate_segment_stats"
 CK_ADAPT_INDEX = "adapt_index"
 CK_ISAX_BREAKPOINTS_FILE = "isax_breakpoints_file"
 CK_ISAX_MERGE_IN_LEAVES = "isax_merge_in_leaves"
@@ -57,6 +58,7 @@ CK_ISAX_SPLIT_STRATEGIES = "isax_split_strategies"
 CK_ISAX_LEAF_CAP_RATIOS = "isax_leaf_cap_ratios"
 CK_ISAX_NUM_BITS_LIMITS = "isax_num_bits_limits"
 CK_ENVELOPE_SIZE_RATIOS = "envelope_size_ratios"
+CK_ENVELOPE_SIZES = "envelope_sizes"
 CK_MERGER_TYPES = "merger_types"
 CK_MERGER_NUM_BIT_NUMBERS = "merger_num_bit_numbers"
 CK_LENGTH_GROUP_SIZE_RATIOS = "length_group_size_ratios"
@@ -70,6 +72,7 @@ CK_PRIORITY_QUEUE = "priority_queue"
 
 # Runner keys
 RK_SERIES_LEN = "series_len"
+RK_INDEX_SAMPLE_FRAC = "index_sample_frac"
 RK_L_RANGE = "l_range"
 RK_COMMAND = "command"
 RK_LOCATION = "location"
@@ -89,6 +92,10 @@ RK_INSERTER_TYPE = "inserter_type"
 RK_BREAKPOINT_STRATEGY = "breakpoint_strategy"
 RK_DATASET_SEED = "dataset_seed"
 RK_QUERY_SET_SEED = "query_set_seed"
+RK_CALCULATE_DATASET_STATS = "calculate_dataset_stats"
+RK_CALCULATE_QUERY_STATS = "calculate_query_stats"
+RK_CALCULATE_INDEX_STATS = "calculate_index_stats"
+RK_SEPARATE_SEGMENT_STATS = "separate_segment_stats"
 RK_FIRST_LAYER_BITS = "first_layer_bits"
 RK_ADAPT = "adapt"
 RK_ISAX_BREAKPOINTS_FILE = "isax_breakpoints_file"
@@ -97,7 +104,8 @@ RK_ISAX_PREFER_FIRST_IN_EM = "isax_prefer_first_in_em"
 RK_SPLIT_STRATEGY = "split_strategy"
 RK_LEAF_CAPACITY = "leaf_capacity"
 RK_ISAX_NUM_BITS_LIMIT = "isax_num_bits_limit"
-RK_POS_PER_ENV = "pos_per_env"
+RK_ENVLEOPE_SIZE_RATIO = "envelope_size_ratio"
+RK_ENVELOPE_SIZE = "envelope_size"
 RK_MERGER_TYPE = "merger_type"
 RK_MERGER_NUM_BITS = "merger_num_bits"
 RK_LENS_PER_GROUP = "lens_per_group"
@@ -246,14 +254,7 @@ def combine_parsed_configs(parsed_configs: dict[str, ParsedConfig]) -> ParsedCon
     )
 
 
-@dataclass
-class CalculateStats:
-    dataset: bool
-    query: bool
-    index: bool
-
-
-def parse_config_file(input_config) -> tuple[ParsedConfig, CalculateStats]:
+def parse_config_file(input_config) -> ParsedConfig:
     config = json.load(open(input_config))
     # fmt: off
     check_config_keys(
@@ -273,6 +274,9 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, CalculateStats]:
             return [{RK_SERIES_LEN: config[CK_SERIES_LENGTHS], RK_L_RANGE: config[CK_L_RANGE_RATIOS]}]
 
         def get_dataset_settings() -> Settings:
+            calculate_dataset_stats = config.get(CK_CALCULATE_DATASET_STATS, [False])
+            if not isinstance(calculate_dataset_stats, list):
+                calculate_dataset_stats = [calculate_dataset_stats]
             dataset_settings = [
                 {
                     RK_COMMAND: SUB_CREATE_DS,
@@ -281,6 +285,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, CalculateStats]:
                     RK_NUM_CHANNELS: config[CK_SYN_NUM_CHANNELS],
                     **get_key_or_none(RK_STEP_STDEV, CK_SYN_STEP_STDEVS),
                     **get_key_or_none(RK_DATASET_SEED, CK_DATASET_SEEDS),
+                    RK_CALCULATE_DATASET_STATS: calculate_dataset_stats,
                 }
             ]
 
@@ -306,16 +311,23 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, CalculateStats]:
             return dataset_settings
 
         def get_query_set_settings() -> Settings:
+            calculate_query_stats = config.get(CK_CALCULATE_QUERY_STATS, [False])
+            if not isinstance(calculate_query_stats, list):
+                calculate_query_stats = [calculate_query_stats]
             setting = {
                 RK_SIZE: config[CK_QUERY_SET_SIZES],
                 **get_key_or_none(RK_USED_CHANNEL_RATIO, CK_USED_CHANNEL_RATIOS),
                 **get_key_or_none(RK_NOISE_STDEV, CK_QUERY_NOISE_STDEVS),
                 **get_key_or_none(RK_QUERY_SET_SEED, CK_QUERY_SET_SEEDS),
                 **get_key_or_none(RK_EXACT_QUERY_LENGTHS, CK_EXACT_QUERY_LENGTH_SETS),
+                RK_CALCULATE_QUERY_STATS: calculate_query_stats,
             }
             return [setting]
 
         def get_index_settings() -> Settings:
+            calculate_index_stats = config.get(CK_CALCULATE_INDEX_STATS, [False])
+            if not isinstance(calculate_index_stats, list):
+                calculate_index_stats = [calculate_index_stats]
             common_settings = {
                 RK_NUM_SEGMENTS: config.get(CK_NUM_SEGMENTS, []),
                 **get_key_or_none(RK_RAW, CK_SEARCH_RAW),
@@ -329,6 +341,9 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, CalculateStats]:
                 **get_key_or_none(RK_MERGER_TYPE, CK_MERGER_TYPES),
                 **get_key_or_none(RK_MERGER_NUM_BITS, CK_MERGER_NUM_BIT_NUMBERS),
                 **get_key_or_none(RK_INSERTER_TYPE, CK_INDEX_INSERTERS),
+                **get_key_or_none(RK_INDEX_SAMPLE_FRAC, CK_INDEX_SAMPLE_FRACS),
+                RK_CALCULATE_INDEX_STATS: calculate_index_stats,
+                RK_SEPARATE_SEGMENT_STATS: config.get(CK_SEPARATE_SEGMENT_STATS, [False]),
             }
             sax_settings = {
                 **common_settings,
@@ -347,7 +362,8 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, CalculateStats]:
             }
             envelope_settings = {
                 **common_settings,
-                RK_POS_PER_ENV: config.get(CK_ENVELOPE_SIZE_RATIOS, []),
+                **get_key_or_none(RK_ENVLEOPE_SIZE_RATIO, CK_ENVELOPE_SIZE_RATIOS),
+                **get_key_or_none(RK_ENVELOPE_SIZE, CK_ENVELOPE_SIZES),
             }
             tree_envelope_settings = {
                 **envelope_settings,
@@ -444,20 +460,13 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, CalculateStats]:
             scan_method_settings=scan_method_settings,
         )
 
-    calculate_dataset_stats = config.get(CK_CALCULATE_DATASET_STATS, False)
-    calculate_query_stats = config.get(CK_CALCULATE_QUERY_STATS, False)
-    calculate_index_stats = config.get(CK_CALCULATE_INDEX_STATS, False)
-
     profiles: set[str] = set()
     for val in config.values():
         if isinstance(val, dict):
             profiles.update(val.keys())
 
     if len(profiles) == 0:
-        return (
-            parse_flat_config(config),
-            CalculateStats(calculate_dataset_stats, calculate_query_stats, calculate_index_stats),
-        )
+        return parse_flat_config(config)
 
     parsed_configs: dict[str, ParsedConfig] = {}
     for profile in profiles:
@@ -471,10 +480,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, CalculateStats]:
 
         parsed_configs[profile] = parse_flat_config(profile_config)
 
-    return (
-        combine_parsed_configs(parsed_configs),
-        CalculateStats(calculate_dataset_stats, calculate_query_stats, calculate_index_stats),
-    )
+    return combine_parsed_configs(parsed_configs)
 
 
 class SettingIterator:
@@ -654,7 +660,7 @@ if __name__ == "__main__":
             else:
                 shutil.rmtree(data_path)
 
-    parsed_config, calculate_stats = parse_config_file(input_args.input_config)
+    parsed_config = parse_config_file(input_args.input_config)
 
     if input_args.print_settings:
         print(parsed_config)
@@ -706,7 +712,7 @@ if __name__ == "__main__":
                 if not run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout):
                     continue
 
-                if calculate_stats.dataset:
+                if dataset_setting.get(RK_CALCULATE_DATASET_STATS, False):
                     # fmt: off
                     run_command_with_logging([
                         EXECUTABLE_PATH, SUB_CALC_D_STATS, "-d", data_file, "-c", str(num_channels), "-m", str(series_len),
@@ -771,7 +777,7 @@ if __name__ == "__main__":
                     # fmt: on
                     queries_created = run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
 
-                    if queries_created and calculate_stats.query:
+                    if queries_created and query_setting.get(RK_CALCULATE_QUERY_STATS, False):
                         # fmt: off
                         args = [
                             SUB_CALC_Q_STATS, "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len)
@@ -852,11 +858,16 @@ if __name__ == "__main__":
                             args += ["--merger_num_bits", str(index_setting_copy.pop(RK_MERGER_NUM_BITS))]
                         if RK_INSERTER_TYPE in index_setting_copy:
                             args += ["-I", index_setting_copy.pop(RK_INSERTER_TYPE)]
+
                         pos_per_env = 1
-                        if RK_POS_PER_ENV in index_setting_copy:
+                        if RK_ENVLEOPE_SIZE_RATIO in index_setting_copy:
                             max_pos_per_env = series_len - l_min + 1
-                            pos_per_env = max(1, int(max_pos_per_env * index_setting_copy.pop(RK_POS_PER_ENV)))
+                            pos_per_env = max(1, int(max_pos_per_env * index_setting_copy.pop(RK_ENVLEOPE_SIZE_RATIO)))
                             args += ["-p", str(pos_per_env)]
+                        elif RK_ENVELOPE_SIZE in index_setting_copy:
+                            pos_per_env = index_setting_copy.pop(RK_ENVELOPE_SIZE)
+                            args += ["-p", str(pos_per_env)]
+
                         if RK_LEAF_CAPACITY in index_setting_copy:
                             num_entries = num_series
                             if index_method == METHOD_ISAX:
@@ -881,11 +892,14 @@ if __name__ == "__main__":
                             if num_bits_limit > 0:
                                 args += ["--num_bits_limit", str(num_bits_limit)]
 
+                        calculate_index_stats = index_setting_copy.pop(RK_CALCULATE_INDEX_STATS, False)
+                        separate_segment_stats = index_setting_copy.pop(RK_SEPARATE_SEGMENT_STATS, False)
+
                         for key, value in index_setting_copy.items():
                             args += [f"--{key}", str(value)]
 
                         if run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout):
-                            if calculate_stats.index:
+                            if calculate_index_stats:
                                 # fmt: off
                                 args = [
                                     SUB_CALC_I_STATS, "-i", index_file, "-c", str(num_channels), "-t", index_method,
@@ -893,6 +907,8 @@ if __name__ == "__main__":
                                 # fmt: on
                                 if num_l_groups > 0:
                                     args += ["-g", str(num_l_groups)]
+                                if separate_segment_stats:
+                                    args += ["--separate_segment_stats"]
                                 run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
 
                             if queries_created:

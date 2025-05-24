@@ -10,8 +10,10 @@
  * parameters, the dataset to use and the location to save the index to are specified in the options.
  *
  * @param index_options Indexing options
+ * @param sample_frac Fraction of the dataset to index. Intended for testing purposes, defaults to 1.0 (index the entire
+ * dataset).
  * @return 0 on success, 1 if the dataset file could not be opened
  * */
-int create_index(const IndexOptions &index_options);
+int create_index(const IndexOptions &index_options, Real sample_frac = 1.0);
 
 #endif  // MODULES_INDEXING_HPP

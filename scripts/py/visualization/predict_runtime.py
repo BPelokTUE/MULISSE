@@ -19,6 +19,7 @@ from scripts.py.visualization.helpers import dict_to_tuples
 from scripts.py.visualization.reduction import (
     ERD,
     CollectionReducer,
+    CombinedReducer,
     ExperimentResults,
     MeanReducer,
     Reducer,
@@ -41,10 +42,9 @@ groups_dict = {ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH, DSC.NUM_
 groups = dict_to_tuples(groups_dict)
 targets_time = [(ERD.RUNS_COLS, QC.PRUNING_RATIO, MeanReducer())]
 columns_time = groups_dict.copy()
-columns_time[ERD.RUNS_COLS] = [targets_time[0][1]]
+columns_time[ERD.RUNS_COLS] = groups_dict.get(ERD.RUNS_COLS, []) + [targets_time[0][1]]
 
 targets = []
-
 # summary_stat_cols = [DSTC.MEAN, DSTC.STD, DSTC.SKEWNESS, DSTC.KURTOSIS]
 summary_stat_cols = []
 for col in summary_stat_cols:
@@ -57,16 +57,33 @@ for col in shape_stat_cols:
     targets.append((ERD.DATASET_STATS_COLS, col, CollectionReducer(reducer=MeanReducer())))
     targets.append((ERD.DATASET_STATS_COLS, col, CollectionReducer(reducer=StdReducer())))
 
-index_stat_cols_and_reducers = [
-    # (ISTC.SEG_RANGE_STATS, SCP.MEAN, MeanReducer()),
-    (ISTC.SEG_LOWER_STATS, SCP.MEAN, StdReducer()),
-    # (ISTC.SEG_LOWER_STATS, SCP.STD, StdReducer()),
-    (ISTC.SEG_UPPER_STATS, SCP.MEAN, StdReducer()),
-    # (ISTC.SEG_UPPER_STATS, SCP.STD, StdReducer()),
-    # (ISTC.SEG_MID_STATS, SCP.MEAN, StdReducer()),
-    # (ISTC.SEG_MID_STATS, SCP.STD, StdReducer()),
+index_stat_cols = [
+    (ISTC.SEG_RANGE_STATS, SCP.MEAN),
+    (ISTC.SEG_RANGE_STATS, SCP.STD),
+    (ISTC.SEG_LOWER_STATS, SCP.MEAN),
+    (ISTC.SEG_LOWER_STATS, SCP.STD),
+    (ISTC.SEG_UPPER_STATS, SCP.MEAN),
+    (ISTC.SEG_UPPER_STATS, SCP.STD),
+    (ISTC.SEG_MID_STATS, SCP.MEAN),
+    (ISTC.SEG_MID_STATS, SCP.STD),
 ]
-for col_base, prefix, reducer in index_stat_cols_and_reducers:
+for col_base, prefix in index_stat_cols:
+    targets.append((ERD.INDEX_STATS_COLS, SC(col_base, prefix), MeanReducer()))
+
+index_stat_list_cols = [
+    (ISTC.SEG_LOWER_LIST_STATS, SCP.MEAN),
+    (ISTC.SEG_LOWER_LIST_STATS, SCP.STD),
+    (ISTC.SEG_UPPER_LIST_STATS, SCP.MEAN),
+    (ISTC.SEG_UPPER_LIST_STATS, SCP.STD),
+    (ISTC.SEG_MID_LIST_STATS, SCP.MEAN),
+    (ISTC.SEG_MID_LIST_STATS, SCP.STD),
+]
+for col_base, prefix in index_stat_list_cols:
+    reducer = (CombinedReducer(CollectionReducer(reducer=MeanReducer()), StdReducer()),)
+    targets.append((ERD.INDEX_STATS_COLS, SC(col_base, prefix), reducer))
+    reducer = (CombinedReducer(CollectionReducer(reducer=StdReducer()), StdReducer()),)
+    targets.append((ERD.INDEX_STATS_COLS, SC(col_base, prefix), reducer))
+    reducer = (CombinedReducer(CollectionReducer(reducer=StdReducer()), MeanReducer()),)
     targets.append((ERD.INDEX_STATS_COLS, SC(col_base, prefix), reducer))
 
 columns = groups_dict.copy()
@@ -74,11 +91,15 @@ for erd, col, _ in targets:
     columns[erd] = columns.get(erd, []) + [col]
 
 add_dataset_stats = len(summary_stat_cols) > 0 or len(shape_stat_cols) > 0
-add_index_stats = len(index_stat_cols_and_reducers) > 0
+add_index_stats = len(index_stat_cols) > 0
 
 results_time = ExperimentResults.load(logs_dir=LOGS_DIR_TIME, cols=columns_time)
 results = ExperimentResults.load(
-    logs_dir=LOGS_DIR, cols=columns, add_runs=True, add_dataset_stats=add_dataset_stats, add_index_stats=add_index_stats
+    logs_dir=LOGS_DIR,
+    cols=columns,
+    add_runs=False,
+    add_dataset_stats=add_dataset_stats,
+    add_index_stats=add_index_stats,
 )
 
 reduced_values_time = execute_reduction([results_time], targets_time, groups)
@@ -87,6 +108,12 @@ reduced_values = execute_reduction([results], targets, groups)
 targets = targets_time + targets
 for group in reduced_values:
     reduced_values[group] = reduced_values_time[group] + reduced_values[group]
+
+# %%
+
+ds_masks = {
+    ds: np.array([key[0].startswith(ds) for key in reduced_values.keys()]) for ds in ["synthetic", "weather", "stocks"]
+}
 
 # %%
 
@@ -110,7 +137,10 @@ for (_, target_col, reducer), value in zip(targets, reduced_values[first_key]):
             labels.append(f"{str(target_col)}_{i}_{reduction}")
             first_row.append(v)
     else:
-        reduction = get_reduction_str(reducer)
+        if isinstance(reducer, CombinedReducer):
+            reduction = "_".join(get_reduction_str(r) for r in reducer.reducers)
+        else:
+            reduction = get_reduction_str(reducer)
         labels.append(f"{str(target_col)}_{reduction}")
         first_row.append(value)
 
@@ -150,14 +180,30 @@ explained_variance = pca.explained_variance_ratio_
 for i, var in enumerate(explained_variance):
     print(f"Principal Component {i + 1}: {var:.4f}")
 
+
 # Plot pca, with pca1 on x-axis and pca2 on y-axis, and ys for the color scale
-plt.figure(figsize=(10, 8))
-pca_components = pca.transform(xs)
-plt.scatter(pca_components[:, 0], pca_components[:, 1], c=ys, cmap="viridis", s=50)
-plt.colorbar(label=str(targets[0][1]))
-plt.xlabel("PCA Component 1")
-plt.ylabel("PCA Component 2")
-plt.plot()
+def plot_points(
+    xs: np.ndarray,
+    ys: np.ndarray,
+    title: str = "PCA Plot",
+    x_label: str = "PCA Component 1",
+    y_label: str = "PCA Component 2",
+):
+    plt.figure(figsize=(10, 8))
+    pca_components = pca.transform(xs)
+    plt.scatter(pca_components[:, 0], pca_components[:, 1], c=ys, cmap="viridis", s=50)
+    plt.colorbar(label=str(targets[0][1]))
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(title)
+    plt.grid()
+    plt.show()
+
+
+mask = ds_masks["stocks"]
+xs_pca = pca.transform(xs)
+plot_points(xs_pca[mask], ys[mask])
+plot_points(xs[mask], ys[mask], title="Points in Original Space", x_label=labels[3], y_label=labels[4])
 
 
 # %%[markdown]
@@ -274,28 +320,6 @@ plt.show()
 
 # %%
 
-# json_name = "scripts/local/ols_metrics_no_summary.json"
-# with open(json_name, "w") as f:
-#     json.dump(metrics_dict, f, indent=4)
-
-# %%
-
-# Visualize model coefficients
-# for name, model in models.items():
-#     plt.figure(figsize=(10, 8))
-#     plt.barh(range(len(model.coef_)), model.coef_)
-#     plt.yticks(range(len(model.coef_)), labels[1:])
-#     plt.xlabel("Coefficient Value")
-#     plt.title(f"Model Coefficients for {name}")
-#     plt.tight_layout()
-#     plt.show()
-
-# %%
-
-print(metrics_dict["lasso_a=10.0"]["weather"]["coeffs"])
-
-# %%
-
 # cross_validation(xs, ys, value_datasets, models["ridge_a=10.0"], verbose=True)
 
 for name, model in models.items():
@@ -307,14 +331,10 @@ for name, model in models.items():
             weights = dict(zip(coef_labels, ds_metrics["coeffs"]))
             weights["intercept"] = ds_metrics["intercept"]
             print(json.dumps(weights, indent=4))
+    elif name.startswith("svr"):
+        print(f"Model: {name}")
+        print(f"Support vectors: {model.support_vectors_.shape[0]}")
+        print(f"Number of support vectors per class: {model.n_support_}")
+        print(f"Dual coefficients: {model.dual_coef_}")
 
 # %%
-
-
-# stats = {
-#     "inter-var": np.mean(np.mean(ranges, axis=1), axis=0),
-#     "lower-std-mean": np.std(np.mean(lower, axis=1), axis=0),
-#     "lower-std-std": np.std(np.std(upper, axis=1), axis=0),
-#     "upper-std-mean": np.std(np.mean(lower, axis=1), axis=0),
-#     "upper-std-std": np.std(np.std(upper, axis=1), axis=0),
-# }

@@ -11,7 +11,7 @@ template <typename T>
 void construct_index(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_factory,
                      uptr<IEntryGenerator<T>> generator, uptr<IEntryMerger<T>> merger,
                      IndexFactoryParams &factory_params,
-                     uptr<ILengthGroupSegmentationStrategy> lg_segmentation_strategy) {
+                     uptr<ILengthGroupSegmentationStrategy> lg_segmentation_strategy, Real sample_frac = 1.0) {
     auto &RS = RunSettings::get_instance();
     auto &logger = IndexLogger::get_instance();
     auto &opts = factory_params.m_opts;
@@ -36,7 +36,7 @@ void construct_index(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_
     }
 
     index->construct(RS.get_dataset_path(), std::move(generator), std::move(merger), opts.m_inserter_type,
-                     opts.m_num_channels, opts.m_series_len, opts.m_adapt);
+                     opts.m_num_channels, opts.m_series_len, opts.m_adapt, sample_frac);
     auto finalized_index = index->finalize();
     finalized_index->save(RS.get_index_path(), opts.m_index_format);
 

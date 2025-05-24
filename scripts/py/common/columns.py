@@ -193,6 +193,10 @@ class IndexStatsColumn(Enum):
     SEG_LOWER_STATS = auto()
     SEG_UPPER_STATS = auto()
     SEG_MID_STATS = auto()
+    SEG_RANGE_LIST_STATS = auto()
+    SEG_LOWER_LIST_STATS = auto()
+    SEG_UPPER_LIST_STATS = auto()
+    SEG_MID_LIST_STATS = auto()
     NUM_INF_LOWER = auto()
     NUM_INF_UPPER = auto()
 

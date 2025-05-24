@@ -28,7 +28,7 @@ ScoreBasedChSegmentationStrategy::ScoreBasedChSegmentationStrategy(
     uint series_len = dataset_props.m_series_len, num_series = dataset_props.m_num_series;
     uint subset_size = U(R(num_series) * subset_fraction);
 
-    std::vector<uint> mts_inds(num_series);
+    vec<uint> mts_inds(num_series);
     std::iota(mts_inds.begin(), mts_inds.end(), 0);
     std::random_device rd;
     std::mt19937 g(rd());

@@ -14,6 +14,6 @@ DEFINE_ENUM_CONSTS(EntryMergerType, ENTRY_MERGER_TYPE, false,
                                                {"paa_generator", SAX_PAA_GENERATOR},
                                                {"in_paa_generator", SAX_PAA_GENERATOR}}));
 
-constexpr std::array<EntryMergerType, 3> MERGERS_W_SAX{SAX_BASED, LOWER_SAX_BASED, SAX_PAA_GENERATOR};
+constexpr std::array MERGERS_W_SAX{SAX_BASED, LOWER_SAX_BASED, SAX_PAA_GENERATOR};
 
 #endif  // ENUMS_ENTRYMERGERTYPE_HPP

@@ -591,6 +591,16 @@ class CollectionReducer(Reducer):
         return np.apply_along_axis(self.reducer, 0, split_arrays)
 
 
+class CombinedReducer(Reducer):
+    reducers: list[Reducer]
+
+    def __call__(self, value: np.ndarray) -> np.ndarray:
+        """
+        Applies all reducers to the value and returns a list of results.
+        """
+        return np.array([reducer(value) for reducer in self.reducers])
+
+
 # %%[markdown]
 """
 ### Reduction executor function

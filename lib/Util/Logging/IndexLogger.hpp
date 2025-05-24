@@ -49,6 +49,7 @@ enum class IndexSettingsColumn {
     INSERTION_TIME_S,             // Time taken to insert the subsequence summaries into the index in seconds
     FFT_CALC_TIME_S,              // Time taken to calculate the FFTs in seconds
     SIZE_ON_DISK_B,               // Size of the index on disk in bytes
+    SAMPLE_FRAC,                  // Fraction of the dataset used for indexing, intended for testing
 };
 
 using ISC = IndexSettingsColumn;
@@ -69,7 +70,7 @@ class IndexLogger : public Logger {
 
     inline static IndexLogger &get_instance() { return instance; };
 
-    static void initialize(const IndexOptions &index_options);
+    static void initialize(const IndexOptions &index_options, Real sample_frac = 1.0);
 
     /** @brief Write the entry */
     void write_entry();

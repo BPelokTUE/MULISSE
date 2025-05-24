@@ -99,7 +99,8 @@ int main(int argc, char **argv) {
         distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(PARALLEL),
         entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY);
     vec<str> csv_paths;
-    Real step_sd = R(1.0), noise = R(0.1), score_based_prop_exp = R(1.0), score_based_sample_frac = R(0.01);
+    Real step_sd = R(1.0), noise = R(0.1), score_based_prop_exp = R(1.0), score_based_sample_frac = R(0.01),
+         index_sample_frac = R(1.0);
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT, merger_num_bits = MAX_NUM_BITS_LIMIT;
     SaxSegIndT num_segments;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
@@ -110,7 +111,8 @@ int main(int argc, char **argv) {
     MtsNumChannelsT num_channels, used_channels = 0;
     vec<bool> channel_mask;
     bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false, sort_query = false,
-         no_use_pq = false, adapt_index = false, merge_in_leaves = false, prefer_first_in_em = false;
+         no_use_pq = false, adapt_index = false, merge_in_leaves = false, prefer_first_in_em = false,
+         separate_segment_stats = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -300,6 +302,12 @@ int main(int argc, char **argv) {
             "Number of bits to use for SAX-based entry mergers. If not provided, takes the value of `num_bits_limit`.")
         ->capture_default_str()
         ->check(positive_int);
+    index_subcommand
+        ->add_option("--index_sample_frac", index_sample_frac,
+                     "Fraction of the dataset to index, intended for testing, "
+                     "defaults to 1.0, meaning that the whole dataset is indexed")
+        ->capture_default_str()
+        ->check(fraction);
     index_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Options for calculating index statistics
@@ -319,6 +327,8 @@ int main(int argc, char **argv) {
                      "length-based grouping")
         ->capture_default_str()
         ->check(positive_int);
+    i_stats_subcommand->add_flag("--separate_segment_stats", separate_segment_stats,
+                                 "Calculate segment statistics for each segment separately");
     i_stats_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Options for calculating FFTs
@@ -596,10 +606,11 @@ int main(int argc, char **argv) {
                 .m_l_per_group = l_per_group,
                 .m_index_params = std::unique_ptr<IIndexParams>(index_params),
             };
-            return create_index(index_options);
+            return create_index(index_options, index_sample_frac);
         }
         case CALC_I_STATS: {
-            return calculate_index_stats(method_type, num_l_groups, STR_TO_ARCHIVE_TYPE.at(index_format_str));
+            return calculate_index_stats(method_type, num_l_groups, STR_TO_ARCHIVE_TYPE.at(index_format_str),
+                                         separate_segment_stats);
         }
         case CALC_FFTS: {
             return calculate_ffts(!unnormalized);

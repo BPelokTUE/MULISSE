@@ -9,7 +9,7 @@ using ISC = IndexSettingsColumn;
 
 const str IndexLogger::INDEX_SETTINGS_FILE = "index_settings.csv";
 
-void IndexLogger::initialize(const IndexOptions &index_options) {
+void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac) {
     if (initialized) return;
     initialized = true;
 
@@ -100,6 +100,7 @@ void IndexLogger::initialize(const IndexOptions &index_options) {
         {ISC::NUM_BITS_LIMIT, format_num_param(num_bits_limit)},
         {ISC::ADAPT_TO_DATASET, to_string(index_options.m_adapt)},
         {ISC::INSERTER_TYPE, ENTRY_INSERTER_TYPE_TO_STR.at(index_options.m_inserter_type)},
+        {ISC::SAMPLE_FRAC, sample_frac < 1.0 ? to_string(sample_frac) : ""},
     };
     for (const auto &col : INDEX_COUNT_COLUMNS) instance.m_count_cols[col] = 0;
     for (const auto &col : INDEX_TIME_COLUMNS) instance.m_time_cols_duration[col] = 0;

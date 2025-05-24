@@ -10,7 +10,7 @@
 #include "Modules/Indexing/InitializeBreakpoints.hpp"
 #include "Modules/Indexing/StrategyFactory/GetLGSegmentationStrategy.hpp"
 
-int create_index(const IndexOptions &opts) {
+int create_index(const IndexOptions &opts, Real sample_frac) {
     auto &RS = RunSettings::get_instance();
     str dataset_path = RS.get_dataset_path();
     str index_path = RS.get_index_path();
@@ -20,7 +20,7 @@ int create_index(const IndexOptions &opts) {
         return 1;
     }
 
-    IndexLogger::initialize(opts);
+    IndexLogger::initialize(opts, sample_frac);
     auto &logger = IndexLogger::get_instance();
     logger.start_timer(ISC::INDEXING_TIME_S);
 
@@ -57,7 +57,7 @@ int create_index(const IndexOptions &opts) {
 #define CONSTRUCT_INDEX(Type, index_factory)                                                                          \
     construct_index<Type>(                                                                                            \
         [](IndexFactoryParams &factory_params_in) -> sptr<IIndex<Type>> { return index_factory(factory_params_in); }, \
-        std::move(generator), std::move(merger), factory_params, std::move(lg_segmentation_strategy));
+        std::move(generator), std::move(merger), factory_params, std::move(lg_segmentation_strategy), sample_frac);
 
 #define CONSTRUCT_ENVELOPE_INDEX(index_factory)                                    \
     auto generator = get_envelope_generator(opts, lg_segmentation_strategy.get()); \

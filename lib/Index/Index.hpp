@@ -1,8 +1,10 @@
 #ifndef INDEX_INDEX_HPP
 #define INDEX_INDEX_HPP
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <random>
 
 #include "Enums/DistanceType.hpp"
 #include "Enums/EntryInserterType.hpp"
@@ -94,13 +96,27 @@ class IIndex {
      * @param num_channels Number of channels in the dataset
      * @param series_len Length of the series
      * @param adapt Whether to adapt the index properties to the dataset
+     * @param sample_frac Fraction of the dataset to use for indexing, intended for testing, defaults to 1.0 (index the
+     * entire dataset)
      */
     void construct(const str &dataset_path, uptr<IEntryGenerator<T>> generator, uptr<IEntryMerger<T>> merger,
-                   EntryInserterType inserter_type, MtsNumChannelsT num_channels, uint series_len, bool adapt) {
+                   EntryInserterType inserter_type, MtsNumChannelsT num_channels, uint series_len, bool adapt = false,
+                   Real sample_frac = 1.0) {
         auto &logger = IndexLogger::get_instance();
 
         size_t N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(Real),
                series_size = channel_size * num_channels, num_series = N / series_size;
+
+        vec<uint> mts_inds(num_series);
+        std::iota(mts_inds.begin(), mts_inds.end(), 0);
+
+        assert(sample_frac >= 0.0 && sample_frac <= 1.0);
+        if (sample_frac < 1.0) {
+            num_series = U(R(num_series) * sample_frac);
+            std::random_device rd;
+            std::mt19937 g(rd());
+            std::shuffle(mts_inds.begin(), mts_inds.end(), g);
+        }
 
         uint num_length_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
         vec<vec<IndexEntry<T>>> dataset_entry_groups(num_length_groups);
@@ -111,13 +127,14 @@ class IIndex {
 
             OMP_PRAGMA(omp for)
             for (size_t i = 0; i < num_series; ++i) {
+                uint mts_ind = mts_inds[i];
                 vec<vec<Real>> mts(num_channels, vec<Real>(series_len));
-                data_stream.seekg(static_cast<std::streamsize>(i * series_size));
+                data_stream.seekg(static_cast<std::streamsize>(mts_ind * series_size));
                 for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
                     data_stream.read(reinterpret_cast<char *>(mts[c].data()),
                                      static_cast<std::streamsize>(channel_size));
                 }
-                auto mts_entries = generator->get_entries(mts, U(i));
+                auto mts_entries = generator->get_entries(mts, U(mts_ind));
                 for (uint l = 0; l < num_length_groups; ++l) {
                     mts_entries[l] = merger->merge_entries(std::move(mts_entries[l]));
                 }

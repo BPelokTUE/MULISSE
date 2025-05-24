@@ -8,6 +8,7 @@ IndexStats::IndexStats(MtsNumChannelsT num_channels, SaxSegIndT num_segments_per
       m_seg_count_list(num_channels, vec<size_t>(num_segments_per_channel, 0)),
       m_seg_lower_list_stats(num_channels, vec<AttributeStats>(num_segments_per_channel)),
       m_seg_upper_list_stats(num_channels, vec<AttributeStats>(num_segments_per_channel)),
+      m_seg_mid_list_stats(num_channels, vec<AttributeStats>(num_segments_per_channel)),
       m_seg_range_list_stats(num_channels, vec<AttributeStats>(num_segments_per_channel)) {}
 
 void IndexStats::update_leaf_stats(size_t num_entries, size_t height) {
