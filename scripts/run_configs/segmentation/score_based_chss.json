@@ -1,9 +1,9 @@
 
 {
-    "csv_data_dirs": ["weather", "stocks"],
+    "csv_data_dirs": ["stocks"],
     "dataset_sizes": [1000],
     "series_lengths": [1024],
-    "syn_num_channels": [3],
+    "syn_num_channels": [],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [100],
     "l_range_ratios": [[0.125, 1.0]],
@@ -16,12 +16,12 @@
     "score_based_weights_files": {
         "score_based": ["../SCORE_FUNC_PARAMS/weighted_score_func.txt"]
     },
-    "score_based_proportional_exps": {
-        "score_based": [1, 2, 3, 4]
+    "score_based_prop_exps": {
+        "score_based": [-3, -2, -1, 1, 2, 3]
     },
-    "num_segments": [4, 8, 16],
-    "envelope_size_ratios": [1.0],
-    "length_group_size_ratios": [1.0],
+    "num_segments": [4, 8, 12, 16],
+    "envelope_size_ratios": [0.05],
+    "length_group_size_ratios": [0.05],
     "distance_measures": ["ed"],
     "early_abandon": [true],
     "dataset_seeds": [0],

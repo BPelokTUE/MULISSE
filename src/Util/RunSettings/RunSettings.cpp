@@ -240,6 +240,11 @@ const EnvelopeProperties &RunSettings::get_envelope_props() const { return m_env
 
 const LengthProperties &RunSettings::get_length_props() const { return m_length_props; }
 
+const void RunSettings::set_lengths_per_group(uint l_per_group) {
+    m_length_props.m_l_per_group = l_per_group;
+    m_length_props.m_num_l_groups = U((m_length_props.m_l_max - m_length_props.m_l_min + l_per_group) / l_per_group);
+}
+
 // Paths
 
 str RunSettings::get_dataset_path() const { return fs::path(DATA_DIR) / m_dataset_props.m_file; }

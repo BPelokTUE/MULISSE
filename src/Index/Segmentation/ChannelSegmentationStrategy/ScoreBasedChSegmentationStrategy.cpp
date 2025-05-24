@@ -38,12 +38,18 @@ ScoreBasedChSegmentationStrategy::ScoreBasedChSegmentationStrategy(
     uint l_min = RS.get_length_props().m_l_min, l_max = RS.get_length_props().m_l_max;
     auto segmentation_strategy = std::make_shared<UniformSegmentationStrategy>(l_max, l_max / segment_len);
     auto ch_segmentation_strategy = std::make_shared<SingleChSegmentationStrategy>(std::move(segmentation_strategy));
+
     uint pos_per_env = series_len - l_min + 1;
     auto lg_segmentation_strategy = std::make_unique<SingleLGSegmentationStrategy>(std::move(ch_segmentation_strategy));
     EnvelopeParams envelope_params{.m_l_min = l_min,
                                    .m_l_max = l_max,
                                    .m_pos_per_env = pos_per_env,
                                    .m_lg_segmentation_strategy = lg_segmentation_strategy.get()};
+
+    uint original_l_per_group = RS.get_length_props().m_l_per_group;
+    uint l_per_group = l_max - l_min + 1;
+    RS.set_lengths_per_group(l_per_group);
+
     auto generator = std::make_unique<EnvelopeEntryGenerator>(true, envelope_params);
 
     vec<IndexStats> channel_stats(num_channels);
@@ -69,6 +75,7 @@ ScoreBasedChSegmentationStrategy::ScoreBasedChSegmentationStrategy(
             }
         }
     }
+    RS.set_lengths_per_group(original_l_per_group);
 
     // 4. Get scores for each channel
     vec<Real> scores;

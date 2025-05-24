@@ -24,7 +24,9 @@ CK_CH_SEGMENTATION_STRATEGIES = "ch_segmentation_strategies"
 CK_SEGMENTATION_STRATEGIES = "segmentation_strategies"
 CK_NUM_SEGMENTS = "num_segments"
 CK_SCORE_BASED_WEIGHTS_FILES = "score_based_weights_files"
-CK_SCORE_BASED_PROPORTIONAL_EXPS = "score_based_proportional_exps"
+CK_SCORE_BASED_PROP_EXPS = "score_based_prop_exps"
+CH_SCORE_BASED_SEGMENT_LENS = "score_based_segment_lens"
+CH_SCORE_BASED_SAMPLE_FRACS = "score_based_sample_fracs"
 CK_NUM_CHANNELS = "num_channels"
 CK_SYN_NUM_CHANNELS = "syn_num_channels"
 CK_QUERY_SET_SIZES = "query_set_sizes"
@@ -77,7 +79,7 @@ RK_CH_SEGMENTATION_STRATEGY = "ch_segmentation_strategy"
 RK_SEGMENTATION_STRATEGY = "segmentation_strategy"
 RK_NUM_SEGMENTS = "num_segments"
 RK_SCORE_BASED_WEIGHTS_FILE = "score_based_weights_file"
-RK_SCORE_BASED_PROPORTIONAL_EXP = "score_based_proportional_exp"
+RK_SCORE_BASED_PROP_EXP = "score_based_prop_exp"
 RK_NUM_CHANNELS = "num_channels"
 RK_STEP_STDEV = "step_stdev"
 RK_USED_CHANNEL_RATIO = "used_channel_ratio"
@@ -321,7 +323,7 @@ def parse_config_file(input_config) -> tuple[ParsedConfig, CalculateStats]:
                 **get_key_or_none(RK_CH_SEGMENTATION_STRATEGY, CK_CH_SEGMENTATION_STRATEGIES),
                 **get_key_or_none(RK_SEGMENTATION_STRATEGY, CK_SEGMENTATION_STRATEGIES),
                 **get_key_or_none(RK_SCORE_BASED_WEIGHTS_FILE, CK_SCORE_BASED_WEIGHTS_FILES),
-                **get_key_or_none(RK_SCORE_BASED_PROPORTIONAL_EXP, CK_SCORE_BASED_PROPORTIONAL_EXPS),
+                **get_key_or_none(RK_SCORE_BASED_PROP_EXP, CK_SCORE_BASED_PROP_EXPS),
                 **get_key_or_none(RK_NUM_CHANNELS, CK_NUM_CHANNELS),
                 **get_key_or_none(RK_LENS_PER_GROUP, CK_LENGTH_GROUP_SIZE_RATIOS),
                 **get_key_or_none(RK_MERGER_TYPE, CK_MERGER_TYPES),

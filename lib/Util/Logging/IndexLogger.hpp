@@ -27,25 +27,28 @@ enum class IndexSettingsColumn {
     SEGMENTATION_STRATEGY,        // Strategy for segmenting the time series channels
     NUM_SEGMENTS,                 // The number of segments per channel used
     CH_SCORE_BASED_WEIGHTS_FILE,  // The file containing the weights for ScoreBasedChSegmentationStrategy
-    CH_PROPORTIONAL_EXP,   // The exponent used for ScoreToProportionalNumSegments in ScoreBasedChSegmentationStrategy
-    BREAKPOINT_STRATEGY,   // Strategy for getting the breakpoints of the symbol intervals for iSAX indexes
-    SPLIT_STRATEGY,        // Strategy for choosing the index to split on for iSAX indexes
-    MERGE_IN_LEAVES,       // Whether to merge the entries int the leaves of iSAX indexes
-    MIN_NUM_BITS_ON_TIE,   // Whether to choose the segment with the minimum number of bits when tied for
-                           // EntropyMaximizing split strategy for iSAX indexes
-    FIRST_LAYER_NUM_BITS,  // Number of bits per segment used in the first layer for iSAX indexes
-    LEAF_CAPACITY,         // Maximum number of entries in a leaves (if applicable)
-    NUM_BITS_LIMIT,        // Maximum number of bits per segment for iSAX indexes
-    ADAPT_TO_DATASET,      // Whether to adapt the index properties to the dataset
-    INSERTER_TYPE,         // Type of inserter used for the index
-    NUM_LEAVES,            // Number of leaves in the index
-    NUM_NODES,             // Number of nodes in the index, excluding the root
-    NUM_ENTRIES,           // Number of entries in the index
-    INDEXING_TIME_S,       // Time taken to index the dataset in seconds
-    SUMMARIZATION_TIME_S,  // Time taken to summarize the subsequences in the dataset in seconds
-    INSERTION_TIME_S,      // Time taken to insert the subsequence summaries into the index in seconds
-    FFT_CALC_TIME_S,       // Time taken to calculate the FFTs in seconds
-    SIZE_ON_DISK_B,        // Size of the index on disk in bytes
+    CH_SCORE_BASED_SEGMENT_LEN,   // The segment length used for ScoreBasedChSegmentationStrategy
+    CH_SCORE_BASED_SAMPLE_FRAC,   // The fraction of the dataset used by ScoreBasedChSegmentationStrategy
+    CH_SCORE_BASED_PROP_EXP,      // The exponent used for ScoreToProportionalNumSegments in
+                                  // ScoreBasedChSegmentationStrategy
+    BREAKPOINT_STRATEGY,          // Strategy for getting the breakpoints of the symbol intervals for iSAX indexes
+    SPLIT_STRATEGY,               // Strategy for choosing the index to split on for iSAX indexes
+    MERGE_IN_LEAVES,              // Whether to merge the entries int the leaves of iSAX indexes
+    MIN_NUM_BITS_ON_TIE,          // Whether to choose the segment with the minimum number of bits when tied for
+                                  // EntropyMaximizing split strategy for iSAX indexes
+    FIRST_LAYER_NUM_BITS,         // Number of bits per segment used in the first layer for iSAX indexes
+    LEAF_CAPACITY,                // Maximum number of entries in a leaves (if applicable)
+    NUM_BITS_LIMIT,               // Maximum number of bits per segment for iSAX indexes
+    ADAPT_TO_DATASET,             // Whether to adapt the index properties to the dataset
+    INSERTER_TYPE,                // Type of inserter used for the index
+    NUM_LEAVES,                   // Number of leaves in the index
+    NUM_NODES,                    // Number of nodes in the index, excluding the root
+    NUM_ENTRIES,                  // Number of entries in the index
+    INDEXING_TIME_S,              // Time taken to index the dataset in seconds
+    SUMMARIZATION_TIME_S,         // Time taken to summarize the subsequences in the dataset in seconds
+    INSERTION_TIME_S,             // Time taken to insert the subsequence summaries into the index in seconds
+    FFT_CALC_TIME_S,              // Time taken to calculate the FFTs in seconds
+    SIZE_ON_DISK_B,               // Size of the index on disk in bytes
 };
 
 using ISC = IndexSettingsColumn;

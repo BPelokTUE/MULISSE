@@ -116,6 +116,8 @@ class RunSettings {
 
     const LengthProperties& get_length_props() const;
 
+    const void set_lengths_per_group(uint l_per_group);
+
     // Length properties
 
     /**

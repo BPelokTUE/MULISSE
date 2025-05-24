@@ -22,8 +22,12 @@ struct IIndexParams {
 };
 
 struct ScoreBasedChSSParams {
+    /** @brief The segment length to use for estimating envelope statistics */
+    uint m_segment_len;
+    /** @brief The fraction of the dataset to use for estimating envelope statistics */
+    Real m_sample_frac;
     /** @brief The exponent to use in ScoreToProportionalNumSegments */
-    Real m_proportional_exp;
+    Real m_prop_exp;
     /** @brief File containing the weights to use for WeightedScoreFunc */
     str m_weights_file;
 };

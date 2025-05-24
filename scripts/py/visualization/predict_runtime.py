@@ -39,7 +39,7 @@ LOGS_DIR = "EXPERIMENT_LOGS/segmentation/LOGS_max_envelopes_simple"
 
 groups_dict = {ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH, DSC.NUM_SERIES]}
 groups = dict_to_tuples(groups_dict)
-targets_time = [(ERD.RUNS_COLS, QC.TOTAL_TIME_S, MeanReducer())]
+targets_time = [(ERD.RUNS_COLS, QC.PRUNING_RATIO, MeanReducer())]
 columns_time = groups_dict.copy()
 columns_time[ERD.RUNS_COLS] = [targets_time[0][1]]
 
@@ -60,11 +60,11 @@ for col in shape_stat_cols:
 index_stat_cols_and_reducers = [
     # (ISTC.SEG_RANGE_STATS, SCP.MEAN, MeanReducer()),
     (ISTC.SEG_LOWER_STATS, SCP.MEAN, StdReducer()),
-    (ISTC.SEG_LOWER_STATS, SCP.STD, StdReducer()),
+    # (ISTC.SEG_LOWER_STATS, SCP.STD, StdReducer()),
     (ISTC.SEG_UPPER_STATS, SCP.MEAN, StdReducer()),
-    (ISTC.SEG_UPPER_STATS, SCP.STD, StdReducer()),
-    (ISTC.SEG_MID_STATS, SCP.MEAN, StdReducer()),
-    (ISTC.SEG_MID_STATS, SCP.STD, StdReducer()),
+    # (ISTC.SEG_UPPER_STATS, SCP.STD, StdReducer()),
+    # (ISTC.SEG_MID_STATS, SCP.MEAN, StdReducer()),
+    # (ISTC.SEG_MID_STATS, SCP.STD, StdReducer()),
 ]
 for col_base, prefix, reducer in index_stat_cols_and_reducers:
     targets.append((ERD.INDEX_STATS_COLS, SC(col_base, prefix), reducer))
@@ -144,11 +144,21 @@ Check data quality
 # %%
 # PCA
 
-pca = PCA(n_components=5)
+pca = PCA(n_components=xs.shape[1])
 pca.fit(xs)
 explained_variance = pca.explained_variance_ratio_
 for i, var in enumerate(explained_variance):
     print(f"Principal Component {i + 1}: {var:.4f}")
+
+# Plot pca, with pca1 on x-axis and pca2 on y-axis, and ys for the color scale
+plt.figure(figsize=(10, 8))
+pca_components = pca.transform(xs)
+plt.scatter(pca_components[:, 0], pca_components[:, 1], c=ys, cmap="viridis", s=50)
+plt.colorbar(label=str(targets[0][1]))
+plt.xlabel("PCA Component 1")
+plt.ylabel("PCA Component 2")
+plt.plot()
+
 
 # %%[markdown]
 """
@@ -160,14 +170,7 @@ Cross validation
 DATASETS = ["weather", "stocks", "synthetic"]
 
 
-def print_model_coefs(model):
-    print(json.dumps(model.coef_.tolist(), indent=4))
-    print(model.intercept_)
-
-
-def cross_validation(
-    xs: np.ndarray, ys: np.ndarray, value_datasets: list[str], model, verbose: bool = False
-) -> dict[str, list[float]]:
+def cross_validation(xs: np.ndarray, ys: np.ndarray, value_datasets: list[str], model) -> dict[str, list[float]]:
     subsets = ["train", "val"]
     metrics = {ds: {s: {metric: 0 for metric in ["rmse", "percent_error"]} for s in subsets} for ds in DATASETS}
     for dataset in DATASETS:
@@ -183,10 +186,6 @@ def cross_validation(
         train_predictions = model.predict(train_xs)
         val_predictions = model.predict(val_xs)
 
-        if verbose:
-            print(f"Dataset: {dataset}")
-            print_model_coefs(model)
-
         for subset, subs_metrics in metrics[dataset].items():
             if subset == "train":
                 predictions = train_predictions
@@ -200,6 +199,8 @@ def cross_validation(
 
             subs_metrics["rmse"] = rmse
             subs_metrics["percent_error"] = percent_error
+        metrics[dataset]["coeffs"] = model.coef_ if hasattr(model, "coef_") else None
+        metrics[dataset]["intercept"] = model.intercept_ if hasattr(model, "intercept_") else None
 
     return metrics
 
@@ -219,7 +220,11 @@ models = {
     "ridge_a=1.0": Ridge(alpha=1.0),
     "ridge_a=10.0": Ridge(alpha=10.0),
     "lasso_a=0.1": Lasso(alpha=0.1),
+    "lasso_a=1.0": Lasso(alpha=0.1),
+    "lasso_a=10.0": Lasso(alpha=0.1),
     "elastic_net_a=0.1_l1=0.5": ElasticNet(alpha=0.1, l1_ratio=0.5),
+    "elastic_net_a=1.0_l1=0.5": ElasticNet(alpha=1.0, l1_ratio=0.5),
+    "elastic_net_a=10.0_l1=0.5": ElasticNet(alpha=10.0, l1_ratio=0.5),
     "svr_linear": SVR(kernel="linear"),
     "svr_rbf": SVR(kernel="rbf"),
     "random_forest_n=100": RandomForestRegressor(n_estimators=100, random_state=42),
@@ -238,9 +243,11 @@ for metric_name, metrics in metrics_dict.items():
     print(f"Model: {metric_name}")
     for dataset, ds_metrics in metrics.items():
         print(f"Validation dataset: {dataset}")
-        for subset, subset_metrics in ds_metrics.items():
+        for subset in ["train", "val"]:
+            subset_metrics = ds_metrics[subset]
             print(f"\t{subset}:")
-            for metric, value in subset_metrics.items():
+            for metric in ["rmse", "percent_error"]:
+                value = subset_metrics[metric]
                 print(f"\t\t{metric}: {value:.6f}")
 
 # Visualize percentage errors per model with bar plot
@@ -285,14 +292,21 @@ plt.show()
 
 # %%
 
+print(metrics_dict["lasso_a=10.0"]["weather"]["coeffs"])
+
+# %%
+
 # cross_validation(xs, ys, value_datasets, models["ridge_a=10.0"], verbose=True)
 
-model = models["ridge_a=1.0"]
-model.fit(xs, ys)
-coef_labels = labels[1 + len(groups) - 1 :]
-weights = dict(zip(coef_labels, model.coef_))
-weights["intercept"] = model.intercept_
-print(json.dumps(weights, indent=4))
+for name, model in models.items():
+    if any(name.startswith(prefix) for prefix in ["ridge", "lasso", "elastic_net"]):
+        print(f"Model: {name}")
+        coef_labels = labels[1 + len(groups) - 1 :]
+        for dataset, ds_metrics in metrics_dict[name].items():
+            print(f"CV weights for: {dataset}")
+            weights = dict(zip(coef_labels, ds_metrics["coeffs"]))
+            weights["intercept"] = ds_metrics["intercept"]
+            print(json.dumps(weights, indent=4))
 
 # %%
 

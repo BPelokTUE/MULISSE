@@ -655,7 +655,7 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
             ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS],
             ERD.INDEXES_COLS: [
                 ISC.CH_SEGMENTATION_STRATEGY,
-                ISC.CH_PROPORTIONAL_EXP,
+                ISC.CH_SCORE_BASED_PROP_EXP,
                 ISC.NUM_SEGMENTS,
             ],
         },
@@ -665,7 +665,7 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
             # (DSC.SERIES_LENGTH,): [],
         },
         # regex_dict={SSC.METHOD_NAME: r"envelope", ISC.NUM_SEGMENTS: r"4", ISC.POS_PER_ENV: r"7"},
-        regex_dict={ISC.CH_PROPORTIONAL_EXP: r"(0\.0|1\.0)"},
+        # regex_dict={ISC.CH_SCORE_BASED_PROP_EXP: r"(0\.0|1\.0)"},
         num_query_intervals=1,
         merge_csv_datasets=False,
         y_scale="linear",
@@ -686,7 +686,8 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
 
 
 for target_args_dict, reducer in [
-    (TargetArgs.QUERY_TIME.value, MeanReducer()),
+    # (TargetArgs.QUERY_TIME.value, MeanReducer()),
+    (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
     # (TargetArgs.QUERY_TIME.value, MeanReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.MEAN)]}}, MeanReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_LOWER_STATS, SCP.MEAN)]}}, StdReducer()),
