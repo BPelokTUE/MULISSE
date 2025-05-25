@@ -456,6 +456,27 @@ class ExperimentResults(BaseModel):
                 how="left",
             )
 
+        if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEXES_COLS])):
+            isc_dataset_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.DATASET_FILE))
+
+            merged_df = merged_df.merge(
+                rename_df_columns(self.indexes_df, ERD.INDEXES_COLS),
+                left_on=dsc_dataset_file,
+                right_on=isc_dataset_file,
+                how="left",
+            )
+
+            if self.add_index_stats and os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEX_STATS_COLS])):
+                isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
+                istc_index_file = get_merged_col_name(ERD.INDEX_STATS_COLS, str(ISTC.INDEX_FILE))
+
+                merged_df = merged_df.merge(
+                    rename_df_columns(self.index_stats_df, ERD.INDEX_STATS_COLS),
+                    left_on=isc_index_file,
+                    right_on=istc_index_file,
+                    how="left",
+                )
+
         if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.METHODS_COLS])):
             qsc_query_file = get_merged_col_name(ERD.QUERY_SETS_COLS, str(QSC.QUERY_FILE))
             ssc_dataset_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.DATASET_FILE))
@@ -468,43 +489,6 @@ class ExperimentResults(BaseModel):
                 how="left",
             )
             columns_to_drop += [ssc_dataset_file, ssc_query_file]
-
-            if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEXES_COLS])):
-                ssc_index_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.INDEX_FILE))
-                ssc_ffts_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.FFTS_FILE))
-                isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
-                isc_ffts_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.FFTS_FILE))
-                isc_dataset_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.DATASET_FILE))
-
-                has_index = merged_df[ssc_index_file].notna()
-                merged_df_w_index = merged_df[has_index]
-                merged_df_no_index = merged_df[~has_index]
-
-                indexes_df = rename_df_columns(self.indexes_df, ERD.INDEXES_COLS)
-                merged_df_w_index = merged_df_w_index.merge(
-                    indexes_df, left_on=ssc_index_file, right_on=isc_index_file, how="left"
-                )
-
-                ffts_df = indexes_df[indexes_df[isc_ffts_file].notna()]
-                merged_df_no_index = merged_df_no_index.merge(
-                    ffts_df, left_on=ssc_ffts_file, right_on=isc_ffts_file, how="left"
-                )
-                merged_df = pd.concat([merged_df_no_index, merged_df_w_index], ignore_index=True)
-
-                columns_to_drop.extend([ssc_index_file, isc_dataset_file])
-
-                if self.add_index_stats and os.path.exists(
-                    os.path.join(self.logs_dir, CSV_FILES[ERD.INDEX_STATS_COLS])
-                ):
-                    isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
-                    istc_index_file = get_merged_col_name(ERD.INDEX_STATS_COLS, str(ISTC.INDEX_FILE))
-
-                    merged_df = merged_df.merge(
-                        rename_df_columns(self.index_stats_df, ERD.INDEX_STATS_COLS),
-                        left_on=isc_index_file,
-                        right_on=istc_index_file,
-                        how="left",
-                    )
 
             if self.add_runs and os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.RUNS_COLS])):
                 qc_settings_id = get_merged_col_name(ERD.RUNS_COLS, str(QC.SETTINGS_ID))
@@ -587,18 +571,21 @@ class CollectionReducer(Reducer):
         ["2", "5"] -> 3.5
         ["3", "6"] -> 4.5
         """
-        split_arrays = np.array([np.fromstring(v, sep=self.separator) for v in value])
+        split_arrays = np.array([np.fromstring(str(v), sep=self.separator) for v in value])
         return np.apply_along_axis(self.reducer, 0, split_arrays)
 
 
 class CombinedReducer(Reducer):
     reducers: list[Reducer]
 
-    def __call__(self, value: np.ndarray) -> np.ndarray:
+    def __call__(self, value: np.ndarray | float) -> np.ndarray | float:
         """
         Applies all reducers to the value and returns a list of results.
         """
-        return np.array([reducer(value) for reducer in self.reducers])
+        result = value
+        for reducer in self.reducers:
+            result = reducer(result)
+        return result
 
 
 # %%[markdown]
@@ -646,7 +633,7 @@ def execute_reduction(
             group_keys = (group_keys,)
         for target, reducers in merged_targets.items():
             for reducer in reducers:
-                reduced_value = reducer(group_df[target])
+                reduced_value = reducer(group_df[target].dropna())
                 if group_keys not in reduction_result:
                     reduction_result[group_keys] = []
                 reduction_result[group_keys].append(reduced_value)
