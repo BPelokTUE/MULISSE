@@ -7,11 +7,15 @@ if True:
     while not os.getcwd().endswith("MULISSE"):
         os.chdir("..")
 
+
+from copy import deepcopy
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scripts.py.common.columns import DatasetSettingsColumn as DSC
 from scripts.py.common.columns import DatasetStatsColumn as DSTC
+from scripts.py.common.columns import IndexSettingsColumn as ISC
 from scripts.py.common.columns import IndexStatsColumn as ISTC
 from scripts.py.common.columns import QueryColumn as QC
 from scripts.py.common.columns import StatsColumn as SC
@@ -30,14 +34,14 @@ from scripts.py.visualization.reduction import (
 from sklearn.decomposition import PCA
 from sklearn.ensemble import AdaBoostRegressor, GradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import ElasticNet, Lasso, Ridge
-from sklearn.preprocessing import RobustScaler, StandardScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
 
 # %%
 
-# LOGS_DIR = "EXPERIMENT_LOGS/dataset_compare/LOGS_dataset_stats_large"
-LOGS_DIR_TIME = "EXPERIMENT_LOGS/segmentation/LOGS_max_envelopes"
 LOGS_DIR = "EXPERIMENT_LOGS/segmentation/LOGS_max_envelopes"
+# LOGS_DIR = "EXPERIMENT_LOGS/segmentation/LOGS_limited_band_segments"
+BAND_NUM_SEGMENTS = 1024
 
 groups_dict = {ERD.DATASETS_COLS: [DSC.DATASET_FILE]}
 groups = dict_to_tuples(groups_dict)
@@ -45,6 +49,7 @@ targets_time = [(ERD.RUNS_COLS, QC.PRUNING_RATIO, MeanReducer())]
 columns_time = groups_dict.copy()
 columns_time[ERD.RUNS_COLS] = groups_dict.get(ERD.RUNS_COLS, []) + [targets_time[0][1]]
 
+groups_dict.update({ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS]})
 targets = []
 # summary_stat_cols = [DSTC.MEAN, DSTC.STD, DSTC.SKEWNESS, DSTC.KURTOSIS]
 summary_stat_cols = []
@@ -60,13 +65,13 @@ for col in shape_stat_cols:
 
 index_stat_cols = [
     (ISTC.SEG_RANGE_STATS, SCP.MEAN),
-    # (ISTC.SEG_RANGE_STATS, SCP.STD),
+    (ISTC.SEG_RANGE_STATS, SCP.STD),
     # (ISTC.SEG_LOWER_STATS, SCP.MEAN),
     # (ISTC.SEG_LOWER_STATS, SCP.STD),
     # (ISTC.SEG_UPPER_STATS, SCP.MEAN),
     # (ISTC.SEG_UPPER_STATS, SCP.STD),
     # (ISTC.SEG_MID_STATS, SCP.MEAN),
-    (ISTC.SEG_MID_STATS, SCP.STD),
+    # (ISTC.SEG_MID_STATS, SCP.STD),
 ]
 for col_base, prefix in index_stat_cols:
     targets.append((ERD.INDEX_STATS_COLS, SC(col_base, prefix), MeanReducer()))
@@ -91,7 +96,7 @@ for erd, col, _ in targets:
 add_dataset_stats = len(summary_stat_cols) > 0 or len(shape_stat_cols) > 0
 add_index_stats = len(index_stat_cols) > 0 or len(index_stat_list_cols) > 0
 
-results_time = ExperimentResults.load(logs_dir=LOGS_DIR_TIME, cols=columns_time)
+results_time = ExperimentResults.load(logs_dir=LOGS_DIR, cols=columns_time)
 results = ExperimentResults.load(
     logs_dir=LOGS_DIR,
     cols=columns,
@@ -100,14 +105,22 @@ results = ExperimentResults.load(
     add_index_stats=add_index_stats,
 )
 
-reduced_values_time = execute_reduction([results_time], targets_time, groups)
-reduced_values = execute_reduction([results], targets, groups, na_replacement=pd.NA)
+# %%
+
+results_sample = deepcopy(results)
+results_sample.indexes_df = results_sample.indexes_df[
+    results_sample.indexes_df[str(ISC.NUM_SEGMENTS)] == BAND_NUM_SEGMENTS
+]
+
+reduced_values_time = execute_reduction([results_time], targets_time, groups, na_replacement=pd.NA)
+reduced_values = execute_reduction([results_sample], targets, groups, na_replacement=pd.NA)
 
 targets = targets_time + targets
+combined_reduced_vals = {}
 for group in reduced_values:
-    reduced_values[group] = reduced_values_time[group] + reduced_values[group]
+    combined_reduced_vals[(group[0],)] = reduced_values_time[(group[0],)] + reduced_values[group]
 
-print("# Reduced values:", len(reduced_values))
+print("# Reduced values:", len(combined_reduced_vals))
 
 # %%
 
@@ -125,12 +138,12 @@ def get_reduction_str(reducer: Reducer, only_last_for_combined: bool = True) -> 
     return type(reducer).__name__.lower().replace("reducer", "")
 
 
-first_key = list(reduced_values.keys())[0]
+first_key = list(combined_reduced_vals.keys())[0]
 for (_, col), val in zip(groups[1:], first_key[1:]):
     labels.append(str(col))
     first_row.append(val)
 
-for (_, target_col, reducer), value in zip(targets, reduced_values[first_key]):
+for (_, target_col, reducer), value in zip(targets, combined_reduced_vals[first_key]):
     reduction = get_reduction_str(reducer)
     if isinstance(reducer, CollectionReducer):
         for i, v in enumerate(value):
@@ -148,22 +161,24 @@ for label, value in zip(labels, first_row):
 
 DATASETS = ["weather", "stocks", "synthetic"]
 DS_PER_CHANNEL = 10
-ds_masks = {ds: np.array([key[0].startswith(ds) for key in reduced_values.keys()]) for ds in DATASETS}
-ds_channels = {ds: sorted(list({key[0] for key in reduced_values.keys() if key[0].startswith(ds)})) for ds in DATASETS}
-channel_inds = np.zeros(len(reduced_values), dtype=int)
+ds_masks = {ds: np.array([key[0].startswith(ds) for key in combined_reduced_vals.keys()]) for ds in DATASETS}
+ds_channels = {
+    ds: sorted(list({key[0] for key in combined_reduced_vals.keys() if key[0].startswith(ds)})) for ds in DATASETS
+}
+channel_inds = np.zeros(len(combined_reduced_vals), dtype=int)
 channel_names = {
     ds: [ds_channels[ds][i].split("/")[1] for i in range(0, len(ds_channels[ds]), DS_PER_CHANNEL)]
     for ds in ["weather", "stocks"]
 }
 channel_names["synthetic"] = [f"SD={sd}" for sd in [0.1, 1.0, 10.0]]
-for i, key in enumerate(reduced_values):
+for i, key in enumerate(combined_reduced_vals):
     mts_dataset = key[0].split("/", 1)[0]
     channel_inds[i] = ds_channels[mts_dataset].index(key[0]) // DS_PER_CHANNEL
 
-xs = np.zeros(shape=(len(reduced_values), len(first_row) - 1), dtype=float)
-ys = np.zeros(shape=(len(reduced_values),), dtype=float)
+xs = np.zeros(shape=(len(combined_reduced_vals), len(first_row) - 1), dtype=float)
+ys = np.zeros(shape=(len(combined_reduced_vals),), dtype=float)
 
-for i, (dataset, values) in enumerate(reduced_values.items()):
+for i, (dataset, values) in enumerate(combined_reduced_vals.items()):
     col_ind = 0
     ys[i] = values[0]
     for value in values[1:]:
@@ -182,7 +197,7 @@ xs = scaler.fit_transform(xs)
 
 # %%
 
-discard_quantiles = {"synthetic": 0.0, "weather": 0.0, "stocks": 1e-5}
+discard_quantiles = {"synthetic": 0.0, "weather": 1e-5, "stocks": 1e-5}
 filtered_mask = np.ones(xs.shape[0], dtype=bool)
 for ds, ds_mask in ds_masks.items():
     discard_quantile = discard_quantiles.get(ds, 0.0)
@@ -202,7 +217,10 @@ print(f"Shape of xs: {xs.shape}, ys: {ys.shape}")
 
 # %%[markdown]
 """
-Check data quality
+## Clustering
+
+- Prioritize channels based on the clusters they form
+- The approach should also take into consideration the spread of each channel
 """
 
 # %%
@@ -216,7 +234,7 @@ for i, var in enumerate(explained_variance):
 
 ys_lims = (ys.min(), ys.max())
 ys_range = ys_lims[1] - ys_lims[0]
-cbar_lims = (max(0.0, ys_lims[0] - 0.1 * ys_range), min(1.0, ys_lims[1] + 0.1 * ys_range))
+cbar_lims = (max(0.0, ys_lims[0] - 0.1 * ys_range), 1.0)
 
 
 # Plot pca, with pca1 on x-axis and pca2 on y-axis, and ys for the color scale
@@ -234,6 +252,7 @@ def plot_points(
     channel_inds: np.ndarray = None,
     channel_names: list[str] = None,
     channel_symbols: list[str] = channel_symbols,
+    draw_bounding_boxes: bool = False,
 ):
     plt.figure(figsize=(10, 8))
     ind1, ind2 = axis_indices
@@ -245,9 +264,10 @@ def plot_points(
         mask = channel_inds == channel_idx
         if np.any(mask):
             marker = channel_symbols[channel_idx % len(channel_symbols)]
+            xs_masked = xs[mask]
             plt.scatter(
-                xs[mask, ind1],
-                xs[mask, ind2],
+                xs_masked[:, ind1],
+                xs_masked[:, ind2],
                 c=ys[mask],
                 marker=marker,
                 cmap="viridis",
@@ -255,6 +275,13 @@ def plot_points(
                 vmax=cbar_lims[1],
                 label=channel_names[channel_idx] if channel_names else f"Channel {channel_idx}",
             )
+            if draw_bounding_boxes:
+                # Draw bounding box around the points
+                x_min, x_max = xs_masked[:, ind1].min(), xs_masked[:, ind1].max()
+                y_min, y_max = xs_masked[:, ind2].min(), xs_masked[:, ind2].max()
+                plt.plot(
+                    [x_min, x_max, x_max, x_min, x_min], [y_min, y_min, y_max, y_max, y_min], color="#404040", lw=1
+                )
 
     plt.colorbar(label=str(targets[0][1]))
     plt.xlabel(x_label)
@@ -278,12 +305,18 @@ for ds, ds_mask in ds_masks.items():
         axis_indices=axis_indices,
         channel_inds=channel_inds[ds_mask],
         channel_names=channel_names.get(ds, None),
+        # draw_bounding_boxes=True,
     )
 
 
 # %%[markdown]
 """
-Cross validation
+## Regression
+
+- Attempt to predict run-time / pruning ratio based on index / dataset statistics.
+- Results are not promising, many models converge to mean value of the target.
+- The main problem is that both run-time and pruning ratio are very noisy and hard to predict exactly.
+- Prioritizing channels using some form of clustering (above) seems like a more promising approach.
 """
 
 # %%
@@ -335,7 +368,7 @@ Models
 
 # %%
 
-value_datasets = list(reduced_values.keys())
+value_datasets = list(combined_reduced_vals.keys())
 
 models = {
     # "ols": LinearRegression(),

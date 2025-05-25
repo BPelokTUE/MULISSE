@@ -494,7 +494,7 @@ class ExperimentResults(BaseModel):
                     rename_df_columns(methods_w_index_df, ERD.METHODS_COLS),
                     left_on=[dsc_dataset_file, qsc_query_file, isc_index_file],
                     right_on=[ssc_dataset_file, ssc_query_file, ssc_index_file],
-                    how="right",
+                    how="outer",
                 )
             merged_wo_index_df = merged_df.merge(
                 rename_df_columns(methods_wo_index_df, ERD.METHODS_COLS),
