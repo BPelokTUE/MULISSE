@@ -5,8 +5,6 @@
 
 #include "Index/Segmentation/ScoreToSegmentationStrategy/ScoreToSegmentationStrategy.hpp"
 
-using NumSegToSegmentationStrategy = std::function<sptr<ISegmentationStrategy>(SaxSegIndT)>;
-
 class ScoreToProportionalNumSegments : public IScoreToSegmentationStrategy {
    public:
     /**
@@ -15,7 +13,8 @@ class ScoreToProportionalNumSegments : public IScoreToSegmentationStrategy {
      * @param strategy_factory The function to use for creating segmentation strategies
      * @param score_exponent The exponent to use for the scores
      */
-    ScoreToProportionalNumSegments(uint num_segments_total, const NumSegToSegmentationStrategy &strategy_factory,
+    ScoreToProportionalNumSegments(uint num_segments_total,
+                                   const std::function<sptr<ISegmentationStrategy>(SaxSegIndT)> &strategy_factory,
                                    Real score_exponent = 2.0);
 
     /**
@@ -25,13 +24,14 @@ class ScoreToProportionalNumSegments : public IScoreToSegmentationStrategy {
      * @param strategy_factory The function to use for creating segmentation strategies
      */
     ScoreToProportionalNumSegments(SaxSegIndT num_channels_avg, MtsNumChannelsT num_channels,
-                                   const NumSegToSegmentationStrategy &strategy_factory, Real score_exponent = 2.0);
+                                   const std::function<sptr<ISegmentationStrategy>(SaxSegIndT)> &strategy_factory,
+                                   Real score_exponent = 2.0);
 
     vec<sptr<ISegmentationStrategy>> get_segmentation_strategy(const vec<Real> &scores) const override;
 
    private:
     uint m_num_segments_total;
-    NumSegToSegmentationStrategy m_strategy_factory;
+    std::function<sptr<ISegmentationStrategy>(SaxSegIndT)> m_strategy_factory;
     Real m_score_exponent;
 };
 

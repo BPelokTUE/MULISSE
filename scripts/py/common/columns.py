@@ -62,6 +62,7 @@ class IndexSettingsColumn(Enum):
     NUM_SEGMENTS = auto()
     CH_SCORE_BASED_WEIGHTS_FILE = auto()
     CH_SCORE_BASED_PROP_EXP = auto()
+    CH_NUM_SEG_PROPS_FILE = auto()
     BREAKPOINT_STRATEGY = auto()
     SPLIT_STRATEGY = auto()
     MERGE_IN_LEAVES = auto()

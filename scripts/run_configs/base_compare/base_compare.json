@@ -20,7 +20,7 @@
         "isax_env": ["equiprobable"]
     },
     "isax_breakpoints_file": {
-        "isax_env_fixed": ["../BREAKPOINTS/ulisse_breakpoints.txt"]
+        "isax_env_fixed": ["../PARAMS/BREAKPOINTS/ulisse_breakpoints.txt"]
     },
     "isax_num_bits_limits": [8],
     "isax_leaf_cap_ratios": [0.05],

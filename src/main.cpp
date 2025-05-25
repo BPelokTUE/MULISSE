@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
             LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(LengthGroupSegmentationStrategyType::SINGLE),
         ch_segmentation_strategy_str = CHANNEL_SEGMENTATION_STRATEGY_TO_STR.at(ChannelSegmentationStrategyType::SINGLE),
         segmentation_strategy_str = SEGMENTATION_STRATEGY_TO_STR.at(UNIFORM), score_based_weights_file = "",
-        split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
+        num_seg_props_file = "", split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
         distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(PARALLEL),
@@ -246,6 +246,11 @@ int main(int argc, char **argv) {
             "Length of the segments to use for estimating envelope statistics in ScoreBasedChSegmentationStrategy")
         ->capture_default_str()
         ->check(positive_int);
+    index_subcommand
+        ->add_option(
+            "--num_seg_props_file", num_seg_props_file,
+            "Path to the file containing the proportions of segments per channel, use in MultiChSegmentationStrategy")
+        ->capture_default_str();
     index_subcommand->add_option("-B,--breakpoint_strategy", breakpoint_strategy_str, "Breakpoint strategy")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS));
@@ -548,6 +553,7 @@ int main(int argc, char **argv) {
                 .m_ch_strategy_type = ch_segmentation_strategy_type,
                 .m_strategy_type = segmentation_strategy_type,
                 .m_ch_score_based_params = score_based_ch_ss_params.get(),
+                .m_ch_num_seg_props_file = num_seg_props_file,
             };
             SaxParams sax_params{
                 .m_num_bits = first_layer_num_bits,

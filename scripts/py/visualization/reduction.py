@@ -456,8 +456,10 @@ class ExperimentResults(BaseModel):
                 how="left",
             )
 
+        isc_index_file = ""
         if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEXES_COLS])):
             isc_dataset_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.DATASET_FILE))
+            isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
 
             merged_df = merged_df.merge(
                 rename_df_columns(self.indexes_df, ERD.INDEXES_COLS),
@@ -467,7 +469,6 @@ class ExperimentResults(BaseModel):
             )
 
             if self.add_index_stats and os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEX_STATS_COLS])):
-                isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
                 istc_index_file = get_merged_col_name(ERD.INDEX_STATS_COLS, str(ISTC.INDEX_FILE))
 
                 merged_df = merged_df.merge(
@@ -481,13 +482,28 @@ class ExperimentResults(BaseModel):
             qsc_query_file = get_merged_col_name(ERD.QUERY_SETS_COLS, str(QSC.QUERY_FILE))
             ssc_dataset_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.DATASET_FILE))
             ssc_query_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.QUERY_FILE))
+            ssc_index_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.INDEX_FILE))
 
-            merged_df = merged_df.merge(
-                rename_df_columns(self.methods_df, ERD.METHODS_COLS),
+            has_index_file = self.methods_df[str(SSC.INDEX_FILE)].notna()
+            methods_w_index_df = self.methods_df[has_index_file]
+            methods_wo_index_df = self.methods_df[~has_index_file]
+
+            merged_w_index_df = pd.DataFrame()
+            if len(isc_index_file) > 0:
+                merged_w_index_df = merged_df.merge(
+                    rename_df_columns(methods_w_index_df, ERD.METHODS_COLS),
+                    left_on=[dsc_dataset_file, qsc_query_file, isc_index_file],
+                    right_on=[ssc_dataset_file, ssc_query_file, ssc_index_file],
+                    how="right",
+                )
+            merged_wo_index_df = merged_df.merge(
+                rename_df_columns(methods_wo_index_df, ERD.METHODS_COLS),
                 left_on=[dsc_dataset_file, qsc_query_file],
                 right_on=[ssc_dataset_file, ssc_query_file],
-                how="left",
+                how="right",
             )
+            merged_df = pd.concat([merged_w_index_df, merged_wo_index_df], ignore_index=True)
+
             columns_to_drop += [ssc_dataset_file, ssc_query_file]
 
             if self.add_runs and os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.RUNS_COLS])):

@@ -16,7 +16,7 @@
     },
     "isax_split_strategies": ["uctm"],
     "isax_breakpoint_strategies": ["fixed"],
-    "isax_breakpoints_file": ["../BREAKPOINTS/ulisse_breakpoints.txt"],
+    "isax_breakpoints_file": ["../PARAMS/BREAKPOINTS/ulisse_breakpoints.txt"],
     "isax_num_bits_limits": [8],
     "isax_leaf_cap_ratios": [0.05],
     "isax_start_bit_numbers": {

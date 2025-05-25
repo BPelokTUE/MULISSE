@@ -31,6 +31,8 @@ enum class IndexSettingsColumn {
     CH_SCORE_BASED_SAMPLE_FRAC,   // The fraction of the dataset used by ScoreBasedChSegmentationStrategy
     CH_SCORE_BASED_PROP_EXP,      // The exponent used for ScoreToProportionalNumSegments in
                                   // ScoreBasedChSegmentationStrategy
+    CH_NUM_SEG_PROPS_FILE,        // The file containing the proportion of segments to use per channel for
+                                  // MultiChSegmentationStrategy
     BREAKPOINT_STRATEGY,          // Strategy for getting the breakpoints of the symbol intervals for iSAX indexes
     SPLIT_STRATEGY,               // Strategy for choosing the index to split on for iSAX indexes
     MERGE_IN_LEAVES,              // Whether to merge the entries int the leaves of iSAX indexes

@@ -1,5 +1,6 @@
 #include "Modules/Indexing/StrategyFactory/GetChSegmentationStrategy.hpp"
 
+#include "Index/Segmentation/ChannelSegmentationStrategy/MultiChSegmentationStrategy.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBasedChSegmentationStrategy.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/SingleChSegmentationStrategy.hpp"
 #include "Index/Segmentation/ScoreToSegmentationStrategy/ScoreToProportionalNumSegments.hpp"
@@ -17,6 +18,12 @@ sptr<IChannelSegmentationStrategy> get_ch_segmentation_strategy(const IndexOptio
         case CHSS::SINGLE:
             return std::make_unique<SingleChSegmentationStrategy>(
                 get_segmentation_strategy(opts, l_min, l_max, num_segments));
+        case CHSS::MULTI:
+            return std::make_unique<MultiChSegmentationStrategy>(
+                [&opts, l_min, l_max](SaxSegIndT num_prop_segments) {
+                    return get_segmentation_strategy(opts, l_min, l_max, num_prop_segments);
+                },
+                num_segments, index_params->m_segmentation_params.m_ch_num_seg_props_file);
         case CHSS::SCORE_BASED: {
             auto score_based_params = index_params->m_segmentation_params.m_ch_score_based_params;
             if (!score_based_params) {

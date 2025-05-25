@@ -10,6 +10,7 @@
 #include "Index/Entry/Envelope.hpp"
 #include "Index/Entry/Paa.hpp"
 #include "Index/EnvelopeIndex/Tree/EnvelopeNode.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/MultiChSegmentationStrategy.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBasedChSegmentationStrategy.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/SingleChSegmentationStrategy.hpp"
 #include "Index/Segmentation/SegmentationStrategy/AdaptiveSegmentationStrategy.hpp"
@@ -64,6 +65,8 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION(ISegmentationStrategy, AdaptiveSegmentation
 // Register channel segmentation strategies
 CEREAL_REGISTER_TYPE(SingleChSegmentationStrategy)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(IChannelSegmentationStrategy, SingleChSegmentationStrategy)
+CEREAL_REGISTER_TYPE(MultiChSegmentationStrategy)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(IChannelSegmentationStrategy, MultiChSegmentationStrategy)
 CEREAL_REGISTER_TYPE(ScoreBasedChSegmentationStrategy)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(IChannelSegmentationStrategy, ScoreBasedChSegmentationStrategy)
 

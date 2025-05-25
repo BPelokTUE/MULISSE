@@ -22,7 +22,8 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
     SaxNumBitsT first_layer_num_bits = 0, num_bits_limit = 0, merger_num_bits = 0;
     size_t leaf_capacity = 0;
     str lg_ss_str = "", ch_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "",
-        merge_in_leaves_str = "", method_type_str = "", entry_merger_type_str = "", ch_score_based_weights_file = "";
+        merge_in_leaves_str = "", method_type_str = "", entry_merger_type_str = "", ch_score_based_weights_file = "",
+        ch_num_seg_props_file = "";
     Real ch_score_based_prop_exp = 0.0;
 
     if (index_options.m_index_params && arr_contains(METHODS_W_PAA, index_options.m_index_method)) {
@@ -36,6 +37,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
             ch_score_based_weights_file = paa_params->m_segmentation_params.m_ch_score_based_params->m_weights_file;
             ch_score_based_prop_exp = paa_params->m_segmentation_params.m_ch_score_based_params->m_prop_exp;
         }
+        ch_num_seg_props_file = paa_params->m_segmentation_params.m_ch_num_seg_props_file;
         ss_str = SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_strategy_type);
         num_segments = paa_params->m_segmentation_params.m_num_segments;
 
@@ -85,6 +87,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         {ISC::NUM_SEGMENTS, to_string(num_segments)},
         {ISC::CH_SCORE_BASED_WEIGHTS_FILE, ch_score_based_weights_file},
         {ISC::CH_SCORE_BASED_PROP_EXP, format_num_param(ch_score_based_prop_exp)},
+        {ISC::CH_NUM_SEG_PROPS_FILE, ch_num_seg_props_file},
         {ISC::POS_PER_ENV, format_num_param(pos_per_env)},
         {ISC::ENTRY_MERGER_TYPE, entry_merger_type_str},
         {ISC::MERGER_NUM_BITS, format_num_param(merger_num_bits)},

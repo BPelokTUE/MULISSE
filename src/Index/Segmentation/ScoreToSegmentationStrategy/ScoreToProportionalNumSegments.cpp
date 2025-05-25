@@ -5,17 +5,16 @@
 #include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 
-ScoreToProportionalNumSegments::ScoreToProportionalNumSegments(uint num_segments_total,
-                                                               const NumSegToSegmentationStrategy &strategy_factory,
-                                                               Real score_exponent)
+ScoreToProportionalNumSegments::ScoreToProportionalNumSegments(
+    uint num_segments_total, const std::function<sptr<ISegmentationStrategy>(SaxSegIndT)> &strategy_factory,
+    Real score_exponent)
     : m_num_segments_total(num_segments_total),
       m_strategy_factory(std::move(strategy_factory)),
       m_score_exponent(score_exponent) {}
 
-ScoreToProportionalNumSegments::ScoreToProportionalNumSegments(SaxSegIndT num_channels_avg,
-                                                               MtsNumChannelsT num_channels,
-                                                               const NumSegToSegmentationStrategy &strategy_factory,
-                                                               Real score_exponent)
+ScoreToProportionalNumSegments::ScoreToProportionalNumSegments(
+    SaxSegIndT num_channels_avg, MtsNumChannelsT num_channels,
+    const std::function<sptr<ISegmentationStrategy>(SaxSegIndT)> &strategy_factory, Real score_exponent)
     : m_num_segments_total(U(num_channels_avg * num_channels)),
       m_strategy_factory(std::move(strategy_factory)),
       m_score_exponent(score_exponent) {}

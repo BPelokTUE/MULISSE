@@ -43,6 +43,8 @@ struct SegmentationParams {
     SegmentationStrategyType m_strategy_type;
     /** @brief Parameters of ScoreBasedChSegmentationStrategy */
     const ScoreBasedChSSParams *m_ch_score_based_params;
+    /** @brief File containing the proportions of segments  */
+    const str m_ch_num_seg_props_file;
 };
 
 struct SaxParams {

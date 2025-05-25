@@ -1,3 +1,4 @@
+import os
 import textwrap
 from typing import Any
 
@@ -564,6 +565,9 @@ def get_x_label(
                     label_parts.append(f"CHS={abbreviate(val)}")
             case ISC.CH_SCORE_BASED_PROP_EXP:
                 label_parts.append(f"CPE={val:.2f}")
+            case ISC.CH_NUM_SEG_PROPS_FILE:
+                if isinstance(val, str) and len(val) > 0:
+                    label_parts.append(os.path.basename(val).rsplit(".", 1)[0])
             case ISC.SEGMENTATION_STRATEGY:
                 if isinstance(val, str) and len(val) > 0:
                     label_parts.append(f"SEG={abbreviate(val)}")
