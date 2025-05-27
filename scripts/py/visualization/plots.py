@@ -1,6 +1,6 @@
 import os
 import textwrap
-from typing import Any
+from typing import Any, Iterator
 
 import numpy as np
 import seaborn as sns
@@ -477,9 +477,9 @@ def abbreviate(name: str, max_len: int = 5) -> str:
     return (name if len(name) <= 5 else f"{name[:5]}.").capitalize()
 
 
-def get_x_label(
+def get_config_label(
     key: tuple,
-    columns: dict[ERD, list[str]],
+    columns_it: Iterator[Column],
     ignore_cols: set[Column] = set(),
     include_cols: set[Column] | None = None,
     padding: str = "",
@@ -490,7 +490,7 @@ def get_x_label(
     label_parts = []
     length_values = {}
 
-    for col, val in zip(iterate_columns(columns), key):
+    for col, val in zip(columns_it, key):
         if col in ignore_cols or (include_cols is not None and col not in include_cols):
             continue
 
@@ -533,6 +533,8 @@ def get_x_label(
                 label_parts.append(val)
             case DSC.NUM_SERIES:
                 label_parts.append(f"n={int(val)}")
+            case DSC.SERIES_LENGTH:
+                label_parts.append(f"m={int(val)}")
             case DSC.NUM_CHANNELS:
                 label_parts.append(f"|C|={int(val)}")
             case DSC.SD:
@@ -604,12 +606,12 @@ def get_x_label(
         l_min_ratio = length_values["l_min_ratio"] * 100
         if "l_max_ratio" in length_values:
             l_max_ratio = length_values["l_max_ratio"] * 100
-            label_parts.append(f"{l_min_ratio:.0f}%≤l≤{l_max_ratio:.0f}%")
+            label_parts.append(f"{l_min_ratio:.1f}%≤l≤{l_max_ratio:.1f}%")
         else:
-            label_parts.append(f"l>{l_min_ratio:.0f}%")
+            label_parts.append(f"l>{l_min_ratio:.1f}%")
     elif "l_max_ratio" in length_values:
         l_max_ratio = length_values["l_max_ratio"] * 100
-        label_parts.append(f"l<{l_max_ratio:.0f}%")
+        label_parts.append(f"l<{l_max_ratio:.1f}%")
 
     label = sep.join(label_parts)
     if "\n" not in label:
@@ -619,7 +621,7 @@ def get_x_label(
     return padding + label
 
 
-def get_x_labels(
+def get_config_labels(
     reduced_values: ReductionResult,
     groups_dict: dict[ERD, list[Column]],
     ignore_cols: set[Column] = set(),
@@ -630,7 +632,7 @@ def get_x_labels(
     sep: str = "\n",
     max_line_length: int = 30,
 ) -> dict[tuple, str]:
-    x_labels = {}
+    config_labels = {}
 
     keys = list(reduced_values.keys())
     key_to_show_index = [True] * len(keys[0])
@@ -649,9 +651,9 @@ def get_x_labels(
 
     for ind, key in enumerate(keys):
         key_to_show = tuple([key[i] for i in range(len(key)) if key_to_show_index[i]])
-        x_labels[key_to_show] = get_x_label(
+        config_labels[key_to_show] = get_config_label(
             key_to_show,
-            columns_to_show,
+            iterate_columns(columns_to_show),
             num_query_intervals=num_query_intervals,
             padding=sep * padding_rows if ind % 2 == 0 else "",
             ignore_cols=ignore_cols,
@@ -659,7 +661,7 @@ def get_x_labels(
             sep=sep,
             max_line_length=max_line_length,
         )
-    return x_labels
+    return config_labels
 
 
 def get_y_label(targets: list[tuple[ERD, Column, Reducer]]) -> str:

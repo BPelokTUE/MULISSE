@@ -45,6 +45,6 @@ def merge_univariate_datasets(reduced_values, ds_index: int = 0):
 
 
 def iterate_columns(columns: dict[ERD, list[Column]]) -> Iterator[Column]:
-    for erd, erd_columns in columns.items():
+    for _erd, erd_columns in columns.items():
         for column in erd_columns:
             yield column

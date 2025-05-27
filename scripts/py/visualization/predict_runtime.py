@@ -39,9 +39,11 @@ from sklearn.svm import SVR
 
 # %%
 
-LOGS_DIR = "EXPERIMENT_LOGS/segmentation/LOGS_max_envelopes"
+# LOGS_DIR = "EXPERIMENT_LOGS/segmentation/LOGS_max_envelopes"
+LOGS_DIR = "EXPERIMENT_LOGS/segmentation/LOGS_sample_size_bands"
 # LOGS_DIR = "EXPERIMENT_LOGS/segmentation/LOGS_limited_band_segments"
 BAND_NUM_SEGMENTS = 1024
+SAMPLE_FRAC = 0.01
 
 groups_dict = {ERD.DATASETS_COLS: [DSC.DATASET_FILE]}
 groups = dict_to_tuples(groups_dict)
@@ -49,7 +51,7 @@ targets_time = [(ERD.RUNS_COLS, QC.PRUNING_RATIO, MeanReducer())]
 columns_time = groups_dict.copy()
 columns_time[ERD.RUNS_COLS] = groups_dict.get(ERD.RUNS_COLS, []) + [targets_time[0][1]]
 
-groups_dict.update({ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS]})
+groups_dict.update({ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS, ISC.SAMPLE_FRAC]})
 targets = []
 # summary_stat_cols = [DSTC.MEAN, DSTC.STD, DSTC.SKEWNESS, DSTC.KURTOSIS]
 summary_stat_cols = []
@@ -65,13 +67,13 @@ for col in shape_stat_cols:
 
 index_stat_cols = [
     (ISTC.SEG_RANGE_STATS, SCP.MEAN),
-    (ISTC.SEG_RANGE_STATS, SCP.STD),
+    # (ISTC.SEG_RANGE_STATS, SCP.STD),
     # (ISTC.SEG_LOWER_STATS, SCP.MEAN),
-    # (ISTC.SEG_LOWER_STATS, SCP.STD),
+    (ISTC.SEG_LOWER_STATS, SCP.STD),
     # (ISTC.SEG_UPPER_STATS, SCP.MEAN),
-    # (ISTC.SEG_UPPER_STATS, SCP.STD),
+    (ISTC.SEG_UPPER_STATS, SCP.STD),
     # (ISTC.SEG_MID_STATS, SCP.MEAN),
-    # (ISTC.SEG_MID_STATS, SCP.STD),
+    (ISTC.SEG_MID_STATS, SCP.STD),
 ]
 for col_base, prefix in index_stat_cols:
     targets.append((ERD.INDEX_STATS_COLS, SC(col_base, prefix), MeanReducer()))
@@ -109,7 +111,8 @@ results = ExperimentResults.load(
 
 results_sample = deepcopy(results)
 results_sample.indexes_df = results_sample.indexes_df[
-    results_sample.indexes_df[str(ISC.NUM_SEGMENTS)] == BAND_NUM_SEGMENTS
+    (results_sample.indexes_df[str(ISC.NUM_SEGMENTS)] == BAND_NUM_SEGMENTS)
+    & (results_sample.indexes_df[str(ISC.SAMPLE_FRAC)] == SAMPLE_FRAC)
 ]
 
 reduced_values_time = execute_reduction([results_time], targets_time, groups, na_replacement=pd.NA)
@@ -144,13 +147,13 @@ for (_, col), val in zip(groups[1:], first_key[1:]):
     first_row.append(val)
 
 for (_, target_col, reducer), value in zip(targets, combined_reduced_vals[first_key]):
-    reduction = get_reduction_str(reducer)
+    reduction = get_reduction_str(reducer).rsplit("mean", 1)[0]
     if isinstance(reducer, CollectionReducer):
         for i, v in enumerate(value):
-            labels.append(f"{str(target_col)}_{i}_{reduction}")
+            labels.append(f"{str(target_col)}_{i}_{reduction}".strip("_"))
             first_row.append(v)
     else:
-        labels.append(f"{str(target_col)}_{reduction}")
+        labels.append(f"{str(target_col)}_{reduction}".strip("_"))
         first_row.append(value)
 
 print("Labels for first row:")
@@ -192,12 +195,12 @@ for i, (dataset, values) in enumerate(combined_reduced_vals.items()):
 
 xs = np.nan_to_num(xs, nan=0.0)
 xs = np.clip(xs, a_min=-1e10, a_max=1e10)
-scaler = StandardScaler()
-xs = scaler.fit_transform(xs)
+# scaler = StandardScaler()
+# xs = scaler.fit_transform(xs)
 
 # %%
 
-discard_quantiles = {"synthetic": 0.0, "weather": 1e-5, "stocks": 1e-5}
+discard_quantiles = {"synthetic": 0.0, "weather": 0.0, "stocks": 0.0}
 filtered_mask = np.ones(xs.shape[0], dtype=bool)
 for ds, ds_mask in ds_masks.items():
     discard_quantile = discard_quantiles.get(ds, 0.0)
@@ -229,8 +232,11 @@ print(f"Shape of xs: {xs.shape}, ys: {ys.shape}")
 pca = PCA(n_components=min(xs.shape[0], xs.shape[1]))
 pca.fit(xs)
 explained_variance = pca.explained_variance_ratio_
-for i, var in enumerate(explained_variance):
-    print(f"Principal Component {i + 1}: {var:.4f}")
+pca_components = pca.components_
+for i, (comp, var) in enumerate(zip(pca_components, explained_variance)):
+    print(f"Principal Component {i + 1}: {comp} ; var: {var:.4f}")
+
+# %%
 
 ys_lims = (ys.min(), ys.max())
 ys_range = ys_lims[1] - ys_lims[0]
@@ -244,68 +250,110 @@ channel_symbols = ["o", "x", "s", "*", "D"]
 def plot_points(
     xs: np.ndarray,
     ys: np.ndarray,
-    axis_indices: tuple[int, int] = (0, 1),
+    axis_indices: tuple[int, int] | list[tuple[int, int]] = (0, 1),
     title: str = "PCA Plot",
     x_label: str = "PCA Component 1",
-    y_label: str = "PCA Component 2",
-    cbar_lims: tuple[float, float] = cbar_lims,
+    y_labels: str | list[str] = "PCA Component 2",
+    cbar_lims: tuple[float, float] | None = None,
     channel_inds: np.ndarray = None,
     channel_names: list[str] = None,
     channel_symbols: list[str] = channel_symbols,
     draw_bounding_boxes: bool = False,
+    verbose: bool = False,
 ):
-    plt.figure(figsize=(10, 8))
-    ind1, ind2 = axis_indices
+    if isinstance(axis_indices, tuple):
+        fig, ax = plt.subplots()
+        axis_indices = [axis_indices]
+        y_labels = [y_labels]
+    else:
+        fig, axs = plt.subplots(nrows=1, ncols=len(axis_indices))
+        assert len(axis_indices) == len(y_labels), "Number of axis indices must match number of y labels"
+    fig.set_size_inches(6 * len(axis_indices), 5)
+    plt.subplots_adjust(wspace=0.3)
 
     if channel_inds is None:
         channel_inds = np.zeros(xs.shape[0], dtype=int)
-    # Use different markers for each channel
-    for channel_idx in np.unique(channel_inds):
-        mask = channel_inds == channel_idx
-        if np.any(mask):
-            marker = channel_symbols[channel_idx % len(channel_symbols)]
-            xs_masked = xs[mask]
-            plt.scatter(
-                xs_masked[:, ind1],
-                xs_masked[:, ind2],
-                c=ys[mask],
-                marker=marker,
-                cmap="viridis",
-                vmin=cbar_lims[0],
-                vmax=cbar_lims[1],
-                label=channel_names[channel_idx] if channel_names else f"Channel {channel_idx}",
-            )
-            if draw_bounding_boxes:
-                # Draw bounding box around the points
-                x_min, x_max = xs_masked[:, ind1].min(), xs_masked[:, ind1].max()
-                y_min, y_max = xs_masked[:, ind2].min(), xs_masked[:, ind2].max()
-                plt.plot(
-                    [x_min, x_max, x_max, x_min, x_min], [y_min, y_min, y_max, y_max, y_min], color="#404040", lw=1
-                )
 
-    plt.colorbar(label=str(targets[0][1]))
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.title(title)
-    plt.grid()
-    plt.legend(title="Channels", loc="best")
+    if cbar_lims is None:
+        ys_range = ys.max() - ys.min()
+        cbar_lims = (max(0.0, ys.min() - 0.1 * ys_range), min(1.0, ys.max() + 0.1 * ys_range))
+
+    plot = None
+    for ax_ind, (ax, (ind1, ind2), y_label) in enumerate(zip(axs, axis_indices, y_labels)):
+        for channel_idx in np.unique(channel_inds):
+            mask = channel_inds == channel_idx
+            if np.any(mask):
+                channel_name = channel_names[channel_idx] if channel_names else f"Channel {channel_idx}"
+                marker = channel_symbols[channel_idx % len(channel_symbols)]
+                xs_masked = xs[mask]
+                ys_masked = ys[mask]
+
+                plot = ax.scatter(
+                    xs_masked[:, ind1],
+                    xs_masked[:, ind2],
+                    c=ys_masked,
+                    marker=marker,
+                    cmap="viridis",
+                    vmin=cbar_lims[0],
+                    vmax=cbar_lims[1],
+                    label=channel_name if ax_ind == 0 else None,
+                )
+                ax.set_xlabel(x_label)
+                ax.set_ylabel(y_label)
+
+                if draw_bounding_boxes:
+                    # Draw bounding box around the points
+                    x_min, x_max = xs_masked[:, ind1].min(), xs_masked[:, ind1].max()
+                    y_min, y_max = xs_masked[:, ind2].min(), xs_masked[:, ind2].max()
+                    ax.plot(
+                        [x_min, x_max, x_max, x_min, x_min], [y_min, y_min, y_max, y_max, y_min], color="#404040", lw=1
+                    )
+    if plot is not None:
+        fig.colorbar(plot, label=str(targets[0][1]))
+    if verbose:
+        channel_stats = {}
+        for channel_idx in np.unique(channel_inds):
+            ys_masked = ys[channel_inds == channel_idx]
+            channel_stats[channel_name] = {
+                "mean": ys_masked.mean(),
+                "std": ys_masked.std(),
+                "min": ys_masked.min(),
+                "max": ys_masked.max(),
+            }
+        print(json.dumps(channel_stats, indent=4))
+
+    fig.suptitle(title)
+    fig.legend(title="Channels", loc="center left", bbox_to_anchor=(0.95, 0.5))
     plt.show()
 
 
 for ds, ds_mask in ds_masks.items():
-    xs_pca = pca.transform(xs)
-    # plot_points(xs_pca[ds_mask], ys[ds_mask], title=f"PCA Plot for {ds.capitalize()}")
-    axis_indices = (0, 1)
+    plot_props = {
+        "channel_inds": channel_inds[ds_mask],
+        "channel_names": channel_names.get(ds, None),
+        "draw_bounding_boxes": True,
+    }
+    xs_ds = xs[ds_mask]
+    pca_ds = PCA(n_components=min(xs_ds.shape[0], xs_ds.shape[1]))
+    pca_ds.fit(xs_ds)
+
+    explained_variance = pca_ds.explained_variance_ratio_
+    pca_components = pca_ds.components_
+    # for i, (comp, var) in enumerate(zip(pca_components, explained_variance)):
+    #     print(f"Principal Component {i + 1}: {comp} ; var: {var:.4f}")
+
+    xs_pca = pca_ds.transform(xs_ds)
+    # plot_points(xs_pca, ys[ds_mask], title=f"PCA Plot for {ds.capitalize()}", **plot_props)
+
+    y_axes = range(1, xs_pca.shape[1])
     plot_points(
-        xs[ds_mask],
+        xs_ds,
         ys[ds_mask],
         title=f"Points in Original Space for {ds.capitalize()}",
-        x_label=labels[len(groups) + axis_indices[0]],
-        y_label=labels[len(groups) + axis_indices[1]],
-        axis_indices=axis_indices,
-        channel_inds=channel_inds[ds_mask],
-        channel_names=channel_names.get(ds, None),
-        # draw_bounding_boxes=True,
+        x_label=labels[len(groups)],
+        y_labels=[labels[len(groups) + i] for i in y_axes],
+        axis_indices=[(0, i) for i in y_axes],
+        **plot_props,
     )
 
 

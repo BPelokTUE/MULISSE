@@ -53,21 +53,14 @@ from scripts.py.visualization.plots import (
     PREP_TIME_HATCH,
     TIME_LABELS,
     TIME_TARGETS,
-    get_x_labels,
+    get_config_label,
+    get_config_labels,
     get_y_label,
     plot_bars,
     plot_heat_map,
     plot_lines,
 )
-from scripts.py.visualization.reduction import (
-    ERD,
-    ExperimentResults,
-    MeanReducer,
-    Reducer,
-    RobustMeanReducer,
-    StdReducer,
-    execute_reduction,
-)
+from scripts.py.visualization.reduction import ERD, ExperimentResults, MeanReducer, Reducer, execute_reduction
 from scripts.py.visualization.style import COLD_TO_HOT_COLORS, PALETTE
 
 # %%[markdown]
@@ -191,13 +184,16 @@ def visualize_experiments(
             reduced_values = {key: values for key, values in reduced_values.items() if re.search(regex, str(key[ind]))}
 
     padding_rows = (
-        max([label.count("\n") + 1 for label in get_x_labels(reduced_values, groups_dict).values()])
+        max([label.count("\n") + 1 for label in get_config_labels(reduced_values, groups_dict).values()])
         if bar_plot_label_padding
         else 0
     )
 
     def create_plots(
-        title: str, remaining_separate_plots_dict: dict[tuple, set], reduced_values_subset: dict[tuple, list[float]]
+        title_key: list,
+        title_columns: list[Column],
+        remaining_separate_plots_dict: dict[tuple, set],
+        reduced_values_subset: dict[tuple, list[float]],
     ):
         if len(remaining_separate_plots_dict) > 0:
             sp_cols, sp_accepted_vals = next(iter(remaining_separate_plots_dict.items()))
@@ -205,7 +201,11 @@ def visualize_experiments(
             all_vals = {tuple([key[col_ind] for col_ind in col_inds]) for key in reduced_values_subset}
             for val in all_vals:
                 if len(sp_accepted_vals) == 0 or val in sp_accepted_vals:
-                    next_title = f"{title} ({', '.join(f'{col}={val[i]}' for i, col in enumerate(sp_cols))})"
+                    new_title_key = title_key.copy()
+                    new_title_columns = title_columns.copy()
+                    for i, col in enumerate(sp_cols):
+                        new_title_key.append(val[i])
+                        new_title_columns.append(col)
 
                     next_remaining_separate_plots_dict = copy.deepcopy(remaining_separate_plots_dict)
                     next_remaining_separate_plots_dict.pop(sp_cols)
@@ -215,7 +215,9 @@ def visualize_experiments(
                         for key, values in reduced_values_subset.items()
                         if all(key[col_ind] == val[i] for i, col_ind in enumerate(col_inds))
                     }
-                    create_plots(next_title, next_remaining_separate_plots_dict, next_reduced_values_subset)
+                    create_plots(
+                        new_title_key, new_title_columns, next_remaining_separate_plots_dict, next_reduced_values_subset
+                    )
         else:
             y_label = get_y_label(targets)
             y_lim = (
@@ -223,6 +225,8 @@ def visualize_experiments(
                 if any(col in [QC.PRUNING_RATIO, QC.KEEP_RATE] for col in targets_dict.get(ERD.RUNS_COLS, []))
                 else None
             )
+            title = f"{title_base}: " if title_base else ""
+            title += get_config_label(tuple(title_key), title_columns, sep=", ", max_line_length=64)
 
             if bar_plot_color_attr is not None:
                 bar_plot_color_attr_ind = get_col_index(bar_plot_color_attr, groups)
@@ -240,7 +244,7 @@ def visualize_experiments(
                 plot_bars(
                     reduced_values_subset,
                     bar_plot_color_attr_ind,
-                    x_labels=get_x_labels(
+                    x_labels=get_config_labels(
                         reduced_values_subset,
                         groups_dict,
                         discard_cols={bar_plot_color_attr},
@@ -260,7 +264,7 @@ def visualize_experiments(
                 plot_lines(
                     reduced_values_subset,
                     get_col_index(line_plot_x_attr, groups),
-                    legend=get_x_labels(
+                    legend=get_config_labels(
                         reduced_values_subset,
                         groups_dict,
                         discard_cols={line_plot_x_attr},
@@ -281,7 +285,7 @@ def visualize_experiments(
                     get_col_index(heat_map_x_attr, groups),
                     get_col_index(heat_map_y_attr, groups),
                     title=f"{y_label} for {title}",
-                    subtitles=get_x_labels(
+                    subtitles=get_config_labels(
                         reduced_values_subset,
                         groups_dict,
                         discard_cols={heat_map_x_attr, heat_map_y_attr},
@@ -292,7 +296,7 @@ def visualize_experiments(
                     color_map=COLD_TO_HOT_COLORS,
                 )
 
-    create_plots(title_base, separate_plots_dict, reduced_values)
+    create_plots([], [], separate_plots_dict, reduced_values)
 
 
 # %%[markdown]
@@ -427,7 +431,7 @@ def experiment_relative_contrast(
         3,
         NOISE_COLORS,
         NOISE_LABELS,
-        x_labels=get_x_labels(reduced_values, groups_dict, {QSTC.QUERY_NOISE}),
+        x_labels=get_config_labels(reduced_values, groups_dict, {QSTC.QUERY_NOISE}),
         y_label=y_label,
         y_scale=y_scale,
         bar_width_inches=bar_width_inches,
@@ -583,7 +587,7 @@ def experiment_ulisse_comparison(
     plot_bars(
         reduced_values,
         0,
-        x_labels=get_x_labels(reduced_values, groups_dict),
+        x_labels=get_config_labels(reduced_values, groups_dict),
         y_label=get_y_label(targets),
         y_scale="linear",
     )
@@ -650,39 +654,29 @@ Experiment: Segmentation strategy
 
 def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
     visualize_experiments(
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_2_position_group_univariate"],
-        # logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_clairvoyant_chss"],
-        logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_4_num_series"],
+        logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_2_ppe_univariate"],
         groups_dict={
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_SERIES],
-            ERD.INDEXES_COLS: [
-                # ISC.CH_SEGMENTATION_STRATEGY,
-                # ISC.CH_NUM_SEG_PROPS_FILE,
-                # ISC.CH_SCORE_BASED_PROP_EXP,
-                # ISC.NUM_SEGMENTS,
-                # ISC.NUM_ENVELOPES,
-            ],
-            # ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+            ERD.INDEXES_COLS: [ISC.POS_PER_ENV],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
         },
         separate_plots_dict={
-            # (DSC.DATASET_FILE, DSC.NUM_CHANNELS): [],
-            # (ISC.NUM_SEGMENTS,): [],
-            # (QSC.L_MIN, QSC.L_MAX): [],
+            (DSC.SERIES_LENGTH,): [],
+            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
         },
-        regex_dict={DSC.DATASET_FILE: r"weather", DSC.NUM_SERIES: r"^5000$"},
-        # regex_dict={ISC.CH_SCORE_BASED_PROP_EXP: r"(0\.0|1\.0)"},
+        # regex_dict={DSC.DATASET_FILE: r"weather"},
         num_query_intervals=1,
-        merge_csv_datasets=False,
+        merge_csv_datasets=True,
         y_scale="linear",
-        bar_plot_color_attr=DSC.DATASET_FILE,
+        bar_plot_color_attr=None,
         # bar_plot_color_map={
         #     "single": PALETTE["Oranges"][2],
         #     "score_based": PALETTE["Blues"][4],
         #     "multi": PALETTE["Greens"][4],
         # },
-        # line_plot_x_attr=ISC.NUM_ENVELOPES,
-        # line_plot_included_cols={DSC.DATASET_FILE},
-        # x_scale="log",
+        line_plot_x_attr=ISC.POS_PER_ENV,
+        line_plot_included_cols={DSC.DATASET_FILE},
+        x_scale="log",
         # heat_map_x_attr=ISC.NUM_ENVELOPES,
         # heat_map_y_attr=ISC.NUM_LEN_GROUPS,
         # heat_map_included_cols={ISC.NUM_SEGMENTS},
