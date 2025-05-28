@@ -13,6 +13,7 @@
 #include "Index/Segmentation/ChannelSegmentationStrategy/MultiChSegmentationStrategy.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBasedChSegmentationStrategy.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/SingleChSegmentationStrategy.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/WidthBasedChSegmentationStrategy.hpp"
 #include "Index/Segmentation/SegmentationStrategy/AdaptiveSegmentationStrategy.hpp"
 #include "Index/Segmentation/SegmentationStrategy/UniformSegmentationStrategy.hpp"
 #include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
@@ -68,6 +69,8 @@ CEREAL_REGISTER_POLYMORPHIC_RELATION(IChannelSegmentationStrategy, SingleChSegme
 CEREAL_REGISTER_TYPE(MultiChSegmentationStrategy)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(IChannelSegmentationStrategy, MultiChSegmentationStrategy)
 CEREAL_REGISTER_TYPE(ScoreBasedChSegmentationStrategy)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(IChannelSegmentationStrategy, ScoreBasedChSegmentationStrategy)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(MultiChSegmentationStrategy, ScoreBasedChSegmentationStrategy)
+CEREAL_REGISTER_TYPE(WidthBasedChSegmentationStrategy)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(MultiChSegmentationStrategy, WidthBasedChSegmentationStrategy)
 
 #endif  // SERIALIZATION_REGISTRATION_HPP

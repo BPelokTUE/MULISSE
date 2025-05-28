@@ -1,5 +1,6 @@
 #include "Index/EntryGenerator/EnvelopeEntryGenerator.hpp"
 
+#include "Enums/ChannelSegmentationStrategyType.hpp"
 #include "Index/Entry/IndexEntry.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"

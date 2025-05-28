@@ -2,6 +2,7 @@
 #define INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_MULTICHSEGMENTATIONSTRATEGY_HPP
 
 #include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
+#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 
 class MultiChSegmentationStrategy : public IChannelSegmentationStrategy {
@@ -29,7 +30,7 @@ class MultiChSegmentationStrategy : public IChannelSegmentationStrategy {
 
     ChannelSegmentationStrategyType get_type() const override;
 
-   private:
+   protected:
     vec<sptr<ISegmentationStrategy>> m_segmentation_strategies;
 
     // Required for Cereal (de)serialization

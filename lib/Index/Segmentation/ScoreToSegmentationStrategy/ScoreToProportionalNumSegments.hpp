@@ -27,7 +27,7 @@ class ScoreToProportionalNumSegments : public IScoreToSegmentationStrategy {
                                    const std::function<sptr<ISegmentationStrategy>(SaxSegIndT)> &strategy_factory,
                                    Real score_exponent = 2.0);
 
-    vec<sptr<ISegmentationStrategy>> get_segmentation_strategy(const vec<Real> &scores) const override;
+    vec<sptr<ISegmentationStrategy>> get_segmentation_strategies(const vec<Real> &scores) const override;
 
    private:
     uint m_num_segments_total;

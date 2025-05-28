@@ -39,10 +39,14 @@ sptr<IChannelSegmentationStrategy> get_ch_segmentation_strategy(const IndexOptio
                     return get_segmentation_strategy(opts, l_min, l_max, num_prop_segments);
                 },
                 index_params->m_segmentation_params.m_ch_score_based_params->m_prop_exp);
-            return std::make_unique<ScoreBasedChSegmentationStrategy>(
-                index_stats_score_func.get(), score_to_strategy.get(), score_based_params->m_sample_frac,
-                score_based_params->m_segment_len);
+
+            SamplingParams sampling_params{.m_segment_len = score_based_params->m_segment_len,
+                                           .m_sample_frac = score_based_params->m_sample_frac};
+            return std::make_unique<ScoreBasedChSegmentationStrategy>(index_stats_score_func.get(),
+                                                                      score_to_strategy.get(), sampling_params);
         }
+        case CHSS::WIDTH_BASED:
+            throw std::runtime_error("WidthBasedChSegmentationStrategy is not implemented yet");
     }
     return nullptr;
 }

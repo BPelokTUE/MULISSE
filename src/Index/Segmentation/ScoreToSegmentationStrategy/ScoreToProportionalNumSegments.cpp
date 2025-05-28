@@ -19,7 +19,7 @@ ScoreToProportionalNumSegments::ScoreToProportionalNumSegments(
       m_strategy_factory(std::move(strategy_factory)),
       m_score_exponent(score_exponent) {}
 
-vec<sptr<ISegmentationStrategy>> ScoreToProportionalNumSegments::get_segmentation_strategy(
+vec<sptr<ISegmentationStrategy>> ScoreToProportionalNumSegments::get_segmentation_strategies(
     const vec<Real> &scores) const {
     Real score_total = 0.0;
     vec<Real> exp_scores(scores);

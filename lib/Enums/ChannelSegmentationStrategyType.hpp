@@ -4,7 +4,7 @@
 #include "Util/HelperFuncs/Enums.hpp"
 
 /** @brief Enum for IChannelSegmentationStrategy implementations */
-enum class ChannelSegmentationStrategyType { SINGLE, MULTI, SCORE_BASED };
+enum class ChannelSegmentationStrategyType { SINGLE, MULTI, SCORE_BASED, WIDTH_BASED };
 
 DEFINE_ENUM_CONSTS(ChannelSegmentationStrategyType, CHANNEL_SEGMENTATION_STRATEGY, false,
                    (umap<str, ChannelSegmentationStrategyType>{

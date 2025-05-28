@@ -1,3 +1,4 @@
+#pragma once
 #ifndef UTIL_TYPES_STR_HPP
 #define UTIL_TYPES_STR_HPP
 

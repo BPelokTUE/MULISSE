@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 
+#include "Enums/ChannelSegmentationStrategyType.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 
 MultiChSegmentationStrategy::MultiChSegmentationStrategy(vec<sptr<ISegmentationStrategy>> segmentation_strategies)

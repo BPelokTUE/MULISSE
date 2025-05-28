@@ -113,9 +113,7 @@ class IIndex {
         assert(sample_frac >= 0.0 && sample_frac <= 1.0);
         if (sample_frac < 1.0) {
             num_series = U(R(num_series) * sample_frac);
-            std::random_device rd;
-            std::mt19937 g(rd());
-            std::shuffle(mts_inds.begin(), mts_inds.end(), g);
+            std::shuffle(mts_inds.begin(), mts_inds.end(), std::mt19937{std::random_device{}()});
         }
 
         uint num_length_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;

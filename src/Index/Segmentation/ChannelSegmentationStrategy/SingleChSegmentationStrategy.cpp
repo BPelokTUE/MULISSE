@@ -1,5 +1,7 @@
 #include "Index/Segmentation/ChannelSegmentationStrategy/SingleChSegmentationStrategy.hpp"
 
+#include "Enums/ChannelSegmentationStrategyType.hpp"
+
 SingleChSegmentationStrategy::SingleChSegmentationStrategy(sptr<ISegmentationStrategy> segmentation_strategy)
     : m_segmentation_strategy(segmentation_strategy) {}
 

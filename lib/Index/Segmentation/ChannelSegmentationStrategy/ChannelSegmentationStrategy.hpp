@@ -3,10 +3,10 @@
 
 #include <cereal/access.hpp>
 
-#include "Enums/ChannelSegmentationStrategyType.hpp"
 #include "Util/Types/Pointers.hpp"
 
 class ISegmentationStrategy;
+enum class ChannelSegmentationStrategyType;
 
 class IChannelSegmentationStrategy {
    public:
