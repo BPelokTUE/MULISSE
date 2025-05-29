@@ -655,6 +655,7 @@ Experiment: Segmentation strategy
 def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_2_ppe_univariate"],
+        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_2_position_group_univariate_2048"],
         groups_dict={
             ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
             ERD.INDEXES_COLS: [ISC.POS_PER_ENV],

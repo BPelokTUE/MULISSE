@@ -111,7 +111,7 @@ Optimal value of $N_p$ slowly goes up with $m$, however $N_p\approx32$ is always
 | ![](images/Parametrization/2_Np_256-2048.png) | ![](images/Parametrization/2_Np_512-4096.png) |
 
 - TODO:
-    - [ ] Parametrize with exact number of positions per envelope
+    - [ ] Parametrize with exact number of positions per envelope (experiments finished for $n\in\{1024,2048\}$, running for $n=4096$)
 
 ___
 ### Experiments to include:

@@ -289,3 +289,13 @@ $$
     - [ ] Assess channel difficulty based on **inter-variation** and **intra-variation**:
         - Low inter-variation $=$ small average envelope ranges $\Leftrightarrow$ tighter and therefore more discriminative envelope $\Leftrightarrow$ higher pruning power $\Leftrightarrow$ lower runtime
         - High intra-variation $=$ more distinct envelopes, measured e.g. through cross-dataset variance of the mean and variance of lower and upper envelope bounds $\Leftrightarrow$ highly distinguishable envelopes $\Leftrightarrow$ higher pruning power $\Leftrightarrow$ lower runtime
+
+## 28-05-2025
+
+- [ ] Redo clairvoyant experiments for raw
+    - [ ] Also try even stricter distribution
+- [ ] Implement and test WeightBasedChSegmentationStrategy
+    - [ ] Also for raw time series
+    - [ ] Test (cited) functions for distributing segments across channels
+- [ ] Threshold for single channel segments
+    - [ ] Simple upper limit
