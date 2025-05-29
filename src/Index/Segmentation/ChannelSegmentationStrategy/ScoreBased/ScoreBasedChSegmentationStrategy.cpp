@@ -1,4 +1,4 @@
-#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBasedChSegmentationStrategy.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/ScoreBasedChSegmentationStrategy.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -7,21 +7,28 @@
 #include "Enums/ChannelSegmentationStrategyType.hpp"
 #include "Index/Entry/Envelope.hpp"
 #include "Index/Entry/IndexEntry.hpp"
+#include "Index/EntryGenerator/EnvelopeEntryGenerator.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/SamplingChSSSamplingParams.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/EnvelopeScores.hpp"
 #include "Index/Segmentation/ScoreToSegmentationStrategy/ScoreToSegmentationStrategy.hpp"
-#include "Util/Stats/IndexStats.hpp"
-#include "Util/Stats/ScoreFunc/IndexStatsScoreFunc.hpp"
 #include "Util/Types/Pointers.hpp"
 
+ScoreBasedChSegmentationStrategy::~ScoreBasedChSegmentationStrategy() = default;
+
+ScoreBasedChSegmentationStrategy::ScoreBasedChSegmentationStrategy() = default;
+
 ScoreBasedChSegmentationStrategy::ScoreBasedChSegmentationStrategy(
-    const IndexStatsScoreFunc *index_stats_score_func,
-    const IScoreToSegmentationStrategy *score_to_segmentation_strategy, SamplingParams sampling_params)
-    : m_index_stats_score_func(index_stats_score_func),
-      m_score_to_segmentation_strategy(score_to_segmentation_strategy) {
+    uptr<IEnvelopeScores> envelope_score, uptr<IScoreToSegmentationStrategy> score_to_segmentation_strategy,
+    SamplingChSSSamplingParams sampling_params)
+    : m_envelope_scores(std::move(envelope_score)),
+      m_score_to_segmentation_strategy(std::move(score_to_segmentation_strategy)) {
     initialize(sampling_params);
 }
 
 void ScoreBasedChSegmentationStrategy::initialize_segmentation_strategies() {
-    vec<IndexStats> channel_stats(m_late_init_params->m_num_channels);
+    uint sample_count = 0;
+    volatile bool early_stop = false;
+
     OMP_PRAGMA(omp parallel) {
         std::ifstream dataset_ifs(*m_late_init_params->m_dataset_path, std::ios::binary);
         OMP_PRAGMA(omp for)
@@ -36,27 +43,13 @@ void ScoreBasedChSegmentationStrategy::initialize_segmentation_strategies() {
             }
             auto envelope = m_late_init_params->m_generator->get_entries(mts, 0)[0][0].m_mts_summary;
             OMP_PRAGMA(omp critical) {
-                for (MtsNumChannelsT c = 0; c < m_late_init_params->m_num_channels; ++c) {
-                    auto &summary = envelope[c];
-                    for (SaxSegIndT s = 0; s < summary.size(); ++s) {
-                        Real lower = summary.m_lower[s], upper = summary.m_upper[s];
-                        channel_stats[c].update_seg_stats(lower, upper, c, s);
-                    }
-                }
+                ++sample_count;
+                bool sufficient_update = m_envelope_scores->update(envelope);
+                if (!sufficient_update) early_stop = true;
             }
         }
     }
 
-    vec<Real> scores;
-    scores.reserve(m_late_init_params->m_num_channels);
-    for (auto &ch_stat : channel_stats) {
-        ch_stat.calculate();
-        scores.push_back(m_index_stats_score_func->calculate_score(ch_stat));
-    }
-
-    m_segmentation_strategies = m_score_to_segmentation_strategy->get_segmentation_strategies(scores);
-}
-
-ChannelSegmentationStrategyType ScoreBasedChSegmentationStrategy::get_type() const {
-    return ChannelSegmentationStrategyType::SCORE_BASED;
+    m_segmentation_strategies =
+        m_score_to_segmentation_strategy->get_segmentation_strategies(m_envelope_scores->get_scores());
 }

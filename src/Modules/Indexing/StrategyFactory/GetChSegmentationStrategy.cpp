@@ -1,7 +1,8 @@
 #include "Modules/Indexing/StrategyFactory/GetChSegmentationStrategy.hpp"
 
 #include "Index/Segmentation/ChannelSegmentationStrategy/MultiChSegmentationStrategy.hpp"
-#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBasedChSegmentationStrategy.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/EnvelopeStatsScores.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/ScoreBasedChSegmentationStrategy.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/SingleChSegmentationStrategy.hpp"
 #include "Index/Segmentation/ScoreToSegmentationStrategy/ScoreToProportionalNumSegments.hpp"
 #include "Modules/Indexing/StrategyFactory/GetSegmentationStrategy.hpp"
@@ -24,28 +25,31 @@ sptr<IChannelSegmentationStrategy> get_ch_segmentation_strategy(const IndexOptio
                     return get_segmentation_strategy(opts, l_min, l_max, num_prop_segments);
                 },
                 num_segments, index_params->m_segmentation_params.m_ch_num_seg_props_file);
-        case CHSS::SCORE_BASED: {
-            auto score_based_params = index_params->m_segmentation_params.m_ch_score_based_params;
+        case CHSS::ENV_STATS_BASED: {
+            auto sampling_params = index_params->m_segmentation_params.m_ch_sampling_params;
+            if (!sampling_params) throw std::runtime_error("SamplingChSegmentationStrategy requires sampling params");
+            auto score_based_params =
+                dynamic_cast<const EnvStatsChSSParams *>(index_params->m_segmentation_params.m_ch_score_based_params);
             if (!score_based_params) {
-                throw std::runtime_error("ScoreBasedChSegmentationStrategy requires ScoreBasedChSSParams");
+                throw std::runtime_error("ScoreBasedChSegmentationStrategy requires envelope stats params");
             }
 
             auto index_stats_score_func = std::make_unique<IndexStatsScoreFunc>(
                 std::make_unique<EnvelopeShapeExtractor>(),
                 std::make_unique<WeightedScoreFunc>(score_based_params->m_weights_file));
+            auto env_stats_scores = std::make_unique<EnvelopeStatsScores>(std::move(index_stats_score_func));
+
             auto score_to_strategy = std::make_unique<ScoreToProportionalNumSegments>(
                 num_segments, opts.m_num_channels,
                 [&opts, l_min, l_max](SaxSegIndT num_prop_segments) {
                     return get_segmentation_strategy(opts, l_min, l_max, num_prop_segments);
                 },
-                index_params->m_segmentation_params.m_ch_score_based_params->m_prop_exp);
+                score_based_params->m_prop_exp);
 
-            SamplingParams sampling_params{.m_segment_len = score_based_params->m_segment_len,
-                                           .m_sample_frac = score_based_params->m_sample_frac};
-            return std::make_unique<ScoreBasedChSegmentationStrategy>(index_stats_score_func.get(),
-                                                                      score_to_strategy.get(), sampling_params);
+            return std::make_unique<ScoreBasedChSegmentationStrategy>(std::move(env_stats_scores),
+                                                                      std::move(score_to_strategy), *sampling_params);
         }
-        case CHSS::WIDTH_BASED:
+        case CHSS::ENV_WIDTH_BASED:
             throw std::runtime_error("WidthBasedChSegmentationStrategy is not implemented yet");
     }
     return nullptr;

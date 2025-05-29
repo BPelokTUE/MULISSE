@@ -8,6 +8,7 @@
 #include "Enums/SearchMethodType.hpp"
 #include "Enums/SegmentationStrategyType.hpp"
 #include "Enums/iSaxSplitStrategyType.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/SamplingChSSSamplingParams.hpp"
 #include "Util/Types/Numbers.hpp"
 
 /** @brief Interface for index parameters */
@@ -22,14 +23,33 @@ struct IIndexParams {
 };
 
 struct ScoreBasedChSSParams {
-    /** @brief The segment length to use for estimating envelope statistics */
-    uint m_segment_len;
-    /** @brief The fraction of the dataset to use for estimating envelope statistics */
-    Real m_sample_frac;
+    virtual ~ScoreBasedChSSParams() = default;
+};
+
+struct EnvStatsChSSParams : public ScoreBasedChSSParams {
     /** @brief The exponent to use in ScoreToProportionalNumSegments */
     Real m_prop_exp;
     /** @brief File containing the weights to use for WeightedScoreFunc */
     str m_weights_file;
+
+    /**
+     * @brief Constructor
+     * @param prop_exp Exponent for ScoreToProportionalNumSegments
+     * @param weights_file File containing the weights for WeightedScoreFunc
+     */
+    EnvStatsChSSParams(Real prop_exp, str weights_file)
+        : m_prop_exp(prop_exp), m_weights_file(std::move(weights_file)) {}
+};
+
+struct EnvWidthChSSParams : public ScoreBasedChSSParams {
+    /** @brief The minimum change in the envelope width for a sufficient update */
+    Real m_min_width_update;
+
+    /**
+     * @brief Constructor
+     * @param min_width_update Minimum change in the envelope width for a sufficient update
+     */
+    EnvWidthChSSParams(Real min_width_update) : m_min_width_update(min_width_update) {}
 };
 
 struct SegmentationParams {
@@ -41,10 +61,12 @@ struct SegmentationParams {
     ChannelSegmentationStrategyType m_ch_strategy_type;
     /** @brief Type of strategy to use for segmentation */
     SegmentationStrategyType m_strategy_type;
-    /** @brief Parameters of ScoreBasedChSegmentationStrategy */
-    const ScoreBasedChSSParams *m_ch_score_based_params;
     /** @brief File containing the proportions of segments  */
     const str m_ch_num_seg_props_file;
+    /** @brief Parameters for SamplingChSegmentationStrategy */
+    const SamplingChSSSamplingParams *m_ch_sampling_params;
+    /** @brief Parameters of ScoreBasedChSegmentationStrategy */
+    const ScoreBasedChSSParams *m_ch_score_based_params;
 };
 
 struct SaxParams {

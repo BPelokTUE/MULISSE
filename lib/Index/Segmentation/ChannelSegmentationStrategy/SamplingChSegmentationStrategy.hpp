@@ -1,17 +1,12 @@
 #ifndef INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_SAMPLINGCHSEGMENTATIONSTRATEGY_HPP
 #define INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_SAMPLINGCHSEGMENTATIONSTRATEGY_HPP
 
-#include "Index/EntryGenerator/EnvelopeEntryGenerator.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/MultiChSegmentationStrategy.hpp"
 #include "Util/Types/Containers.hpp"
 
 class IScoreToSegmentationStrategy;
-
-struct SamplingParams {
-    uint m_segment_len = 1;
-    uint m_sample_size = 0;
-    Real m_sample_frac = 0.0;
-};
+class EnvelopeEntryGenerator;
+class SamplingChSSSamplingParams;
 
 struct SamplingChSSLateInitParams {
     MtsNumChannelsT m_num_channels;
@@ -19,6 +14,8 @@ struct SamplingChSSLateInitParams {
     const str* m_dataset_path;
     vec<vec<uint>> m_mts_inds;
     uptr<EnvelopeEntryGenerator> m_generator;
+
+    ~SamplingChSSLateInitParams();
 };
 
 class SamplingChSegmentationStrategy : public MultiChSegmentationStrategy {
@@ -30,7 +27,7 @@ class SamplingChSegmentationStrategy : public MultiChSegmentationStrategy {
      * @brief Late-initialize the strategy
      * @param sampling_params Parameters for sampling
      */
-    void initialize(SamplingParams sampling_params);
+    void initialize(SamplingChSSSamplingParams sampling_params);
 
     virtual void initialize_segmentation_strategies() = 0;
 

@@ -6,6 +6,6 @@
 
 class EnvelopeEntryGenerator;
 
-uptr<EnvelopeEntryGenerator> get_simple_envelope_entry_generator(uint segment_len);
+uptr<EnvelopeEntryGenerator> get_simple_envelope_entry_generator(uint segment_len, bool normalized = true);
 
 #endif  // UTIL_STATS_ENVELOPESTATSUTIL_HPP

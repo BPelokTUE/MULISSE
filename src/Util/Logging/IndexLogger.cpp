@@ -33,9 +33,10 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         auto *paa_params = dynamic_cast<PaaIndexParams *>(index_options.m_index_params.get());
         lg_ss_str = LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_lg_strategy_type);
         ch_ss_str = CHANNEL_SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_ch_strategy_type);
-        if (paa_params->m_segmentation_params.m_ch_score_based_params) {
-            ch_score_based_weights_file = paa_params->m_segmentation_params.m_ch_score_based_params->m_weights_file;
-            ch_score_based_prop_exp = paa_params->m_segmentation_params.m_ch_score_based_params->m_prop_exp;
+        if (auto ch_env_stats_params =
+                dynamic_cast<const EnvStatsChSSParams *>(paa_params->m_segmentation_params.m_ch_score_based_params)) {
+            ch_score_based_weights_file = ch_env_stats_params->m_weights_file;
+            ch_score_based_prop_exp = ch_env_stats_params->m_prop_exp;
         }
         ch_num_seg_props_file = paa_params->m_segmentation_params.m_ch_num_seg_props_file;
         ss_str = SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_strategy_type);

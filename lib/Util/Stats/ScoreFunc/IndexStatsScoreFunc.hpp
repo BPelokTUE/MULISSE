@@ -2,9 +2,9 @@
 #define UTIL_STATS_INDEXSTATSSCOREFUNC_HPP
 
 struct IndexStats;
-class IScoreFunc;
-class IIndexStatsExtractor;
 
+#include "Util/Stats/IndexStatsExtractor/IndexStatsExtractor.hpp"
+#include "Util/Stats/ScoreFunc/ScoreFunc.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"
 

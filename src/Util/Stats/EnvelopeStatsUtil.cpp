@@ -6,7 +6,7 @@
 #include "Index/Segmentation/SegmentationStrategy/UniformSegmentationStrategy.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
-uptr<EnvelopeEntryGenerator> get_simple_envelope_entry_generator(uint segment_len) {
+uptr<EnvelopeEntryGenerator> get_simple_envelope_entry_generator(uint segment_len, bool normalized) {
     auto &RS = RunSettings::get_instance();
     uint series_len = RS.get_dataset_props().m_series_len;
 
@@ -22,5 +22,5 @@ uptr<EnvelopeEntryGenerator> get_simple_envelope_entry_generator(uint segment_le
                                    .m_pos_per_env = pos_per_env,
                                    .m_lg_segmentation_strategy = lg_segmentation_strategy.get()};
 
-    return std::make_unique<EnvelopeEntryGenerator>(true, envelope_params);
+    return std::make_unique<EnvelopeEntryGenerator>(normalized, envelope_params);
 }

@@ -5,31 +5,31 @@
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/Types/Numbers.hpp"
 
+class IEnvelopeScores;
 class IScoreToSegmentationStrategy;
-class IndexStatsScoreFunc;
 
 class ScoreBasedChSegmentationStrategy : public SamplingChSegmentationStrategy {
    public:
+    ~ScoreBasedChSegmentationStrategy();
+
+    ScoreBasedChSegmentationStrategy();
+
     /**
      * @brief Constructor for ScoreBasedChSegmentationStrategy.
-     * @param index_stats_score_function Function for calculating scores based on index (envelope) statistics
+     * @param envelope_scores Used for calculating envelope scores
      * @param score_to_segmentation_strategy Function for converting scores to segmentation strategies
      * @param sampling_params Parameters for sampling
      */
-    ScoreBasedChSegmentationStrategy(const IndexStatsScoreFunc *index_stats_score_function,
-                                     const IScoreToSegmentationStrategy *score_to_segmentation_strategy,
-                                     SamplingParams sampling_params);
+    ScoreBasedChSegmentationStrategy(uptr<IEnvelopeScores> envelope_score,
+                                     uptr<IScoreToSegmentationStrategy> score_to_segmentation_strategy,
+                                     SamplingChSSSamplingParams sampling_params);
 
-    ScoreBasedChSegmentationStrategy() = default;
-
-    ChannelSegmentationStrategyType get_type() const override;
-
-   private:
+   protected:
     void initialize_segmentation_strategies() override;
 
-    const IndexStatsScoreFunc *m_index_stats_score_func;
-
-    const IScoreToSegmentationStrategy *m_score_to_segmentation_strategy;
+   private:
+    uptr<IEnvelopeScores> m_envelope_scores;
+    uptr<IScoreToSegmentationStrategy> m_score_to_segmentation_strategy;
 };
 
 #endif  // INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_SCOREBASEDCHSEGMENTATIONSTRATEGY_HPP

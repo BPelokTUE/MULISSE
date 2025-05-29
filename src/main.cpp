@@ -542,18 +542,26 @@ int main(int argc, char **argv) {
                     std::make_unique<SaxParams>(merger_num_bits, breakpoint_strategy_type, breakpoints_path);
             }
 
+            uptr<SamplingChSSSamplingParams> sampling_ch_ss_params = nullptr;
             uptr<ScoreBasedChSSParams> score_based_ch_ss_params = nullptr;
-            if (ch_segmentation_strategy_type == ChannelSegmentationStrategyType::SCORE_BASED) {
-                score_based_ch_ss_params = std::make_unique<ScoreBasedChSSParams>(
-                    score_based_segment_len, score_based_sample_frac, score_based_prop_exp, score_based_weights_file);
+            if (arr_contains(SAMPLING_CH_SEGMENTATION_STRATEGY_TYPES, ch_segmentation_strategy_type)) {
+                sampling_ch_ss_params =
+                    std::make_unique<SamplingChSSSamplingParams>(score_based_segment_len, 0, score_based_sample_frac);
+            }
+            if (ch_segmentation_strategy_type == ChannelSegmentationStrategyType::ENV_STATS_BASED) {
+                score_based_ch_ss_params =
+                    std::make_unique<EnvStatsChSSParams>(score_based_prop_exp, score_based_weights_file);
+            } else if (ch_segmentation_strategy_type == ChannelSegmentationStrategyType::ENV_WIDTH_BASED) {
+                score_based_ch_ss_params = std::make_unique<EnvWidthChSSParams>(0);
             }
             SegmentationParams segmentation_params{
                 .m_num_segments = num_segments,
                 .m_lg_strategy_type = lg_segmentation_strategy_type,
                 .m_ch_strategy_type = ch_segmentation_strategy_type,
                 .m_strategy_type = segmentation_strategy_type,
-                .m_ch_score_based_params = score_based_ch_ss_params.get(),
                 .m_ch_num_seg_props_file = num_seg_props_file,
+                .m_ch_sampling_params = sampling_ch_ss_params.get(),
+                .m_ch_score_based_params = score_based_ch_ss_params.get(),
             };
             SaxParams sax_params{
                 .m_num_bits = first_layer_num_bits,

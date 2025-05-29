@@ -3,11 +3,15 @@
 #include <algorithm>
 #include <random>
 
+#include "Index/EntryGenerator/EnvelopeEntryGenerator.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/SamplingChSSSamplingParams.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 #include "Util/Stats/EnvelopeStatsUtil.hpp"
 
-void SamplingChSegmentationStrategy::initialize(SamplingParams sampling_params) {
+SamplingChSSLateInitParams::~SamplingChSSLateInitParams() = default;
+
+void SamplingChSegmentationStrategy::initialize(SamplingChSSSamplingParams sampling_params) {
     // 1. Get dataset path
     auto &RS = RunSettings::get_instance();
     str dataset_path = RS.get_dataset_path();
@@ -32,8 +36,8 @@ void SamplingChSegmentationStrategy::initialize(SamplingParams sampling_params) 
     auto generator = get_simple_envelope_entry_generator(sampling_params.m_segment_len);
 
     // 4. Set late initialization parameters
-    m_late_init_params = std::make_unique<SamplingChSSLateInitParams>(SamplingChSSLateInitParams{
-        num_channels, subset_size, series_len, &dataset_path, std::move(mts_inds), std::move(generator)});
+    m_late_init_params = std::make_unique<SamplingChSSLateInitParams>(
+        num_channels, subset_size, series_len, &dataset_path, std::move(mts_inds), std::move(generator));
 
     // 5. Initialize segmentation strategies according to the implementation
     auto &length_props = RS.get_length_props();

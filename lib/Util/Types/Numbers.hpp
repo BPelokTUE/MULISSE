@@ -1,4 +1,3 @@
-#pragma once
 #ifndef UTIL_TYPES_NUMBERS_HPP
 #define UTIL_TYPES_NUMBERS_HPP
 
