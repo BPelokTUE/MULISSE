@@ -5,8 +5,8 @@
 
 EnvelopeStatsScores::~EnvelopeStatsScores() = default;
 
-EnvelopeStatsScores::EnvelopeStatsScores(uptr<IndexStatsScoreFunc> index_stats_score_func)
-    : m_index_stats_score_func(std::move(index_stats_score_func)) {}
+EnvelopeStatsScores::EnvelopeStatsScores(MtsNumChannelsT num_channels, uptr<IndexStatsScoreFunc> index_stats_score_func)
+    : m_channel_stats(num_channels), m_index_stats_score_func(std::move(index_stats_score_func)) {}
 
 bool EnvelopeStatsScores::update(const vec<Envelope> &mts_envelope) {
     for (MtsNumChannelsT c = 0; c < mts_envelope.size(); ++c) {

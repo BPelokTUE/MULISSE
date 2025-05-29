@@ -26,13 +26,15 @@ enum class IndexSettingsColumn {
     CH_SEGMENTATION_STRATEGY,     // Strategy for varying the segmentation strategy for different channels
     SEGMENTATION_STRATEGY,        // Strategy for segmenting the time series channels
     NUM_SEGMENTS,                 // The number of segments per channel used
-    CH_SCORE_BASED_WEIGHTS_FILE,  // The file containing the weights for ScoreBasedChSegmentationStrategy
-    CH_SCORE_BASED_SEGMENT_LEN,   // The segment length used for ScoreBasedChSegmentationStrategy
-    CH_SCORE_BASED_SAMPLE_FRAC,   // The fraction of the dataset used by ScoreBasedChSegmentationStrategy
-    CH_SCORE_BASED_PROP_EXP,      // The exponent used for ScoreToProportionalNumSegments in
-                                  // ScoreBasedChSegmentationStrategy
-    CH_NUM_SEG_PROPS_FILE,        // The file containing the proportion of segments to use per channel for
+    MULTI_CHSS_NUM_SEG_FILE,      // The file containing the proportion of segments to use per channel for
                                   // MultiChSegmentationStrategy
+    SCORE_BASED_CHSS_SCORE_EXP,   // The exponent used for ScoreToProportionalNumSegments in
+                                  // ScoreBasedChSegmentationStrategy
+    SAMPLING_CHSS_SEGMENT_LEN,    // The segment length used for SamplingChSegmentationStrategy
+    SAMPLING_CHSS_SAMPLE_SIZE,    // The sample size used by SamplingChSegmentationStrategy
+    ENV_STATS_CHSS_WEIGHTS_FILE,  // The file containing the weights for IndexStatsScoreFunc in
+                                  // EnvStatsChSegmentationStrategy
+    ENV_WIDTH_CHSS_MIN_W_UPDATE,  // The minimum sufficient width update for EnvWidthChSegmentationStrategy
     BREAKPOINT_STRATEGY,          // Strategy for getting the breakpoints of the symbol intervals for iSAX indexes
     SPLIT_STRATEGY,               // Strategy for choosing the index to split on for iSAX indexes
     MERGE_IN_LEAVES,              // Whether to merge the entries int the leaves of iSAX indexes

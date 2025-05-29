@@ -18,9 +18,9 @@ ScoreBasedChSegmentationStrategy::~ScoreBasedChSegmentationStrategy() = default;
 ScoreBasedChSegmentationStrategy::ScoreBasedChSegmentationStrategy() = default;
 
 ScoreBasedChSegmentationStrategy::ScoreBasedChSegmentationStrategy(
-    uptr<IEnvelopeScores> envelope_score, uptr<IScoreToSegmentationStrategy> score_to_segmentation_strategy,
+    uptr<IEnvelopeScores> envelope_scores, uptr<IScoreToSegmentationStrategy> score_to_segmentation_strategy,
     SamplingChSSSamplingParams sampling_params)
-    : m_envelope_scores(std::move(envelope_score)),
+    : m_envelope_scores(std::move(envelope_scores)),
       m_score_to_segmentation_strategy(std::move(score_to_segmentation_strategy)) {
     initialize(sampling_params);
 }

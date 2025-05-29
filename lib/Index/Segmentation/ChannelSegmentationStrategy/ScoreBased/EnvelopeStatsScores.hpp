@@ -11,7 +11,7 @@ class EnvelopeStatsScores : public IEnvelopeScores {
    public:
     ~EnvelopeStatsScores();
 
-    EnvelopeStatsScores(uptr<IndexStatsScoreFunc> index_stats_score_func);
+    EnvelopeStatsScores(MtsNumChannelsT num_channels, uptr<IndexStatsScoreFunc> index_stats_score_func);
 
     bool update(const vec<Envelope> &mts_envelope) override;
 

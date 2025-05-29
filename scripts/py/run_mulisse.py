@@ -23,11 +23,12 @@ CK_LG_SEGMENTATION_STRATEGIES = "lg_segmentation_strategies"
 CK_CH_SEGMENTATION_STRATEGIES = "ch_segmentation_strategies"
 CK_SEGMENTATION_STRATEGIES = "segmentation_strategies"
 CK_NUM_SEGMENTS = "num_segments"
-CK_SCORE_BASED_WEIGHTS_FILES = "score_based_weights_files"
-CK_SCORE_BASED_PROP_EXPS = "score_based_prop_exps"
-CK_SCORE_BASED_SEGMENT_LENS = "score_based_segment_lens"
-CK_SCORE_BASED_SAMPLE_FRACS = "score_based_sample_fracs"
-CK_NUM_SEG_PROPS_FILES = "num_seg_props_files"
+CK_MULTI_CHSS_NUM_SEG_FILES = "multi_chss_num_seg_file"
+CK_SAMPLING_CHSS_SEGMENT_LEN = "sampling_chss_segment_len"
+CK_SAMPLING_CHSS_SAMPLE_SIZE = "sampling_chss_sample_size"
+CK_SCORE_BASED_CHSS_SCORE_EXPS = "score_based_chss_score_exps"
+CK_ENV_STATS_CHSS_WEIGHTS_FILES = "env_stats_chss_weights_files"
+CK_ENV_WIDTH_CHSS_MIN_W_UPDATES = "env_width_chss_min_w_updates"
 CK_NUM_CHANNELS = "num_channels"
 CK_SYN_NUM_CHANNELS = "syn_num_channels"
 CK_QUERY_SET_SIZES = "query_set_sizes"
@@ -82,9 +83,12 @@ RK_LG_SEGMENTATION_STRATEGY = "lg_segmentation_strategy"
 RK_CH_SEGMENTATION_STRATEGY = "ch_segmentation_strategy"
 RK_SEGMENTATION_STRATEGY = "segmentation_strategy"
 RK_NUM_SEGMENTS = "num_segments"
-RK_SCORE_BASED_WEIGHTS_FILE = "score_based_weights_file"
-RK_SCORE_BASED_PROP_EXP = "score_based_prop_exp"
-RK_NUM_SEG_PROPS_FILE = "num_seg_props_file"
+RK_MULTI_CHSS_NUM_SEG_FILE = "multi_chss_num_seg_file"
+RK_SAMPLING_CHSS_SEGMENT_LEN = "sampling_chss_segment_len"
+RK_SAMPLING_CHSS_SAMPLE_SIZE = "sampling_chss_sample_size"
+RK_SCORE_BASED_CHSS_SCORE_EXP = "score_based_chss_score_exp"
+RK_ENV_STATS_CHSS_WEIGHTS_FILE = "env_stats_chss_weights_file"
+RK_ENV_WIDTH_CHSS_MIN_W_UPDATE = "env_width_chss_min_w_update"
 RK_NUM_CHANNELS = "num_channels"
 RK_STEP_STDEV = "step_stdev"
 RK_USED_CHANNEL_RATIO = "used_channel_ratio"
@@ -336,9 +340,12 @@ def parse_config_file(input_config) -> ParsedConfig:
                 **get_key_or_none(RK_LG_SEGMENTATION_STRATEGY, CK_LG_SEGMENTATION_STRATEGIES),
                 **get_key_or_none(RK_CH_SEGMENTATION_STRATEGY, CK_CH_SEGMENTATION_STRATEGIES),
                 **get_key_or_none(RK_SEGMENTATION_STRATEGY, CK_SEGMENTATION_STRATEGIES),
-                **get_key_or_none(RK_SCORE_BASED_WEIGHTS_FILE, CK_SCORE_BASED_WEIGHTS_FILES),
-                **get_key_or_none(RK_SCORE_BASED_PROP_EXP, CK_SCORE_BASED_PROP_EXPS),
-                **get_key_or_none(RK_NUM_SEG_PROPS_FILE, CK_NUM_SEG_PROPS_FILES),
+                **get_key_or_none(RK_MULTI_CHSS_NUM_SEG_FILE, CK_MULTI_CHSS_NUM_SEG_FILES),
+                **get_key_or_none(RK_SAMPLING_CHSS_SEGMENT_LEN, CK_SAMPLING_CHSS_SEGMENT_LEN),
+                **get_key_or_none(RK_SAMPLING_CHSS_SAMPLE_SIZE, CK_SAMPLING_CHSS_SAMPLE_SIZE),
+                **get_key_or_none(RK_SCORE_BASED_CHSS_SCORE_EXP, CK_SCORE_BASED_CHSS_SCORE_EXPS),
+                **get_key_or_none(RK_ENV_STATS_CHSS_WEIGHTS_FILE, CK_ENV_STATS_CHSS_WEIGHTS_FILES),
+                **get_key_or_none(RK_ENV_WIDTH_CHSS_MIN_W_UPDATE, CK_ENV_WIDTH_CHSS_MIN_W_UPDATES),
                 **get_key_or_none(RK_NUM_CHANNELS, CK_NUM_CHANNELS),
                 **get_key_or_none(RK_LENS_PER_GROUP, CK_LENGTH_GROUP_SIZE_RATIOS),
                 **get_key_or_none(RK_MERGER_TYPE, CK_MERGER_TYPES),

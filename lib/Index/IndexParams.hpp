@@ -24,21 +24,28 @@ struct IIndexParams {
 
 struct ScoreBasedChSSParams {
     virtual ~ScoreBasedChSSParams() = default;
+
+    /** @brief The exponent to use in ScoreToProportionalNumSegments */
+    Real m_score_exp;
+
+    /**
+     * @brief Constructor
+     * @param score_exp Exponent for ScoreToProportionalNumSegments
+     */
+    ScoreBasedChSSParams(Real score_exp) : m_score_exp(score_exp) {}
 };
 
 struct EnvStatsChSSParams : public ScoreBasedChSSParams {
-    /** @brief The exponent to use in ScoreToProportionalNumSegments */
-    Real m_prop_exp;
     /** @brief File containing the weights to use for WeightedScoreFunc */
     str m_weights_file;
 
     /**
      * @brief Constructor
-     * @param prop_exp Exponent for ScoreToProportionalNumSegments
+     * @param score_exp Exponent for ScoreToProportionalNumSegments
      * @param weights_file File containing the weights for WeightedScoreFunc
      */
-    EnvStatsChSSParams(Real prop_exp, str weights_file)
-        : m_prop_exp(prop_exp), m_weights_file(std::move(weights_file)) {}
+    EnvStatsChSSParams(Real score_exp, str weights_file)
+        : ScoreBasedChSSParams(score_exp), m_weights_file(std::move(weights_file)) {}
 };
 
 struct EnvWidthChSSParams : public ScoreBasedChSSParams {
@@ -47,9 +54,11 @@ struct EnvWidthChSSParams : public ScoreBasedChSSParams {
 
     /**
      * @brief Constructor
+     * @param score_exp Exponent for ScoreToProportionalNumSegments
      * @param min_width_update Minimum change in the envelope width for a sufficient update
      */
-    EnvWidthChSSParams(Real min_width_update) : m_min_width_update(min_width_update) {}
+    EnvWidthChSSParams(Real score_exp, Real min_width_update)
+        : ScoreBasedChSSParams(score_exp), m_min_width_update(min_width_update) {}
 };
 
 struct SegmentationParams {
@@ -64,9 +73,9 @@ struct SegmentationParams {
     /** @brief File containing the proportions of segments  */
     const str m_ch_num_seg_props_file;
     /** @brief Parameters for SamplingChSegmentationStrategy */
-    const SamplingChSSSamplingParams *m_ch_sampling_params;
+    const SamplingChSSSamplingParams *m_sampling_chss_params;
     /** @brief Parameters of ScoreBasedChSegmentationStrategy */
-    const ScoreBasedChSSParams *m_ch_score_based_params;
+    const ScoreBasedChSSParams *m_score_based_chss_params;
 };
 
 struct SaxParams {

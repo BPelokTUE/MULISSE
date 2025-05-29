@@ -6,7 +6,6 @@
 struct SamplingChSSSamplingParams {
     uint m_segment_len = 1;
     uint m_sample_size = 0;
-    Real m_sample_frac = 0.0;
 };
 
 #endif  // INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_SAMPLINGCHSSSAMPLINGPARAMS_HPP

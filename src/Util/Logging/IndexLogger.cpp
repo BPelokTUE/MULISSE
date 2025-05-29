@@ -18,13 +18,13 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         fs::path(RunSettings::get_instance().get_logs_path()) / instance.INDEX_SETTINGS_FILE;
     instance.file_setup(instance.m_index_settings_path, INDEX_SETTINGS_COL_STRS);
 
-    uint num_segments = 0, pos_per_env = 0;
+    uint num_segments = 0, pos_per_env = 0, sampling_chss_sample_size = 0, sampling_chss_segment_len = 0;
     SaxNumBitsT first_layer_num_bits = 0, num_bits_limit = 0, merger_num_bits = 0;
     size_t leaf_capacity = 0;
     str lg_ss_str = "", ch_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "",
-        merge_in_leaves_str = "", method_type_str = "", entry_merger_type_str = "", ch_score_based_weights_file = "",
-        ch_num_seg_props_file = "";
-    Real ch_score_based_prop_exp = 0.0;
+        merge_in_leaves_str = "", method_type_str = "", entry_merger_type_str = "", env_stats_chss_weights_file = "",
+        multi_chss_num_seg_file = "", env_width_chss_min_w_update_str = "";
+    Real score_based_chss_score_exp = 0.0;
 
     if (index_options.m_index_params && arr_contains(METHODS_W_PAA, index_options.m_index_method)) {
         auto method_type = index_options.m_index_params->get_type();
@@ -33,12 +33,25 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         auto *paa_params = dynamic_cast<PaaIndexParams *>(index_options.m_index_params.get());
         lg_ss_str = LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_lg_strategy_type);
         ch_ss_str = CHANNEL_SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_ch_strategy_type);
-        if (auto ch_env_stats_params =
-                dynamic_cast<const EnvStatsChSSParams *>(paa_params->m_segmentation_params.m_ch_score_based_params)) {
-            ch_score_based_weights_file = ch_env_stats_params->m_weights_file;
-            ch_score_based_prop_exp = ch_env_stats_params->m_prop_exp;
+
+        if (auto sampling_params = paa_params->m_segmentation_params.m_sampling_chss_params) {
+            sampling_chss_sample_size = sampling_params->m_sample_size;
+            sampling_chss_segment_len = sampling_params->m_segment_len;
         }
-        ch_num_seg_props_file = paa_params->m_segmentation_params.m_ch_num_seg_props_file;
+
+        if (paa_params->m_segmentation_params.m_score_based_chss_params) {
+            score_based_chss_score_exp = paa_params->m_segmentation_params.m_score_based_chss_params->m_score_exp;
+            if (auto ch_env_stats_params = dynamic_cast<const EnvStatsChSSParams *>(
+                    paa_params->m_segmentation_params.m_score_based_chss_params)) {
+                env_stats_chss_weights_file = ch_env_stats_params->m_weights_file;
+            }
+            if (auto ch_env_width_params = dynamic_cast<const EnvWidthChSSParams *>(
+                    paa_params->m_segmentation_params.m_score_based_chss_params)) {
+                env_width_chss_min_w_update_str = to_string(ch_env_width_params->m_min_width_update);
+            }
+        }
+
+        multi_chss_num_seg_file = paa_params->m_segmentation_params.m_ch_num_seg_props_file;
         ss_str = SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_strategy_type);
         num_segments = paa_params->m_segmentation_params.m_num_segments;
 
@@ -86,9 +99,12 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         {ISC::NORMALIZED, to_string(index_options.m_normalized)},
         {ISC::INDEX_TYPE, method_type_str},
         {ISC::NUM_SEGMENTS, to_string(num_segments)},
-        {ISC::CH_SCORE_BASED_WEIGHTS_FILE, ch_score_based_weights_file},
-        {ISC::CH_SCORE_BASED_PROP_EXP, format_num_param(ch_score_based_prop_exp)},
-        {ISC::CH_NUM_SEG_PROPS_FILE, ch_num_seg_props_file},
+        {ISC::MULTI_CHSS_NUM_SEG_FILE, multi_chss_num_seg_file},
+        {ISC::SCORE_BASED_CHSS_SCORE_EXP, format_num_param(score_based_chss_score_exp)},
+        {ISC::SAMPLING_CHSS_SEGMENT_LEN, format_num_param(sampling_chss_segment_len)},
+        {ISC::SAMPLING_CHSS_SAMPLE_SIZE, format_num_param(sampling_chss_sample_size)},
+        {ISC::ENV_STATS_CHSS_WEIGHTS_FILE, env_stats_chss_weights_file},
+        {ISC::ENV_WIDTH_CHSS_MIN_W_UPDATE, env_width_chss_min_w_update_str},
         {ISC::POS_PER_ENV, format_num_param(pos_per_env)},
         {ISC::ENTRY_MERGER_TYPE, entry_merger_type_str},
         {ISC::MERGER_NUM_BITS, format_num_param(merger_num_bits)},

@@ -20,24 +20,23 @@ void SamplingChSegmentationStrategy::initialize(SamplingChSSSamplingParams sampl
     auto dataset_props = RS.get_dataset_props();
     MtsNumChannelsT num_channels = dataset_props.m_num_channels;
     uint series_len = dataset_props.m_series_len, num_series = dataset_props.m_num_series;
-    uint subset_size = sampling_params.m_sample_size > 0 ? sampling_params.m_sample_size
-                                                         : U(R(num_series) * sampling_params.m_sample_frac);
 
-    vec<vec<uint>> mts_inds(num_channels, vec<uint>(subset_size));
+    vec<vec<uint>> mts_inds(num_channels, vec<uint>(sampling_params.m_sample_size));
     auto mt = std::mt19937{std::random_device{}()};
     for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
         vec<uint> channel_inds(num_series);
         std::iota(channel_inds.begin(), channel_inds.end(), 0);
         std::shuffle(channel_inds.begin(), channel_inds.end(), mt);
-        mts_inds[c].assign(channel_inds.begin(), channel_inds.begin() + subset_size);
+        mts_inds[c].assign(channel_inds.begin(), channel_inds.begin() + sampling_params.m_sample_size);
     }
 
     // 3. Get generator
     auto generator = get_simple_envelope_entry_generator(sampling_params.m_segment_len);
 
     // 4. Set late initialization parameters
-    m_late_init_params = std::make_unique<SamplingChSSLateInitParams>(
-        num_channels, subset_size, series_len, &dataset_path, std::move(mts_inds), std::move(generator));
+    m_late_init_params =
+        std::make_unique<SamplingChSSLateInitParams>(num_channels, sampling_params.m_sample_size, series_len,
+                                                     &dataset_path, std::move(mts_inds), std::move(generator));
 
     // 5. Initialize segmentation strategies according to the implementation
     auto &length_props = RS.get_length_props();

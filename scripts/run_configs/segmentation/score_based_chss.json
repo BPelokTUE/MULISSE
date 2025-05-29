@@ -13,10 +13,10 @@
         "score_based": ["score_based"],
         "single": ["single"]
     },
-    "score_based_weights_files": {
+    "env_stats_chss_weights_file": {
         "score_based": ["../PARAMS/SCORE_FUNC_PARAMS/weighted_score_func.txt"]
     },
-    "score_based_prop_exps": {
+    "score_based_chss_score_exps": {
         "score_based": [-3, -2, -1, 1, 2, 3]
     },
     "num_segments": [4, 8, 12, 16],

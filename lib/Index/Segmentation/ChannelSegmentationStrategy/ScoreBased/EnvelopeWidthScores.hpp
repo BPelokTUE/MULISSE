@@ -7,7 +7,7 @@
 
 class EnvelopeWidthScores : public IEnvelopeScores {
    public:
-    EnvelopeWidthScores(Real min_width_update = 0.0);
+    EnvelopeWidthScores(MtsNumChannelsT num_channels, Real min_width_update = 0.0);
 
     bool update(const vec<Envelope> &mts_envelope) override;
 

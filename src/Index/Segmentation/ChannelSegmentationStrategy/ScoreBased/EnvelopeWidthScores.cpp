@@ -3,7 +3,8 @@
 #include "Index/Entry/Envelope.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 
-EnvelopeWidthScores::EnvelopeWidthScores(Real min_width_update) : m_min_width_update(min_width_update) {}
+EnvelopeWidthScores::EnvelopeWidthScores(MtsNumChannelsT num_channels, Real min_width_update)
+    : m_min_width_update(min_width_update) {}
 
 bool EnvelopeWidthScores::update(const vec<Envelope> &mts_envelope) {
     bool sufficient_update = false;

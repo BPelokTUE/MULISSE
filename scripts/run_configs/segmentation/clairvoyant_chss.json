@@ -12,7 +12,7 @@
         "multi": ["multi"],
         "single": ["single"]
     },
-    "num_seg_props_files":  {
+    "multi_chss_num_seg_files":  {
         "multi": ["../PARAMS/NUM_SEG_PROPS/stocks_40-15.txt", "../PARAMS/NUM_SEG_PROPS/stocks_60-10.txt"]
     },
     "num_segments": [4, 8, 12, 16],

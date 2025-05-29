@@ -15,9 +15,9 @@
 #include "Util/Stats/EnvelopeStatsUtil.hpp"
 
 EnvWidthChSegmentationStrategy::EnvWidthChSegmentationStrategy(
-    uptr<IScoreToSegmentationStrategy> score_to_segmentation_strategy, SamplingChSSSamplingParams sampling_params,
-    Real min_width_update)
-    : ScoreBasedChSegmentationStrategy(std::make_unique<EnvelopeWidthScores>(min_width_update),
+    MtsNumChannelsT num_channels, uptr<IScoreToSegmentationStrategy> score_to_segmentation_strategy,
+    SamplingChSSSamplingParams sampling_params, Real min_width_update)
+    : ScoreBasedChSegmentationStrategy(std::make_unique<EnvelopeWidthScores>(num_channels, min_width_update),
                                        std::move(score_to_segmentation_strategy), std::move(sampling_params)) {}
 
 ChannelSegmentationStrategyType EnvWidthChSegmentationStrategy::get_type() const {
