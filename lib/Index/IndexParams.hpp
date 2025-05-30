@@ -3,12 +3,13 @@
 
 #include "Enums/ChannelSegmentationStrategyType.hpp"
 #include "Enums/EntryMergerType.hpp"
+#include "Enums/EnvelopeScoresTypes.hpp"
 #include "Enums/LengthGroupSegmentationStrategyType.hpp"
 #include "Enums/SaxBreakpointStrategyType.hpp"
 #include "Enums/SearchMethodType.hpp"
 #include "Enums/SegmentationStrategyType.hpp"
 #include "Enums/iSaxSplitStrategyType.hpp"
-#include "Index/Segmentation/ChannelSegmentationStrategy/SamplingChSSSamplingParams.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/ScoreBasedChSSParams.hpp"
 #include "Util/Types/Numbers.hpp"
 
 /** @brief Interface for index parameters */
@@ -22,45 +23,6 @@ struct IIndexParams {
     virtual SearchMethodType get_type() const = 0;
 };
 
-struct ScoreBasedChSSParams {
-    virtual ~ScoreBasedChSSParams() = default;
-
-    /** @brief The exponent to use in ScoreToProportionalNumSegments */
-    Real m_score_exp;
-
-    /**
-     * @brief Constructor
-     * @param score_exp Exponent for ScoreToProportionalNumSegments
-     */
-    ScoreBasedChSSParams(Real score_exp) : m_score_exp(score_exp) {}
-};
-
-struct EnvStatsChSSParams : public ScoreBasedChSSParams {
-    /** @brief File containing the weights to use for WeightedScoreFunc */
-    str m_weights_file;
-
-    /**
-     * @brief Constructor
-     * @param score_exp Exponent for ScoreToProportionalNumSegments
-     * @param weights_file File containing the weights for WeightedScoreFunc
-     */
-    EnvStatsChSSParams(Real score_exp, str weights_file)
-        : ScoreBasedChSSParams(score_exp), m_weights_file(std::move(weights_file)) {}
-};
-
-struct EnvWidthChSSParams : public ScoreBasedChSSParams {
-    /** @brief The minimum change in the envelope width for a sufficient update */
-    Real m_min_width_update;
-
-    /**
-     * @brief Constructor
-     * @param score_exp Exponent for ScoreToProportionalNumSegments
-     * @param min_width_update Minimum change in the envelope width for a sufficient update
-     */
-    EnvWidthChSSParams(Real score_exp, Real min_width_update)
-        : ScoreBasedChSSParams(score_exp), m_min_width_update(min_width_update) {}
-};
-
 struct SegmentationParams {
     /** @brief Number of segments to use */
     SaxSegIndT m_num_segments;
@@ -72,8 +34,6 @@ struct SegmentationParams {
     SegmentationStrategyType m_strategy_type;
     /** @brief File containing the proportions of segments  */
     const str m_ch_num_seg_props_file;
-    /** @brief Parameters for SamplingChSegmentationStrategy */
-    const SamplingChSSSamplingParams *m_sampling_chss_params;
     /** @brief Parameters of ScoreBasedChSegmentationStrategy */
     const ScoreBasedChSSParams *m_score_based_chss_params;
 };

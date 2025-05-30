@@ -11,8 +11,6 @@
 #include "Index/Entry/Paa.hpp"
 #include "Index/EnvelopeIndex/Tree/EnvelopeNode.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/MultiChSegmentationStrategy.hpp"
-#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/EnvStatsChSegmentationStrategy.hpp"
-#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/EnvWidthChSegmentationStrategy.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/ScoreBasedChSegmentationStrategy.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/SingleChSegmentationStrategy.hpp"
 #include "Index/Segmentation/SegmentationStrategy/AdaptiveSegmentationStrategy.hpp"
@@ -69,13 +67,7 @@ CEREAL_REGISTER_TYPE(SingleChSegmentationStrategy)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(IChannelSegmentationStrategy, SingleChSegmentationStrategy)
 CEREAL_REGISTER_TYPE(MultiChSegmentationStrategy)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(IChannelSegmentationStrategy, MultiChSegmentationStrategy)
-CEREAL_REGISTER_TYPE(SamplingChSegmentationStrategy)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(MultiChSegmentationStrategy, SamplingChSegmentationStrategy)
 CEREAL_REGISTER_TYPE(ScoreBasedChSegmentationStrategy)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(SamplingChSegmentationStrategy, ScoreBasedChSegmentationStrategy)
-CEREAL_REGISTER_TYPE(EnvWidthChSegmentationStrategy)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(ScoreBasedChSegmentationStrategy, EnvWidthChSegmentationStrategy)
-CEREAL_REGISTER_TYPE(EnvStatsChSegmentationStrategy)
-CEREAL_REGISTER_POLYMORPHIC_RELATION(ScoreBasedChSegmentationStrategy, EnvStatsChSegmentationStrategy)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(MultiChSegmentationStrategy, ScoreBasedChSegmentationStrategy)
 
 #endif  // SERIALIZATION_REGISTRATION_HPP

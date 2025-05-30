@@ -1,12 +1,12 @@
-#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/EnvelopeWidthScores.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/EnvelopeWidthScoreFunc.hpp"
 
 #include "Index/Entry/Envelope.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 
-EnvelopeWidthScores::EnvelopeWidthScores(MtsNumChannelsT num_channels, Real min_width_update)
+EnvelopeWidthScoreFunc::EnvelopeWidthScoreFunc(MtsNumChannelsT num_channels, Real min_width_update)
     : m_min_width_update(min_width_update), m_range_sums(num_channels, 0.0) {}
 
-bool EnvelopeWidthScores::update(const vec<Envelope> &mts_envelope) {
+bool EnvelopeWidthScoreFunc::update(const vec<Envelope> &mts_envelope) {
     bool sufficient_update = false;
     ++m_sample_count;
     for (MtsNumChannelsT c = 0; c < mts_envelope.size(); ++c) {
@@ -22,7 +22,7 @@ bool EnvelopeWidthScores::update(const vec<Envelope> &mts_envelope) {
     return sufficient_update;
 }
 
-vec<Real> EnvelopeWidthScores::get_scores() {
+vec<Real> EnvelopeWidthScoreFunc::get_scores() {
     vec<Real> scores;
     scores.reserve(m_range_sums.size());
     for (Real range_sum : m_range_sums) {

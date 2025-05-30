@@ -1,14 +1,16 @@
-#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/EnvelopeStatsScores.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/EnvelopeStatsScoreFunc.hpp"
 
 #include "Index/Entry/Envelope.hpp"
+#include "Util/Stats/IndexStats.hpp"
 #include "Util/Stats/ScoreFunc/IndexStatsScoreFunc.hpp"
 
-EnvelopeStatsScores::~EnvelopeStatsScores() = default;
+EnvelopeStatsScoreFunc::~EnvelopeStatsScoreFunc() = default;
 
-EnvelopeStatsScores::EnvelopeStatsScores(MtsNumChannelsT num_channels, uptr<IndexStatsScoreFunc> index_stats_score_func)
+EnvelopeStatsScoreFunc::EnvelopeStatsScoreFunc(MtsNumChannelsT num_channels,
+                                               uptr<IndexStatsScoreFunc> index_stats_score_func)
     : m_channel_stats(num_channels), m_index_stats_score_func(std::move(index_stats_score_func)) {}
 
-bool EnvelopeStatsScores::update(const vec<Envelope> &mts_envelope) {
+bool EnvelopeStatsScoreFunc::update(const vec<Envelope> &mts_envelope) {
     for (MtsNumChannelsT c = 0; c < mts_envelope.size(); ++c) {
         auto &envelope = mts_envelope[c];
         for (SaxSegIndT s = 0; s < envelope.size(); ++s) {
@@ -19,7 +21,7 @@ bool EnvelopeStatsScores::update(const vec<Envelope> &mts_envelope) {
     return true;
 }
 
-vec<Real> EnvelopeStatsScores::get_scores() {
+vec<Real> EnvelopeStatsScoreFunc::get_scores() {
     vec<Real> scores;
     scores.reserve(m_channel_stats.size());
     for (auto &ch_stat : m_channel_stats) {

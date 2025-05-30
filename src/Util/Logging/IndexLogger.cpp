@@ -39,21 +39,14 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         lg_ss_str = LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_lg_strategy_type);
         ch_ss_str = CHANNEL_SEGMENTATION_STRATEGY_TO_STR.at(paa_params->m_segmentation_params.m_ch_strategy_type);
 
-        if (auto sampling_params = paa_params->m_segmentation_params.m_sampling_chss_params) {
-            sampling_chss_sample_size = sampling_params->m_sample_size;
-            sampling_chss_segment_len = sampling_params->m_segment_len;
-        }
-
-        if (paa_params->m_segmentation_params.m_score_based_chss_params) {
-            score_based_chss_score_exp = paa_params->m_segmentation_params.m_score_based_chss_params->m_score_exp;
-            if (auto ch_env_stats_params = dynamic_cast<const EnvStatsChSSParams *>(
-                    paa_params->m_segmentation_params.m_score_based_chss_params)) {
-                env_stats_chss_weights_file = ch_env_stats_params->m_weights_file;
-            }
-            if (auto ch_env_width_params = dynamic_cast<const EnvWidthChSSParams *>(
-                    paa_params->m_segmentation_params.m_score_based_chss_params)) {
-                env_width_chss_min_w_update_str = to_string(ch_env_width_params->m_min_width_update);
-            }
+        if (auto score_based_chss_params = paa_params->m_segmentation_params.m_score_based_chss_params) {
+            sampling_chss_sample_size = score_based_chss_params->m_sample_size;
+            sampling_chss_segment_len = score_based_chss_params->m_segment_len;
+            score_based_chss_score_exp = score_based_chss_params->m_score_exp;
+            if (score_based_chss_params->m_env_scores_type == STATS)
+                env_stats_chss_weights_file = score_based_chss_params->m_weights_file;
+            if (score_based_chss_params->m_env_scores_type == WIDTH)
+                env_width_chss_min_w_update_str = to_string(score_based_chss_params->m_min_width_update);
         }
 
         multi_chss_num_seg_file = paa_params->m_segmentation_params.m_ch_num_seg_props_file;

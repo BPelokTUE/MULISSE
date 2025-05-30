@@ -1,0 +1,10 @@
+#ifndef ENUMS_ENVELOPESCORESTYPES_HPP
+#define ENUMS_ENVELOPESCORESTYPES_HPP
+
+#include "Util/HelperFuncs/Enums.hpp"
+
+enum EnvelopeScoresType { STATS, WIDTH };
+
+DEFINE_ENUM_CONSTS_NO_EXTRA(EnvelopeScoresType, ENVELOPE_SCORES_TYPE, false);
+
+#endif  // ENUMS_ENVELOPESCORESTYPES_HPP

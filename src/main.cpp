@@ -92,7 +92,8 @@ int main(int argc, char **argv) {
         lg_segmentation_strategy_str =
             LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(LengthGroupSegmentationStrategyType::SINGLE),
         ch_segmentation_strategy_str = CHANNEL_SEGMENTATION_STRATEGY_TO_STR.at(ChannelSegmentationStrategyType::SINGLE),
-        segmentation_strategy_str = SEGMENTATION_STRATEGY_TO_STR.at(UNIFORM), env_stats_chss_weights_file = "",
+        segmentation_strategy_str = SEGMENTATION_STRATEGY_TO_STR.at(UNIFORM),
+        env_scores_type_str = ENVELOPE_SCORES_TYPE_TO_STR.at(WIDTH), env_stats_weights_file = "",
         multi_chss_num_seg_file = "", split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
@@ -100,12 +101,12 @@ int main(int argc, char **argv) {
         entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY);
     vec<str> csv_paths;
     Real step_sd = R(1.0), noise = R(0.1), score_based_chss_score_exp = R(1.0), index_sample_frac = R(1.0),
-         env_width_chss_min_w_update = R(0.0);
+         env_width_min_w_update = R(0.0);
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT, merger_num_bits = MAX_NUM_BITS_LIMIT;
     SaxSegIndT num_segments;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
-         num_l_groups = 0, knn_k = 1, seed = 0, num_lags = 5, sampling_chss_segment_len = 1,
-         sampling_chss_sample_size = 0;
+         num_l_groups = 0, knn_k = 1, seed = 0, num_lags = 5, score_based_chss_segment_len = 1,
+         score_based_chss_sample_size = 0;
     Real r_range_r = 1.0;
     size_t leaf_capacity = 0, max_leaves_to_visit = 0;
     vec<uint> exact_lengths = {};
@@ -235,27 +236,32 @@ int main(int argc, char **argv) {
             "Path to the file containing the proportions of segments per channel, use in MultiChSegmentationStrategy")
         ->capture_default_str();
     index_subcommand
-        ->add_option("--sampling_chss_sample_size", sampling_chss_sample_size,
+        ->add_option("-E,--envelope_scores_type", env_scores_type_str,
+                     "Envelope scores type to use in ScoreBasedChSegmentationStrategy")
+        ->capture_default_str()
+        ->check(CLI::IsMember(ACCEPTED_ENVELOPE_SCORES_TYPE_STRS));
+    index_subcommand
+        ->add_option("--score_based_chss_sample_size", score_based_chss_sample_size,
                      "Size of the sample to use for estimating envelope statistics in SamplingChSegmentationStrategy "
                      "implementations")
         ->capture_default_str()
         ->check(positive_int);
     index_subcommand
-        ->add_option("--sampling_chss_segment_len", sampling_chss_segment_len,
+        ->add_option("--score_based_chss_segment_len", score_based_chss_segment_len,
                      "Length of the segments to use for estimating envelope statistics in "
                      "SamplingChSegmentationStrategy implementations")
         ->capture_default_str()
         ->check(positive_int);
     index_subcommand
         ->add_option("-e,--score_based_chss_score_exp", score_based_chss_score_exp,
-                     "Exponent to use for the ScoreToProportionalNumSegments in ScoreBasedChSegmentationStrategy "
-                     "implementations")
+                     "Exponent to use for ScoreBasedChSegmentationStrategy  with IEnvelopeScores implementations")
         ->capture_default_str();
-    index_subcommand->add_option("-w,--env_stats_chss_weights_file", env_stats_chss_weights_file,
-                                 "Path to the file containing the weights for the EnvStatsChSegmentationStrategy");
+    index_subcommand->add_option(
+        "-w,--env_stats_weights_file", env_stats_weights_file,
+        "Path to the file containing the weights ScoreBasedChSegmentationStrategy for with EnvelopeStatsScores ");
     index_subcommand
-        ->add_option("--env_width_chss_min_w_update", env_width_chss_min_w_update,
-                     "Minimum sufficient width update for EnvWidthChSegmentationStrategy")
+        ->add_option("--env_width_min_w_update", env_width_min_w_update,
+                     "Minimum sufficient width update for EnvWidthChSegmentationStrategy with EnvelopeWidthScores ")
         ->capture_default_str()
         ->check(positive_real);
     index_subcommand->add_option("-B,--breakpoint_strategy", breakpoint_strategy_str, "Breakpoint strategy")
@@ -554,22 +560,16 @@ int main(int argc, char **argv) {
                     std::make_unique<SaxParams>(merger_num_bits, breakpoint_strategy_type, breakpoints_path);
             }
 
-            uptr<SamplingChSSSamplingParams> sampling_chss_params = nullptr;
             uptr<ScoreBasedChSSParams> score_based_chss_params = nullptr;
-            if (arr_contains(SAMPLING_CH_SEGMENTATION_STRATEGY_TYPES, ch_segmentation_strategy_type)) {
-                if (sampling_chss_sample_size == 0) {
-                    std::cerr << ch_segmentation_strategy_str << " requires non-zero --sampling_chss_sample_size\n";
+            if (ch_segmentation_strategy_type == ChannelSegmentationStrategyType::SCORE_BASED) {
+                if (score_based_chss_sample_size == 0) {
+                    std::cerr << ch_segmentation_strategy_str << " requires non-zero --score_based_chss_sample_size\n";
                     return 1;
                 }
-                sampling_chss_params = std::make_unique<SamplingChSSSamplingParams>(!raw, sampling_chss_segment_len,
-                                                                                    sampling_chss_sample_size);
-            }
-            if (ch_segmentation_strategy_type == ChannelSegmentationStrategyType::ENV_STATS_BASED) {
-                score_based_chss_params =
-                    std::make_unique<EnvStatsChSSParams>(score_based_chss_score_exp, env_stats_chss_weights_file);
-            } else if (ch_segmentation_strategy_type == ChannelSegmentationStrategyType::ENV_WIDTH_BASED) {
-                score_based_chss_params =
-                    std::make_unique<EnvWidthChSSParams>(score_based_chss_score_exp, env_width_chss_min_w_update);
+                score_based_chss_params = std::make_unique<ScoreBasedChSSParams>(
+                    !raw, score_based_chss_segment_len, score_based_chss_sample_size, score_based_chss_score_exp,
+                    env_width_min_w_update, env_stats_weights_file,
+                    STR_TO_ENVELOPE_SCORES_TYPE.at(env_scores_type_str));
             }
             SegmentationParams segmentation_params{
                 .m_num_segments = num_segments,
@@ -577,7 +577,6 @@ int main(int argc, char **argv) {
                 .m_ch_strategy_type = ch_segmentation_strategy_type,
                 .m_strategy_type = segmentation_strategy_type,
                 .m_ch_num_seg_props_file = multi_chss_num_seg_file,
-                .m_sampling_chss_params = sampling_chss_params.get(),
                 .m_score_based_chss_params = score_based_chss_params.get(),
             };
             SaxParams sax_params{

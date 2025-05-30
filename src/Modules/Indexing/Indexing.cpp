@@ -1,6 +1,7 @@
 #include "Modules/Indexing/Indexing.hpp"
 
 #include "Modules/Indexing/ConstructIndex.hpp"
+#include "Modules/Indexing/GetChannelScores.hpp"
 #include "Modules/Indexing/GetEntryGenerator.hpp"
 #include "Modules/Indexing/GetEntryMerger.hpp"
 #include "Modules/Indexing/IndexFactory/GetFlatEnvelopeIndex.hpp"
@@ -55,7 +56,8 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
     // Set up segmentation strategies
 
     logger.start_timer(ISC::SEGMENTATION_SETUP_TIME_S);
-    auto lg_segmentation_strategy = get_lg_segmentation_strategy(opts);
+    vec<Real> channel_scores = get_channel_scores(opts);
+    auto lg_segmentation_strategy = get_lg_segmentation_strategy(opts, channel_scores);
     logger.set_num_segments_cols(lg_segmentation_strategy.get(), log_num_seg_per_ch, log_num_seg_all);
     logger.stop_timer(ISC::SEGMENTATION_SETUP_TIME_S);
 

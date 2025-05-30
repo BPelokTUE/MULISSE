@@ -1,4 +1,4 @@
-#include "Index/Segmentation/ScoreToSegmentationStrategy/ScoreToProportionalNumSegments.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/ScoreToProportionalNumSegments.hpp"
 
 #include <cmath>
 

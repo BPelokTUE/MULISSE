@@ -1,14 +1,14 @@
-#ifndef INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_SCOREBASED_ENVELOPESCORES_HPP
-#define INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_SCOREBASED_ENVELOPESCORES_HPP
+#ifndef INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_SCOREBASED_ENVELOPESCOREFUNC_HPP
+#define INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_SCOREBASED_ENVELOPESCOREFUNC_HPP
 
 #include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 
 class Envelope;
 
-class IEnvelopeScores {
+class IEnvelopeScoreFunc {
    public:
-    virtual ~IEnvelopeScores() = default;
+    virtual ~IEnvelopeScoreFunc() = default;
 
     /**
      * @brief Update the envelope scores based on the given (MTS) envelope.
@@ -24,4 +24,4 @@ class IEnvelopeScores {
     virtual vec<Real> get_scores() = 0;
 };
 
-#endif  // INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_SCOREBASED_ENVELOPESCORES_HPP
+#endif  // INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_SCOREBASED_ENVELOPESCOREFUNC_HPP

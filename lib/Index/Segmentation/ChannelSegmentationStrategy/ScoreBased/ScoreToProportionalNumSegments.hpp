@@ -3,7 +3,7 @@
 
 #include <functional>
 
-#include "Index/Segmentation/ScoreToSegmentationStrategy/ScoreToSegmentationStrategy.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/ScoreToSegmentationStrategy.hpp"
 
 class ScoreToProportionalNumSegments : public IScoreToSegmentationStrategy {
    public:
