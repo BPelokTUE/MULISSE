@@ -24,8 +24,8 @@ CK_CH_SEGMENTATION_STRATEGIES = "ch_segmentation_strategies"
 CK_SEGMENTATION_STRATEGIES = "segmentation_strategies"
 CK_NUM_SEGMENTS = "num_segments"
 CK_MULTI_CHSS_NUM_SEG_FILES = "multi_chss_num_seg_file"
-CK_SAMPLING_CHSS_SEGMENT_LEN = "sampling_chss_segment_len"
-CK_SAMPLING_CHSS_SAMPLE_SIZE = "sampling_chss_sample_size"
+CK_SAMPLING_CHSS_SEGMENT_LENS = "sampling_chss_segment_lens"
+CK_SAMPLING_CHSS_SAMPLE_SIZES = "sampling_chss_sample_sizes"
 CK_SCORE_BASED_CHSS_SCORE_EXPS = "score_based_chss_score_exps"
 CK_ENV_STATS_CHSS_WEIGHTS_FILES = "env_stats_chss_weights_files"
 CK_ENV_WIDTH_CHSS_MIN_W_UPDATES = "env_width_chss_min_w_updates"
@@ -341,8 +341,8 @@ def parse_config_file(input_config) -> ParsedConfig:
                 **get_key_or_none(RK_CH_SEGMENTATION_STRATEGY, CK_CH_SEGMENTATION_STRATEGIES),
                 **get_key_or_none(RK_SEGMENTATION_STRATEGY, CK_SEGMENTATION_STRATEGIES),
                 **get_key_or_none(RK_MULTI_CHSS_NUM_SEG_FILE, CK_MULTI_CHSS_NUM_SEG_FILES),
-                **get_key_or_none(RK_SAMPLING_CHSS_SEGMENT_LEN, CK_SAMPLING_CHSS_SEGMENT_LEN),
-                **get_key_or_none(RK_SAMPLING_CHSS_SAMPLE_SIZE, CK_SAMPLING_CHSS_SAMPLE_SIZE),
+                **get_key_or_none(RK_SAMPLING_CHSS_SEGMENT_LEN, CK_SAMPLING_CHSS_SEGMENT_LENS),
+                **get_key_or_none(RK_SAMPLING_CHSS_SAMPLE_SIZE, CK_SAMPLING_CHSS_SAMPLE_SIZES),
                 **get_key_or_none(RK_SCORE_BASED_CHSS_SCORE_EXP, CK_SCORE_BASED_CHSS_SCORE_EXPS),
                 **get_key_or_none(RK_ENV_STATS_CHSS_WEIGHTS_FILE, CK_ENV_STATS_CHSS_WEIGHTS_FILES),
                 **get_key_or_none(RK_ENV_WIDTH_CHSS_MIN_W_UPDATE, CK_ENV_WIDTH_CHSS_MIN_W_UPDATES),
@@ -854,20 +854,6 @@ if __name__ == "__main__":
                             if lens_per_group > 0:
                                 args += ["-g", str(lens_per_group)]
                                 num_l_groups = (l_range + lens_per_group - 1) // lens_per_group
-                        if RK_LG_SEGMENTATION_STRATEGY in index_setting_copy:
-                            args += ["-G", index_setting_copy.pop(RK_LG_SEGMENTATION_STRATEGY)]
-                        if RK_CH_SEGMENTATION_STRATEGY in index_setting_copy:
-                            args += ["-C", index_setting_copy.pop(RK_CH_SEGMENTATION_STRATEGY)]
-                        if RK_SEGMENTATION_STRATEGY in index_setting_copy:
-                            args += ["-S", index_setting_copy.pop(RK_SEGMENTATION_STRATEGY)]
-                        if RK_NUM_SEGMENTS in index_setting_copy:
-                            args += ["-s", str(index_setting_copy.pop(RK_NUM_SEGMENTS))]
-                        if RK_MERGER_TYPE in index_setting_copy:
-                            args += ["-M", index_setting_copy.pop(RK_MERGER_TYPE)]
-                        if RK_MERGER_NUM_BITS in index_setting_copy:
-                            args += ["--merger_num_bits", str(index_setting_copy.pop(RK_MERGER_NUM_BITS))]
-                        if RK_INSERTER_TYPE in index_setting_copy:
-                            args += ["-I", index_setting_copy.pop(RK_INSERTER_TYPE)]
 
                         pos_per_env = 1
                         if RK_ENVLEOPE_SIZE_RATIO in index_setting_copy:
@@ -887,23 +873,20 @@ if __name__ == "__main__":
                             leaf_capacity = int(index_setting_copy.pop(RK_LEAF_CAPACITY) * num_entries)
                             leaf_capacity = max(1, leaf_capacity)
                             args += ["--leaf_capacity", str(leaf_capacity)]
-                        if index_setting_copy.pop(RK_ADAPT, False):
-                            args += ["--adapt"]
-                        if RK_ISAX_BREAKPOINTS_FILE in index_setting_copy:
-                            breakpoints_file = index_setting_copy.pop(RK_ISAX_BREAKPOINTS_FILE, "")
+
+                        if breakpoints_file := index_setting_copy.pop(RK_ISAX_BREAKPOINTS_FILE, ""):
                             if len(breakpoints_file) > 0:
                                 args += ["--breakpoints", breakpoints_file]
-                        if index_setting_copy.pop(RK_ISAX_MERGE_IN_LEAVES, False):
-                            args += ["--merge_in_leaves"]
-                        if index_setting_copy.pop(RK_ISAX_PREFER_FIRST_IN_EM, False):
-                            args += ["--prefer_first_in_em"]
-                        if RK_ISAX_NUM_BITS_LIMIT in index_setting_copy:
-                            num_bits_limit = index_setting_copy.pop(RK_ISAX_NUM_BITS_LIMIT)
+                        if num_bits_limit := index_setting_copy.pop(RK_ISAX_NUM_BITS_LIMIT, ""):
                             if num_bits_limit > 0:
                                 args += ["--num_bits_limit", str(num_bits_limit)]
 
                         calculate_index_stats = index_setting_copy.pop(RK_CALCULATE_INDEX_STATS, False)
                         separate_segment_stats = index_setting_copy.pop(RK_SEPARATE_SEGMENT_STATS, False)
+
+                        for flag in [RK_ADAPT, RK_ISAX_MERGE_IN_LEAVES, RK_ISAX_PREFER_FIRST_IN_EM]:
+                            if index_setting_copy.pop(flag, False):
+                                args.append(f"--{flag}")
 
                         for key, value in index_setting_copy.items():
                             args += [f"--{key}", str(value)]

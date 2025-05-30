@@ -92,27 +92,28 @@ int main(int argc, char **argv) {
         lg_segmentation_strategy_str =
             LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(LengthGroupSegmentationStrategyType::SINGLE),
         ch_segmentation_strategy_str = CHANNEL_SEGMENTATION_STRATEGY_TO_STR.at(ChannelSegmentationStrategyType::SINGLE),
-        segmentation_strategy_str = SEGMENTATION_STRATEGY_TO_STR.at(UNIFORM), chss_weights_file = "",
-        num_seg_props_file = "", split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
+        segmentation_strategy_str = SEGMENTATION_STRATEGY_TO_STR.at(UNIFORM), env_stats_chss_weights_file = "",
+        multi_chss_num_seg_file = "", split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
         distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(PARALLEL),
         entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY);
     vec<str> csv_paths;
-    Real step_sd = R(1.0), noise = R(0.1), chss_score_exp = R(1.0), index_sample_frac = R(1.0),
-         chss_min_width_update = R(0.0);
+    Real step_sd = R(1.0), noise = R(0.1), score_based_chss_score_exp = R(1.0), index_sample_frac = R(1.0),
+         env_width_chss_min_w_update = R(0.0);
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT, merger_num_bits = MAX_NUM_BITS_LIMIT;
     SaxSegIndT num_segments;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
-         num_l_groups = 0, knn_k = 1, seed = 0, num_lags = 5, score_based_segment_len = 1, score_based_sample_size = 0;
+         num_l_groups = 0, knn_k = 1, seed = 0, num_lags = 5, sampling_chss_segment_len = 1,
+         sampling_chss_sample_size = 0;
     Real r_range_r = 1.0;
     size_t leaf_capacity = 0, max_leaves_to_visit = 0;
     vec<uint> exact_lengths = {};
     MtsNumChannelsT num_channels, used_channels = 0;
     vec<bool> channel_mask;
-    bool zero_start = false, unnormalized = false, approximate = false, early_abandon = false, sort_query = false,
+    bool zero_start = false, raw = false, approximate = false, early_abandon = false, sort_query = false,
          no_use_pq = false, adapt_index = false, merge_in_leaves = false, prefer_first_in_em = false,
-         separate_segment_stats = false;
+         separate_segment_stats = false, no_log_num_seg_per_ch = false, log_num_seg_all = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -195,7 +196,7 @@ int main(int argc, char **argv) {
     q_stats_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
         ->required()
         ->check(positive_int);
-    q_stats_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
+    q_stats_subcommand->add_flag("--raw", raw, "Do not normalize");
     q_stats_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Options for indexing
@@ -229,41 +230,43 @@ int main(int argc, char **argv) {
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_SEGMENTATION_STRATEGY_STRS));
     index_subcommand
-        ->add_option("--score_based_sample_size", score_based_sample_size,
+        ->add_option(
+            "--multi_chss_num_seg_file", multi_chss_num_seg_file,
+            "Path to the file containing the proportions of segments per channel, use in MultiChSegmentationStrategy")
+        ->capture_default_str();
+    index_subcommand
+        ->add_option("--sampling_chss_sample_size", sampling_chss_sample_size,
                      "Size of the sample to use for estimating envelope statistics in SamplingChSegmentationStrategy "
                      "implementations")
         ->capture_default_str()
         ->check(positive_int);
     index_subcommand
-        ->add_option("--score_based_segment_len", score_based_segment_len,
+        ->add_option("--sampling_chss_segment_len", sampling_chss_segment_len,
                      "Length of the segments to use for estimating envelope statistics in "
                      "SamplingChSegmentationStrategy implementations")
         ->capture_default_str()
         ->check(positive_int);
-    index_subcommand->add_option("-w,--chss_weights_file", chss_weights_file,
+    index_subcommand
+        ->add_option("-e,--score_based_chss_score_exp", score_based_chss_score_exp,
+                     "Exponent to use for the ScoreToProportionalNumSegments in ScoreBasedChSegmentationStrategy "
+                     "implementations")
+        ->capture_default_str();
+    index_subcommand->add_option("-w,--env_stats_chss_weights_file", env_stats_chss_weights_file,
                                  "Path to the file containing the weights for the EnvStatsChSegmentationStrategy");
     index_subcommand
-        ->add_option("-e,--chss_score_exp", chss_score_exp,
-                     "Exponent to use for the ScoreToProportionalNumSegments in EnvStatsChSegmentationStrategy")
-        ->capture_default_str();
-    index_subcommand
-        ->add_option("--chss_min_width_update", chss_min_width_update,
+        ->add_option("--env_width_chss_min_w_update", env_width_chss_min_w_update,
                      "Minimum sufficient width update for EnvWidthChSegmentationStrategy")
         ->capture_default_str()
         ->check(positive_real);
-    index_subcommand
-        ->add_option(
-            "--num_seg_props_file", num_seg_props_file,
-            "Path to the file containing the proportions of segments per channel, use in MultiChSegmentationStrategy")
-        ->capture_default_str();
     index_subcommand->add_option("-B,--breakpoint_strategy", breakpoint_strategy_str, "Breakpoint strategy")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS));
     index_subcommand->add_option("--split_strategy", split_strategy_str, "Split strategy")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ISAX_SPLIT_STRATEGY_STRS));
-    index_subcommand->add_flag("--merge_in_leaves", merge_in_leaves, "Merge entries in the leaves of the iSAX trie.");
-    index_subcommand->add_flag("--prefer_first_in_em", prefer_first_in_em,
+    index_subcommand->add_flag("--merge_in_leaves,--isax_merge_in_leaves", merge_in_leaves,
+                               "Merge entries in the leaves of the iSAX trie.");
+    index_subcommand->add_flag("--prefer_first_in_em,--isax_prefer_first_in_em", prefer_first_in_em,
                                "Prefer the first segment over the one with the minimum number of bits, in case of ties "
                                "in the split when using EntropyMaximizing strategy");
     index_subcommand->add_option("--breakpoints", breakpoints_path, "Path to breakpoints file")->capture_default_str();
@@ -290,7 +293,7 @@ int main(int argc, char **argv) {
                      "Leaf capacity or bucket size in case of tree envelope indexes")
         ->capture_default_str()
         ->check(positive_int);
-    index_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
+    index_subcommand->add_flag("--raw", raw, "Do not normalize");
     index_subcommand
         ->add_option("-b,--first_layer_bits", first_layer_num_bits,
                      "Number of bits for first layer in the case of iSAX, number of bits in the case of flat SAX "
@@ -303,7 +306,7 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-I,--inserter_type", inserter_type_str, "Entry inserter type")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ENTRY_INSERTER_TYPE_STRS));
-    index_subcommand->add_option("-M,--merger", entry_merger_type_str, "Entry merger type")
+    index_subcommand->add_option("-M,--merger,--merger_type", entry_merger_type_str, "Entry merger type")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ENTRY_MERGER_TYPE_STRS));
     index_subcommand
@@ -318,6 +321,10 @@ int main(int argc, char **argv) {
                      "defaults to 1.0, meaning that the whole dataset is indexed")
         ->capture_default_str()
         ->check(fraction);
+    index_subcommand->add_flag("--no_log_num_seg_per_ch", no_log_num_seg_per_ch,
+                               "Do not log the number of segments per channel in the index");
+    index_subcommand->add_flag("--log_num_seg_all", log_num_seg_all,
+                               "Log the number of segments for all length groups and channels in the index.");
     index_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Options for calculating index statistics
@@ -348,7 +355,7 @@ int main(int argc, char **argv) {
     ffts_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")
         ->required()
         ->check(positive_int);
-    ffts_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
+    ffts_subcommand->add_flag("--raw", raw, "Do not normalize");
     ffts_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
 
     // Options for searching
@@ -397,7 +404,7 @@ int main(int argc, char **argv) {
             "-M,--max_leaves_to_visit", max_leaves_to_visit,
             "Maximum number of leaves to visit if approximate search is used. Defaults to 0, indicating no max.")
         ->capture_default_str();
-    search_subcommand->add_flag("--raw", unnormalized, "Do not normalize");
+    search_subcommand->add_flag("--raw", raw, "Do not normalize");
     //      Search type-specific options
     search_subcommand->add_option("-T,--search_type", search_type_str, "Search type")
         ->capture_default_str()
@@ -522,7 +529,7 @@ int main(int argc, char **argv) {
             return create_queries({noise, num_queries, exact_lengths, l_min, l_max, used_channels, channel_mask, seed});
         }
         case CALC_Q_STATS: {
-            return calculate_query_stats(!unnormalized);
+            return calculate_query_stats(!raw);
         }
         case INDEX: {
             IIndexParams *index_params;
@@ -550,20 +557,26 @@ int main(int argc, char **argv) {
             uptr<SamplingChSSSamplingParams> sampling_chss_params = nullptr;
             uptr<ScoreBasedChSSParams> score_based_chss_params = nullptr;
             if (arr_contains(SAMPLING_CH_SEGMENTATION_STRATEGY_TYPES, ch_segmentation_strategy_type)) {
-                sampling_chss_params =
-                    std::make_unique<SamplingChSSSamplingParams>(score_based_segment_len, score_based_sample_size);
+                if (sampling_chss_sample_size == 0) {
+                    std::cerr << ch_segmentation_strategy_str << " requires non-zero --sampling_chss_sample_size\n";
+                    return 1;
+                }
+                sampling_chss_params = std::make_unique<SamplingChSSSamplingParams>(!raw, sampling_chss_segment_len,
+                                                                                    sampling_chss_sample_size);
             }
             if (ch_segmentation_strategy_type == ChannelSegmentationStrategyType::ENV_STATS_BASED) {
-                score_based_chss_params = std::make_unique<EnvStatsChSSParams>(chss_score_exp, chss_weights_file);
+                score_based_chss_params =
+                    std::make_unique<EnvStatsChSSParams>(score_based_chss_score_exp, env_stats_chss_weights_file);
             } else if (ch_segmentation_strategy_type == ChannelSegmentationStrategyType::ENV_WIDTH_BASED) {
-                score_based_chss_params = std::make_unique<EnvWidthChSSParams>(chss_score_exp, chss_min_width_update);
+                score_based_chss_params =
+                    std::make_unique<EnvWidthChSSParams>(score_based_chss_score_exp, env_width_chss_min_w_update);
             }
             SegmentationParams segmentation_params{
                 .m_num_segments = num_segments,
                 .m_lg_strategy_type = lg_segmentation_strategy_type,
                 .m_ch_strategy_type = ch_segmentation_strategy_type,
                 .m_strategy_type = segmentation_strategy_type,
-                .m_ch_num_seg_props_file = num_seg_props_file,
+                .m_ch_num_seg_props_file = multi_chss_num_seg_file,
                 .m_sampling_chss_params = sampling_chss_params.get(),
                 .m_score_based_chss_params = score_based_chss_params.get(),
             };
@@ -611,7 +624,7 @@ int main(int argc, char **argv) {
                     return 1;
             }
             IndexOptions index_options{
-                .m_normalized = !unnormalized,
+                .m_normalized = !raw,
                 .m_adapt = adapt_index,
                 .m_use_length_groups = use_length_groups,
                 .m_num_channels = num_channels,
@@ -631,7 +644,7 @@ int main(int argc, char **argv) {
                                          separate_segment_stats);
         }
         case CALC_FFTS: {
-            return calculate_ffts(!unnormalized);
+            return calculate_ffts(!raw);
         }
         case SEARCH: {
             SearchType search_type = STR_TO_SEARCH_TYPE.at(search_type_str);
@@ -639,7 +652,7 @@ int main(int argc, char **argv) {
 
             SearchOptions search_options = {
                 .m_exact = !approximate,
-                .m_normalized = !unnormalized,
+                .m_normalized = !raw,
                 .m_use_early_abandoning = early_abandon,
                 .m_sort_queries = sort_query,
                 .m_use_priority_queue = !no_use_pq,
@@ -661,25 +674,25 @@ int main(int argc, char **argv) {
                     if (search_type == KNN) {
                         ResultSet<KNN> knn_result_set(knn_k);
                         if (sort_query) {
-                            DistanceMeasure<KNN, ED, true> distance_measure(!unnormalized, early_abandon);
+                            DistanceMeasure<KNN, ED, true> distance_measure(!raw, early_abandon);
                             return search<KNN, ED, true>(search_options, knn_result_set, distance_measure);
                         } else {
-                            DistanceMeasure<KNN, ED> distance_measure(!unnormalized, early_abandon);
+                            DistanceMeasure<KNN, ED> distance_measure(!raw, early_abandon);
                             return search<KNN, ED>(search_options, knn_result_set, distance_measure);
                         }
                     } else {  // search_type == R_RANGE
                         ResultSet<R_RANGE> result_set(r_range_r);
-                        DistanceMeasure<R_RANGE, ED> distance_measure(!unnormalized, early_abandon);
+                        DistanceMeasure<R_RANGE, ED> distance_measure(!raw, early_abandon);
                         return search<R_RANGE, ED>(search_options, result_set, distance_measure);
                     }
                 case MASS:
                     if (STR_TO_SEARCH_TYPE.at(search_type_str) == KNN) {
                         ResultSet<KNN> knn_result_set(knn_k);
-                        DistanceMeasure<KNN, MASS> distance_measure(!unnormalized);
+                        DistanceMeasure<KNN, MASS> distance_measure(!raw);
                         return search<KNN, MASS>(search_options, knn_result_set, distance_measure);
                     } else {  // search_type == R_RANGE
                         ResultSet<R_RANGE> result_set(r_range_r);
-                        DistanceMeasure<R_RANGE, MASS> distance_measure(!unnormalized);
+                        DistanceMeasure<R_RANGE, MASS> distance_measure(!raw);
                         return search<R_RANGE, MASS>(search_options, result_set, distance_measure);
                     }
                 default:

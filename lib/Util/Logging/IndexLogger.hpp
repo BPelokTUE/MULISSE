@@ -8,30 +8,34 @@
 #include "Util/HelperFuncs/Enums.hpp"
 #include "Util/Logging/Logger.hpp"
 
+class ILengthGroupSegmentationStrategy;
+
 /** @brief Enum of the columns of the index settings log file */
 enum class IndexSettingsColumn {
-    ID,                           // Index of the setting within the log file
-    DATASET_FILE,                 // Name of the indexed dataset file
-    INDEX_FILE,                   // Name of the index file
-    FFTS_FILE,                    // Name of the FFTs file, empty if not used
-    L_MIN,                        // Minimum allowed query length
-    L_MAX,                        // Maximum allowed query length
-    L_PER_GROUP,                  // Size of length groups
-    POS_PER_ENV,                  // Number of positions per envelope for envelope-based methods
-    ENTRY_MERGER_TYPE,            // Type of entry merger used
-    MERGER_NUM_BITS,              // Number of bits used for SAX-based entry merger, if applicable
-    NORMALIZED,                   // Whether the query and subsequences are normalized
-    INDEX_TYPE,                   // Type of index used
-    LG_SEGMENTATION_STRATEGY,     // Strategy for varying the channel segmentation strategy for different length groups
-    CH_SEGMENTATION_STRATEGY,     // Strategy for varying the segmentation strategy for different channels
-    SEGMENTATION_STRATEGY,        // Strategy for segmenting the time series channels
-    NUM_SEGMENTS,                 // The number of segments per channel used
-    MULTI_CHSS_NUM_SEG_FILE,      // The file containing the proportion of segments to use per channel for
-                                  // MultiChSegmentationStrategy
-    SCORE_BASED_CHSS_SCORE_EXP,   // The exponent used for ScoreToProportionalNumSegments in
-                                  // ScoreBasedChSegmentationStrategy
-    SAMPLING_CHSS_SEGMENT_LEN,    // The segment length used for SamplingChSegmentationStrategy
-    SAMPLING_CHSS_SAMPLE_SIZE,    // The sample size used by SamplingChSegmentationStrategy
+    ID,                          // Index of the setting within the log file
+    DATASET_FILE,                // Name of the indexed dataset file
+    INDEX_FILE,                  // Name of the index file
+    FFTS_FILE,                   // Name of the FFTs file, empty if not used
+    L_MIN,                       // Minimum allowed query length
+    L_MAX,                       // Maximum allowed query length
+    L_PER_GROUP,                 // Size of length groups
+    POS_PER_ENV,                 // Number of positions per envelope for envelope-based methods
+    ENTRY_MERGER_TYPE,           // Type of entry merger used
+    MERGER_NUM_BITS,             // Number of bits used for SAX-based entry merger, if applicable
+    NORMALIZED,                  // Whether the query and subsequences are normalized
+    INDEX_TYPE,                  // Type of index used
+    LG_SEGMENTATION_STRATEGY,    // Strategy for varying the channel segmentation strategy for different length groups
+    CH_SEGMENTATION_STRATEGY,    // Strategy for varying the segmentation strategy for different channels
+    SEGMENTATION_STRATEGY,       // Strategy for segmenting the time series channels
+    NUM_SEGMENTS,                // The number of segments used per channel on average in the highest order length group
+    NUM_SEGMENTS_PER_CHANNEL,    // List of numbers of segments per channel in the highest order length group
+    NUM_SEGMENTS_ALL,            // List of numbers of segments per length group, per channel
+    MULTI_CHSS_NUM_SEG_FILE,     // The file containing the proportion of segments to use per channel for
+                                 // MultiChSegmentationStrategy
+    SCORE_BASED_CHSS_SCORE_EXP,  // The exponent used for ScoreToProportionalNumSegments in
+                                 // ScoreBasedChSegmentationStrategy
+    SAMPLING_CHSS_SEGMENT_LEN,   // The segment length used for SamplingChSegmentationStrategy
+    SAMPLING_CHSS_SAMPLE_SIZE,   // The sample size used by SamplingChSegmentationStrategy
     ENV_STATS_CHSS_WEIGHTS_FILE,  // The file containing the weights for IndexStatsScoreFunc in
                                   // EnvStatsChSegmentationStrategy
     ENV_WIDTH_CHSS_MIN_W_UPDATE,  // The minimum sufficient width update for EnvWidthChSegmentationStrategy
@@ -49,6 +53,7 @@ enum class IndexSettingsColumn {
     NUM_NODES,                    // Number of nodes in the index, excluding the root
     NUM_ENTRIES,                  // Number of entries in the index
     INDEXING_TIME_S,              // Time taken to index the dataset in seconds
+    SEGMENTATION_SETUP_TIME_S,    // Time taken to set up the segmentation strategies in seconds
     SUMMARIZATION_TIME_S,         // Time taken to summarize the subsequences in the dataset in seconds
     INSERTION_TIME_S,             // Time taken to insert the subsequence summaries into the index in seconds
     FFT_CALC_TIME_S,              // Time taken to calculate the FFTs in seconds
@@ -58,10 +63,10 @@ enum class IndexSettingsColumn {
 
 using ISC = IndexSettingsColumn;
 
-const vec<ISC> INDEX_TIME_COLUMNS = {ISC::INDEXING_TIME_S, ISC::SUMMARIZATION_TIME_S, ISC::INSERTION_TIME_S,
-                                     ISC::FFT_CALC_TIME_S};
+constexpr std::array INDEX_TIME_COLUMNS = {ISC::INDEXING_TIME_S, ISC::SEGMENTATION_SETUP_TIME_S,
+                                           ISC::SUMMARIZATION_TIME_S, ISC::INSERTION_TIME_S, ISC::FFT_CALC_TIME_S};
 
-const vec<ISC> INDEX_COUNT_COLUMNS = {ISC::NUM_LEAVES, ISC::NUM_NODES, ISC::NUM_ENTRIES, ISC::SIZE_ON_DISK_B};
+constexpr std::array INDEX_COUNT_COLUMNS = {ISC::NUM_LEAVES, ISC::NUM_NODES, ISC::NUM_ENTRIES, ISC::SIZE_ON_DISK_B};
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(IndexSettingsColumn, INDEX_SETTINGS_COL, false);
 
@@ -74,7 +79,21 @@ class IndexLogger : public Logger {
 
     inline static IndexLogger &get_instance() { return instance; };
 
+    /**
+     * @brief Initialize the index logger with the given index options
+     * @param index_options The options for the index
+     * @param sample_frac The fraction of the dataset used for indexing, intended for testing
+     */
     static void initialize(const IndexOptions &index_options, Real sample_frac = 1.0);
+
+    /**
+     * @brief Set columns related to the number of segments, using the length group segmentation strategy
+     * @param lg_segmentation_strategy The length group segmentation strategy to use
+     * @param log_num_seg_per_ch Whether to log the number of segments per channel
+     * @param log_num_seg_all Whether to log the number of segments for all length groups and channels
+     */
+    void set_num_segments_cols(const ILengthGroupSegmentationStrategy *lg_segmentation_strategy,
+                               bool log_num_seg_per_ch = true, bool log_num_seg_all = false);
 
     /** @brief Write the entry */
     void write_entry();
@@ -85,7 +104,7 @@ class IndexLogger : public Logger {
      * @param amount The amount to increment by
      */
     inline void increment_count_col(ISC col, size_t amount = 1) {
-        assert(vec_contains(INDEX_COUNT_COLUMNS, col));
+        assert(arr_contains(INDEX_COUNT_COLUMNS, col));
         instance.m_count_cols[col] += amount;
     }
 
@@ -94,7 +113,7 @@ class IndexLogger : public Logger {
      * @param col The column to start the timer for, expected to be a value from INDEX_TIME_COLUMNS
      */
     inline void start_timer(ISC col) {
-        assert(vec_contains(INDEX_TIME_COLUMNS, col));
+        assert(arr_contains(INDEX_TIME_COLUMNS, col));
         m_time_cols_start[col] = std::chrono::high_resolution_clock::now();
     }
 
@@ -103,7 +122,7 @@ class IndexLogger : public Logger {
      * @param col The column to stop the timer for, expected to be a value from INDEX_TIME_COLUMNS
      */
     inline void stop_timer(ISC col) {
-        assert(vec_contains(INDEX_TIME_COLUMNS, col));
+        assert(arr_contains(INDEX_TIME_COLUMNS, col));
         auto end = std::chrono::high_resolution_clock::now();
         m_time_cols_duration[col] += std::chrono::duration<double>(end - m_time_cols_start[col]).count();
     }

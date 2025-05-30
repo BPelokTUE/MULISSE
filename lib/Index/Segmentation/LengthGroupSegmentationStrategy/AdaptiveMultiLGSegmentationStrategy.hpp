@@ -11,7 +11,7 @@ class AdaptiveMultiLGSegmentationStrategy : public MultiLGSegmentationStrategy {
     /**
      * @brief Construct a new AdaptiveMultiLGSegmentationStrategy with the given segmentation strategy factory.
      * @param ch_segmentation_strategy_factory The factory function to create channel segmentation strategies for each
-     * group.
+     * group, which takes in the minimum and maximum lengths and the number of segments
      * @param avg_num_segments The average number of segments for each group.
      * @param pos_per_env The number of positions per envelope.
      */

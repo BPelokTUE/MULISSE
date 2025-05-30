@@ -10,7 +10,7 @@ class MultiLGSegmentationStrategy : public ILengthGroupSegmentationStrategy {
     /**
      * @brief Construct a new MultiLGSegmentationStrategy with the given a segmentation strategy factory.
      * @param ch_segmentation_strategy_factory The factory function to create channel segmentation strategies for each
-     * group.
+     * group, which takes in the minimum and maximum lengths
      */
     MultiLGSegmentationStrategy(
         std::function<sptr<IChannelSegmentationStrategy>(uint, uint)> ch_segmentation_strategy_factory);

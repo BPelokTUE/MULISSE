@@ -5,9 +5,11 @@
 
 #include "Index/EntryGenerator/EnvelopeEntryGenerator.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/SamplingChSSSamplingParams.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/SingleChSegmentationStrategy.hpp"
+#include "Index/Segmentation/LengthGroupSegmentationStrategy/SingleLGSegmentationStrategy.hpp"
+#include "Index/Segmentation/SegmentationStrategy/UniformSegmentationStrategy.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
-#include "Util/Stats/EnvelopeStatsUtil.hpp"
 
 SamplingChSSLateInitParams::~SamplingChSSLateInitParams() = default;
 
@@ -31,7 +33,21 @@ void SamplingChSegmentationStrategy::initialize(SamplingChSSSamplingParams sampl
     }
 
     // 3. Get generator
-    auto generator = get_simple_envelope_entry_generator(sampling_params.m_segment_len);
+
+    auto &length_props = RS.get_length_props();
+    uint l_min = length_props.m_l_min, l_max = length_props.m_l_max;
+    auto segmentation_strategy =
+        std::make_shared<UniformSegmentationStrategy>(l_max, l_max / sampling_params.m_segment_len);
+    auto ch_segmentation_strategy = std::make_shared<SingleChSegmentationStrategy>(std::move(segmentation_strategy));
+
+    uint pos_per_env = series_len - l_min + 1;
+    auto lg_segmentation_strategy = std::make_unique<SingleLGSegmentationStrategy>(std::move(ch_segmentation_strategy));
+    EnvelopeParams envelope_params{.m_l_min = l_min,
+                                   .m_l_max = l_max,
+                                   .m_pos_per_env = pos_per_env,
+                                   .m_lg_segmentation_strategy = lg_segmentation_strategy.get()};
+
+    auto generator = std::make_unique<EnvelopeEntryGenerator>(sampling_params.m_normalized, envelope_params);
 
     // 4. Set late initialization parameters
     m_late_init_params =
@@ -39,8 +55,7 @@ void SamplingChSegmentationStrategy::initialize(SamplingChSSSamplingParams sampl
                                                      &dataset_path, std::move(mts_inds), std::move(generator));
 
     // 5. Initialize segmentation strategies according to the implementation
-    auto &length_props = RS.get_length_props();
-    RS.set_lengths_per_group(length_props.m_l_max - length_props.m_l_min + 1);  // Ugly hack
+    RS.set_lengths_per_group(l_max - l_min + 1);  // Ugly hack
     initialize_segmentation_strategies();
     RS.set_lengths_per_group(length_props.m_l_per_group);  // Ugly hack
 }

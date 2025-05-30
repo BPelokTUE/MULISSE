@@ -64,13 +64,13 @@ DEFINE_ENUM_CONSTS_NO_EXTRA(QueryColumn, QUERY_COL, false);
 
 using QC = QueryColumn;
 
-const vec<QC> QUERY_TIME_COLUMNS = {QC::TOTAL_TIME_S, QC::FIRST_LAYER_TIME_S, QC::TREE_TRAVERSAL_TIME_S, QC::IO_TIME_S,
-                                    QC::TS_EXAMINATION_TIME_S},
-              QUERY_COUNT_COLUMNS = {QC::NUM_LEAVES_VISITED, QC::NUM_NODES_VISITED, QC::NUM_ENTRIES_EXAMINED,
-                                     QC::NUM_MIN_DIST_CALCULATED, QC::NUM_SUBS_EXAMINED},
-              QUERY_COLLECTION_COLUMNS = {QC::RESULT_SET_TS_INDICES, QC::RESULT_SET_TS_POSITIONS,
-                                          QC::RESULT_SET_DISTANCES, QC::QUERY_CHANNELS},
-              QUERY_NUMBER_COLUMNS = {QC::QUERY_ID, QC::QUERY_LENGTH, QC::MIN_DIST_TOTAL};
+constexpr std::array QUERY_TIME_COLUMNS = {QC::TOTAL_TIME_S, QC::FIRST_LAYER_TIME_S, QC::TREE_TRAVERSAL_TIME_S,
+                                           QC::IO_TIME_S, QC::TS_EXAMINATION_TIME_S};
+constexpr std::array QUERY_COUNT_COLUMNS = {QC::NUM_LEAVES_VISITED, QC::NUM_NODES_VISITED, QC::NUM_ENTRIES_EXAMINED,
+                                            QC::NUM_MIN_DIST_CALCULATED, QC::NUM_SUBS_EXAMINED};
+constexpr std::array QUERY_COLLECTION_COLUMNS = {QC::RESULT_SET_TS_INDICES, QC::RESULT_SET_TS_POSITIONS,
+                                                 QC::RESULT_SET_DISTANCES, QC::QUERY_CHANNELS};
+constexpr std::array QUERY_NUMBER_COLUMNS = {QC::QUERY_ID, QC::QUERY_LENGTH, QC::MIN_DIST_TOTAL};
 
 // QueryLogger class
 
@@ -89,7 +89,7 @@ class QueryLogger : public Logger {
      * */
     template <typename T>
     inline void set_number_col(QC col, T value) {
-        assert(vec_contains(QUERY_NUMBER_COLUMNS, col));
+        assert(arr_contains(QUERY_NUMBER_COLUMNS, col));
         instance.m_settable_cols[col] = std::to_string(value);
     }
 
@@ -99,7 +99,7 @@ class QueryLogger : public Logger {
      * @param amount The amount to increment by
      * */
     inline void increment_count_col(QC col, uint amount = 1) {
-        assert(vec_contains(QUERY_COUNT_COLUMNS, col));
+        assert(arr_contains(QUERY_COUNT_COLUMNS, col));
         instance.m_count_cols[col] += amount;
     }
 
@@ -122,7 +122,7 @@ class QueryLogger : public Logger {
      * @param col The column to start the timer for, expected to be a value from QUERY_TIME_COLUMNS
      */
     inline void start_timer(QC col) {
-        assert(vec_contains(QUERY_TIME_COLUMNS, col));
+        assert(arr_contains(QUERY_TIME_COLUMNS, col));
         instance.m_time_cols_start[col] = std::chrono::high_resolution_clock::now();
     }
 
@@ -131,7 +131,7 @@ class QueryLogger : public Logger {
      * @param col The column to stop the timer for, expected to be a value from QUERY_TIME_COLUMNS
      */
     inline void stop_timer(QC col) {
-        assert(vec_contains(QUERY_TIME_COLUMNS, col));
+        assert(arr_contains(QUERY_TIME_COLUMNS, col));
         auto end = std::chrono::high_resolution_clock::now();
         instance.m_time_cols_duration[col] +=
             std::chrono::duration<double>(end - instance.m_time_cols_start[col]).count();

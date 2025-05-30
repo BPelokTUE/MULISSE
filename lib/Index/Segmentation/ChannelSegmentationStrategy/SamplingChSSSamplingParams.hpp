@@ -4,6 +4,7 @@
 #include "Util/Types/Numbers.hpp"
 
 struct SamplingChSSSamplingParams {
+    bool m_normalized = true;
     uint m_segment_len = 1;
     uint m_sample_size = 0;
 };

@@ -26,13 +26,14 @@ ScoreBasedChSegmentationStrategy::ScoreBasedChSegmentationStrategy(
 }
 
 void ScoreBasedChSegmentationStrategy::initialize_segmentation_strategies() {
-    uint sample_count = 0;
     volatile bool early_stop = false;
 
     OMP_PRAGMA(omp parallel) {
         std::ifstream dataset_ifs(*m_late_init_params->m_dataset_path, std::ios::binary);
         OMP_PRAGMA(omp for)
         for (uint i = 0; i < m_late_init_params->m_sample_size; ++i) {
+            if (early_stop) continue;
+
             vec<vec<Real>> mts(m_late_init_params->m_num_channels, vec<Real>(m_late_init_params->m_series_len));
             for (MtsNumChannelsT c = 0; c < m_late_init_params->m_num_channels; ++c) {
                 uint mts_ind = m_late_init_params->m_mts_inds[c][i];
@@ -43,9 +44,7 @@ void ScoreBasedChSegmentationStrategy::initialize_segmentation_strategies() {
             }
             auto envelope = m_late_init_params->m_generator->get_entries(mts, 0)[0][0].m_mts_summary;
             OMP_PRAGMA(omp critical) {
-                ++sample_count;
-                bool sufficient_update = m_envelope_scores->update(envelope);
-                if (!sufficient_update) early_stop = true;
+                if (!m_envelope_scores->update(envelope)) early_stop = true;
             }
         }
     }

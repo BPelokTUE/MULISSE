@@ -12,7 +12,6 @@
 #include "Util/Constants/Math.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
-#include "Util/Stats/EnvelopeStatsUtil.hpp"
 
 EnvWidthChSegmentationStrategy::EnvWidthChSegmentationStrategy(
     MtsNumChannelsT num_channels, uptr<IScoreToSegmentationStrategy> score_to_segmentation_strategy,

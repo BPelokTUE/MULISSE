@@ -1,5 +1,9 @@
 #include "Util/Logging/IndexLogger.hpp"
 
+#include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
+#include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
+#include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
+#include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
 IndexLogger IndexLogger::instance = IndexLogger();
@@ -11,6 +15,7 @@ const str IndexLogger::INDEX_SETTINGS_FILE = "index_settings.csv";
 
 void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac) {
     if (initialized) return;
+
     initialized = true;
 
     auto &RS = RunSettings::get_instance();
@@ -124,6 +129,38 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
     };
     for (const auto &col : INDEX_COUNT_COLUMNS) instance.m_count_cols[col] = 0;
     for (const auto &col : INDEX_TIME_COLUMNS) instance.m_time_cols_duration[col] = 0;
+}
+
+void IndexLogger::set_num_segments_cols(const ILengthGroupSegmentationStrategy *lg_segmentation_strategy,
+                                        bool log_num_seg_per_ch, bool log_num_seg_all) {
+    auto &RS = RunSettings::get_instance();
+
+    MtsNumChannelsT num_channels = RS.m_dataset_props.m_num_channels;
+    uint num_len_groups = RS.m_length_props.m_num_l_groups;
+
+    vec<SaxSegIndT> num_seg_per_ch, num_seg_all;
+    if (log_num_seg_per_ch) {
+        num_seg_per_ch.reserve(num_channels);
+        uint l_max = RS.m_length_props.m_l_max;
+        uint lg_ind = RS.m_length_props.m_use_length_groups ? num_len_groups - 1 : 0;
+        auto chss = lg_segmentation_strategy->get_const_ch_segmentation_strategy(lg_ind);
+        for (MtsNumChannelsT ch_ind = 0; ch_ind < num_channels; ++ch_ind) {
+            num_seg_per_ch.push_back(chss->get_const_segmentation_strategy(ch_ind)->get_num_segments(l_max));
+        }
+    }
+    if (log_num_seg_all) {
+        num_seg_all.reserve(num_len_groups * num_channels);
+        for (uint lg_ind = 0; lg_ind < num_len_groups; ++lg_ind) {
+            auto chss = lg_segmentation_strategy->get_const_ch_segmentation_strategy(lg_ind);
+            uint lg_l_max = RS.get_lg_l_max(lg_ind);
+            for (MtsNumChannelsT ch_ind = 0; ch_ind < num_channels; ++ch_ind) {
+                num_seg_all.push_back(chss->get_const_segmentation_strategy(ch_ind)->get_num_segments(lg_l_max));
+            }
+        }
+    }
+
+    m_columns[ISC::NUM_SEGMENTS_PER_CHANNEL] = get_collection_str(num_seg_per_ch);
+    m_columns[ISC::NUM_SEGMENTS_ALL] = get_collection_str(num_seg_all);
 }
 
 void IndexLogger::write_entry() {

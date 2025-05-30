@@ -10,7 +10,7 @@
 #include "Modules/Indexing/InitializeBreakpoints.hpp"
 #include "Modules/Indexing/StrategyFactory/GetLGSegmentationStrategy.hpp"
 
-int create_index(const IndexOptions &opts, Real sample_frac) {
+int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_per_ch, bool log_num_seg_all) {
     auto &RS = RunSettings::get_instance();
     str dataset_path = RS.get_dataset_path();
     str index_path = RS.get_index_path();
@@ -52,6 +52,18 @@ int create_index(const IndexOptions &opts, Real sample_frac) {
         }
     }
 
+    // Set up segmentation strategies
+
+    logger.start_timer(ISC::SEGMENTATION_SETUP_TIME_S);
+    auto lg_segmentation_strategy = get_lg_segmentation_strategy(opts);
+    logger.set_num_segments_cols(lg_segmentation_strategy.get(), log_num_seg_per_ch, log_num_seg_all);
+    logger.stop_timer(ISC::SEGMENTATION_SETUP_TIME_S);
+
+    IndexFactoryParams factory_params{
+        .m_discretize_flat_index = false,
+        .m_opts = opts,
+    };
+
     // Create index
 
 #define CONSTRUCT_INDEX(Type, index_factory)                                                                          \
@@ -68,12 +80,6 @@ int create_index(const IndexOptions &opts, Real sample_frac) {
     auto generator = get_paa_generator(opts, lg_segmentation_strategy.get()); \
     auto merger = get_entry_merger<Paa>(opts);                                \
     CONSTRUCT_INDEX(Paa, index_factory);
-
-    auto lg_segmentation_strategy = get_lg_segmentation_strategy(opts);
-    IndexFactoryParams factory_params{
-        .m_discretize_flat_index = false,
-        .m_opts = opts,
-    };
 
     switch (opts.m_index_method) {
         case ISAX_ENVELOPE: {

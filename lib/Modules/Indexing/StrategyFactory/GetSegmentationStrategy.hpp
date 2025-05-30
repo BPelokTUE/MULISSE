@@ -5,6 +5,13 @@
 #include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
 #include "Util/Types/Pointers.hpp"
 
+/**
+ * @brief Get the segmentation strategy for the given index options
+ * @param opts The index options containing the segmentation parameters
+ * @param l_min The minimum length of the queries for the given channel
+ * @param l_max The maximum length of the queries for the given channel
+ * @param num_segments The number of segments to use for the given channel
+ */
 sptr<ISegmentationStrategy> get_segmentation_strategy(const IndexOptions &opts, uint l_min, uint l_max,
                                                       SaxSegIndT num_segments);
 
