@@ -14,7 +14,6 @@
         "single2": [[0.125, 1.0]],
         "single3": [[0.0625, 1.0]]
     },
-    "channel_masks": [[1,1,1,1,1], [1,1,0,0,0]],
     "search_methods": ["envelope"],
     "ch_segmentation_strategies": {
         "env_width1": ["score_based"],

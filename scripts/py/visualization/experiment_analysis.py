@@ -654,21 +654,23 @@ Experiment: Segmentation strategy
 
 def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
     visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_env_width_chss"],
+        logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_env_width_chss3"],
+        # logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_clairvoyant_chss2"],
         groups_dict={
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
             ERD.INDEXES_COLS: [
                 ISC.NUM_SEGMENTS,
                 ISC.CH_SEGMENTATION_STRATEGY,
-                ISC.SCORE_BASED_CHSS_SAMPLE_SIZE,
-                ISC.SCORE_BASED_CHSS_SEGMENT_LEN,
+                ISC.SCORE_BASED_CHSS_SCORE_EXP,
+                # ISC.MULTI_CHSS_NUM_SEG_FILE,
             ],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX, QSC.CHANNEL_MASK],
         },
         separate_plots_dict={
-            (DSC.DATASET_FILE,): [("weather",)],
-            (ISC.NUM_SEGMENTS,): [],
+            (DSC.DATASET_FILE, QSC.CHANNEL_MASK): [],
+            (ISC.NUM_SEGMENTS, QSC.L_MIN, QSC.L_MAX): [(4, 256, 1024), (8, 128, 1024), (16, 64, 1024)],
         },
-        regex_dict={ISC.SCORE_BASED_CHSS_SAMPLE_SIZE: r"^(50|0)"},
+        # regex_dict={ISC.SCORE_BASED_CHSS_SAMPLE_SIZE: r"^(50|0)"},
         num_query_intervals=1,
         merge_csv_datasets=True,
         y_scale="linear",
@@ -690,8 +692,8 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
 
 
 for target_args_dict, reducer in [
-    # (TargetArgs.QUERY_TIME.value, MeanReducer()),
-    (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
+    (TargetArgs.QUERY_TIME.value, MeanReducer()),
+    # (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
     # (TargetArgs.QUERY_TIME.value, MeanReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.MEAN)]}}, MeanReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_LOWER_STATS, SCP.MEAN)]}}, StdReducer()),

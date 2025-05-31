@@ -23,7 +23,7 @@ CK_LG_SEGMENTATION_STRATEGIES = "lg_segmentation_strategies"
 CK_CH_SEGMENTATION_STRATEGIES = "ch_segmentation_strategies"
 CK_SEGMENTATION_STRATEGIES = "segmentation_strategies"
 CK_NUM_SEGMENTS = "num_segments"
-CK_MULTI_CHSS_NUM_SEG_FILES = "multi_chss_num_seg_file"
+CK_MULTI_CHSS_NUM_SEG_FILES = "multi_chss_num_seg_files"
 CK_SCORE_BASED_CHSS_SEGMENT_LENS = "score_based_chss_segment_lens"
 CK_SCORE_BASED_CHSS_SAMPLE_SIZES = "score_based_chss_sample_sizes"
 CK_SCORE_BASED_CHSS_ENV_SCORE_FUNC_TYPES = "env_score_func_types"
@@ -36,6 +36,7 @@ CK_QUERY_SET_SIZES = "query_set_sizes"
 CK_SYN_STEP_STDEVS = "syn_step_stdevs"
 CK_L_RANGE_RATIOS = "l_range_ratios"
 CK_USED_CHANNEL_RATIOS = "used_channel_ratios"
+CK_CHANNEL_MASKS = "channel_masks"
 CK_EXACT_QUERY_LENGTH_SETS = "exact_query_length_sets"
 CK_QUERY_NOISE_STDEVS = "query_noise_stdevs"
 CK_SEARCH_METHODS = "search_methods"
@@ -94,6 +95,7 @@ RK_ENV_WIDTH_CHSS_MIN_W_UPDATE = "env_width_chss_min_w_update"
 RK_NUM_CHANNELS = "num_channels"
 RK_STEP_STDEV = "step_stdev"
 RK_USED_CHANNEL_RATIO = "used_channel_ratio"
+RK_CHANNEL_MASK = "channel_mask"
 RK_EXACT_QUERY_LENGTHS = "exact_query_lengths"
 RK_NOISE_STDEV = "noise_stdev"
 RK_INSERTER_TYPE = "inserter_type"
@@ -325,6 +327,7 @@ def parse_config_file(input_config) -> ParsedConfig:
             setting = {
                 RK_SIZE: config[CK_QUERY_SET_SIZES],
                 **get_key_or_none(RK_USED_CHANNEL_RATIO, CK_USED_CHANNEL_RATIOS),
+                **get_key_or_none(RK_CHANNEL_MASK, CK_CHANNEL_MASKS),
                 **get_key_or_none(RK_NOISE_STDEV, CK_QUERY_NOISE_STDEVS),
                 **get_key_or_none(RK_QUERY_SET_SEED, CK_QUERY_SET_SEEDS),
                 **get_key_or_none(RK_EXACT_QUERY_LENGTHS, CK_EXACT_QUERY_LENGTH_SETS),
@@ -714,7 +717,7 @@ if __name__ == "__main__":
                     args += ["-l", str(l_min), "-L", str(l_max)]
                     csv_location = os.path.join(local_settings[LS_CSV_PATH], dataset_setting[RK_LOCATION])
                     if os.path.isdir(csv_location):
-                        args += ["-i", *[os.path.join(csv_location, f) for f in os.listdir(csv_location)]]
+                        args += ["-i", *[os.path.join(csv_location, f) for f in sorted(os.listdir(csv_location))]]
                     else:
                         args += ["-i", csv_location]
                 if command == SUB_CREATE_DS:
@@ -769,16 +772,21 @@ if __name__ == "__main__":
                     desc="Query settings", leave=False
                 ):
                     num_queries = query_setting[RK_SIZE]
-                    used_channels = int(num_channels * query_setting[RK_USED_CHANNEL_RATIO])
-                    exact_query_lengths = query_setting.get(RK_EXACT_QUERY_LENGTHS, [])
 
                     query_file = os.path.join(dataset_setting[RK_LOCATION], f"queries-{query_counter}.txt")
                     query_counter += 1
                     # fmt: off
                     args = [
                         SUB_CREATE_QS, "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
-                        "-Q", str(num_queries), "-u", str(used_channels),
+                        "-Q", str(num_queries)
                     ]
+
+                    if RK_CHANNEL_MASK in query_setting:
+                        args += ["-M", *[str(int(c)) for c in query_setting[RK_CHANNEL_MASK]]]
+                    elif RK_USED_CHANNEL_RATIO in query_setting:
+                        args += ["-u", str(int(num_channels * query_setting[RK_USED_CHANNEL_RATIO]))]
+
+                    exact_query_lengths = query_setting.get(RK_EXACT_QUERY_LENGTHS, [])
                     if RK_NOISE_STDEV in query_setting:
                         args += ["--noise", str(query_setting[RK_NOISE_STDEV])]
                     if RK_QUERY_SET_SEED in query_setting:

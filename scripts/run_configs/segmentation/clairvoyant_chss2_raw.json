@@ -1,4 +1,3 @@
-
 {
     "csv_data_dirs": ["stocks"],
     "dataset_sizes": [1000],
@@ -10,16 +9,22 @@
         "env_width1": [[0.25, 1.0]],
         "env_width2": [[0.125, 1.0]],
         "env_width3": [[0.0625, 1.0]],
+        "multi1": [[0.25, 1.0]],
+        "multi2": [[0.125, 1.0]],
+        "multi3": [[0.0625, 1.0]],
         "single1": [[0.25, 1.0]],
         "single2": [[0.125, 1.0]],
         "single3": [[0.0625, 1.0]]
     },
-    "channel_masks": [[1,1,1,1,1], [1,1,0,0,0]],
+    "used_channel_ratios": [1.0],
     "search_methods": ["envelope"],
     "ch_segmentation_strategies": {
         "env_width1": ["score_based"],
         "env_width2": ["score_based"],
         "env_width3": ["score_based"],
+        "multi1": ["multi"],
+        "multi2": ["multi"],
+        "multi3": ["multi"],
         "single1": ["single"],
         "single2": ["single"],
         "single3": ["single"]
@@ -34,6 +39,11 @@
         "env_width2": ["width"],
         "env_width3": ["width"]
     },
+    "multi_chss_num_seg_files":  {
+        "multi1": ["../PARAMS/NUM_SEG_PROPS/stocks_40-15.txt", "../PARAMS/NUM_SEG_PROPS/stocks_60-10.txt", "../PARAMS/NUM_SEG_PROPS/stocks_10-40.txt", "../PARAMS/NUM_SEG_PROPS/stocks_10-25.txt", "../PARAMS/NUM_SEG_PROPS/stocks_15-40-15.txt", "../PARAMS/NUM_SEG_PROPS/stocks_10-60-10.txt"],
+        "multi2": ["../PARAMS/NUM_SEG_PROPS/stocks_40-15.txt", "../PARAMS/NUM_SEG_PROPS/stocks_60-10.txt", "../PARAMS/NUM_SEG_PROPS/stocks_10-40.txt", "../PARAMS/NUM_SEG_PROPS/stocks_10-25.txt", "../PARAMS/NUM_SEG_PROPS/stocks_15-40-15.txt", "../PARAMS/NUM_SEG_PROPS/stocks_10-60-10.txt"],
+        "multi3": ["../PARAMS/NUM_SEG_PROPS/stocks_40-15.txt", "../PARAMS/NUM_SEG_PROPS/stocks_60-10.txt", "../PARAMS/NUM_SEG_PROPS/stocks_10-40.txt", "../PARAMS/NUM_SEG_PROPS/stocks_10-25.txt", "../PARAMS/NUM_SEG_PROPS/stocks_15-40-15.txt", "../PARAMS/NUM_SEG_PROPS/stocks_10-60-10.txt"]
+    },
     "score_based_chss_sample_sizes": {
         "env_width1": [50],
         "env_width2": [50],
@@ -45,17 +55,21 @@
         "env_width3": [1]
     },
     "num_segments": {
-        "env_width1": [4],
-        "env_width2": [8],
+        "env_width1": [4, 8, 12, 16],
+        "env_width2": [8, 12, 16],
         "env_width3": [16],
-        "single1": [4],
-        "single2": [8],
+        "multi1": [4, 8, 12, 16],
+        "multi2": [8, 12, 16],
+        "multi3": [16],
+        "single1": [4, 8, 12, 16],
+        "single2": [8, 12, 16],
         "single3": [16]
     },
     "envelope_size_ratios": [0.05],
     "length_group_size_ratios": [0.05],
     "distance_measures": ["ed"],
     "early_abandon": [true],
+    "search_raw": [true],
     "dataset_seeds": [0],
     "query_set_seeds": [0]
 }

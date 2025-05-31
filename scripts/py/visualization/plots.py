@@ -509,6 +509,9 @@ def get_config_label(
                 length_values["l_max_ratio"] = val
             case QC.QUERY_INTERVAL:
                 length_values["l_q_interval"] = val
+            case QSC.CHANNEL_MASK:
+                if isinstance(val, str) and len(val) > 0:
+                    label_parts.append(f"CM={val.replace(';', '')}")
             case ISC.L_PER_GROUP:
                 l_per_group = val
                 if l_per_group is not None and l_per_group > 0:
