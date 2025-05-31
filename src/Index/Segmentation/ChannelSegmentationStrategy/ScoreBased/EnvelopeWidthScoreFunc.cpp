@@ -11,22 +11,27 @@ bool EnvelopeWidthScoreFunc::update(const vec<Envelope> &mts_envelope) {
     ++m_sample_count;
     for (MtsNumChannelsT c = 0; c < mts_envelope.size(); ++c) {
         auto &envelope = mts_envelope[c];
+
         Real prev_range_mean = m_sample_count > 1 ? m_range_sums[c] / R(m_sample_count - 1) : 0.0;
-        for (SaxSegIndT s = 0; s < envelope.size(); ++s) m_range_sums[c] += envelope.m_lower[s] - envelope.m_upper[s];
+        for (SaxSegIndT s = 0; s < envelope.size(); ++s) m_range_sums[c] += envelope.m_upper[s] - envelope.m_lower[s];
 
         Real range_mean = m_range_sums[c] / R(m_sample_count);
-        m_range_min = std::min(m_range_min, range_mean);
-        m_range_max = std::max(m_range_max, range_mean);
-        sufficient_update |= std::abs(range_mean - prev_range_mean) / (m_range_max - m_range_min) >= m_min_width_update;
+        sufficient_update |= std::abs(range_mean - prev_range_mean) / prev_range_mean >= m_min_width_update;
     }
     return sufficient_update;
 }
 
 vec<Real> EnvelopeWidthScoreFunc::get_scores() {
+    Real range_mean_sum = 0.0;
+    for (Real &range_sum : m_range_sums) {
+        range_sum /= R(m_sample_count);
+        range_mean_sum += range_sum;
+    }
+
     vec<Real> scores;
     scores.reserve(m_range_sums.size());
     for (Real range_sum : m_range_sums) {
-        scores.push_back((range_sum / R(m_sample_count) - m_range_min) / (m_range_max - m_range_min));
+        scores.push_back(range_sum / range_mean_sum);
     }
     return scores;
 }

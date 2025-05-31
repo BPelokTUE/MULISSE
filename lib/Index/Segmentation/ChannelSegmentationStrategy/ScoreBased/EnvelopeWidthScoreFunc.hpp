@@ -2,7 +2,6 @@
 #define INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_SCOREBASED_ENVELOPEWIDTHSCOREFUNC_HPP
 
 #include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/EnvelopeScoreFunc.hpp"
-#include "Util/Constants/Math.hpp"
 #include "Util/Types/Numbers.hpp"
 
 class EnvelopeWidthScoreFunc : public IEnvelopeScoreFunc {
@@ -14,7 +13,7 @@ class EnvelopeWidthScoreFunc : public IEnvelopeScoreFunc {
     vec<Real> get_scores() override;
 
    private:
-    Real m_min_width_update, m_range_min = INF, m_range_max = 0.0;
+    Real m_min_width_update;
     vec<Real> m_range_sums;
     uint m_sample_count = 0;
 };

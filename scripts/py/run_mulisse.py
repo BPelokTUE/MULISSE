@@ -24,8 +24,9 @@ CK_CH_SEGMENTATION_STRATEGIES = "ch_segmentation_strategies"
 CK_SEGMENTATION_STRATEGIES = "segmentation_strategies"
 CK_NUM_SEGMENTS = "num_segments"
 CK_MULTI_CHSS_NUM_SEG_FILES = "multi_chss_num_seg_file"
-CK_SAMPLING_CHSS_SEGMENT_LENS = "sampling_chss_segment_lens"
-CK_SAMPLING_CHSS_SAMPLE_SIZES = "sampling_chss_sample_sizes"
+CK_SCORE_BASED_CHSS_SEGMENT_LENS = "score_based_chss_segment_lens"
+CK_SCORE_BASED_CHSS_SAMPLE_SIZES = "score_based_chss_sample_sizes"
+CK_SCORE_BASED_CHSS_ENV_SCORE_FUNC_TYPES = "env_score_func_types"
 CK_SCORE_BASED_CHSS_SCORE_EXPS = "score_based_chss_score_exps"
 CK_ENV_STATS_CHSS_WEIGHTS_FILES = "env_stats_chss_weights_files"
 CK_ENV_WIDTH_CHSS_MIN_W_UPDATES = "env_width_chss_min_w_updates"
@@ -84,8 +85,9 @@ RK_CH_SEGMENTATION_STRATEGY = "ch_segmentation_strategy"
 RK_SEGMENTATION_STRATEGY = "segmentation_strategy"
 RK_NUM_SEGMENTS = "num_segments"
 RK_MULTI_CHSS_NUM_SEG_FILE = "multi_chss_num_seg_file"
-RK_SAMPLING_CHSS_SEGMENT_LEN = "sampling_chss_segment_len"
-RK_SAMPLING_CHSS_SAMPLE_SIZE = "sampling_chss_sample_size"
+RK_SCORE_BASED_CHSS_SEGMENT_LEN = "score_based_chss_segment_len"
+RK_SCORE_BASED_CHSS_SAMPLE_SIZE = "score_based_chss_sample_size"
+RK_SCORE_BASED_CHSS_ENV_SCORE_FUNC_TYPE = "env_score_func_type"
 RK_SCORE_BASED_CHSS_SCORE_EXP = "score_based_chss_score_exp"
 RK_ENV_STATS_CHSS_WEIGHTS_FILE = "env_stats_chss_weights_file"
 RK_ENV_WIDTH_CHSS_MIN_W_UPDATE = "env_width_chss_min_w_update"
@@ -341,8 +343,9 @@ def parse_config_file(input_config) -> ParsedConfig:
                 **get_key_or_none(RK_CH_SEGMENTATION_STRATEGY, CK_CH_SEGMENTATION_STRATEGIES),
                 **get_key_or_none(RK_SEGMENTATION_STRATEGY, CK_SEGMENTATION_STRATEGIES),
                 **get_key_or_none(RK_MULTI_CHSS_NUM_SEG_FILE, CK_MULTI_CHSS_NUM_SEG_FILES),
-                **get_key_or_none(RK_SAMPLING_CHSS_SEGMENT_LEN, CK_SAMPLING_CHSS_SEGMENT_LENS),
-                **get_key_or_none(RK_SAMPLING_CHSS_SAMPLE_SIZE, CK_SAMPLING_CHSS_SAMPLE_SIZES),
+                **get_key_or_none(RK_SCORE_BASED_CHSS_SEGMENT_LEN, CK_SCORE_BASED_CHSS_SEGMENT_LENS),
+                **get_key_or_none(RK_SCORE_BASED_CHSS_SAMPLE_SIZE, CK_SCORE_BASED_CHSS_SAMPLE_SIZES),
+                **get_key_or_none(RK_SCORE_BASED_CHSS_ENV_SCORE_FUNC_TYPE, CK_SCORE_BASED_CHSS_ENV_SCORE_FUNC_TYPES),
                 **get_key_or_none(RK_SCORE_BASED_CHSS_SCORE_EXP, CK_SCORE_BASED_CHSS_SCORE_EXPS),
                 **get_key_or_none(RK_ENV_STATS_CHSS_WEIGHTS_FILE, CK_ENV_STATS_CHSS_WEIGHTS_FILES),
                 **get_key_or_none(RK_ENV_WIDTH_CHSS_MIN_W_UPDATE, CK_ENV_WIDTH_CHSS_MIN_W_UPDATES),

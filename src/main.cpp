@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
             LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(LengthGroupSegmentationStrategyType::SINGLE),
         ch_segmentation_strategy_str = CHANNEL_SEGMENTATION_STRATEGY_TO_STR.at(ChannelSegmentationStrategyType::SINGLE),
         segmentation_strategy_str = SEGMENTATION_STRATEGY_TO_STR.at(UNIFORM),
-        env_scores_type_str = ENVELOPE_SCORES_TYPE_TO_STR.at(WIDTH), env_stats_weights_file = "",
+        env_score_func_type_str = ENVELOPE_SCORES_TYPE_TO_STR.at(WIDTH), env_stats_weights_file = "",
         multi_chss_num_seg_file = "", split_strategy_str = ISAX_SPLIT_STRATEGY_TO_STR.at(ENTROPY_MAXIMIZING),
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
@@ -236,32 +236,32 @@ int main(int argc, char **argv) {
             "Path to the file containing the proportions of segments per channel, use in MultiChSegmentationStrategy")
         ->capture_default_str();
     index_subcommand
-        ->add_option("-E,--envelope_scores_type", env_scores_type_str,
-                     "Envelope scores type to use in ScoreBasedChSegmentationStrategy")
+        ->add_option("-E,--env_score_func_type", env_score_func_type_str,
+                     "Envelope score function type to use in ScoreBasedChSegmentationStrategy")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ENVELOPE_SCORES_TYPE_STRS));
     index_subcommand
         ->add_option("--score_based_chss_sample_size", score_based_chss_sample_size,
-                     "Size of the sample to use for estimating envelope statistics in SamplingChSegmentationStrategy "
+                     "Size of the sample to use for estimating envelope statistics in ScoreBasedChSegmentationStrategy "
                      "implementations")
         ->capture_default_str()
         ->check(positive_int);
     index_subcommand
         ->add_option("--score_based_chss_segment_len", score_based_chss_segment_len,
                      "Length of the segments to use for estimating envelope statistics in "
-                     "SamplingChSegmentationStrategy implementations")
+                     "ScoreBasedChSegmentationStrategy implementations")
         ->capture_default_str()
         ->check(positive_int);
     index_subcommand
         ->add_option("-e,--score_based_chss_score_exp", score_based_chss_score_exp,
-                     "Exponent to use for ScoreBasedChSegmentationStrategy  with IEnvelopeScores implementations")
+                     "Exponent to use for ScoreBasedChSegmentationStrategy  with IEnvelopeScoreFunc implementations")
         ->capture_default_str();
     index_subcommand->add_option(
         "-w,--env_stats_weights_file", env_stats_weights_file,
-        "Path to the file containing the weights ScoreBasedChSegmentationStrategy for with EnvelopeStatsScores ");
+        "Path to the file containing the weights ScoreBasedChSegmentationStrategy for with EnvelopeStatsScoreFunc ");
     index_subcommand
         ->add_option("--env_width_min_w_update", env_width_min_w_update,
-                     "Minimum sufficient width update for EnvWidthChSegmentationStrategy with EnvelopeWidthScores ")
+                     "Minimum sufficient width update for EnvWidthChSegmentationStrategy with EnvelopeWidthScoreFunc ")
         ->capture_default_str()
         ->check(positive_real);
     index_subcommand->add_option("-B,--breakpoint_strategy", breakpoint_strategy_str, "Breakpoint strategy")
@@ -569,7 +569,7 @@ int main(int argc, char **argv) {
                 score_based_chss_params = std::make_unique<ScoreBasedChSSParams>(
                     !raw, score_based_chss_segment_len, score_based_chss_sample_size, score_based_chss_score_exp,
                     env_width_min_w_update, env_stats_weights_file,
-                    STR_TO_ENVELOPE_SCORES_TYPE.at(env_scores_type_str));
+                    STR_TO_ENVELOPE_SCORES_TYPE.at(env_score_func_type_str));
             }
             SegmentationParams segmentation_params{
                 .m_num_segments = num_segments,

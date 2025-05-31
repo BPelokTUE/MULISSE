@@ -12,7 +12,7 @@ class EnvelopeScoreEstimator {
    public:
     EnvelopeScoreEstimator(uptr<IEnvelopeScoreFunc> envelope_scores);
 
-    vec<Real> estimate_scores(ScoreBasedChSSParams sampling_params);
+    vec<Real> estimate_scores(const ScoreBasedChSSParams &sampling_params);
 
     vec<Real> get_scores() const;
 

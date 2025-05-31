@@ -31,7 +31,7 @@ vec<Real> get_channel_scores(const IndexOptions &opts) {
                     opts.m_num_channels, score_based_chss_params->m_min_width_update);
             }
         }
-        return EnvelopeScoreEstimator(std::move(envelope_score_func)).get_scores();
+        return EnvelopeScoreEstimator(std::move(envelope_score_func)).estimate_scores(*score_based_chss_params);
     }
     return {};
 }

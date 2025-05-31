@@ -20,7 +20,7 @@
 EnvelopeScoreEstimator::EnvelopeScoreEstimator(uptr<IEnvelopeScoreFunc> envelope_scores)
     : m_envelope_scores(std::move(envelope_scores)) {}
 
-vec<Real> EnvelopeScoreEstimator::estimate_scores(ScoreBasedChSSParams score_based_chss_params) {
+vec<Real> EnvelopeScoreEstimator::estimate_scores(const ScoreBasedChSSParams &score_based_chss_params) {
     // 1. Get dataset path
     auto &RS = RunSettings::get_instance();
     str dataset_path = RS.get_dataset_path();
@@ -57,6 +57,7 @@ vec<Real> EnvelopeScoreEstimator::estimate_scores(ScoreBasedChSSParams score_bas
     auto generator = std::make_unique<EnvelopeEntryGenerator>(score_based_chss_params.m_normalized, envelope_params);
 
     // 4. Initialize segmentation strategies according to the implementation
+    uint original_l_per_group = length_props.m_l_per_group;
     RS.set_lengths_per_group(l_max - l_min + 1);  // Ugly hack
 
     volatile bool early_stop = false;
@@ -70,7 +71,7 @@ vec<Real> EnvelopeScoreEstimator::estimate_scores(ScoreBasedChSSParams score_bas
             vec<vec<Real>> mts(num_channels, vec<Real>(series_len));
             for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
                 uint mts_ind = mts_inds[c][i];
-                dataset_ifs.seekg(mts_ind * series_len * num_channels * sizeof(Real));
+                dataset_ifs.seekg((mts_ind * num_channels + c) * series_len * sizeof(Real));
                 dataset_ifs.read(reinterpret_cast<char *>(mts[c].data()), series_len * sizeof(Real));
             }
             auto envelope = generator->get_entries(mts, 0)[0][0].m_mts_summary;
@@ -80,7 +81,7 @@ vec<Real> EnvelopeScoreEstimator::estimate_scores(ScoreBasedChSSParams score_bas
         }
     }
 
-    RS.set_lengths_per_group(length_props.m_l_per_group);  // Ugly hack
+    RS.set_lengths_per_group(original_l_per_group);  // Ugly hack
 
     return m_envelope_scores->get_scores();
 }
