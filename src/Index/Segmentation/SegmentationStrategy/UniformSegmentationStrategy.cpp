@@ -6,8 +6,6 @@ UniformSegmentationStrategy::UniformSegmentationStrategy(uint l_max, SaxSegIndT 
 }
 
 SaxSegIndT UniformSegmentationStrategy::get_num_segments(uint subs_len) const {
-    assert(subs_len <= m_l_max);
-    assert(subs_len >= m_segment_len);
     return static_cast<SaxSegIndT>(subs_len / m_segment_len);
 }
 

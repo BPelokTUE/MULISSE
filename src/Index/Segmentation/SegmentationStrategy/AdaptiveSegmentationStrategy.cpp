@@ -34,8 +34,6 @@ AdaptiveSegmentationStrategy::AdaptiveSegmentationStrategy(uint l_min, uint l_ma
 }
 
 SaxSegIndT AdaptiveSegmentationStrategy::get_num_segments(uint subs_len) const {
-    assert(subs_len <= m_l_max);
-    assert(subs_len >= m_segment_ends[0]);
     SaxSegIndT end_ind = static_cast<SaxSegIndT>(
         std::lower_bound(m_segment_ends.begin(), m_segment_ends.end(), subs_len) - m_segment_ends.begin());
     return subs_len == m_segment_ends[end_ind] ? end_ind + 1 : end_ind;

@@ -654,30 +654,33 @@ Experiment: Segmentation strategy
 
 def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
     visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_2_ppe_univariate"],
-        # logs_dirs=["EXPERIMENT_LOGS/combined_param/LOGS_2_position_group_univariate_2048"],
+        logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_env_width_chss"],
         groups_dict={
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
-            ERD.INDEXES_COLS: [ISC.POS_PER_ENV],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+            ERD.INDEXES_COLS: [
+                ISC.NUM_SEGMENTS,
+                ISC.CH_SEGMENTATION_STRATEGY,
+                ISC.SCORE_BASED_CHSS_SAMPLE_SIZE,
+                ISC.SCORE_BASED_CHSS_SEGMENT_LEN,
+            ],
         },
         separate_plots_dict={
-            (DSC.SERIES_LENGTH,): [],
-            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
+            (DSC.DATASET_FILE,): [("weather",)],
+            (ISC.NUM_SEGMENTS,): [],
         },
-        # regex_dict={DSC.DATASET_FILE: r"weather"},
+        regex_dict={ISC.SCORE_BASED_CHSS_SAMPLE_SIZE: r"^(50|0)"},
         num_query_intervals=1,
         merge_csv_datasets=True,
         y_scale="linear",
-        bar_plot_color_attr=None,
-        # bar_plot_color_map={
-        #     "single": PALETTE["Oranges"][2],
-        #     "score_based": PALETTE["Blues"][4],
-        #     "multi": PALETTE["Greens"][4],
-        # },
-        line_plot_x_attr=ISC.POS_PER_ENV,
-        line_plot_included_cols={DSC.DATASET_FILE},
-        x_scale="log",
+        bar_plot_color_attr=ISC.CH_SEGMENTATION_STRATEGY,
+        bar_plot_color_map={
+            "single": PALETTE["Oranges"][2],
+            "score_based": PALETTE["Blues"][4],
+            "multi": PALETTE["Greens"][4],
+        },
+        # line_plot_x_attr=ISC.POS_PER_ENV,
+        # line_plot_included_cols={DSC.DATASET_FILE},
+        # x_scale="log",
         # heat_map_x_attr=ISC.NUM_ENVELOPES,
         # heat_map_y_attr=ISC.NUM_LEN_GROUPS,
         # heat_map_included_cols={ISC.NUM_SEGMENTS},
@@ -687,9 +690,8 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
 
 
 for target_args_dict, reducer in [
-    (TargetArgs.QUERY_TIME.value, MeanReducer()),
-    # (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
-    # (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
+    # (TargetArgs.QUERY_TIME.value, MeanReducer()),
+    (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
     # (TargetArgs.QUERY_TIME.value, MeanReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.MEAN)]}}, MeanReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_LOWER_STATS, SCP.MEAN)]}}, StdReducer()),

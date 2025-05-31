@@ -565,11 +565,17 @@ def get_config_label(
             case ISC.CH_SEGMENTATION_STRATEGY:
                 if isinstance(val, str) and len(val) > 0:
                     label_parts.append(f"CHS={abbreviate(val)}")
-            case ISC.CH_SCORE_BASED_PROP_EXP:
+            case ISC.SCORE_BASED_CHSS_SCORE_EXP:
                 label_parts.append(f"CPE={val:.2f}")
-            case ISC.CH_NUM_SEG_PROPS_FILE:
+            case ISC.MULTI_CHSS_NUM_SEG_FILE:
                 if isinstance(val, str) and len(val) > 0:
                     label_parts.append(os.path.basename(val).rsplit(".", 1)[0])
+            case ISC.SCORE_BASED_CHSS_SEGMENT_LEN:
+                if val is not None and val > 0:
+                    label_parts.append(f"SBs={int(val)}")
+            case ISC.SCORE_BASED_CHSS_SAMPLE_SIZE:
+                if val is not None and val > 0:
+                    label_parts.append(f"Sample={int(val)}")
             case ISC.SEGMENTATION_STRATEGY:
                 if isinstance(val, str) and len(val) > 0:
                     label_parts.append(f"SEG={abbreviate(val)}")

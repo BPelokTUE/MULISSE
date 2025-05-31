@@ -1,0 +1,56 @@
+
+{
+    "csv_data_dirs": ["stocks", "weather"],
+    "dataset_sizes": [1000],
+    "series_lengths": [1024],
+    "syn_num_channels": [3],
+    "syn_step_stdevs": [1.0],
+    "query_set_sizes": [100],
+    "l_range_ratios": {
+        "env_width1": [[0.25, 1.0]],
+        "env_width2": [[0.125, 1.0]],
+        "env_width3": [[0.0625, 1.0]],
+        "single1": [[0.25, 1.0]],
+        "single2": [[0.125, 1.0]],
+        "single3": [[0.0625, 1.0]]
+    },
+    "used_channel_ratios": [1.0],
+    "search_methods": ["envelope"],
+    "ch_segmentation_strategies": {
+        "env_width1": ["score_based"],
+        "env_width2": ["score_based"],
+        "env_width3": ["score_based"],
+        "single1": ["single"],
+        "single2": ["single"],
+        "single3": ["single"]
+    },
+    "score_based_chss_env_scores_types": {
+        "env_width1": ["width"],
+        "env_width2": ["width"],
+        "env_width3": ["width"]
+    },
+    "score_based_chss_sample_sizes": {
+        "env_width1": [50],
+        "env_width2": [50],
+        "env_width3": [50]
+    },
+    "score_based_chss_segment_lens": {
+        "env_width1": [1, 16],
+        "env_width2": [1, 16],
+        "env_width3": [1, 16]
+    },
+    "num_segments": {
+        "env_width1": [4, 8, 12, 16],
+        "env_width2": [8, 12, 16],
+        "env_width3": [16],
+        "single1": [4, 8, 12, 16],
+        "single2": [8, 12, 16],
+        "single3": [16]
+    },
+    "envelope_size_ratios": [0.05],
+    "length_group_size_ratios": [0.05],
+    "distance_measures": ["ed"],
+    "early_abandon": [true],
+    "dataset_seeds": [0],
+    "query_set_seeds": [0]
+}
