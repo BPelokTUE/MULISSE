@@ -19,7 +19,7 @@ vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec
     vec<vec<IndexEntry<Envelope>>> entries(m_num_len_groups);
 
     for (MtsNumChannelsT c = 0; c < mts.size(); ++c) {
-        auto channel_envs_groups = m_normalized ? get_normalized_envelopes(mts[c], c) : get_raw_envelopes(mts[c]);
+        auto channel_envs_groups = m_normalized ? get_normalized_envelopes(mts[c], c) : get_raw_envelopes(mts[c], c);
         for (uint l = 0; l < m_num_len_groups; ++l) {
             auto &channel_envs = channel_envs_groups[l];
             for (uint i = 0; i < channel_envs.size(); ++i) {
@@ -38,7 +38,7 @@ vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec
     return entries;
 }
 
-vec<vec<Envelope>> EnvelopeEntryGenerator::get_raw_envelopes(const vec<Real> &ts) {
+vec<vec<Envelope>> EnvelopeEntryGenerator::get_raw_envelopes(const vec<Real> &ts, MtsNumChannelsT ch_ind) {
     if (m_num_len_groups != 1) {
         throw std::runtime_error("Length-based grouping is not supported for raw envelopes");
     }
@@ -46,17 +46,15 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_raw_envelopes(const vec<Real> &ts
     auto [l_min, l_max, pos_per_env, lg_segmentation_strategy] = m_env_params;
 
     auto ch_segmentation_strategy = lg_segmentation_strategy->get_const_ch_segmentation_strategy(0);
-    auto segmentation_strategy = ch_segmentation_strategy->get_const_segmentation_strategy(0);
-    if (lg_segmentation_strategy->get_type() != SINGLE || ch_segmentation_strategy->get_type() != CHSS::SINGLE ||
-        segmentation_strategy->get_type() != UNIFORM) {
+    auto segmentation_strategy = ch_segmentation_strategy->get_const_segmentation_strategy(ch_ind);
+    if (lg_segmentation_strategy->get_type() != SINGLE || segmentation_strategy->get_type() != UNIFORM) {
         throw std::runtime_error(
-            "get_raw_envelopes is only supported for SingleLGSegmentationStrategy + SingleChSegmentationStrategy + "
-            "UniformSegmentationStrategy");
+            "get_raw_envelopes is only supported for SingleLGSegmentationStrategy + UniformSegmentationStrategy");
     }
     uint segment_len = segmentation_strategy->get_segment_len(0);
 
     vec<vec<Envelope>> envelope_groups =
-        get_envelope_groups(U(ts.size()), pos_per_env, l_min, l_max, lg_segmentation_strategy, 0);
+        get_envelope_groups(U(ts.size()), pos_per_env, l_min, l_max, lg_segmentation_strategy, ch_ind);
 
     Real paa_acc = 0.0, segment_len_r = R(segment_len);
 

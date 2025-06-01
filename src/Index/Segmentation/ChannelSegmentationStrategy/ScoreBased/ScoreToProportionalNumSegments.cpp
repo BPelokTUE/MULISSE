@@ -32,9 +32,13 @@ vec<sptr<ISegmentationStrategy>> ScoreToProportionalNumSegments::get_segmentatio
     vec<sptr<ISegmentationStrategy>> segmentation_strategies;
     segmentation_strategies.reserve(exp_scores.size());
 
-    for (Real exp_score : exp_scores) {
+    for (uint i = 0; i < exp_scores.size(); ++i) {
+        Real exp_score = exp_scores[i];
         SaxSegIndT num_segments =
             static_cast<SaxSegIndT>(std::round(exp_score / score_total * R(num_segments_remaining)));
+        num_segments = std::max(
+            static_cast<SaxSegIndT>(1),
+            std::min(static_cast<SaxSegIndT>(num_segments_remaining - exp_scores.size() + i + 1), num_segments));
         segmentation_strategies.push_back(m_strategy_factory(num_segments));
         num_segments_remaining -= num_segments;
         score_total -= exp_score;

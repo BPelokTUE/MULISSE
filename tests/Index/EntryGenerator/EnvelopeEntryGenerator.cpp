@@ -13,9 +13,9 @@
 
 class EnvelopeTest {
    public:
-    static vec<Envelope> get_raw_envelope(const vec<Real> &ts, EnvelopeParams env_params) {
+    static vec<Envelope> get_raw_envelope(const vec<Real> &ts, EnvelopeParams env_params, MtsNumChannelsT ch_ind) {
         EnvelopeEntryGenerator generator(false, env_params);
-        return generator.get_raw_envelopes(ts)[0];
+        return generator.get_raw_envelopes(ts, ch_ind)[0];
     }
 
     static vec<Envelope> get_normalized_envelope(const vec<Real> &ts, MtsNumChannelsT ch_ind,
@@ -64,7 +64,7 @@ TEST_CASE("get_raw_envelope envelope happy-flow works") {
     */
 
     auto envelopes =
-        EnvelopeTest::get_raw_envelope(ts, {l_min, l_max, pos_per_env, &lg_segmentation_strategy_mock.get()});
+        EnvelopeTest::get_raw_envelope(ts, {l_min, l_max, pos_per_env, &lg_segmentation_strategy_mock.get()}, 0);
     vec<Envelope> expected = {
         {{R(2.25), R(2.5), R(-0.5)}, {3, 9, 9}},
         {{R(-0.5), R(-0.5), R(1.5)}, {9, R(7.25), R(7.25)}},

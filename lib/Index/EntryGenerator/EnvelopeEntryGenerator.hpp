@@ -31,9 +31,10 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
      * useless. Nevertheless, if requested, the envelopes are repeated for each length group.
      *
      * @param ts The (subsequence of the) univariate time series / channel
+     * @param ch_ind The channel index
      * @return Vector of vector pairs containing the upper and lower bounds of the subsequences respectively
      */
-    vec<vec<Envelope>> get_raw_envelopes(const vec<Real> &ts);
+    vec<vec<Envelope>> get_raw_envelopes(const vec<Real> &ts, MtsNumChannelsT ch_ind);
 
     /**
      * @brief Compute the ULISSE envelopes of subsequences of a time series WITH normalization
