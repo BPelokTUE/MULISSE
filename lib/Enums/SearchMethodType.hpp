@@ -14,6 +14,7 @@ enum SearchMethodType {
     ISAX_ENV_W_ENV,
     ISAX_ENV_W_SAX_ENV,
     TREE_ENVELOPE,
+    VL_ENVELOPE,
     SEQUENTIAL_SCAN,
 };
 
@@ -23,14 +24,14 @@ DEFINE_ENUM_CONSTS(SearchMethodType, SEARCH_METHOD_TYPE, false,
 
 constexpr std::array METHODS_W_ISAX{ISAX, ISAX_ENVELOPE, ISAX_ENV_W_ENV, ISAX_ENV_W_SAX_ENV};
 
-constexpr std::array METHODS_W_SAX{ISAX,           ISAX_ENVELOPE,      SAX_ENVELOPE,
-                                   ISAX_ENV_W_ENV, ISAX_ENV_W_SAX_ENV, TREE_ENVELOPE};
+constexpr std::array METHODS_W_SAX{ISAX,          ISAX_ENVELOPE, SAX_ENVELOPE, ISAX_ENV_W_ENV, ISAX_ENV_W_SAX_ENV,
+                                   TREE_ENVELOPE, VL_ENVELOPE};
 
-constexpr std::array METHODS_W_PAA{ISAX,           ISAX_ENVELOPE,      ENVELOPE,     SAX_ENVELOPE,
-                                   ISAX_ENV_W_ENV, ISAX_ENV_W_SAX_ENV, TREE_ENVELOPE};
+constexpr std::array METHODS_W_PAA{ISAX,           ISAX_ENVELOPE,      ENVELOPE,      SAX_ENVELOPE,
+                                   ISAX_ENV_W_ENV, ISAX_ENV_W_SAX_ENV, TREE_ENVELOPE, VL_ENVELOPE};
 
-constexpr std::array METHODS_W_ENVELOPE{ENVELOPE,       ISAX_ENVELOPE,      SAX_ENVELOPE,
-                                        ISAX_ENV_W_ENV, ISAX_ENV_W_SAX_ENV, TREE_ENVELOPE};
+constexpr std::array METHODS_W_ENVELOPE{ENVELOPE,           ISAX_ENVELOPE, SAX_ENVELOPE, ISAX_ENV_W_ENV,
+                                        ISAX_ENV_W_SAX_ENV, TREE_ENVELOPE, VL_ENVELOPE};
 
 constexpr std::array METHODS_W_FLAT_PART{ENVELOPE, SAX_ENVELOPE, ISAX_ENV_W_ENV, ISAX_ENV_W_SAX_ENV};
 

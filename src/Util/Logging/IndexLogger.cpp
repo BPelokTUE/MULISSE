@@ -28,7 +28,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
     size_t leaf_capacity = 0;
     str lg_ss_str = "", ch_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "",
         merge_in_leaves_str = "", method_type_str = "", entry_merger_type_str = "", env_stats_chss_weights_file = "",
-        multi_chss_num_seg_file = "", env_width_chss_min_w_update_str = "";
+        multi_chss_num_seg_file = "", env_width_chss_min_w_update_str = "", max_width_change_str = "";
     Real score_based_chss_score_exp = 0.0;
 
     if (index_options.m_index_params && arr_contains(METHODS_W_PAA, index_options.m_index_method)) {
@@ -77,7 +77,10 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
                 num_bits_limit = isax_index_params->m_isax_trie_params.m_num_bits_limit;
             } else if (method_type == TREE_ENVELOPE) {
                 auto *tree_env_params = dynamic_cast<TreeEnvelopeIndexParams *>(index_options.m_index_params.get());
-                leaf_capacity = tree_env_params->m_bucket_size;
+                leaf_capacity = tree_env_params->m_env_grouping_params.m_bucket_size;
+            } else if (method_type == VL_ENVELOPE) {
+                auto *tree_env_params = dynamic_cast<TreeEnvelopeIndexParams *>(index_options.m_index_params.get());
+                max_width_change_str = to_string(tree_env_params->m_env_grouping_params.m_max_width_change);
             }
         }
         if (arr_contains(METHODS_W_ENVELOPE, method_type)) {
@@ -108,6 +111,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         {ISC::MERGER_NUM_BITS, format_num_param(merger_num_bits)},
         {ISC::FIRST_LAYER_NUM_BITS, format_num_param(first_layer_num_bits)},
         {ISC::LEAF_CAPACITY, format_num_param(leaf_capacity)},
+        {ISC::MAX_WIDTH_CHANGE, max_width_change_str},
         {ISC::LG_SEGMENTATION_STRATEGY, lg_ss_str},
         {ISC::CH_SEGMENTATION_STRATEGY, ch_ss_str},
         {ISC::SEGMENTATION_STRATEGY, ss_str},

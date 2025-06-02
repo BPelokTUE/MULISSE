@@ -61,6 +61,7 @@ CK_ISAX_MERGE_IN_LEAVES = "isax_merge_in_leaves"
 CK_ISAX_PREFER_FIRST_IN_EM = "isax_prefer_first_in_em"
 CK_ISAX_SPLIT_STRATEGIES = "isax_split_strategies"
 CK_ISAX_LEAF_CAP_RATIOS = "isax_leaf_cap_ratios"
+CK_MAX_WIDTH_CHANGES = "max_width_changes"
 CK_ISAX_NUM_BITS_LIMITS = "isax_num_bits_limits"
 CK_ENVELOPE_SIZE_RATIOS = "envelope_size_ratios"
 CK_ENVELOPE_SIZES = "envelope_sizes"
@@ -115,6 +116,7 @@ RK_ISAX_MERGE_IN_LEAVES = "isax_merge_in_leaves"
 RK_ISAX_PREFER_FIRST_IN_EM = "isax_prefer_first_in_em"
 RK_SPLIT_STRATEGY = "split_strategy"
 RK_LEAF_CAPACITY = "leaf_capacity"
+RK_MAX_WIDTH_CHANGE = "max_width_change"
 RK_ISAX_NUM_BITS_LIMIT = "isax_num_bits_limit"
 RK_ENVLEOPE_SIZE_RATIO = "envelope_size_ratio"
 RK_ENVELOPE_SIZE = "envelope_size"
@@ -157,6 +159,7 @@ METHOD_ISAX_ENVELOPE = "isax_envelope"
 METHOD_SAX_ENVELOPE = "sax_envelope"
 METHOD_ENVELOPE = "envelope"
 METHOD_TREE_ENVELOPE = "tree_envelope"
+METHOD_VL_ENVELOPE = "vl_envelope"
 METHOD_ISAX_ENV_W_ENV = "isax_env_w_env"
 METHOD_ISAX_ENV_W_SAX_ENV = "isax_env_w_sax_env"
 
@@ -389,6 +392,11 @@ def parse_config_file(input_config) -> ParsedConfig:
                 **sax_settings,
                 RK_LEAF_CAPACITY: config.get(CK_ISAX_LEAF_CAP_RATIOS, []),
             }
+            vl_envelope_settings = {
+                **envelope_settings,
+                **sax_settings,
+                RK_MAX_WIDTH_CHANGE: config.get(CK_MAX_WIDTH_CHANGES, []),
+            }
             isax_envelope_settings = {**isax_settings, **envelope_settings}
 
             index_settings = []
@@ -402,6 +410,8 @@ def parse_config_file(input_config) -> ParsedConfig:
                 index_settings.append({RK_INDEX_TYPE: METHOD_ENVELOPE, **envelope_settings})
             if METHOD_TREE_ENVELOPE in config[CK_SEARCH_METHODS]:
                 index_settings.append({RK_INDEX_TYPE: METHOD_TREE_ENVELOPE, **tree_envelope_settings})
+            if METHOD_VL_ENVELOPE in config[CK_SEARCH_METHODS]:
+                index_settings.append({RK_INDEX_TYPE: METHOD_VL_ENVELOPE, **vl_envelope_settings})
             if METHOD_ISAX_ENV_W_ENV in config[CK_SEARCH_METHODS]:
                 index_settings.append({RK_INDEX_TYPE: METHOD_ISAX_ENV_W_ENV, **isax_envelope_settings})
             if METHOD_ISAX_ENV_W_SAX_ENV in config[CK_SEARCH_METHODS]:

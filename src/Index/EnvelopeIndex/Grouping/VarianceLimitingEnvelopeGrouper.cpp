@@ -5,13 +5,13 @@
 #include "Index/EnvelopeIndex/Tree/EnvelopeNode.hpp"
 #include "Util/Constants/Math.hpp"
 
-VarianceLimitingEnvelopeGrouper::VarianceLimitingEnvelopeGrouper(Real max_width_update)
-    : m_max_width_update(max_width_update) {}
+VarianceLimitingEnvelopeGrouper::VarianceLimitingEnvelopeGrouper(Real max_width_change)
+    : m_max_width_change(max_width_change) {}
 
 vec<uptr<EnvelopeNode>> VarianceLimitingEnvelopeGrouper::group_envelope_entries(
     vec<IndexEntry<Envelope>> &envelope_entries) {
     // Iterate over all entries, keep track of the maximum lower and minimum upper for each segment, if the update to
-    // the average width is less than or equal to m_max_width_update, the current entry is merged into the current node,
+    // the average width is less than or equal to m_max_width_change, the current entry is merged into the current node,
     // otherwise a new node is created.
     if (envelope_entries.empty()) return {};
 
@@ -33,12 +33,12 @@ vec<uptr<EnvelopeNode>> VarianceLimitingEnvelopeGrouper::group_envelope_entries(
                 minimal_envelopes[c].m_upper[s] =
                     std::min(entry.m_mts_summary[c].m_upper[s], minimal_envelopes[c].m_upper[s]);
 
-                width_update += (minimal_envelopes[c].m_upper[s] - minimal_envelopes[c].m_lower[s] -
-                                 (entry.m_mts_summary[c].m_upper[s] - entry.m_mts_summary[c].m_lower[s]));
+                width_update += std::abs(minimal_envelopes[c].m_upper[s] - minimal_envelopes[c].m_lower[s] -
+                                         (entry.m_mts_summary[c].m_upper[s] - entry.m_mts_summary[c].m_lower[s]));
             }
         }
         width_update /= num_channels * num_segments;
-        if (width_update <= m_max_width_update) {
+        if (width_update <= m_max_width_change) {
             for (MtsNumChannelsT c = 0; c < num_channels; ++c) node_envelopes[c].merge(entry.m_mts_summary[c]);
             node_subs_infos.push_back(entry.m_subs_info);
         } else {

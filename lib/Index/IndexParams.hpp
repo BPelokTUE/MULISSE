@@ -178,12 +178,19 @@ struct iSaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual iSaxIndexP
           iSaxIndexParams(segmentation_params, merger_params, sax_params, isax_trie_params) {}
 };
 
+struct EnvelopeGroupingParams {
+    /** @brief The size of each bucket for BucketingEnvelopeMerger */
+    size_t m_bucket_size;
+    /** @brief The maximum allowed width update VarianceLimitingEnvelopeGrouper */
+    Real m_max_width_change;
+};
+
 /** @brief Parameters for TreeEnvelopeIndex */
 struct TreeEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual SaxIndexParams {
-    SearchMethodType get_type() const override { return TREE_ENVELOPE; }
+    /** @brief Params for envelope grouping */
+    EnvelopeGroupingParams m_env_grouping_params;
 
-    /** @brief The size of each bucket in the tree */
-    size_t m_bucket_size;
+    SearchMethodType get_type() const override { return TREE_ENVELOPE; }
 
     /**
      * @brief Constructor
@@ -194,11 +201,11 @@ struct TreeEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual SaxIndexPa
      * @param bucket_size The size of each bucket in the tree
      */
     TreeEnvelopeIndexParams(SegmentationParams segmentation_params, MergerParams merger_params, uint pos_per_env,
-                            SaxParams sax_params, size_t bucket_size)
+                            SaxParams sax_params, EnvelopeGroupingParams env_grouping_params)
         : PaaIndexParams(segmentation_params, merger_params),
           EnvelopeIndexParams(segmentation_params, merger_params, pos_per_env),
           SaxIndexParams(segmentation_params, merger_params, sax_params),
-          m_bucket_size(bucket_size) {}
+          m_env_grouping_params(env_grouping_params) {}
 };
 
 #endif  // INDEX_INDEXPARAMS_HPP

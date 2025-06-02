@@ -46,8 +46,9 @@ enum class IndexSettingsColumn {
     MIN_NUM_BITS_ON_TIE,           // Whether to choose the segment with the minimum number of bits when tied for
                                    // EntropyMaximizing split strategy for iSAX indexes
     FIRST_LAYER_NUM_BITS,          // Number of bits per segment used in the first layer for iSAX indexes
-    LEAF_CAPACITY,                 // Maximum number of entries in a leaves (if applicable)
+    LEAF_CAPACITY,                 // Maximum number of entries in a leaves / buckets (if applicable)
     NUM_BITS_LIMIT,                // Maximum number of bits per segment for iSAX indexes
+    MAX_WIDTH_CHANGE,              // Maximum mean width change to allow in VarianceLimitingEnvelopeGrouper
     ADAPT_TO_DATASET,              // Whether to adapt the index properties to the dataset
     INSERTER_TYPE,                 // Type of inserter used for the index
     NUM_LEAVES,                    // Number of leaves in the index

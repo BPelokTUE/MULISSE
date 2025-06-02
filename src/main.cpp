@@ -115,13 +115,13 @@ int main(int argc, char **argv) {
         entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY);
     vec<str> csv_paths;
     Real step_sd = R(1.0), noise = R(0.1), score_based_chss_score_exp = R(1.0), index_sample_frac = R(1.0),
-         env_width_min_w_update = R(0.0), min_subs_sigma = MIN_SUBS_SIGMA;
+         env_width_min_w_update = R(0.0), min_subs_sigma = MIN_SUBS_SIGMA, max_width_change = R(0.0),
+         r_range_r = R(1.0);
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT, merger_num_bits = MAX_NUM_BITS_LIMIT;
     SaxSegIndT num_segments;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
          num_l_groups = 0, knn_k = 1, seed = 0, num_lags = 5, score_based_chss_segment_len = 1,
          score_based_chss_sample_size = 0;
-    Real r_range_r = 1.0;
     size_t leaf_capacity = 0, max_leaves_to_visit = 0;
     vec<uint> exact_lengths = {};
     MtsNumChannelsT num_channels, used_channels = 0;
@@ -319,6 +319,11 @@ int main(int argc, char **argv) {
                      "Leaf capacity or bucket size in case of tree envelope indexes")
         ->capture_default_str()
         ->check(positive_int);
+    index_subcommand
+        ->add_option("--max_width_change", max_width_change,
+                     "Maximum mean width change to allow in VarianceLimitingEnvelopeGrouper")
+        ->capture_default_str()
+        ->check(non_negative_real);
     index_subcommand->add_flag("--raw", raw, "Do not normalize");
     index_subcommand
         ->add_option("-b,--first_layer_bits", first_layer_num_bits,
@@ -619,6 +624,10 @@ int main(int argc, char **argv) {
                 .m_split_strategy_type = split_strategy_type,
                 .m_leaf_capacity = leaf_capacity,
             };
+            EnvelopeGroupingParams env_grouping_params{
+                .m_bucket_size = leaf_capacity,
+                .m_max_width_change = max_width_change,
+            };
 
             switch (method_type) {
                 case ISAX_ENVELOPE:
@@ -639,8 +648,9 @@ int main(int argc, char **argv) {
                         new SaxEnvelopeIndexParams(segmentation_params, merger_params, pos_per_env, sax_params);
                     break;
                 case TREE_ENVELOPE:
+                case VL_ENVELOPE:
                     index_params = new TreeEnvelopeIndexParams(segmentation_params, merger_params, pos_per_env,
-                                                               sax_params, leaf_capacity);
+                                                               sax_params, env_grouping_params);
                     break;
                 case SEQUENTIAL_SCAN:
                     std::cerr << "Sequential scan does not require indexation\n";

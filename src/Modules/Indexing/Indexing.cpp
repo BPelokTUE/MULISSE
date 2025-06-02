@@ -104,7 +104,8 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
             CONSTRUCT_ENVELOPE_INDEX(get_flat_envelope_index);
             break;
         }
-        case TREE_ENVELOPE: {
+        case TREE_ENVELOPE:
+        case VL_ENVELOPE: {
             CONSTRUCT_ENVELOPE_INDEX(get_envelope_tree_index);
             break;
         }
