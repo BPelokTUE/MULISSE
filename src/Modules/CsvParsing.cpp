@@ -63,11 +63,11 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
                     goto next_channel;
                 }
 
+                ++ind;
                 if (min_subs_sigma > 0) {
-                    sum += mts[channel][ind];
-                    sum_sq += mts[channel][ind] * mts[channel][ind];
+                    sum += mts[channel][ind - 1];
+                    sum_sq += mts[channel][ind - 1] * mts[channel][ind - 1];
 
-                    ++ind;
                     uint start_min = U(std::max(0, static_cast<int>(ind - l_max)));
                     int start_max = static_cast<int>(ind - l_min);
                     Real sum_tmp = sum, sum_sq_tmp = sum_sq;

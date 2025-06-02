@@ -741,6 +741,8 @@ if __name__ == "__main__":
                     args += ["-S", str(dataset_setting[RK_DATASET_SEED])]
                 if command == SUB_PARSE_CSV:
                     args += ["-l", str(l_min), "-L", str(l_max)]
+                    if RK_MIN_SUBS_SIGMA in dataset_setting:
+                        args += ["-s", str(dataset_setting[RK_MIN_SUBS_SIGMA])]
                     csv_location = os.path.join(local_settings[LS_CSV_PATH], dataset_setting[RK_LOCATION])
                     if os.path.isdir(csv_location):
                         args += ["-i", *[os.path.join(csv_location, f) for f in sorted(os.listdir(csv_location))]]
