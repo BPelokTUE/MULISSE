@@ -3,14 +3,13 @@
 #include <algorithm>
 #include <random>
 
-#include "Util/Constants/Math.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/Logging/DatasetLogger.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
-int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, uint seed,
-                            char col_sep) {
+int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, char col_sep,
+                            Real min_subs_sigma, uint seed) {
     for (str csv_path : csv_paths) {
         if (!std::filesystem::exists(csv_path)) {
             std::cerr << "Error: Dataset " << csv_path << " does not exist\n";
@@ -63,25 +62,28 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
                     discard = true;
                     goto next_channel;
                 }
-                sum += mts[channel][ind];
-                sum_sq += mts[channel][ind] * mts[channel][ind];
 
-                ++ind;
-                uint start_min = U(std::max(0, static_cast<int>(ind - l_max)));
-                int start_max = static_cast<int>(ind - l_min);
-                Real sum_tmp = sum, sum_sq_tmp = sum_sq;
-                for (uint start = start_min; static_cast<int>(start) <= start_max; ++start) {
-                    Real sigma = calculate_mu_and_sigma(sum_tmp, sum_sq_tmp, U(ind - start)).second;
-                    if (sigma < MIN_SUBS_SIGMA) {
-                        discard = true;
-                        goto next_channel;
+                if (min_subs_sigma > 0) {
+                    sum += mts[channel][ind];
+                    sum_sq += mts[channel][ind] * mts[channel][ind];
+
+                    ++ind;
+                    uint start_min = U(std::max(0, static_cast<int>(ind - l_max)));
+                    int start_max = static_cast<int>(ind - l_min);
+                    Real sum_tmp = sum, sum_sq_tmp = sum_sq;
+                    for (uint start = start_min; static_cast<int>(start) <= start_max; ++start) {
+                        Real sigma = calculate_mu_and_sigma(sum_tmp, sum_sq_tmp, U(ind - start)).second;
+                        if (sigma < min_subs_sigma) {
+                            discard = true;
+                            goto next_channel;
+                        }
+                        sum_tmp -= mts[channel][start];
+                        sum_sq_tmp -= mts[channel][start] * mts[channel][start];
                     }
-                    sum_tmp -= mts[channel][start];
-                    sum_sq_tmp -= mts[channel][start] * mts[channel][start];
-                }
-                if (ind >= l_max) {
-                    sum -= mts[channel][start_min];
-                    sum_sq -= mts[channel][start_min] * mts[channel][start_min];
+                    if (ind >= l_max) {
+                        sum -= mts[channel][start_min];
+                        sum_sq -= mts[channel][start_min] * mts[channel][start_min];
+                    }
                 }
                 if (ind == series_len) break;
             }

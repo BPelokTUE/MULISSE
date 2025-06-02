@@ -55,6 +55,20 @@ int main(int argc, char **argv) {
         },
         "POSITIVE_INTEGER", "Positive Integer");
 
+    auto non_negative_real = CLI::Validator(
+        [](str &input) {
+            try {
+                double value = std::stod(input);
+                if (value >= 0.0) {
+                    return "";
+                } else {
+                    return "Value must be non-negative";
+                }
+            } catch (const std::exception &) {
+                return "Could not convert";
+            }
+        },
+        "NON_NEGATIVE_REAL", "Non-Negative Real");
     auto positive_real = CLI::Validator(
         [](str &input) {
             try {
@@ -87,7 +101,7 @@ int main(int argc, char **argv) {
 
     // Add arguments
     str dataset_path, query_path, index_path, ffts_path,
-        breakpoints_path = "", logs_path = "../LOGS",
+        breakpoints_path = "", logs_path = "../LOGS", data_path = "../DATA",
         search_method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(ISAX_ENVELOPE),
         lg_segmentation_strategy_str =
             LENGTH_GROUP_SEGMENTATION_STRATEGY_TO_STR.at(LengthGroupSegmentationStrategyType::SINGLE),
@@ -101,7 +115,7 @@ int main(int argc, char **argv) {
         entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY);
     vec<str> csv_paths;
     Real step_sd = R(1.0), noise = R(0.1), score_based_chss_score_exp = R(1.0), index_sample_frac = R(1.0),
-         env_width_min_w_update = R(0.0);
+         env_width_min_w_update = R(0.0), min_subs_sigma = MIN_SUBS_SIGMA;
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT, merger_num_bits = MAX_NUM_BITS_LIMIT;
     SaxSegIndT num_segments;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
@@ -125,24 +139,27 @@ int main(int argc, char **argv) {
     rw_subcommand->add_option("-c,--num_channels", num_channels, "Number of channels")->required()->check(positive_int);
     rw_subcommand->add_option("-S,--seed", seed, "Random seed")->capture_default_str();
     rw_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
+    rw_subcommand->add_option("--data", data_path, "Path to the data directory")->capture_default_str();
 
     // Options for parsing csv
     csv_subcommand->add_option("-i,--input", csv_paths, "Input CSV file paths, in the order of channels")->required();
     csv_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
     csv_subcommand->add_option("-n,--num_series", num_series, "Max number of series")->required()->check(positive_int);
+    csv_subcommand->add_option(
+        "-l,--l_min", l_min,
+        "Minimum length of subsequences that will be queried for. Used for discarding series with "
+        "stagnant subsequences that would make normalization unstable");
+    csv_subcommand->add_option("-L,--l_max", l_max,
+                               "Maximum length of subsequences that will be queried for. Used for discarding stagnant "
+                               "subsequences that would make normalization unstable");
     csv_subcommand
-        ->add_option("-l,--l_min", l_min,
-                     "Minimum length of subsequences that will be queried for. Used for discarding series with "
-                     "stagnant subsequences that would make normalization unstable")
-        ->required();
-    csv_subcommand
-        ->add_option("-L,--l_max", l_max,
-                     "Maximum length of subsequences that will be queried for. Used for discarding stagnant "
-                     "subsequences that would make normalization unstable")
-        ->required();
+        ->add_option("-s,--min_subs_sigma", min_subs_sigma, "Minimum standard deviation required for each subsequence")
+        ->capture_default_str()
+        ->check(non_negative_real);
     csv_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
     csv_subcommand->add_option("-S,--seed", seed, "Random seed")->capture_default_str();
     csv_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
+    csv_subcommand->add_option("--data", data_path, "Path to the data directory")->capture_default_str();
 
     // Options for calculating dataset statistics
     d_stats_subcommand->add_option("-d,--dataset", dataset_path, "Dataset path relative to `DATA`")->required();
@@ -154,6 +171,7 @@ int main(int argc, char **argv) {
         ->add_option("--num_lags", num_lags, "Number of lags to calculate for autocorrelation and total variance")
         ->capture_default_str()
         ->check(positive_int);
+    d_stats_subcommand->add_option("--data", data_path, "Path to the data directory")->capture_default_str();
 
     // Options for creating queries
     qs_subcommand->add_option("-d,--dataset", dataset_path, "Dataset to use")->required();
@@ -189,6 +207,7 @@ int main(int argc, char **argv) {
                      "used_channels if provided.")
         ->capture_default_str();
     qs_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
+    qs_subcommand->add_option("--data", data_path, "Path to the data directory")->capture_default_str();
 
     // Options for calculating query statistics
     q_stats_subcommand->add_option("-d,--dataset", dataset_path, "Dataset path relative to `DATA`")->required();
@@ -199,6 +218,7 @@ int main(int argc, char **argv) {
         ->check(positive_int);
     q_stats_subcommand->add_flag("--raw", raw, "Do not normalize");
     q_stats_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
+    q_stats_subcommand->add_option("--data", data_path, "Path to the data directory")->capture_default_str();
 
     // Options for indexing
     index_subcommand->add_option("-i,--index", index_path, "Output index path relative to `DATA`")->required();
@@ -263,7 +283,7 @@ int main(int argc, char **argv) {
         ->add_option("--env_width_min_w_update", env_width_min_w_update,
                      "Minimum sufficient width update for EnvWidthChSegmentationStrategy with EnvelopeWidthScoreFunc ")
         ->capture_default_str()
-        ->check(positive_real);
+        ->check(non_negative_real);
     index_subcommand->add_option("-B,--breakpoint_strategy", breakpoint_strategy_str, "Breakpoint strategy")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS));
@@ -332,6 +352,7 @@ int main(int argc, char **argv) {
     index_subcommand->add_flag("--log_num_seg_all", log_num_seg_all,
                                "Log the number of segments for all length groups and channels in the index.");
     index_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
+    index_subcommand->add_option("--data", data_path, "Path to the data directory")->capture_default_str();
 
     // Options for calculating index statistics
     i_stats_subcommand->add_option("-i,--index", index_path, "Index file path relative to `DATA`")->required();
@@ -353,6 +374,7 @@ int main(int argc, char **argv) {
     i_stats_subcommand->add_flag("--separate_segment_stats", separate_segment_stats,
                                  "Calculate segment statistics for each segment separately");
     i_stats_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
+    i_stats_subcommand->add_option("--data", data_path, "Path to the data directory")->capture_default_str();
 
     // Options for calculating FFTs
     ffts_subcommand->add_option("-d,--dataset", dataset_path, "Dataset path relative to `DATA`")->required();
@@ -363,6 +385,7 @@ int main(int argc, char **argv) {
         ->check(positive_int);
     ffts_subcommand->add_flag("--raw", raw, "Do not normalize");
     ffts_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
+    ffts_subcommand->add_option("--data", data_path, "Path to the data directory")->capture_default_str();
 
     // Options for searching
     search_subcommand->add_option("-i,--index", index_path, "Index file path relative to `DATA`")
@@ -422,6 +445,7 @@ int main(int argc, char **argv) {
         ->capture_default_str()
         ->check(positive_real);
     search_subcommand->add_option("--logs", logs_path, "Path to write logs to")->capture_default_str();
+    search_subcommand->add_option("--data", data_path, "Path to the data directory")->capture_default_str();
 
     // Parse arguments and initialize run settings
     CLI11_PARSE(app, argc, argv);
@@ -514,7 +538,7 @@ int main(int argc, char **argv) {
     try {
         RunSettings::initialize(command_type, {num_channels, series_len, num_series, dataset_path},
                                 {use_length_groups, l_min, l_max, l_per_group, num_l_groups}, pos_per_env, index_path,
-                                ffts_path, query_path, method_type, logs_path);
+                                ffts_path, query_path, method_type, logs_path, data_path);
     } catch (const std::exception &e) {
         std::cerr << "Error configuring run: " << e.what() << '\n';
         return 1;
@@ -526,7 +550,7 @@ int main(int argc, char **argv) {
             return create_random_walks(step_sd, zero_start, seed);
         }
         case PARSE_CSV: {
-            return create_dataset_from_csv(csv_paths, num_series, l_min, l_max, seed);
+            return create_dataset_from_csv(csv_paths, num_series, l_min, l_max, ',', min_subs_sigma, seed);
         }
         case CALC_D_STATS: {
             return calculate_dataset_stats(num_lags);

@@ -23,7 +23,7 @@ class RunSettings {
 
     static void initialize(CommandType command_type, DatasetProperties dataset_props, LengthProperties length_props,
                            uint pos_per_env, const str& index_path, const str& ffts_path, const str& query_path,
-                           SearchMethodType method_type, const str& logs_dir);
+                           SearchMethodType method_type, const str& logs_dir, const str& data_dir);
 
     static inline RunSettings& get_instance() {
         assert(initialized);
@@ -200,8 +200,7 @@ class RunSettings {
     static bool initialized;
 
     // output directories
-    const str DATA_DIR = "../DATA/";
-    str logs_dir;
+    str m_logs_dir, m_data_dir;
 
     // Friend classes
     friend class DatasetLogger;

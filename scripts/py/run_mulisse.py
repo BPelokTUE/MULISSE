@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 # Config keys
 CK_CSV_DATA_DIRS = "csv_data_dirs"
+CK_MIN_SUBS_SIGMAS = "min_subs_sigmas"
 CK_DATASET_SIZES = "dataset_sizes"
 CK_SERIES_LENGTHS = "series_lengths"
 CK_INDEX_SAMPLE_FRACS = "index_sample_fracs"
@@ -76,6 +77,7 @@ CK_PRIORITY_QUEUE = "priority_queue"
 
 # Runner keys
 RK_SERIES_LEN = "series_len"
+RK_MIN_SUBS_SIGMA = "min_subs_sigma"
 RK_INDEX_SAMPLE_FRAC = "index_sample_frac"
 RK_L_RANGE = "l_range"
 RK_COMMAND = "command"
@@ -271,7 +273,7 @@ def parse_config_file(input_config) -> ParsedConfig:
         config,
         required = [
             CK_CSV_DATA_DIRS, CK_DATASET_SIZES, CK_SERIES_LENGTHS, CK_SYN_NUM_CHANNELS, CK_QUERY_SET_SIZES,
-            CK_L_RANGE_RATIOS, CK_SEARCH_METHODS, CK_DISTANCE_MEASURES, 
+            CK_SEARCH_METHODS, CK_DISTANCE_MEASURES, 
         ],
     )
     # fmt: on
@@ -281,7 +283,7 @@ def parse_config_file(input_config) -> ParsedConfig:
             return {rk: config[ck]} if ck in config else {}
 
         def get_length_settings() -> Settings:
-            return [{RK_SERIES_LEN: config[CK_SERIES_LENGTHS], RK_L_RANGE: config[CK_L_RANGE_RATIOS]}]
+            return [{RK_SERIES_LEN: config[CK_SERIES_LENGTHS], **get_key_or_none(RK_L_RANGE, CK_L_RANGE_RATIOS)}]
 
         def get_dataset_settings() -> Settings:
             calculate_dataset_stats = config.get(CK_CALCULATE_DATASET_STATS, [False])
@@ -309,6 +311,7 @@ def parse_config_file(input_config) -> ParsedConfig:
                     RK_LOCATION: os.path.basename(path),
                     RK_SIZE: config[CK_DATASET_SIZES],
                     RK_NUM_CHANNELS: [len(os.listdir(path))],
+                    **get_key_or_none(RK_MIN_SUBS_SIGMA, CK_MIN_SUBS_SIGMAS),
                     **get_key_or_none(RK_DATASET_SEED, CK_DATASET_SEEDS),
                 }
                 if not separate_csv_datasets:
@@ -569,7 +572,6 @@ local_settings = json.load(open(local_settings_path))
 check_config_keys(local_settings, [LS_DEFAULT_RUN_CONFIG, LS_CSV_PATH, LS_REPO_PATH])
 
 DATA_DIR = os.path.join(local_settings[LS_REPO_PATH], "DATA")
-LOGS_DIR = os.path.join(local_settings[LS_REPO_PATH], "LOGS")
 for build_dir in ["build", "buildRelease", "buildDebug"]:
     BUILD_PATH = os.path.join(local_settings[LS_REPO_PATH], build_dir)
     if os.path.exists(BUILD_PATH):
@@ -578,27 +580,8 @@ if not os.path.exists(BUILD_PATH):
     raise FileNotFoundError("No build directory found")
 EXECUTABLE_PATH = os.path.join(BUILD_PATH, "mulisse")
 
-dataset_id = 0
-query_set_id = 0
-index_id = 0
 
-dataset_log = os.path.join(LOGS_DIR, "dataset_settings.csv")
-query_set_log = os.path.join(LOGS_DIR, "query_set_settings.csv")
-index_log = os.path.join(LOGS_DIR, "index_settings.csv")
-
-if os.path.exists(dataset_log):
-    dataset_id = pd.read_csv(dataset_log, usecols=[COL_ID])[COL_ID].max() + 1
-if os.path.exists(query_set_log):
-    query_set_id = pd.read_csv(query_set_log, usecols=[COL_ID])[COL_ID].max() + 1
-if os.path.exists(index_log):
-    index_id = pd.read_csv(index_log, usecols=[COL_ID])[COL_ID].max() + 1
-
-COMMAND_LOG_PATH = os.path.join(LOGS_DIR, COMMAND_LOG_NAME)
-
-
-def run_command_with_logging(
-    args: list[str], timeout: Optional[int] = None, command_log_path: str = COMMAND_LOG_PATH
-) -> bool:
+def run_command_with_logging(args: list[str], command_log_path: str, timeout: Optional[int] = None) -> bool:
     with open(command_log_path, "a+") as f:
         start_time = time()
         f.write(f"Running command:\n{' '.join(args)}\n")
@@ -614,21 +597,21 @@ def run_command_with_logging(
         return True
 
 
-def add_logs_to_logs_dir(logs_to_add: str):
+def add_logs_to_logs_dir(logs_to_add: str, base_logs_dir: str, command_log_path: str):
     # Merge command logs
-    with open(COMMAND_LOG_PATH, "a+") as f_base:
+    with open(command_log_path, "a+") as f_base:
         with open(os.path.join(logs_to_add, COMMAND_LOG_NAME), "r") as f_new:
             f_base.write(f_new.read())
 
     # Merge search settings
     search_settings_id_base = 0
-    search_settings_path = os.path.join(LOGS_DIR, SEARCH_SETTINGS_CSV)
+    search_settings_path = os.path.join(base_logs_dir, SEARCH_SETTINGS_CSV)
     search_settings_exists = os.path.exists(search_settings_path)
     with open(search_settings_path, "a+") as f_base:
         new_search_settings = pd.read_csv(os.path.join(logs_to_add, SEARCH_SETTINGS_CSV))
         if search_settings_exists:
             search_settings_id_base = (
-                pd.read_csv(os.path.join(LOGS_DIR, SEARCH_SETTINGS_CSV), usecols=[COL_ID])[COL_ID].max() + 1
+                pd.read_csv(os.path.join(base_logs_dir, SEARCH_SETTINGS_CSV), usecols=[COL_ID])[COL_ID].max() + 1
             )
             new_search_settings[COL_ID] += search_settings_id_base
             new_search_settings.to_csv(f_base, index=False, header=False, mode="a")
@@ -637,13 +620,13 @@ def add_logs_to_logs_dir(logs_to_add: str):
 
     # Merge runs
     runs_id_base = 0
-    runs_path = os.path.join(LOGS_DIR, RUNS_CSV)
+    runs_path = os.path.join(base_logs_dir, RUNS_CSV)
     runs_exists = os.path.exists(runs_path)
     with open(runs_path, "a+") as f_base:
         new_runs = pd.read_csv(os.path.join(logs_to_add, RUNS_CSV))
         new_runs[COL_SETTINGS_ID] += search_settings_id_base
         if runs_exists:
-            runs_id_base = pd.read_csv(os.path.join(LOGS_DIR, RUNS_CSV), usecols=[COL_ID])[COL_ID].max() + 1
+            runs_id_base = pd.read_csv(os.path.join(base_logs_dir, RUNS_CSV), usecols=[COL_ID])[COL_ID].max() + 1
             new_runs[COL_ID] += runs_id_base
             new_runs.to_csv(f_base, index=False, header=False, mode="a")
         else:
@@ -660,19 +643,41 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input_config", default=local_settings["DEFAULT_RUN_CONFIG"])
+    parser.add_argument("-l", "--logs_dir", default="LOGS", help="Directory to store logs")
+    parser.add_argument("-D", "--data_dir", default="DATA", help="Directory to store data")
     parser.add_argument("-d", "--no_cleanup", "--dirty", action="store_true", help="Do not remove generated data files")
     parser.add_argument("-p", "--print_settings", action="store_true", help="Print settings")
     parser.add_argument("-b", "--progress_bar", action="store_true", help="Show progress bar")
     parser.add_argument("-t", "--timeout", type=int, help="Timeout for each command in seconds. Default is no timeout.")
     input_args = parser.parse_args()
 
+    logs_dir = os.path.join(local_settings[LS_REPO_PATH], input_args.logs_dir)
+    data_dir = os.path.join(local_settings[LS_REPO_PATH], input_args.data_dir)
+    output_args = ["--logs", logs_dir, "--data", data_dir]
+    command_log_path = os.path.join(logs_dir, COMMAND_LOG_NAME)
+
+    dataset_id = 0
+    query_set_id = 0
+    index_id = 0
+
+    dataset_log = os.path.join(logs_dir, "dataset_settings.csv")
+    query_set_log = os.path.join(logs_dir, "query_set_settings.csv")
+    index_log = os.path.join(logs_dir, "index_settings.csv")
+
+    if os.path.exists(dataset_log):
+        dataset_id = pd.read_csv(dataset_log, usecols=[COL_ID])[COL_ID].max() + 1
+    if os.path.exists(query_set_log):
+        query_set_id = pd.read_csv(query_set_log, usecols=[COL_ID])[COL_ID].max() + 1
+    if os.path.exists(index_log):
+        index_id = pd.read_csv(index_log, usecols=[COL_ID])[COL_ID].max() + 1
+
     if input_args.progress_bar:
         from tqdm import tqdm
 
-    if not os.path.exists(DATA_DIR):
-        os.makedirs(DATA_DIR)
-    if not os.path.exists(LOGS_DIR):
-        os.makedirs(LOGS_DIR)
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    if not os.path.exists(logs_dir):
+        os.makedirs(logs_dir)
     if not os.path.exists(input_args.input_config):
         raise FileNotFoundError(f"Config file {input_args.input_config} not found.")
 
@@ -680,7 +685,7 @@ if __name__ == "__main__":
         if input_args.no_cleanup:
             return
 
-        data_path = os.path.join(DATA_DIR, file)
+        data_path = os.path.join(data_dir, file)
         if os.path.exists(data_path):
             if os.path.isfile(data_path):
                 os.remove(data_path)
@@ -708,8 +713,8 @@ if __name__ == "__main__":
     with ProcessPoolExecutor() as executor:
         for l_profile, length_setting in SettingIterator(length_settings).iterate(desc="Length settings"):
             series_len = length_setting[RK_SERIES_LEN]
-            l_min = int(series_len * length_setting[RK_L_RANGE][0])
-            l_max = int(series_len * length_setting[RK_L_RANGE][1])
+            l_min, l_max = length_setting.get(RK_L_RANGE, (0.0, 0.0))
+            l_min, l_max = int(l_min * series_len), int(l_max * series_len)
 
             for d_profile, dataset_setting in SettingIterator(dataset_settings, l_profile).iterate(
                 desc="Dataset settings", leave=False
@@ -721,7 +726,7 @@ if __name__ == "__main__":
                 data_file = os.path.join(dataset_setting[RK_LOCATION], f"data-{dataset_id}.bin")
                 dataset_id += 1
 
-                args = [command, "-d", data_file, "-n", str(num_series), "-m", str(series_len)]
+                args = [command, "-d", data_file, "-n", str(num_series), "-m", str(series_len), *output_args]
                 if RK_DATASET_SEED in dataset_setting:
                     args += ["-S", str(dataset_setting[RK_DATASET_SEED])]
                 if command == SUB_PARSE_CSV:
@@ -736,14 +741,14 @@ if __name__ == "__main__":
                     if RK_STEP_STDEV in dataset_setting:
                         args += ["-s", str(dataset_setting[RK_STEP_STDEV])]
 
-                if not run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout):
+                if not run_command_with_logging([EXECUTABLE_PATH, *args], command_log_path, timeout=input_args.timeout):
                     continue
 
                 if dataset_setting.get(RK_CALCULATE_DATASET_STATS, False):
                     # fmt: off
                     run_command_with_logging([
                         EXECUTABLE_PATH, SUB_CALC_D_STATS, "-d", data_file, "-c", str(num_channels), "-m", str(series_len),
-                    ])
+                    ], command_log_path)
                     # fmt: on
 
                 ffts_required = any(
@@ -760,7 +765,7 @@ if __name__ == "__main__":
                     ffts_calculated = run_command_with_logging([
                         EXECUTABLE_PATH, SUB_CALC_FFTS, "-d", data_file, "-F", ffts_file, "-m", str(series_len), "-c",
                         str(num_channels), 
-                    ], timeout=input_args.timeout)
+                    ], command_log_path, timeout=input_args.timeout)
                     # fmt: on
 
                 def get_method_args(setting):
@@ -789,7 +794,7 @@ if __name__ == "__main__":
                     # fmt: off
                     args = [
                         SUB_CREATE_QS, "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
-                        "-Q", str(num_queries)
+                        "-Q", str(num_queries), *output_args
                     ]
 
                     if RK_CHANNEL_MASK in query_setting:
@@ -807,19 +812,22 @@ if __name__ == "__main__":
                     else:
                         args += ["-l", str(l_min), "-L", str(l_max)]
                     # fmt: on
-                    queries_created = run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
+                    queries_created = run_command_with_logging(
+                        [EXECUTABLE_PATH, *args], command_log_path, timeout=input_args.timeout
+                    )
 
                     if queries_created and query_setting.get(RK_CALCULATE_QUERY_STATS, False):
                         # fmt: off
                         args = [
-                            SUB_CALC_Q_STATS, "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len)
+                            SUB_CALC_Q_STATS, "-d", data_file, "-q", query_file, "-c", str(num_channels),
+                            "-m", str(series_len), *output_args
                         ]
                         # fmt: on
-                        run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
+                        run_command_with_logging([EXECUTABLE_PATH, *args], command_log_path, timeout=input_args.timeout)
 
                     if queries_created:
                         futures = []
-                        logs_dirs = []
+                        helper_logs_dirs = []
                         for m_ind, (sm_profile, scan_method_setting) in enumerate(
                             SettingIterator(scan_method_settings, q_profile).iterate(
                                 desc="Scan method settings", leave=False
@@ -828,25 +836,29 @@ if __name__ == "__main__":
                             if scan_method_setting.get(RK_PRECALCULATE_FFTS, False) and not ffts_calculated:
                                 continue
                             args = get_method_args(scan_method_setting)
-                            args += ["-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file]
+                            # fmt: off
+                            args += [
+                                "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q", query_file
+                            ]
+                            # fmt: on
                             # Save results into separate log file
-                            logs_dirs.append(f"{LOGS_DIR}_{m_ind}")
-                            args += ["--logs", logs_dirs[-1]]
-                            os.makedirs(logs_dirs[-1], exist_ok=True)
+                            helper_logs_dirs.append(f"{logs_dir}_{m_ind}")
+                            args += ["--data", data_dir, "--logs", helper_logs_dirs[-1]]
+                            os.makedirs(helper_logs_dirs[-1], exist_ok=True)
 
                             futures.append(
                                 executor.submit(
                                     run_command_with_logging,
                                     [EXECUTABLE_PATH, *args],
                                     timeout=input_args.timeout,
-                                    command_log_path=os.path.join(logs_dirs[-1], COMMAND_LOG_NAME),
+                                    command_log_path=os.path.join(helper_logs_dirs[-1], COMMAND_LOG_NAME),
                                 )
                             )
 
                         # Wait for all futures to complete
-                        for logs_dir, future in zip(logs_dirs, futures):
+                        for helper_logs_dir, future in zip(helper_logs_dirs, futures):
                             future.result()
-                            add_logs_to_logs_dir(logs_dir)
+                            add_logs_to_logs_dir(helper_logs_dir, logs_dir, command_log_path)
 
                     for i_profile, index_setting in SettingIterator(index_settings, q_profile).iterate(
                         desc="Index settings", leave=False
@@ -859,7 +871,8 @@ if __name__ == "__main__":
                         # fmt: off
                         args = [
                             SUB_INDEX, "-i", index_file, "-l", str(l_min), "-L", str(l_max), "-t", 
-                            index_setting_copy.pop(RK_INDEX_TYPE), "-m", str(series_len), "-c", str(num_channels), "-d", data_file 
+                            index_setting_copy.pop(RK_INDEX_TYPE), "-m", str(series_len), "-c", str(num_channels),
+                            "-d", data_file, *output_args
                         ]
                         # fmt: on
 
@@ -913,22 +926,27 @@ if __name__ == "__main__":
                         for key, value in index_setting_copy.items():
                             args += [f"--{key}", str(value)]
 
-                        if run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout):
+                        if run_command_with_logging(
+                            [EXECUTABLE_PATH, *args], command_log_path, timeout=input_args.timeout
+                        ):
                             if calculate_index_stats:
                                 # fmt: off
                                 args = [
                                     SUB_CALC_I_STATS, "-i", index_file, "-c", str(num_channels), "-t", index_method,
+                                    *output_args
                                 ]
                                 # fmt: on
                                 if num_l_groups > 0:
                                     args += ["-g", str(num_l_groups)]
                                 if separate_segment_stats:
                                     args += ["--separate_segment_stats"]
-                                run_command_with_logging([EXECUTABLE_PATH, *args], timeout=input_args.timeout)
+                                run_command_with_logging(
+                                    [EXECUTABLE_PATH, *args], command_log_path, timeout=input_args.timeout
+                                )
 
                             if queries_created:
                                 futures = []
-                                logs_dirs = []
+                                helper_logs_dirs = []
                                 for m_ind, (im_profile, index_method_setting) in enumerate(
                                     SettingIterator(index_method_settings, i_profile).iterate(
                                         desc="Indexing method settings", leave=False
@@ -948,23 +966,23 @@ if __name__ == "__main__":
                                     if lens_per_group > 0:
                                         args += ["-g", str(lens_per_group), "-l", str(l_min), "-L", str(l_max)]
 
-                                    logs_dirs.append(f"{LOGS_DIR}_{m_ind}")
-                                    args += ["--logs", logs_dirs[-1]]
-                                    os.makedirs(logs_dirs[-1], exist_ok=True)
+                                    helper_logs_dirs.append(f"{logs_dir}_{m_ind}")
+                                    args += ["--data", data_dir, "--logs", helper_logs_dirs[-1]]
+                                    os.makedirs(helper_logs_dirs[-1], exist_ok=True)
 
                                     futures.append(
                                         executor.submit(
                                             run_command_with_logging,
                                             [EXECUTABLE_PATH, *args],
                                             timeout=input_args.timeout,
-                                            command_log_path=os.path.join(logs_dirs[-1], COMMAND_LOG_NAME),
+                                            command_log_path=os.path.join(helper_logs_dirs[-1], COMMAND_LOG_NAME),
                                         )
                                     )
 
                             # Wait for all futures to complete
-                            for logs_dir, future in zip(logs_dirs, futures):
+                            for helper_logs_dir, future in zip(helper_logs_dirs, futures):
                                 future.result()
-                                add_logs_to_logs_dir(logs_dir)
+                                add_logs_to_logs_dir(helper_logs_dir, logs_dir, command_log_path)
 
                         file_cleanup(index_file)
                     file_cleanup(query_file)
@@ -972,9 +990,9 @@ if __name__ == "__main__":
                 file_cleanup(ffts_file)
 
     # Run check
-    run_command_with_logging([CHECK_RESULTS_SCRIPT_PATH, "-l", LOGS_DIR])
+    run_command_with_logging([CHECK_RESULTS_SCRIPT_PATH, "-l", logs_dir], command_log_path)
 
-    with open(COMMAND_LOG_PATH, "a+") as f:
+    with open(command_log_path, "a+") as f:
         f.write(f"\nTotal time: {time() - start_time:.2f} seconds\n")
         f.write(f"Total datasets created: {dataset_id}\n")
         f.write(f"Total queries created: {query_set_id}\n")

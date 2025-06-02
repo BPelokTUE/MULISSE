@@ -22,15 +22,16 @@ void check_path_exists(str path, str name) {
 
 void RunSettings::initialize(CommandType command_type, DatasetProperties dataset_props, LengthProperties length_props,
                              uint pos_per_env, const str &index_path, const str &ffts_path, const str &query_path,
-                             SearchMethodType method_type, const str &logs_dir) {
+                             SearchMethodType method_type, const str &logs_dir, const str &data_dir) {
     if (initialized) return;
     initialized = true;
 
     // Create directories if they do not exist
-    if (!fs::exists(instance->DATA_DIR)) fs::create_directories(instance->DATA_DIR);
-    instance->logs_dir = logs_dir;
+    instance->m_data_dir = data_dir;
+    if (!fs::exists(instance->m_data_dir)) fs::create_directories(instance->m_data_dir);
+    instance->m_logs_dir = logs_dir;
 #ifndef DISABLE_LOGGING
-    if (!fs::exists(instance->logs_dir)) fs::create_directories(instance->logs_dir);
+    if (!fs::exists(instance->m_logs_dir)) fs::create_directories(instance->m_logs_dir);
 #endif
 
     instance->m_command_type = command_type;
@@ -247,12 +248,12 @@ const void RunSettings::set_lengths_per_group(uint l_per_group) {
 
 // Paths
 
-str RunSettings::get_dataset_path() const { return fs::path(DATA_DIR) / m_dataset_props.m_file; }
+str RunSettings::get_dataset_path() const { return fs::path(m_data_dir) / m_dataset_props.m_file; }
 
-str RunSettings::get_query_path() const { return fs::path(DATA_DIR) / m_query_file; }
+str RunSettings::get_query_path() const { return fs::path(m_data_dir) / m_query_file; }
 
-str RunSettings::get_index_path() const { return m_index_file.empty() ? "" : fs::path(DATA_DIR) / m_index_file; }
+str RunSettings::get_index_path() const { return m_index_file.empty() ? "" : fs::path(m_data_dir) / m_index_file; }
 
-str RunSettings::get_ffts_path() const { return m_ffts_file.empty() ? "" : fs::path(DATA_DIR) / m_ffts_file; }
+str RunSettings::get_ffts_path() const { return m_ffts_file.empty() ? "" : fs::path(m_data_dir) / m_ffts_file; }
 
-str RunSettings::get_logs_path() const { return logs_dir; }
+str RunSettings::get_logs_path() const { return m_logs_dir; }

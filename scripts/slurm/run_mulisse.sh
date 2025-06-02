@@ -45,18 +45,19 @@ done
 # cp -r ./scripts ./build ./BREAKPOINTS ./local_settings.json $TMPDIR/MULISSE/
 # cd $TMPDIR/MULISSE
 
-log_dirs=()
+logs_dirs=()
 for config_file in $config_files; do
-    log_dir="LOGS_$(basename ${config_file%.*})"
-    ./scripts/py/run_mulisse.py -i $config_file $timeout_str $dirty_str
-    mv LOGS $log_dir
-    log_dirs+=("$log_dir")
+    suffix="${config_file%.*}"
+    logs_dir="LOGS_$(basename ${suffix})"
+    data_dir="DATA_$(basename ${suffix})"
+    ./scripts/py/run_mulisse.py -l $logs_dir -D $data_dir -i $config_file $timeout_str $dirty_str
+    logs_dirs+=("$logs_dir")
     if [[ -z "$dirty_str" ]]; then
-        rm -rf DATA
+        rm -rf $data_dir
     fi
 done
 
 zip_name="${experiment_name}_$(date +%Y-%m-%d_%H:%M).zip"
-zip -r $zip_name ${log_dirs[@]}
+zip -r $zip_name ${logs_dirs[@]}
 mv $zip_name $HOME/MULISSE/EXPERIMENT_LOGS/
 

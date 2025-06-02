@@ -8,6 +8,7 @@ xcode/*
 # Helper files
 mulisse_pack
 DATA/*
+DATA_*
 LOGS/*
 LOGS_*
 EXPERIMENT_LOGS/*
