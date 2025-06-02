@@ -82,7 +82,7 @@ class EnvelopeLeaf : public EnvelopeNode {
 
     EnvelopeLeaf(IndexEntry<Envelope> &envelope_entry);
 
-    EnvelopeLeaf(vec<Envelope> &envelopes, vec<SubsequenceInfo> &subs_infos);
+    EnvelopeLeaf(vec<Envelope> envelopes, vec<SubsequenceInfo> subs_infos);
 
     bool is_leaf() const override;
 

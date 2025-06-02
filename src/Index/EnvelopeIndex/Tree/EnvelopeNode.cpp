@@ -50,6 +50,11 @@ EnvelopeLeaf::EnvelopeLeaf(IndexEntry<Envelope> &envelope_entry) {
     m_subs_infos = {envelope_entry.m_subs_info};
 }
 
+EnvelopeLeaf::EnvelopeLeaf(vec<Envelope> envelopes, vec<SubsequenceInfo> subs_infos) {
+    m_envelopes = envelopes;
+    m_subs_infos = subs_infos;
+}
+
 bool EnvelopeLeaf::is_leaf() const { return true; }
 
 const vec<Envelope> &EnvelopeLeaf::get_envelopes() const { return m_envelopes; }

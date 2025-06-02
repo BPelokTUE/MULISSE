@@ -17,13 +17,7 @@ class BucketingEnvelopeGrouper : virtual public IEnvelopeGrouper {
    private:
     size_t m_bucket_size;
 
-    inline size_t get_bucket_size(const size_t b_ind, const size_t num_buckets, const size_t num_items) const {
-        if (b_ind == num_buckets - 1) {
-            size_t remainder = num_items % m_bucket_size;
-            return remainder == 0 ? m_bucket_size : remainder;
-        }
-        return m_bucket_size;
-    }
+    size_t get_bucket_size(const size_t b_ind, const size_t num_buckets, const size_t num_items) const;
 };
 
 #endif  // INDEX_ENVELOPEINDEX_GROUPING_BUCKETINGENVELOPEGROUPER_HPP
