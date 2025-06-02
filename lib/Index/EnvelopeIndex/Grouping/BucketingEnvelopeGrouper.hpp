@@ -4,7 +4,7 @@
 #include "Index/EnvelopeIndex/Grouping/EnvelopeGrouper.hpp"
 
 /** @brief Grouper that creates a balanced index by recursively grouping together buckets of entries */
-class BucketingEnvelopeGrouper : virtual public IEnvelopeGrouper {
+class BucketingEnvelopeGrouper : public IEnvelopeGrouper {
    public:
     /**
      * @brief Construct a new BucketingEnvelopeGrouper instance

@@ -3,7 +3,13 @@
 
 #include "Index/EnvelopeIndex/Grouping/EnvelopeGrouper.hpp"
 
-class VarianceLimitingEnvelopeGrouper : virtual public IEnvelopeGrouper {
+/** @brief IEnvelopGrouper implementation that merges subsequent envelope entries until the update to the intra-series
+ * variance estimated by the mean width of the envelope segments, exceeds a specified threshold */
+class VarianceLimitingEnvelopeGrouper : public IEnvelopeGrouper {
+    /**
+     * @brief Construct a new VarianceLimitingEnvelopeGrouper instance
+     * @param max_width_update Maximum allowed update to the mean envelope width
+     */
     VarianceLimitingEnvelopeGrouper(Real max_width_update);
 
     vec<uptr<EnvelopeNode>> group_envelope_entries(vec<IndexEntry<Envelope>> &envelope_entries) override;
