@@ -578,9 +578,20 @@ if not os.path.exists(BUILD_PATH):
     raise FileNotFoundError("No build directory found")
 EXECUTABLE_PATH = os.path.join(BUILD_PATH, "mulisse")
 
-dataset_counter = 0
-query_counter = 0
-index_counter = 0
+dataset_id = 0
+query_set_id = 0
+index_id = 0
+
+dataset_log = os.path.join(LOGS_DIR, "dataset_settings.csv")
+query_set_log = os.path.join(LOGS_DIR, "query_set_settings.csv")
+index_log = os.path.join(LOGS_DIR, "index_settings.csv")
+
+if os.path.exists(dataset_log):
+    dataset_id = pd.read_csv(dataset_log, usecols=[COL_ID])[COL_ID].max() + 1
+if os.path.exists(query_set_log):
+    query_set_id = pd.read_csv(query_set_log, usecols=[COL_ID])[COL_ID].max() + 1
+if os.path.exists(index_log):
+    index_id = pd.read_csv(index_log, usecols=[COL_ID])[COL_ID].max() + 1
 
 COMMAND_LOG_PATH = os.path.join(LOGS_DIR, COMMAND_LOG_NAME)
 
@@ -707,8 +718,8 @@ if __name__ == "__main__":
                 num_series = dataset_setting[RK_SIZE]
                 num_channels = dataset_setting[RK_NUM_CHANNELS]
 
-                data_file = os.path.join(dataset_setting[RK_LOCATION], f"data-{dataset_counter}.bin")
-                dataset_counter += 1
+                data_file = os.path.join(dataset_setting[RK_LOCATION], f"data-{dataset_id}.bin")
+                dataset_id += 1
 
                 args = [command, "-d", data_file, "-n", str(num_series), "-m", str(series_len)]
                 if RK_DATASET_SEED in dataset_setting:
@@ -743,7 +754,7 @@ if __name__ == "__main__":
                     )
                 )
                 ffts_calculated = False
-                ffts_file = os.path.join(dataset_setting[RK_LOCATION], f"ffts-{dataset_counter - 1}.bin")
+                ffts_file = os.path.join(dataset_setting[RK_LOCATION], f"ffts-{dataset_id - 1}.bin")
                 if ffts_required:
                     # fmt: off
                     ffts_calculated = run_command_with_logging([
@@ -773,8 +784,8 @@ if __name__ == "__main__":
                 ):
                     num_queries = query_setting[RK_SIZE]
 
-                    query_file = os.path.join(dataset_setting[RK_LOCATION], f"queries-{query_counter}.txt")
-                    query_counter += 1
+                    query_file = os.path.join(dataset_setting[RK_LOCATION], f"queries-{query_set_id}.txt")
+                    query_set_id += 1
                     # fmt: off
                     args = [
                         SUB_CREATE_QS, "-d", data_file, "-q", query_file, "-c", str(num_channels), "-m", str(series_len),
@@ -841,8 +852,8 @@ if __name__ == "__main__":
                         desc="Index settings", leave=False
                     ):
                         index_method = index_setting[RK_INDEX_TYPE]
-                        index_file = os.path.join(dataset_setting[RK_LOCATION], f"index-{index_method}-{index_counter}")
-                        index_counter += 1
+                        index_file = os.path.join(dataset_setting[RK_LOCATION], f"index-{index_method}-{index_id}")
+                        index_id += 1
                         index_setting_copy = index_setting.copy()
 
                         # fmt: off
@@ -965,6 +976,6 @@ if __name__ == "__main__":
 
     with open(COMMAND_LOG_PATH, "a+") as f:
         f.write(f"\nTotal time: {time() - start_time:.2f} seconds\n")
-        f.write(f"Total datasets created: {dataset_counter}\n")
-        f.write(f"Total queries created: {query_counter}\n")
-        f.write(f"Total indexes created: {index_counter}\n")
+        f.write(f"Total datasets created: {dataset_id}\n")
+        f.write(f"Total queries created: {query_set_id}\n")
+        f.write(f"Total indexes created: {index_id}\n")
