@@ -17,18 +17,13 @@ class FinalizedTreeEnvelopeIndex : public FinalizedEnvelopeIndex {
      * @param nodes The envelope nodes in the first layer of the tree
      */
     FinalizedTreeEnvelopeIndex(sptr<IChannelSegmentationStrategy> ch_segmentation_strategy, const uint pos_per_env,
-                               vec<uptr<EnvelopeNode>> &&nodes)
-        : FinalizedEnvelopeIndex(ch_segmentation_strategy, pos_per_env), m_first_layer_nodes(std::move(nodes)) {}
+                               vec<uptr<EnvelopeNode>> &&nodes);
 
     /**
      * @brief Get the first layer nodes of the tree
      * @return The first layer nodes of the tree
      */
-    const vec<const EnvelopeNode *> get_first_layer_nodes() const {
-        vec<const EnvelopeNode *> nodes(m_first_layer_nodes.size());
-        for (size_t i = 0; i < nodes.size(); ++i) nodes[i] = m_first_layer_nodes[i].get();
-        return nodes;
-    }
+    const vec<const EnvelopeNode *> get_first_layer_nodes() const;
 
    private:
     vec<uptr<EnvelopeNode>> m_first_layer_nodes;

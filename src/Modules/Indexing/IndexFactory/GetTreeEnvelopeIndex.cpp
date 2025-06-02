@@ -1,6 +1,7 @@
 #include "Modules/Indexing/IndexFactory/GetTreeEnvelopeIndex.hpp"
 
-#include "Index/EnvelopeIndex/EnvelopeGrouper.hpp"
+#include "Index/EnvelopeIndex/Grouping/EnvelopeGrouper.hpp"
+#include "Index/EnvelopeIndex/Grouping/InvSaxSortingBucketingEnvelopeGrouper.hpp"
 #include "Index/EnvelopeIndex/Tree/TreeEnvelopeIndex.hpp"
 
 sptr<IIndex<Envelope>> get_envelope_tree_index(IndexFactoryParams &factory_params) {

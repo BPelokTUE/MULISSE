@@ -15,6 +15,7 @@
 #include "Index/FinalizedIndex.hpp"
 #include "Index/Traits/EntryTags.hpp"
 #include "Index/Traits/IndexTraits.hpp"
+#include "Util/HelperFuncs/Parallelism.hpp"
 #include "Util/Logging/IndexLogger.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 

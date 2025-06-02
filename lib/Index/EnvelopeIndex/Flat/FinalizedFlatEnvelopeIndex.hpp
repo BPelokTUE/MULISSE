@@ -18,14 +18,9 @@ class FinalizedFlatEnvelopeIndex : public FinalizedEnvelopeIndex {
      * @param entries The envelope entries in the index
      */
     FinalizedFlatEnvelopeIndex(sptr<IChannelSegmentationStrategy> ch_segmentation_strategy, const uint pos_per_env,
-                               vec<IndexEntry<Envelope>> &&entries)
-        : FinalizedEnvelopeIndex(ch_segmentation_strategy, pos_per_env), m_entries(std::move(entries)) {}
+                               vec<IndexEntry<Envelope>> &&entries);
 
-    const vec<IndexEntry<Envelope>> &get_entries() const { return m_entries; }
-
-    inline SaxSegIndT get_num_seg_per_channel() const {
-        return static_cast<SaxSegIndT>(m_entries[0].m_mts_summary[0].m_lower.size());
-    }
+    const vec<IndexEntry<Envelope>> &get_entries() const;
 
    private:
     vec<IndexEntry<Envelope>> m_entries;

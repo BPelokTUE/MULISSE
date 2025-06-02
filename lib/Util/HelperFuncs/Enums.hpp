@@ -155,12 +155,4 @@ umap<V, K> get_inverse_map(const umap<K, V> map) {
 #define DEFINE_ENUM_CONSTS_NO_EXTRA(ENUM_TYPE, ENUM_NAME, GENERATE_ACRONYM) \
     DEFINE_ENUM_CONSTS(ENUM_TYPE, ENUM_NAME, GENERATE_ACRONYM, (umap<str, ENUM_TYPE>{}))
 
-// Parallelism
-
-#ifndef DISABLE_PARALLELISM
-#define OMP_PRAGMA(x) _Pragma(#x)
-#else
-#define OMP_PRAGMA(x)
-#endif
-
 #endif  // UTIL_HELPERFUNCS_ENUMS_HPP

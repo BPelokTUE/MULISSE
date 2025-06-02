@@ -1,6 +1,7 @@
 #include "Index/EntryInserter/ParallelInserter.hpp"
 
 #include "Index/Traits/EntryDataSpec.hpp"
+#include "Util/HelperFuncs/Parallelism.hpp"
 
 template <typename T>
 iSaxParallelInserter<T>::iSaxParallelInserter(sptr<iSaxIndex<T>> index) : m_index(index) {}

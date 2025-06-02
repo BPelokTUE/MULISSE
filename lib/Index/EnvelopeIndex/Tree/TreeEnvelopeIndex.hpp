@@ -23,7 +23,6 @@ class TreeEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_t
 
    private:
     uptr<IEnvelopeGrouper> m_grouper;
-    vec<uptr<EnvelopeNode>> m_first_layer_nodes;
 };
 
 #endif  // ENVELOPE_INDEX_HPP

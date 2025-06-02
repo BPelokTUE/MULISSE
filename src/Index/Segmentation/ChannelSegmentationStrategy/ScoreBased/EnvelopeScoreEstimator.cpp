@@ -14,6 +14,7 @@
 #include "Index/Segmentation/ChannelSegmentationStrategy/SingleChSegmentationStrategy.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/SingleLGSegmentationStrategy.hpp"
 #include "Index/Segmentation/SegmentationStrategy/UniformSegmentationStrategy.hpp"
+#include "Util/HelperFuncs/Parallelism.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 #include "Util/Types/Pointers.hpp"
 

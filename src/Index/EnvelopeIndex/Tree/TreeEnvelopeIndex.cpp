@@ -11,7 +11,7 @@
 #include "Index/Entry/IndexEntry.hpp"
 #include "Index/EntryInserter/EntryInserter.hpp"
 #include "Index/EntryInserter/TopDownInserter.hpp"
-#include "Index/EnvelopeIndex/EnvelopeGrouper.hpp"
+#include "Index/EnvelopeIndex/Grouping/EnvelopeGrouper.hpp"
 #include "Index/EnvelopeIndex/Tree/FinalizedTreeEnvelopeIndex.hpp"
 
 TreeEnvelopeIndex::TreeEnvelopeIndex(sptr<IChannelSegmentationStrategy> ch_segmentation_strategy,
@@ -32,12 +32,6 @@ void TreeEnvelopeIndex::insert_entries(vec<IndexEntry<Envelope>> &entries, Entry
 };
 
 uptr<IFinalizedIndex<EnvelopeTag>> TreeEnvelopeIndex::finalize() {
-    // 1. Group entries
-    m_first_layer_nodes = m_grouper->group_envelope_entries(m_entries);
-
-    // 2. Merge entries in leaves of the tree
-
-    // 3. Return the finalized index (this)
     return std::make_unique<FinalizedTreeEnvelopeIndex>(m_ch_segmentation_strategy, m_pos_per_env,
-                                                        std::move(m_first_layer_nodes));
+                                                        std::move(m_grouper->group_envelope_entries(m_entries)));
 }

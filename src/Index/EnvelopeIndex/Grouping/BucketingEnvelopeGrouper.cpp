@@ -1,46 +1,9 @@
-#include <algorithm>
-#ifndef DISABLE_PARALLELISM
-#include <tbb/parallel_sort.h>
-#endif
+#include "Index/EnvelopeIndex/Grouping/BucketingEnvelopeGrouper.hpp"
 
+#include "Index/Entry/Envelope.hpp"
 #include "Index/Entry/IndexEntry.hpp"
-#include "Index/EnvelopeIndex/EnvelopeGrouper.hpp"
 #include "Index/EnvelopeIndex/Tree/EnvelopeNode.hpp"
-#include "Index/Sax/InvSax.hpp"
-#include "Util/HelperFuncs/Math.hpp"
-
-InvSaxSortingEnvelopeGrouper::InvSaxSortingEnvelopeGrouper(SaxNumBitsT num_bits) : m_num_bits(num_bits) {}
-
-void InvSaxSortingEnvelopeGrouper::sort_envelope_entries(vec<IndexEntry<Envelope>> &entries) {
-    // 1. Calculate invSAX
-    vec<std::pair<InvSax<Envelope>, int>> inv_sax_entries(entries.size());
-
-    OMP_PRAGMA(omp parallel for)
-    for (size_t i = 0; i < entries.size(); ++i)
-        inv_sax_entries[i] = {InvSax<Envelope>(entries[i].m_mts_summary, m_num_bits), static_cast<int>(i)};
-
-    // 2. Sort entries based on invSAX
-
-#ifdef DISABLE_PARALLELISM
-    std::sort(inv_sax_entries.begin(), inv_sax_entries.end());
-#else
-    tbb::parallel_sort(inv_sax_entries.begin(), inv_sax_entries.end());
-#endif
-
-    // 2.1. Apply ordering to entries
-    for (size_t i = 0; i < entries.size(); ++i) {
-        size_t j = i;
-        // Until the permutation cycle is resolved, keep iterating
-        while (inv_sax_entries[j].second >= 0) {
-            int &loc = inv_sax_entries[j].second;  // Get the location of the entry
-            j = static_cast<size_t>(loc);          // Update the index
-            std::swap(entries[i], entries[j]);     // Swap the entries
-            loc = -1;                              // Mark the location as resolved
-        }
-    }
-}
-
-// BucketingEnvelopeGrouper
+#include "Util/HelperFuncs/Parallelism.hpp"
 
 BucketingEnvelopeGrouper::BucketingEnvelopeGrouper(size_t bucket_size) : m_bucket_size(bucket_size) {}
 
@@ -80,12 +43,4 @@ vec<uptr<EnvelopeNode>> BucketingEnvelopeGrouper::group_envelope_entries(vec<Ind
     } while (num_buckets > 1);
 
     return std::move(buckets[0]);
-}
-
-// InvSaxSortingBucketingEnvelopeGrouper
-
-vec<uptr<EnvelopeNode>> InvSaxSortingBucketingEnvelopeGrouper::group_envelope_entries(
-    vec<IndexEntry<Envelope>> &envelope_entries) {
-    sort_envelope_entries(envelope_entries);
-    return BucketingEnvelopeGrouper::group_envelope_entries(envelope_entries);
 }

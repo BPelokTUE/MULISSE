@@ -2,8 +2,17 @@
 
 #include <cassert>
 
+#include "Index/Entry/Envelope.hpp"
 #include "Index/Entry/IndexEntry.hpp"
 #include "Util/Types/Pointers.hpp"
+
+EnvelopeNode::~EnvelopeNode() = default;
+
+// EnvelopeInternal
+
+EnvelopeInternal::~EnvelopeInternal() = default;
+
+EnvelopeInternal::EnvelopeInternal() = default;
 
 EnvelopeInternal::EnvelopeInternal(vec<uptr<EnvelopeNode>> &&children) : m_children(std::move(children)) {
     assert(!m_children.empty());
@@ -31,6 +40,10 @@ const vec<const EnvelopeNode *> EnvelopeInternal::get_children() const {
 const vec<SubsequenceInfo> *EnvelopeInternal::get_subsequence_infos() const { return nullptr; }
 
 // EnvelopeLeaf
+
+EnvelopeLeaf::~EnvelopeLeaf() = default;
+
+EnvelopeLeaf::EnvelopeLeaf() = default;
 
 EnvelopeLeaf::EnvelopeLeaf(IndexEntry<Envelope> &envelope_entry) {
     m_envelopes = envelope_entry.m_mts_summary;

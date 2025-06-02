@@ -3,18 +3,18 @@
 
 #include <cereal/access.hpp>
 
-#include "Index/Entry/Envelope.hpp"
 #include "Util/Types/Containers.hpp"
 #include "Util/Types/Pointers.hpp"
 #include "Util/Types/SubsequenceInfo.hpp"
 
 template <typename T>
 class IndexEntry;
+class Envelope;
 
 /** @brief Base class for envelope nodes */
 class EnvelopeNode {
    public:
-    virtual ~EnvelopeNode() = default;
+    virtual ~EnvelopeNode();
 
     /**
      * @brief Check whether the node is a leaf or not
@@ -47,7 +47,9 @@ class EnvelopeNode {
 /** @brief Class representing envelope internal nodes */
 class EnvelopeInternal : public EnvelopeNode {
    public:
-    EnvelopeInternal() = default;
+    ~EnvelopeInternal();
+
+    EnvelopeInternal();
 
     EnvelopeInternal(vec<uptr<EnvelopeNode>> &&children);
 
@@ -74,7 +76,9 @@ class EnvelopeInternal : public EnvelopeNode {
 /** @brief Class representing envelope leaf nodes */
 class EnvelopeLeaf : public EnvelopeNode {
    public:
-    EnvelopeLeaf() = default;
+    ~EnvelopeLeaf();
+
+    EnvelopeLeaf();
 
     EnvelopeLeaf(IndexEntry<Envelope> &envelope_entry);
 
