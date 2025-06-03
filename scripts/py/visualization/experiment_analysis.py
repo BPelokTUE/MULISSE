@@ -654,6 +654,7 @@ Experiment: Segmentation strategy
 
 def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
     visualize_experiments(
+        # logs_dirs=["EXPERIMENT_LOGS/vl_envelope/LOGS_vl_envelope"],
         logs_dirs=["LOGS"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],

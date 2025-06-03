@@ -115,7 +115,8 @@ int main(int argc, char **argv) {
         entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY);
     vec<str> csv_paths;
     Real step_sd = R(1.0), noise = R(0.1), score_based_chss_score_exp = R(1.0), index_sample_frac = R(1.0),
-         env_width_min_w_update = R(0.0), min_subs_sd = MIN_SUBS_SD, max_width_change = R(0.0), r_range_r = R(1.0);
+         env_width_min_w_update = R(0.0), min_subs_sd = MIN_SUBS_SD, max_width_change = R(0.0), r_range_r = R(1.0),
+         index_size_limit = R(0.0);
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT, merger_num_bits = MAX_NUM_BITS_LIMIT;
     SaxSegIndT num_segments;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
@@ -345,6 +346,11 @@ int main(int argc, char **argv) {
             "Number of bits to use for SAX-based entry mergers. If not provided, takes the value of `num_bits_limit`.")
         ->capture_default_str()
         ->check(positive_int);
+    index_subcommand
+        ->add_option("--size_limit", index_size_limit,
+                     "Maximum size of FlatEnvelopeIndex as a ratio of the dataset size, 0 by default, meaning no limit")
+        ->capture_default_str()
+        ->check(non_negative_real);
     index_subcommand
         ->add_option("--index_sample_frac", index_sample_frac,
                      "Fraction of the dataset to index, intended for testing, "

@@ -31,6 +31,8 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         multi_chss_num_seg_file = "", env_width_chss_min_w_update_str = "", max_width_change_str = "";
     Real score_based_chss_score_exp = 0.0;
 
+    Real index_size_limit = index_options.m_index_method == ENVELOPE ? index_options.m_index_size_limit : 0.0;
+
     if (index_options.m_index_params && arr_contains(METHODS_W_PAA, index_options.m_index_method)) {
         auto method_type = index_options.m_index_params->get_type();
         method_type_str = SEARCH_METHOD_TYPE_TO_STR.at(method_type);
@@ -110,6 +112,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         {ISC::ENV_STATS_SCORE_WEIGHTS_FILE, env_stats_chss_weights_file},
         {ISC::ENV_WIDTH_SCORE_MIN_W_UPDATE, env_width_chss_min_w_update_str},
         {ISC::POS_PER_ENV, format_num_param(pos_per_env)},
+        {ISC::INDEX_SIZE_LIMIT, format_num_param(index_size_limit)},
         {ISC::ENTRY_MERGER_TYPE, entry_merger_type_str},
         {ISC::MERGER_NUM_BITS, format_num_param(merger_num_bits)},
         {ISC::FIRST_LAYER_NUM_BITS, format_num_param(first_layer_num_bits)},

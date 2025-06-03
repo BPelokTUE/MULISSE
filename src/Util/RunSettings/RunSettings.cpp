@@ -51,12 +51,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
             U((length_props.m_l_max - length_props.m_l_min + length_props.m_l_per_group) / length_props.m_l_per_group);
     }
 
-    uint envs_per_ts =
-        pos_per_env == 0 ? 1 : (dataset_props.m_series_len - length_props.m_l_min + pos_per_env) / pos_per_env;
-    instance->m_envelope_props = {
-        .m_pos_per_env = pos_per_env,
-        .m_envs_per_ts = envs_per_ts,
-    };
+    instance->set_pos_per_env(pos_per_env);
 
     instance->m_index_file = index_path;
     instance->m_ffts_file = ffts_path;
@@ -78,7 +73,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
             break;
         case INDEX:
             check_path_exists(instance->get_dataset_path(), "Dataset");
-            if (instance->ffts_supported() && envs_per_ts > 1) {
+            if (instance->ffts_supported() && instance->m_envelope_props.m_envs_per_ts > 1) {
                 throw std::runtime_error(
                     "Precalculating FFTs are only supported for setups with one envelope per time series");
             }
@@ -241,7 +236,13 @@ const EnvelopeProperties &RunSettings::get_envelope_props() const { return m_env
 
 const LengthProperties &RunSettings::get_length_props() const { return m_length_props; }
 
-const void RunSettings::set_lengths_per_group(uint l_per_group) {
+void RunSettings::set_pos_per_env(uint pos_per_env) {
+    m_envelope_props.m_pos_per_env = pos_per_env;
+    m_envelope_props.m_envs_per_ts =
+        pos_per_env == 0 ? 1 : (m_dataset_props.m_series_len - m_length_props.m_l_min + pos_per_env) / pos_per_env;
+}
+
+void RunSettings::set_lengths_per_group(uint l_per_group) {
     m_length_props.m_l_per_group = l_per_group;
     m_length_props.m_num_l_groups = U((m_length_props.m_l_max - m_length_props.m_l_min + l_per_group) / l_per_group);
 }

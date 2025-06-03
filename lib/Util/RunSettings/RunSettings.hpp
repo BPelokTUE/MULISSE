@@ -114,9 +114,11 @@ class RunSettings {
 
     const EnvelopeProperties& get_envelope_props() const;
 
+    void set_pos_per_env(uint pos_per_env);
+
     const LengthProperties& get_length_props() const;
 
-    const void set_lengths_per_group(uint l_per_group);
+    void set_lengths_per_group(uint l_per_group);
 
     // Length properties
 

@@ -20,6 +20,7 @@ enum class IndexSettingsColumn {
     L_MAX,                       // Maximum allowed query length
     L_PER_GROUP,                 // Size of length groups
     POS_PER_ENV,                 // Number of positions per envelope for envelope-based methods
+    INDEX_SIZE_LIMIT,            // Maximum size of the index in bytes, only supported for FlatEnvelopeIndex
     ENTRY_MERGER_TYPE,           // Type of entry merger used
     MERGER_NUM_BITS,             // Number of bits used for SAX-based entry merger, if applicable
     NORMALIZED,                  // Whether the query and subsequences are normalized
@@ -60,6 +61,7 @@ enum class IndexSettingsColumn {
     INSERTION_TIME_S,              // Time taken to insert the subsequence summaries into the index in seconds
     FFT_CALC_TIME_S,               // Time taken to calculate the FFTs in seconds
     SIZE_ON_DISK_B,                // Size of the index on disk in bytes
+    ESTIMATED_SIZE_ON_DISK_B,      // Estimated size of the index on disk in bytes, only supported for FlatEnvelopeIndex
     SAMPLE_FRAC,                   // Fraction of the dataset used for indexing, intended for testing
 };
 
@@ -68,7 +70,8 @@ using ISC = IndexSettingsColumn;
 constexpr std::array INDEX_TIME_COLUMNS = {ISC::INDEXING_TIME_S, ISC::SEGMENTATION_SETUP_TIME_S,
                                            ISC::SUMMARIZATION_TIME_S, ISC::INSERTION_TIME_S, ISC::FFT_CALC_TIME_S};
 
-constexpr std::array INDEX_COUNT_COLUMNS = {ISC::NUM_LEAVES, ISC::NUM_NODES, ISC::NUM_ENTRIES, ISC::SIZE_ON_DISK_B};
+constexpr std::array INDEX_COUNT_COLUMNS = {ISC::NUM_LEAVES, ISC::NUM_NODES, ISC::NUM_ENTRIES, ISC::SIZE_ON_DISK_B,
+                                            ISC::ESTIMATED_SIZE_ON_DISK_B};
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(IndexSettingsColumn, INDEX_SETTINGS_COL, false);
 

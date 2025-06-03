@@ -5,6 +5,7 @@
 #include "Index/LengthGroupingIndex/LengthGroupingIndex.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
 #include "Modules/Indexing/IndexFactory/IndexFactoryParams.hpp"
+#include "Util/Stats/IndexSizeEstimator.hpp"
 
 template <typename T>
     requires DerivedFromEntryData<T>
@@ -41,6 +42,11 @@ void construct_index(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_
     finalized_index->save(RS.get_index_path(), opts.m_index_format);
 
     logger.increment_count_col(ISC::SIZE_ON_DISK_B, finalized_index->get_size_on_disk(RS.get_index_path()));
+    if (opts.m_index_method == ENVELOPE) {
+        logger.increment_count_col(
+            ISC::ESTIMATED_SIZE_ON_DISK_B,
+            get_estimated_flat_envelope_size(lg_segmentation_strategy.get(), RS.get_envelope_props().m_pos_per_env));
+    }
 }
 
 #endif  // MODULES_INDEXING_CONSTRUCTINDEX

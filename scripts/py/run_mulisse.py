@@ -66,6 +66,7 @@ CK_MAX_WIDTH_CHANGES = "max_width_changes"
 CK_ISAX_NUM_BITS_LIMITS = "isax_num_bits_limits"
 CK_ENVELOPE_SIZE_RATIOS = "envelope_size_ratios"
 CK_ENVELOPE_SIZES = "envelope_sizes"
+CK_INDEX_SIZE_LIMITS = "index_size_limits"
 CK_MERGER_TYPES = "merger_types"
 CK_MERGER_NUM_BIT_NUMBERS = "merger_num_bit_numbers"
 CK_LENGTH_GROUP_SIZE_RATIOS = "length_group_size_ratios"
@@ -122,6 +123,7 @@ RK_MAX_WIDTH_CHANGE = "max_width_change"
 RK_ISAX_NUM_BITS_LIMIT = "isax_num_bits_limit"
 RK_ENVLEOPE_SIZE_RATIO = "envelope_size_ratio"
 RK_ENVELOPE_SIZE = "envelope_size"
+RK_INDEX_SIZE_LIMIT = "size_limit"
 RK_MERGER_TYPE = "merger_type"
 RK_MERGER_NUM_BITS = "merger_num_bits"
 RK_LENS_PER_GROUP = "lens_per_group"
@@ -389,6 +391,7 @@ def parse_config_file(input_config) -> ParsedConfig:
                 **common_settings,
                 **get_key_or_none(RK_ENVLEOPE_SIZE_RATIO, CK_ENVELOPE_SIZE_RATIOS),
                 **get_key_or_none(RK_ENVELOPE_SIZE, CK_ENVELOPE_SIZES),
+                **get_key_or_none(RK_INDEX_SIZE_LIMIT, CK_INDEX_SIZE_LIMITS),
             }
             tree_envelope_settings = {
                 **envelope_settings,

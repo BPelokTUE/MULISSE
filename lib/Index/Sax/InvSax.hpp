@@ -28,8 +28,8 @@ class InvSax {
         if constexpr (std::is_same_v<T, Envelope>) num_bits_total *= 2;
         m_inv_sax_value.resize((num_bits_total + 7) / 8, 0);
 
-        uint inv_sax_ind = 0;
-        uint8_t bit_ind = 0b111;
+        uint inv_sax_byte_ind = 0;
+        uint8_t inv_sax_bit_ind = 7;
 
         if constexpr (std::is_same_v<T, Paa>) {
             vec<SaxWord> sax_words;
@@ -40,7 +40,7 @@ class InvSax {
             for (int bit = static_cast<int>(segment_num_bits) - 1; bit >= 0; --bit) {
                 for (SaxSegIndT s = 0; s < num_segments; ++s) {
                     for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-                        update_inv_sax_value(sax_words, inv_sax_ind, bit_ind, c, s, bit);
+                        update_inv_sax_value(sax_words, inv_sax_byte_ind, inv_sax_bit_ind, c, s, bit);
                     }
                 }
             }
@@ -57,7 +57,7 @@ class InvSax {
                 for (SaxSegIndT s = 0; s < num_segments; ++s) {
                     for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
                         for (auto& sax_words : {sax_lowers, sax_uppers}) {
-                            update_inv_sax_value(sax_words, inv_sax_ind, bit_ind, c, s, bit);
+                            update_inv_sax_value(sax_words, inv_sax_byte_ind, inv_sax_bit_ind, c, s, bit);
                         }
                     }
                 }
@@ -77,14 +77,14 @@ class InvSax {
    private:
     vec<char> m_inv_sax_value;
 
-    inline void update_inv_sax_value(const vec<SaxWord>& sax_words, uint& inv_sax_ind, uint8_t& bit_ind,
+    inline void update_inv_sax_value(const vec<SaxWord>& sax_words, uint& inv_sax_byte_ind, uint8_t& inv_sax_bit_ind,
                                      MtsNumChannelsT c, SaxSegIndT s, int bit) {
-        m_inv_sax_value[inv_sax_ind] |= static_cast<char>(((sax_words[c][s] >> bit) & 1) << bit_ind);
-        if (bit_ind == 0) {
-            bit_ind = 0b111;
-            ++inv_sax_ind;
+        m_inv_sax_value[inv_sax_byte_ind] |= static_cast<char>(((sax_words[c][s] >> bit) & 1) << inv_sax_bit_ind);
+        if (inv_sax_bit_ind == 0) {
+            inv_sax_bit_ind = 7;
+            ++inv_sax_byte_ind;
         } else {
-            --bit_ind;
+            --inv_sax_bit_ind;
         }
     }
 };

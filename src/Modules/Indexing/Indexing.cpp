@@ -61,12 +61,21 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
     logger.set_num_segments_cols(lg_segmentation_strategy.get(), log_num_seg_per_ch, log_num_seg_all);
     logger.stop_timer(ISC::SEGMENTATION_SETUP_TIME_S);
 
+    // Set pos_per_env based on required index size, if applicable
+
+    if (opts.m_index_size_limit > 0.0 && opts.m_index_method == ENVELOPE) {
+        auto envelope_params = dynamic_cast<EnvelopeIndexParams *>(opts.m_index_params.get());
+        if (envelope_params && envelope_params->m_segmentation_params.m_lg_strategy_type != ADAPTIVE_MULTI) {
+            RS.set_pos_per_env(get_max_pos_per_env(opts.m_index_size_limit, lg_segmentation_strategy.get()));
+        }
+    }
+
+    // Create index
+
     IndexFactoryParams factory_params{
         .m_discretize_flat_index = false,
         .m_opts = opts,
     };
-
-    // Create index
 
 #define CONSTRUCT_INDEX(Type, index_factory)                                                                          \
     construct_index<Type>(                                                                                            \
