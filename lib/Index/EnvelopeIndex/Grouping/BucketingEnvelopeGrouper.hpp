@@ -3,7 +3,6 @@
 
 #include "Index/EnvelopeIndex/Grouping/EnvelopeGrouper.hpp"
 
-/** @brief Grouper that creates a balanced index by recursively grouping together buckets of entries */
 class BucketingEnvelopeGrouper : public IEnvelopeGrouper {
    public:
     /**
@@ -14,7 +13,7 @@ class BucketingEnvelopeGrouper : public IEnvelopeGrouper {
 
     vec<uptr<EnvelopeNode>> group_envelope_entries(vec<IndexEntry<Envelope>> &envelope_entries) override;
 
-   private:
+   protected:
     size_t m_bucket_size;
 
     size_t get_bucket_size(const size_t b_ind, const size_t num_buckets, const size_t num_items) const;

@@ -33,28 +33,32 @@ METHOD_COLORS = {
     "sequential_scan-mass-ffts": PALETTE["Oranges"][2],
     "ulisse_single-ed-early": PALETTE["Greys"][1],
     "ulisse_parallel-ed-early": PALETTE["Greys"][3],
-    "isax_envelope-ed": PALETTE["Blues"][0],
-    "isax_envelope-ed-early": PALETTE["Blues"][2],
-    "isax_envelope-mass": PALETTE["Blues"][4],
-    "isax_envelope-mass-ffts": PALETTE["Blues"][6],
+    "isax_envelope-ed": PALETTE["Pinks"][0],
+    "isax_envelope-ed-early": PALETTE["Pinks"][2],
+    "isax_envelope-mass": PALETTE["Pinks"][3],
+    "isax_envelope-mass-ffts": PALETTE["Pinks"][5],
     "isax-ed": PALETTE["Reds"][1],
     "isax-ed-early": PALETTE["Reds"][1],
     "isax-mass": PALETTE["Reds"][2],
     "isax-mass-ffts": PALETTE["Reds"][4],
-    "envelope-ed": PALETTE["Pinks"][1],
-    "envelope-ed-early": PALETTE["Pinks"][1],
-    "tree_envelope-ed": PALETTE["Pinks"][2],
-    "tree_envelope-ed-early": PALETTE["Pinks"][2],
-    "vl_envelope-ed": PALETTE["Pinks"][3],
-    "vl_envelope-ed-early": PALETTE["Pinks"][3],
-    "sax_envelope-ed": PALETTE["Pinks"][4],
-    "sax_envelope-ed-early": PALETTE["Pinks"][4],
-    "envelope-mass": PALETTE["Purples"][3],
-    "envelope-mass-ffts": PALETTE["Purples"][3],
-    "tree_envelope-mass": PALETTE["Purples"][4],
-    "tree_envelope-mass-ffts": PALETTE["Purples"][4],
-    "vl_envelope-mass": PALETTE["Purples"][5],
-    "vl_envelope-mass-ffts": PALETTE["Purples"][5],
+    "envelope-ed": PALETTE["Blues"][1],
+    "envelope-ed-early": PALETTE["Blues"][1],
+    "tree_envelope-ed": PALETTE["Blues"][0],
+    "tree_envelope-ed-early": PALETTE["Blues"][0],
+    "vl_envelope-ed": PALETTE["Blues"][2],
+    "vl_envelope-ed-early": PALETTE["Blues"][2],
+    "bucketing_envelope-ed": PALETTE["Blues"][4],
+    "bucketing_envelope-ed-early": PALETTE["Blues"][4],
+    "sax_envelope-ed": PALETTE["Blues"][6],
+    "sax_envelope-ed-early": PALETTE["Blues"][6],
+    "envelope-mass": PALETTE["Purples"][2],
+    "envelope-mass-ffts": PALETTE["Purples"][2],
+    "tree_envelope-mass": PALETTE["Purples"][3],
+    "tree_envelope-mass-ffts": PALETTE["Purples"][3],
+    "vl_envelope-mass": PALETTE["Purples"][4],
+    "vl_envelope-mass-ffts": PALETTE["Purples"][4],
+    "bucketing_envelope-mass": PALETTE["Purples"][5],
+    "bucketing_envelope-mass-ffts": PALETTE["Purples"][5],
     "sax_envelope-mass": PALETTE["Purples"][6],
     "sax_envelope-mass-ffts": PALETTE["Purples"][6],
     "isax_env_w_env-ed": PALETTE["Greens"][0],
@@ -95,6 +99,10 @@ METHOD_LABELS = {
     "vl_envelope-ed-early": "VL Env. (ED, EAb)",
     "vl_envelope-mass": "VL Env. (MASS, no pre.)",
     "vl_envelope-mass-ffts": "VL Env. (MASS)",
+    "bucketing_envelope-ed": "Bucketing Env. (ED)",
+    "bucketing_envelope-ed-early": "Bucketing Env. (ED, EAb)",
+    "bucketing_envelope-mass": "Bucketing Env. (MASS, no pre.)",
+    "bucketing_envelope-mass-ffts": "Bucketing Env. (MASS)",
     "sax_envelope-ed": "SAX Env (ED)",
     "sax_envelope-ed-early": "SAX Env (ED, EAb)",
     "sax_envelope-mass": "SAX Env (MASS, no pre.)",
@@ -607,9 +615,15 @@ def get_config_label(
             case ISC.SPLIT_STRATEGY:
                 if isinstance(val, str) and len(val) > 0:
                     label_parts.append("".join(s[0].upper() for s in val.split("_")))
+            case ISC.NUM_LEN_GROUPS:
+                if val is not None and val > 0:
+                    label_parts.append(f"Nl={int(val)}")
+            case ISC.NUM_ENVELOPES:
+                if val is not None and val > 0:
+                    label_parts.append(f"Ne={int(val)}")
             case ISC.NUM_SEGMENTS:
                 if val is not None and val > 0:
-                    label_parts.append(f"|S|={int(val)}")
+                    label_parts.append(f"Ns={int(val)}")
 
     if "l_min" in length_values:
         l_min = length_values["l_min"]

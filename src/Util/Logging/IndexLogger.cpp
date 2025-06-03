@@ -80,7 +80,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
             if (arr_contains(METHODS_W_ENV_GROUPING, method_type)) {
                 auto grouping_params =
                     dynamic_cast<TreeEnvelopeIndexParams *>(index_options.m_index_params.get())->m_env_grouping_params;
-                if (method_type == TREE_ENVELOPE)
+                if (method_type == TREE_ENVELOPE || method_type == BUCKETING_ENVELOPE)
                     leaf_capacity = grouping_params.m_bucket_size;
                 else if (method_type == VL_ENVELOPE)
                     max_width_change_str = to_string(grouping_params.m_max_width_change);

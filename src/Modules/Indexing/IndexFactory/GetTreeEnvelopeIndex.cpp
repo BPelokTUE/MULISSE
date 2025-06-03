@@ -1,8 +1,8 @@
 #include "Modules/Indexing/IndexFactory/GetTreeEnvelopeIndex.hpp"
 
-#include "Index/EnvelopeIndex/Grouping/BucketingEnvelopeGrouper.hpp"
 #include "Index/EnvelopeIndex/Grouping/EnvelopeGrouper.hpp"
 #include "Index/EnvelopeIndex/Grouping/InvSaxSortingEnvelopeGrouper.hpp"
+#include "Index/EnvelopeIndex/Grouping/RecursiveBucketingEnvelopeGrouper.hpp"
 #include "Index/EnvelopeIndex/Grouping/VarianceLimitingEnvelopeGrouper.hpp"
 #include "Index/EnvelopeIndex/Tree/TreeEnvelopeIndex.hpp"
 
@@ -14,6 +14,10 @@ sptr<IIndex<Envelope>> get_envelope_tree_index(IndexFactoryParams &factory_param
 
     switch (opts.m_index_method) {
         case TREE_ENVELOPE:
+            extra_grouper =
+                std::make_unique<RecursiveBucketingEnvelopeGrouper>(index_params->m_env_grouping_params.m_bucket_size);
+            break;
+        case BUCKETING_ENVELOPE:
             extra_grouper =
                 std::make_unique<BucketingEnvelopeGrouper>(index_params->m_env_grouping_params.m_bucket_size);
             break;

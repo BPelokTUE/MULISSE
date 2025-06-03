@@ -138,6 +138,7 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
                 },
                 opts);
         case TREE_ENVELOPE:
+        case BUCKETING_ENVELOPE:
         case VL_ENVELOPE:
             return load_index_based_method<EnvelopeTag, S, D, QS>(
                 []() { return std::make_unique<FinalizedTreeEnvelopeIndex>(); },

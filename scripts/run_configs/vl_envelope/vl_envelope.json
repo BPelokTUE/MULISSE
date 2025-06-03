@@ -1,5 +1,5 @@
 {
-    "csv_data_dirs": [],
+    "csv_data_dirs": ["stocks", "weather"],
     "dataset_sizes": [1000],
     "series_lengths": [1024],
     "syn_num_channels": [1],
@@ -11,17 +11,41 @@
     "search_methods": {
         "scan": ["scan"],
         "envelope": ["envelope"],
-        "vl_envelope": ["vl_envelope"]
+        "envelope_half_lg": ["envelope"],
+        "envelope_half_pg": ["envelope"],
+        "envelope_half_seg": ["envelope"],
+        "vl_envelope": ["vl_envelope"],
+        "bucketing_env": ["bucketing_envelope"]
     },
     "isax_split_strategies": ["em"],
     "isax_breakpoint_strategies": ["equiprobable"],
     "isax_start_bit_numbers": [15],
-    "max_width_changes": {
-        "vl_envelope": [0.0, 0.5, 1.0, 1.5]
+    "bucket_sizes": [2],
+    "max_width_changes": [1.25],
+    "length_group_size_ratios": {
+        "envelope": [0.05],
+        "envelope_half_lg": [0.1],
+        "envelope_half_pg": [0.05],
+        "envelope_half_seg": [0.05],
+        "vl_envelope": [0.05],
+        "bucketing_env": [0.05]
     },
-    "length_group_size_ratios": [0.05],
-    "num_segments": [32],
-    "envelope_size_ratios": [0.05],
+    "envelope_size_ratios": {
+        "envelope": [0.05],
+        "envelope_half_lg": [0.05],
+        "envelope_half_pg": [0.1],
+        "envelope_half_seg": [0.05],
+        "vl_envelope": [0.05],
+        "bucketing_env": [0.05]
+    },
+    "num_segments": {
+        "envelope": [32],
+        "envelope_half_lg": [32],
+        "envelope_half_pg": [32],
+        "envelope_half_seg": [16],
+        "vl_envelope": [32],
+        "bucketing_env": [32]
+    },
     "distance_measures": ["ed"],
     "early_abandon": [true],
     "adapt_index": [false],

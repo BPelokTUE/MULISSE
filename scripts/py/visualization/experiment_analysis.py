@@ -658,9 +658,17 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
-            ERD.INDEXES_COLS: [ISC.MAX_WIDTH_CHANGE],
+            ERD.INDEXES_COLS: [
+                ISC.MAX_WIDTH_CHANGE,
+                ISC.LEAF_CAPACITY,
+                ISC.NUM_ENVELOPES,
+                ISC.NUM_LEN_GROUPS,
+                ISC.NUM_SEGMENTS,
+            ],
         },
-        separate_plots_dict={},
+        separate_plots_dict={
+            (DSC.DATASET_FILE,): [],
+        },
         # regex_dict={ISC.SCORE_BASED_CHSS_SAMPLE_SIZE: r"^(50|0)"},
         num_query_intervals=1,
         merge_csv_datasets=True,
@@ -683,7 +691,7 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
 
 
 for target_args_dict, reducer in [
-    (TargetArgs.COMBINED_TIME.value, MeanReducer()),
+    # (TargetArgs.COMBINED_TIME.value, MeanReducer()),
     (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
     (TargetArgs.INDEX_SIZE.value, MeanReducer()),
 ]:

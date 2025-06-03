@@ -648,6 +648,7 @@ int main(int argc, char **argv) {
                         new SaxEnvelopeIndexParams(segmentation_params, merger_params, pos_per_env, sax_params);
                     break;
                 case TREE_ENVELOPE:
+                case BUCKETING_ENVELOPE:
                 case VL_ENVELOPE:
                     index_params = new TreeEnvelopeIndexParams(segmentation_params, merger_params, pos_per_env,
                                                                sax_params, env_grouping_params);
