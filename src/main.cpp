@@ -115,8 +115,7 @@ int main(int argc, char **argv) {
         entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY);
     vec<str> csv_paths;
     Real step_sd = R(1.0), noise = R(0.1), score_based_chss_score_exp = R(1.0), index_sample_frac = R(1.0),
-         env_width_min_w_update = R(0.0), min_subs_sigma = MIN_SUBS_SIGMA, max_width_change = R(0.0),
-         r_range_r = R(1.0);
+         env_width_min_w_update = R(0.0), min_subs_sd = MIN_SUBS_SD, max_width_change = R(0.0), r_range_r = R(1.0);
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT, merger_num_bits = MAX_NUM_BITS_LIMIT;
     SaxSegIndT num_segments;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
@@ -153,7 +152,7 @@ int main(int argc, char **argv) {
                                "Maximum length of subsequences that will be queried for. Used for discarding stagnant "
                                "subsequences that would make normalization unstable");
     csv_subcommand
-        ->add_option("-s,--min_subs_sigma", min_subs_sigma, "Minimum standard deviation required for each subsequence")
+        ->add_option("-s,--min_subs_sd", min_subs_sd, "Minimum standard deviation required for each subsequence")
         ->capture_default_str()
         ->check(non_negative_real);
     csv_subcommand->add_option("-m,--series_len", series_len, "Length of series")->required()->check(positive_int);
@@ -555,7 +554,7 @@ int main(int argc, char **argv) {
             return create_random_walks(step_sd, zero_start, seed);
         }
         case PARSE_CSV: {
-            return create_dataset_from_csv(csv_paths, num_series, l_min, l_max, ',', min_subs_sigma, seed);
+            return create_dataset_from_csv(csv_paths, num_series, l_min, l_max, ',', min_subs_sd, seed);
         }
         case CALC_D_STATS: {
             return calculate_dataset_stats(num_lags);
@@ -625,8 +624,9 @@ int main(int argc, char **argv) {
                 .m_leaf_capacity = leaf_capacity,
             };
             EnvelopeGroupingParams env_grouping_params{
-                .m_bucket_size = leaf_capacity,
                 .m_max_width_change = max_width_change,
+                .m_bucket_size = leaf_capacity,
+                .m_type = method_type,
             };
 
             switch (method_type) {

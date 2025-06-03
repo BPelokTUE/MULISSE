@@ -14,6 +14,7 @@ enum class DatasetSettingsColumn {
     NUM_CHANNELS,   // Number of channels
     NUM_SERIES,     // Number of time series in the dataset
     SD,             // The standard deviation of the Gaussian noise used for generating the random walk dataset
+    MIN_SUBS_SD,    // Minimum standard deviation required for all subsequences when parsing CSV datasets
     SOURCE_CSVS,    // Source CSV files used for generating the CSV dataset
     L_MIN,          // Minimum length of subsequences that will be searched for (required for normalization)
     L_MAX,          // Maximum length of subsequences that will be searched for (required for normalization)
@@ -29,10 +30,19 @@ enum DatasetType { RANDOM_WALK, CSV };
 struct IDatasetLogAttributes {
     virtual ~IDatasetLogAttributes() = default;
 
+    /**
+     * @brief Get the type of the dataset
+     * @return The type of the dataset
+     */
     virtual DatasetType get_type() = 0;
 };
 
 struct RandomWalkLogAttributes : IDatasetLogAttributes {
+    /**
+     * @brief Constructor for random walk dataset log attributes
+     * @param noise The standard deviation of the Gaussian noise used for generating the random walk dataset
+     * @param seed The random seed used for generating the dataset
+     */
     RandomWalkLogAttributes(Real noise, int seed);
 
     DatasetType get_type() override;
@@ -42,13 +52,24 @@ struct RandomWalkLogAttributes : IDatasetLogAttributes {
 };
 
 struct CsvDatasetLogAttributes : IDatasetLogAttributes {
-    CsvDatasetLogAttributes(const vec<str> &source_csvs, uint series_generated, uint l_min, uint l_max, int seed);
+    /**
+     * @brief Constructor for CSV dataset log attributes
+     * @param source_csvs The source CSV files used for generating the dataset
+     * @param series_generated The number of time series generated from the CSV files
+     * @param l_min The minimum length of subsequences to check standard deviation for
+     * @param l_max The maximum length of subsequences to check standard deviation for
+     * @param min_subs_sd The minimum standard deviation required for all subsequences
+     * @param seed The random seed used for generating the dataset
+     */
+    CsvDatasetLogAttributes(const vec<str> &source_csvs, uint series_generated, uint l_min, uint l_max,
+                            Real min_subs_sd, int seed);
 
     DatasetType get_type() override;
 
-    vec<str> m_source_csvs;
     uint m_series_generated, m_l_min, m_l_max;
     int m_seed;
+    Real m_min_subs_sd;
+    vec<str> m_source_csvs;
 };
 
 // DatasetLogger class

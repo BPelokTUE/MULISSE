@@ -456,6 +456,8 @@ class ExperimentResults(BaseModel):
                 how="left",
             )
 
+        merged_df_before_indexes = merged_df.copy()
+
         isc_index_file = ""
         if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEXES_COLS])):
             isc_dataset_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.DATASET_FILE))
@@ -494,13 +496,13 @@ class ExperimentResults(BaseModel):
                     rename_df_columns(methods_w_index_df, ERD.METHODS_COLS),
                     left_on=[dsc_dataset_file, qsc_query_file, isc_index_file],
                     right_on=[ssc_dataset_file, ssc_query_file, ssc_index_file],
-                    how="outer",
+                    how="left",
                 )
-            merged_wo_index_df = merged_df.merge(
+            merged_wo_index_df = merged_df_before_indexes.merge(
                 rename_df_columns(methods_wo_index_df, ERD.METHODS_COLS),
                 left_on=[dsc_dataset_file, qsc_query_file],
                 right_on=[ssc_dataset_file, ssc_query_file],
-                how="right",
+                how="left",
             )
             merged_df = pd.concat([merged_w_index_df, merged_wo_index_df], ignore_index=True)
 

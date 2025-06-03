@@ -1,14 +1,15 @@
 {
     "csv_data_dirs": [],
-    "dataset_sizes": [100],
+    "dataset_sizes": [1000],
     "series_lengths": [1024],
     "syn_num_channels": [1],
     "syn_step_stdevs": [0.1],
-    "query_set_sizes": [10],
+    "query_set_sizes": [100],
     "l_range_ratios": [[0.25, 1.0]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {
+        "scan": ["scan"],
         "envelope": ["envelope"],
         "vl_envelope": ["vl_envelope"]
     },
@@ -16,7 +17,7 @@
     "isax_breakpoint_strategies": ["equiprobable"],
     "isax_start_bit_numbers": [15],
     "max_width_changes": {
-        "vl_envelope": [0, 0.1, 1.0, 10.0, 100.0]
+        "vl_envelope": [0.0, 0.5, 1.0, 1.5]
     },
     "length_group_size_ratios": [0.05],
     "num_segments": [32],

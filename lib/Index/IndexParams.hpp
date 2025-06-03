@@ -179,10 +179,12 @@ struct iSaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual iSaxIndexP
 };
 
 struct EnvelopeGroupingParams {
-    /** @brief The size of each bucket for BucketingEnvelopeMerger */
-    size_t m_bucket_size;
     /** @brief The maximum allowed width update VarianceLimitingEnvelopeGrouper */
     Real m_max_width_change;
+    /** @brief The size of each bucket for BucketingEnvelopeMerger */
+    size_t m_bucket_size;
+    /** @brief Type of search method used (TREE_ENVELOPE or VL_ENVELOPE) */
+    SearchMethodType m_type;
 };
 
 /** @brief Parameters for TreeEnvelopeIndex */
@@ -190,7 +192,7 @@ struct TreeEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual SaxIndexPa
     /** @brief Params for envelope grouping */
     EnvelopeGroupingParams m_env_grouping_params;
 
-    SearchMethodType get_type() const override { return TREE_ENVELOPE; }
+    SearchMethodType get_type() const override { return m_env_grouping_params.m_type; }
 
     /**
      * @brief Constructor

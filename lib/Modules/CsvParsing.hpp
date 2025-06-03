@@ -19,10 +19,10 @@
  * @param l_max Discard time series where the standard deviation is too low in any subsequence of length between `l_min`
  * and `l_max
  * @param col_sep The column separator in the CSV files
- * @param min_subs_sigma The minimum standard deviation required for each valid length subsequence
+ * @param min_subs_sd The minimum standard deviation required for each valid length subsequence
  * @param seed The seed for the random number generator
  */
 int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, char col_sep = ',',
-                            Real min_subs_sigma = MIN_SUBS_SIGMA, uint seed = 0);
+                            Real min_subs_sd = MIN_SUBS_SD, uint seed = 0);
 
 #endif  // MODULES_CSVPARSING_HPP

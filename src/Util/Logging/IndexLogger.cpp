@@ -75,12 +75,15 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
                 if (split_strategy == ENTROPY_MAXIMIZING)
                     min_num_bits_on_tie_str = to_string(isax_index_params->m_isax_trie_params.m_min_num_bits_on_tie);
                 num_bits_limit = isax_index_params->m_isax_trie_params.m_num_bits_limit;
-            } else if (method_type == TREE_ENVELOPE) {
-                auto *tree_env_params = dynamic_cast<TreeEnvelopeIndexParams *>(index_options.m_index_params.get());
-                leaf_capacity = tree_env_params->m_env_grouping_params.m_bucket_size;
-            } else if (method_type == VL_ENVELOPE) {
-                auto *tree_env_params = dynamic_cast<TreeEnvelopeIndexParams *>(index_options.m_index_params.get());
-                max_width_change_str = to_string(tree_env_params->m_env_grouping_params.m_max_width_change);
+            }
+
+            if (arr_contains(METHODS_W_ENV_GROUPING, method_type)) {
+                auto grouping_params =
+                    dynamic_cast<TreeEnvelopeIndexParams *>(index_options.m_index_params.get())->m_env_grouping_params;
+                if (method_type == TREE_ENVELOPE)
+                    leaf_capacity = grouping_params.m_bucket_size;
+                else if (method_type == VL_ENVELOPE)
+                    max_width_change_str = to_string(grouping_params.m_max_width_change);
             }
         }
         if (arr_contains(METHODS_W_ENVELOPE, method_type)) {

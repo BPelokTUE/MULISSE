@@ -43,10 +43,18 @@ METHOD_COLORS = {
     "isax-mass-ffts": PALETTE["Reds"][4],
     "envelope-ed": PALETTE["Pinks"][1],
     "envelope-ed-early": PALETTE["Pinks"][1],
+    "tree_envelope-ed": PALETTE["Pinks"][2],
+    "tree_envelope-ed-early": PALETTE["Pinks"][2],
+    "vl_envelope-ed": PALETTE["Pinks"][3],
+    "vl_envelope-ed-early": PALETTE["Pinks"][3],
     "sax_envelope-ed": PALETTE["Pinks"][4],
     "sax_envelope-ed-early": PALETTE["Pinks"][4],
     "envelope-mass": PALETTE["Purples"][3],
     "envelope-mass-ffts": PALETTE["Purples"][3],
+    "tree_envelope-mass": PALETTE["Purples"][4],
+    "tree_envelope-mass-ffts": PALETTE["Purples"][4],
+    "vl_envelope-mass": PALETTE["Purples"][5],
+    "vl_envelope-mass-ffts": PALETTE["Purples"][5],
     "sax_envelope-mass": PALETTE["Purples"][6],
     "sax_envelope-mass-ffts": PALETTE["Purples"][6],
     "isax_env_w_env-ed": PALETTE["Greens"][0],
@@ -79,6 +87,14 @@ METHOD_LABELS = {
     "envelope-ed-early": "Envelope (ED, EAb)",
     "envelope-mass": "Envelope (MASS, no pre.)",
     "envelope-mass-ffts": "Envelope (MASS)",
+    "tree_envelope-ed": "Tree Env. (ED)",
+    "tree_envelope-ed-early": "Tree Env. (ED, EAb)",
+    "tree_envelope-mass": "Tree Env. (MASS, no pre.)",
+    "tree_envelope-mass-ffts": "Tree Env. (MASS)",
+    "vl_envelope-ed": "VL Env. (ED)",
+    "vl_envelope-ed-early": "VL Env. (ED, EAb)",
+    "vl_envelope-mass": "VL Env. (MASS, no pre.)",
+    "vl_envelope-mass-ffts": "VL Env. (MASS)",
     "sax_envelope-ed": "SAX Env (ED)",
     "sax_envelope-ed-early": "SAX Env (ED, EAb)",
     "sax_envelope-mass": "SAX Env (MASS, no pre.)",
@@ -553,6 +569,9 @@ def get_config_label(
                     label_parts.append(
                         f"LC={int(val) if val < 10000 else f'{int(val / 1000)}K' if val < 1e6 else f'{round(val / 1e6, 2)}M'}"
                     )
+            case ISC.MAX_WIDTH_CHANGE:
+                if val is not None and val > 0:
+                    label_parts.append(f"MWC={val:.2f}")
             case ISC.ADAPT_TO_DATASET:
                 if val == 1:
                     label_parts.append("Adapt")

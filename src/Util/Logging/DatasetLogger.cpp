@@ -12,8 +12,13 @@ RandomWalkLogAttributes::RandomWalkLogAttributes(Real noise, int seed) : m_noise
 DatasetType RandomWalkLogAttributes::get_type() { return RANDOM_WALK; }
 
 CsvDatasetLogAttributes::CsvDatasetLogAttributes(const vec<str> &source_csvs, uint series_generated, uint l_min,
-                                                 uint l_max, int seed)
-    : m_source_csvs(source_csvs), m_series_generated(series_generated), m_l_min(l_min), m_l_max(l_max), m_seed(seed) {}
+                                                 uint l_max, Real min_subs_sd, int seed)
+    : m_source_csvs(source_csvs),
+      m_series_generated(series_generated),
+      m_l_min(l_min),
+      m_l_max(l_max),
+      m_min_subs_sd(min_subs_sd),
+      m_seed(seed) {}
 
 DatasetType CsvDatasetLogAttributes::get_type() { return CSV; }
 
@@ -33,7 +38,7 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
     uint id = instance.determine_index(dataset_settings_path);
     auto [num_channels, series_len, num_series, dataset_file] = RunSettings::get_instance().get_dataset_props();
 
-    str sd_str = "", source_csv_str = "", l_min_str = "", l_max_str = "", seed_str = "";
+    str sd_str = "", min_subs_sd_str = "", source_csv_str = "", l_min_str = "", l_max_str = "", seed_str = "";
     switch (attributes->get_type()) {
         case RANDOM_WALK: {
             auto *rw_attributes = static_cast<RandomWalkLogAttributes *>(attributes.get());
@@ -52,6 +57,7 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
             }
             l_min_str = to_string(csv_attributes->m_l_min);
             l_max_str = to_string(csv_attributes->m_l_max);
+            min_subs_sd_str = to_string(csv_attributes->m_min_subs_sd);
             seed_str = to_string(csv_attributes->m_seed);
             break;
         }
@@ -65,6 +71,7 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
                            {DSC::SERIES_LENGTH, to_string(series_len)},
                            {DSC::NUM_SERIES, to_string(num_series)},
                            {DSC::SD, sd_str},
+                           {DSC::MIN_SUBS_SD, min_subs_sd_str},
                            {DSC::SOURCE_CSVS, source_csv_str},
                            {DSC::L_MIN, l_min_str},
                            {DSC::L_MAX, l_max_str},

@@ -654,32 +654,23 @@ Experiment: Segmentation strategy
 
 def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
     visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_env_width_chss3"],
-        # logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_clairvoyant_chss2"],
+        logs_dirs=["LOGS"],
         groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
-            ERD.INDEXES_COLS: [
-                ISC.NUM_SEGMENTS,
-                ISC.CH_SEGMENTATION_STRATEGY,
-                ISC.SCORE_BASED_CHSS_SCORE_EXP,
-                # ISC.MULTI_CHSS_NUM_SEG_FILE,
-            ],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX, QSC.CHANNEL_MASK],
+            ERD.INDEXES_COLS: [ISC.MAX_WIDTH_CHANGE],
         },
-        separate_plots_dict={
-            (DSC.DATASET_FILE, QSC.CHANNEL_MASK): [],
-            (ISC.NUM_SEGMENTS, QSC.L_MIN, QSC.L_MAX): [(4, 256, 1024), (8, 128, 1024), (16, 64, 1024)],
-        },
+        separate_plots_dict={},
         # regex_dict={ISC.SCORE_BASED_CHSS_SAMPLE_SIZE: r"^(50|0)"},
         num_query_intervals=1,
         merge_csv_datasets=True,
         y_scale="linear",
-        bar_plot_color_attr=ISC.CH_SEGMENTATION_STRATEGY,
-        bar_plot_color_map={
-            "single": PALETTE["Oranges"][2],
-            "score_based": PALETTE["Blues"][4],
-            "multi": PALETTE["Greens"][4],
-        },
+        bar_plot_color_attr=SSC.METHOD_NAME,
+        # bar_plot_color_map={
+        #     "single": PALETTE["Oranges"][2],
+        #     "score_based": PALETTE["Blues"][4],
+        #     "multi": PALETTE["Greens"][4],
+        # },
         # line_plot_x_attr=ISC.POS_PER_ENV,
         # line_plot_included_cols={DSC.DATASET_FILE},
         # x_scale="log",
@@ -692,20 +683,9 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
 
 
 for target_args_dict, reducer in [
-    (TargetArgs.QUERY_TIME.value, MeanReducer()),
-    # (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
-    # (TargetArgs.QUERY_TIME.value, MeanReducer()),
-    # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.MEAN)]}}, MeanReducer()),
-    # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_LOWER_STATS, SCP.MEAN)]}}, StdReducer()),
-    # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_UPPER_STATS, SCP.MEAN)]}}, StdReducer()),
-    # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_LOWER_STATS, SCP.STD)]}}, StdReducer()),
-    # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_UPPER_STATS, SCP.STD)]}}, StdReducer()),
-    # {"targets_dict": {ERD.RUNS_COLS: [QC.MIN_DIST_TOTAL]}},
-    # TargetArgs.PRUNING_RATIO.value,
-    # {"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.STD)]}},
-    # {"targets_dict": {ERD.DATASET_STATS_COLS: [DSTC.VARIANCE]}},
-    # {"targets_dict": {ERD.DATASET_STATS_COLS: [DSTC.SKEWNESS]}},
-    # {"targets_dict": {ERD.DATASET_STATS_COLS: [DSTC.KURTOSIS]}},
+    (TargetArgs.COMBINED_TIME.value, MeanReducer()),
+    (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
+    (TargetArgs.INDEX_SIZE.value, MeanReducer()),
 ]:
     experiment_segmentation_strategy(target_args_dict=target_args_dict, reducer=reducer)
 

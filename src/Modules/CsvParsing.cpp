@@ -9,7 +9,7 @@
 #include "Util/RunSettings/RunSettings.hpp"
 
 int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, char col_sep,
-                            Real min_subs_sigma, uint seed) {
+                            Real min_subs_sd, uint seed) {
     for (str csv_path : csv_paths) {
         if (!std::filesystem::exists(csv_path)) {
             std::cerr << "Error: Dataset " << csv_path << " does not exist\n";
@@ -64,7 +64,7 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
                 }
 
                 ++ind;
-                if (min_subs_sigma > 0) {
+                if (min_subs_sd > 0) {
                     sum += mts[channel][ind - 1];
                     sum_sq += mts[channel][ind - 1] * mts[channel][ind - 1];
 
@@ -73,7 +73,7 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
                     Real sum_tmp = sum, sum_sq_tmp = sum_sq;
                     for (uint start = start_min; static_cast<int>(start) <= start_max; ++start) {
                         Real sigma = calculate_mu_and_sigma(sum_tmp, sum_sq_tmp, U(ind - start)).second;
-                        if (sigma < min_subs_sigma) {
+                        if (sigma < min_subs_sd) {
                             discard = true;
                             goto next_channel;
                         }
@@ -116,7 +116,7 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
     }
 
     DatasetLogger::write_entry(
-        std::make_unique<CsvDatasetLogAttributes>(csv_paths, mts_indexes.size(), l_min, l_max, seed));
+        std::make_unique<CsvDatasetLogAttributes>(csv_paths, mts_indexes.size(), l_min, l_max, min_subs_sd, seed));
 
     return 0;
 }
