@@ -5,10 +5,6 @@
 AdaptiveSegmentationStrategy::AdaptiveSegmentationStrategy(uint l_min, uint l_max, uint series_len,
                                                            SaxSegIndT num_segments, uint pos_per_env)
     : m_l_max(l_max) {
-    if (num_segments > l_max) {
-        throw std::invalid_argument("Number of segments cannot be greater than l_max for AdaptiveSegmentationStrategy");
-    }
-
     PresenceArray presence_array(l_min, l_max, series_len, pos_per_env);
     const auto &presences = presence_array.get_presences();
     auto presence_sum = presence_array.get_presence_sum();

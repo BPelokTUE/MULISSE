@@ -6,6 +6,11 @@
 sptr<ISegmentationStrategy> get_segmentation_strategy(const IndexOptions &opts, uint l_min, uint l_max,
                                                       SaxSegIndT num_segments) {
     auto index_params = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get());
+
+    if (num_segments > l_max) {
+        throw std::invalid_argument("Number of segments must be greater equal to l_max");
+    }
+
     switch (index_params->m_segmentation_params.m_strategy_type) {
         case UNIFORM:
             return std::make_unique<UniformSegmentationStrategy>(l_max, num_segments);
