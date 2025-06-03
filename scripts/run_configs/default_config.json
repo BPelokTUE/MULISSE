@@ -1,7 +1,7 @@
 {
     "csv_data_dirs": ["weather", "stocks"],
     "dataset_sizes": [1000],
-    "series_lengths": [1024],
+    "series_lengths": [26],
     "syn_num_channels": [10],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [100],
@@ -17,7 +17,7 @@
     "isax_leaf_cap_ratios": [0.0128],
     "isax_start_bit_numbers": [1],
     "segmentation_strategies": ["adaptive", "uniform"],
-    "num_segments": [20],
+    "num_segments": [32],
     "envelope_size_ratios": [0.05],
     "length_group_size_ratios": [0.05],
     "distance_measures": {

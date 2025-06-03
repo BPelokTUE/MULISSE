@@ -26,6 +26,7 @@ class UniformSegmentationStrategy : public ISegmentationStrategy {
     SegmentationStrategyType get_type() const override;
 
    private:
+    SaxSegIndT m_num_segments;
     uint m_segment_len, m_l_max;
 
     // Required for Cereal (de)serialization
@@ -33,7 +34,7 @@ class UniformSegmentationStrategy : public ISegmentationStrategy {
 
     template <class Archive>
     void serialize(Archive &ar) {
-        ar(m_segment_len, m_l_max);
+        ar(m_num_segments, m_segment_len, m_l_max);
     }
 };
 
