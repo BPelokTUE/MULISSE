@@ -115,8 +115,8 @@ int main(int argc, char **argv) {
         entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY);
     vec<str> csv_paths;
     Real step_sd = R(1.0), noise = R(0.1), score_based_chss_score_exp = R(1.0), index_sample_frac = R(1.0),
-         env_width_min_w_update = R(0.0), min_subs_sd = MIN_SUBS_SD, max_width_change = R(0.0), r_range_r = R(1.0),
-         index_size_limit = R(0.0);
+         env_width_min_w_update = R(0.0), min_subs_sd = DEFAULT_MIN_SUBS_SD, max_width_change = R(0.0),
+         r_range_r = R(1.0), index_size_limit = R(0.0);
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT, merger_num_bits = MAX_NUM_BITS_LIMIT;
     SaxSegIndT num_segments;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
@@ -675,6 +675,7 @@ int main(int argc, char **argv) {
                 .m_l_max = l_max,
                 .m_series_len = series_len,
                 .m_l_per_group = l_per_group,
+                .m_index_size_limit = index_size_limit,
                 .m_index_params = std::unique_ptr<IIndexParams>(index_params),
             };
             return create_index(index_options, index_sample_frac);

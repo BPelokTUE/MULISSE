@@ -134,6 +134,8 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
     for (const auto &col : INDEX_TIME_COLUMNS) instance.m_time_cols_duration[col] = 0;
 }
 
+void IndexLogger::set_pos_per_env(uint pos_per_env) { m_columns[ISC::POS_PER_ENV] = format_num_param(pos_per_env); }
+
 void IndexLogger::set_num_segments_cols(const ILengthGroupSegmentationStrategy *lg_segmentation_strategy,
                                         bool log_num_seg_per_ch, bool log_num_seg_all) {
     auto &RS = RunSettings::get_instance();

@@ -33,7 +33,18 @@ size_t get_estimated_flat_envelope_size(const ILengthGroupSegmentationStrategy *
 }
 
 uint get_max_pos_per_env(Real index_size_limit, const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
+    auto &RS = RunSettings::get_instance();
+
     size_t bytes_limit =
         static_cast<size_t>(index_size_limit * R(get_dataset_size(RunSettings::get_instance().get_dataset_path())));
-    return U((get_estimated_flat_envelope_size(lg_segmentation_strategy, 1) + bytes_limit - 1) / bytes_limit);
+
+    size_t numerator = get_estimated_flat_envelope_size(lg_segmentation_strategy, 1);
+    size_t min_size = get_estimated_flat_envelope_size(lg_segmentation_strategy, RS.get_dataset_props().m_series_len);
+    size_t denominator = min_size < bytes_limit ? bytes_limit - min_size : 1;
+
+    uint min_pos_per_env = RS.get_envelope_props().m_pos_per_env;
+    uint max_pos_per_env = RS.get_length_props().m_l_max - RS.get_length_props().m_l_min + 1;
+
+    return std::min(max_pos_per_env,
+                    std::max(min_pos_per_env, static_cast<uint>((numerator + denominator - 1) / denominator)));
 }

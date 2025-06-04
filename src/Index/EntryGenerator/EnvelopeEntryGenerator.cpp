@@ -11,8 +11,8 @@
 
 using CHSS = ChannelSegmentationStrategyType;
 
-EnvelopeEntryGenerator::EnvelopeEntryGenerator(bool normalized, const EnvelopeParams &uli_params, uint num_len_groups)
-    : m_normalized(normalized), m_env_params(uli_params), m_num_len_groups(num_len_groups) {}
+EnvelopeEntryGenerator::EnvelopeEntryGenerator(bool normalized, const EnvelopeParams &env_params, uint num_len_groups)
+    : m_normalized(normalized), m_env_params(env_params), m_num_len_groups(num_len_groups) {}
 
 vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec<Real>> &mts, uint series_ind) {
     uint series_len = U(mts[0].size());

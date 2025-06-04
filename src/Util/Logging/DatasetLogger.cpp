@@ -2,6 +2,7 @@
 
 #include <filesystem>
 
+#include "Util/HelperFuncs/Path.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
 namespace fs = std::filesystem;
@@ -62,6 +63,7 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
             break;
         }
     }
+    size_t dataset_size = get_dataset_size(RunSettings::get_instance().get_dataset_path());
 
     instance.write_row(dataset_settings_path,
                        {
@@ -76,6 +78,7 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
                            {DSC::L_MIN, l_min_str},
                            {DSC::L_MAX, l_max_str},
                            {DSC::SEED, seed_str},
+                           {DSC::SIZE_ON_DISK_B, to_string(dataset_size)},
                        },
                        DATASET_SETTINGS_COL_ENUMS);
 #endif  // DISABLE_LOGGING

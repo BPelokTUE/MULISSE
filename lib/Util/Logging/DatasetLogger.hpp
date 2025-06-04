@@ -8,17 +8,18 @@
 
 /** @brief Enum of the columns of the dataset settings log file */
 enum class DatasetSettingsColumn {
-    ID,             // Index of the setting within the log file
-    DATASET_FILE,   // Name to the dataset file
-    SERIES_LENGTH,  // Length of each time series
-    NUM_CHANNELS,   // Number of channels
-    NUM_SERIES,     // Number of time series in the dataset
-    SD,             // The standard deviation of the Gaussian noise used for generating the random walk dataset
-    MIN_SUBS_SD,    // Minimum standard deviation required for all subsequences when parsing CSV datasets
-    SOURCE_CSVS,    // Source CSV files used for generating the CSV dataset
-    L_MIN,          // Minimum length of subsequences that will be searched for (required for normalization)
-    L_MAX,          // Maximum length of subsequences that will be searched for (required for normalization)
-    SEED,           // The random seed to generate the dataset
+    ID,              // Index of the setting within the log file
+    DATASET_FILE,    // Name to the dataset file
+    SERIES_LENGTH,   // Length of each time series
+    NUM_CHANNELS,    // Number of channels
+    NUM_SERIES,      // Number of time series in the dataset
+    SD,              // The standard deviation of the Gaussian noise used for generating the random walk dataset
+    MIN_SUBS_SD,     // Minimum standard deviation required for all subsequences when parsing CSV datasets
+    SOURCE_CSVS,     // Source CSV files used for generating the CSV dataset
+    L_MIN,           // Minimum length of subsequences that will be searched for (required for normalization)
+    L_MAX,           // Maximum length of subsequences that will be searched for (required for normalization)
+    SEED,            // The random seed to generate the dataset
+    SIZE_ON_DISK_B,  // Size of the dataset file on disk in bytes
 };
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(DatasetSettingsColumn, DATASET_SETTINGS_COL, false);

@@ -66,7 +66,10 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
     if (opts.m_index_size_limit > 0.0 && opts.m_index_method == ENVELOPE) {
         auto envelope_params = dynamic_cast<EnvelopeIndexParams *>(opts.m_index_params.get());
         if (envelope_params && envelope_params->m_segmentation_params.m_lg_strategy_type != ADAPTIVE_MULTI) {
-            RS.set_pos_per_env(get_max_pos_per_env(opts.m_index_size_limit, lg_segmentation_strategy.get()));
+            uint pos_per_env = get_max_pos_per_env(opts.m_index_size_limit, lg_segmentation_strategy.get());
+            RS.set_pos_per_env(pos_per_env);
+            logger.set_pos_per_env(pos_per_env);
+            envelope_params->m_pos_per_env = pos_per_env;
         }
     }
 

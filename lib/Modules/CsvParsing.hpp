@@ -23,6 +23,6 @@
  * @param seed The seed for the random number generator
  */
 int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, char col_sep = ',',
-                            Real min_subs_sd = MIN_SUBS_SD, uint seed = 0);
+                            Real min_subs_sd = DEFAULT_MIN_SUBS_SD, uint seed = 0);
 
 #endif  // MODULES_CSVPARSING_HPP

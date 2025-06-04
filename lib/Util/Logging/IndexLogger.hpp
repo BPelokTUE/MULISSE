@@ -92,6 +92,12 @@ class IndexLogger : public Logger {
     static void initialize(const IndexOptions &index_options, Real sample_frac = 1.0);
 
     /**
+     * @brief Set the pos_per_env column in the log
+     * @param pos_per_env The value of the column
+     */
+    void set_pos_per_env(uint pos_per_env);
+
+    /**
      * @brief Set columns related to the number of segments, using the length group segmentation strategy
      * @param lg_segmentation_strategy The length group segmentation strategy to use
      * @param log_num_seg_per_ch Whether to log the number of segments per channel
