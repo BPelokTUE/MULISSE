@@ -37,6 +37,7 @@ enum class IndexSettingsColumn {
                                  // ScoreBasedChSegmentationStrategy
     SCORE_BASED_CHSS_SEGMENT_LEN,  // The segment length used for ScoreBasedChSegmentationStrategy
     SCORE_BASED_CHSS_SAMPLE_SIZE,  // The sample size used by ScoreBasedChSegmentationStrategy
+    SCORE_BASED_CHSS_SCORES_TYPE,  // The type of scores used for ScoreBasedChSegmentationStrategy
     ENV_STATS_SCORE_WEIGHTS_FILE,  // The file containing the weights for EnvelopeStatsScore in
                                    // ScoreBasedChSegmentationStrategy
     ENV_WIDTH_SCORE_MIN_W_UPDATE,  // The minimum sufficient width update for EnvelopeWidthScore in

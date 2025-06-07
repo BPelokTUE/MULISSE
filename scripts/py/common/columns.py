@@ -53,6 +53,7 @@ class IndexSettingsColumn(Enum):
     POS_PER_ENV = auto()
     NUM_LEN_GROUPS = auto()
     NUM_ENVELOPES = auto()
+    INDEX_SIZE_LIMIT = auto()
     ENTRY_MERGER_TYPE = auto()
     MERGER_NUM_BITS = auto()
     NORMALIZED = auto()
@@ -67,6 +68,7 @@ class IndexSettingsColumn(Enum):
     SCORE_BASED_CHSS_SCORE_EXP = auto()
     SCORE_BASED_CHSS_SEGMENT_LEN = auto()
     SCORE_BASED_CHSS_SAMPLE_SIZE = auto()
+    SCORE_BASED_CHSS_SCORES_TYPE = auto()
     ENV_STATS_SCORE_WEIGHTS_FILE = auto()
     ENV_WIDTH_SCORE_MIN_W_UPDATE = auto()
     BREAKPOINT_STRATEGY = auto()
@@ -84,6 +86,7 @@ class IndexSettingsColumn(Enum):
     INDEXING_TIME_S = auto()
     FFT_CALC_TIME_S = auto()
     SIZE_ON_DISK_B = auto()
+    ESTIMATED_SIZE_ON_DISK_B = auto()
     SAMPLE_FRAC = auto()
 
     def __str__(self):

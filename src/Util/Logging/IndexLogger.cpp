@@ -28,7 +28,8 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
     size_t leaf_capacity = 0;
     str lg_ss_str = "", ch_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "",
         merge_in_leaves_str = "", method_type_str = "", entry_merger_type_str = "", env_stats_chss_weights_file = "",
-        multi_chss_num_seg_file = "", env_width_chss_min_w_update_str = "", max_width_change_str = "";
+        multi_chss_num_seg_file = "", chss_scores_type_str = "", env_width_chss_min_w_update_str = "",
+        max_width_change_str = "";
     Real score_based_chss_score_exp = 0.0;
 
     Real index_size_limit = index_options.m_index_method == ENVELOPE ? index_options.m_index_size_limit : 0.0;
@@ -45,6 +46,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
             sampling_chss_sample_size = score_based_chss_params->m_sample_size;
             sampling_chss_segment_len = score_based_chss_params->m_segment_len;
             score_based_chss_score_exp = score_based_chss_params->m_score_exp;
+            chss_scores_type_str = ENVELOPE_SCORES_TYPE_TO_STR.at(score_based_chss_params->m_env_scores_type);
             if (score_based_chss_params->m_env_scores_type == STATS)
                 env_stats_chss_weights_file = score_based_chss_params->m_weights_file;
             if (score_based_chss_params->m_env_scores_type == WIDTH)
@@ -111,6 +113,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         {ISC::SCORE_BASED_CHSS_SAMPLE_SIZE, format_num_param(sampling_chss_sample_size)},
         {ISC::ENV_STATS_SCORE_WEIGHTS_FILE, env_stats_chss_weights_file},
         {ISC::ENV_WIDTH_SCORE_MIN_W_UPDATE, env_width_chss_min_w_update_str},
+        {ISC::SCORE_BASED_CHSS_SCORES_TYPE, chss_scores_type_str},
         {ISC::POS_PER_ENV, format_num_param(pos_per_env)},
         {ISC::INDEX_SIZE_LIMIT, format_num_param(index_size_limit)},
         {ISC::ENTRY_MERGER_TYPE, entry_merger_type_str},

@@ -496,13 +496,13 @@ class ExperimentResults(BaseModel):
                     rename_df_columns(methods_w_index_df, ERD.METHODS_COLS),
                     left_on=[dsc_dataset_file, qsc_query_file, isc_index_file],
                     right_on=[ssc_dataset_file, ssc_query_file, ssc_index_file],
-                    how="left",
+                    how="right",
                 )
             merged_wo_index_df = merged_df_before_indexes.merge(
                 rename_df_columns(methods_wo_index_df, ERD.METHODS_COLS),
                 left_on=[dsc_dataset_file, qsc_query_file],
                 right_on=[ssc_dataset_file, ssc_query_file],
-                how="left",
+                how="right",
             )
             merged_df = pd.concat([merged_w_index_df, merged_wo_index_df], ignore_index=True)
 

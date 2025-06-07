@@ -1,4 +1,3 @@
-
 {
     "csv_data_dirs": ["stocks"],
     "dataset_sizes": [1000],

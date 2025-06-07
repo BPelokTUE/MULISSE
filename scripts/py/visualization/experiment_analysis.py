@@ -198,7 +198,7 @@ def visualize_experiments(
         if len(remaining_separate_plots_dict) > 0:
             sp_cols, sp_accepted_vals = next(iter(remaining_separate_plots_dict.items()))
             col_inds = [get_col_index(col, groups) for col in sp_cols]
-            all_vals = {tuple([key[col_ind] for col_ind in col_inds]) for key in reduced_values_subset}
+            all_vals = set(sorted([tuple([key[col_ind] for col_ind in col_inds]) for key in reduced_values_subset]))
             for val in all_vals:
                 if len(sp_accepted_vals) == 0 or val in sp_accepted_vals:
                     new_title_key = title_key.copy()
@@ -654,27 +654,41 @@ Experiment: Segmentation strategy
 
 def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
     visualize_experiments(
-        # logs_dirs=["EXPERIMENT_LOGS/vl_envelope/LOGS_vl_envelope"],
-        logs_dirs=["LOGS"],
+        # logs_dirs=["EXPERIMENT_LOGS/envelope_variants/LOGS_vl_envelope"],
+        # logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_env_width_chss2"], # Show correlations
+        # logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_env_width_chss3"],  # Using correlations not usable in general
+        # logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_clairvoyant_chss2_raw"],  # Clairvoyant raw
+        logs_dirs=["EXPERIMENT_LOGS/envelope_variants/LOGS_size_limiting"],
+        # logs_dirs=["LOGS"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
             ERD.INDEXES_COLS: [
-                ISC.MAX_WIDTH_CHANGE,
-                ISC.LEAF_CAPACITY,
-                ISC.NUM_ENVELOPES,
-                ISC.NUM_LEN_GROUPS,
+                # ISC.CH_SEGMENTATION_STRATEGY,
+                # ISC.MULTI_CHSS_NUM_SEG_FILE,
+                # ISC.ENV_WIDTH_SCORE_MIN_W_UPDATE,
+                # ISC.SCORE_BASED_CHSS_SCORE_EXP,
                 ISC.NUM_SEGMENTS,
+                # ISC.NUM_ENVELOPES,
+                ISC.NUM_LEN_GROUPS,
+                ISC.INDEX_SIZE_LIMIT,
             ],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
         },
         separate_plots_dict={
-            (DSC.DATASET_FILE,): [],
+            # (QSC.CHANNEL_MASK,): [],
+            # (ISC.NUM_SEGMENTS,): [],
+            (DSC.DATASET_FILE,): [("stocks",)],
+            (ISC.INDEX_SIZE_LIMIT,): [(1.0,)],
+            (QSC.L_MIN, QSC.L_MAX): [(128, 1024)],
         },
-        # regex_dict={ISC.SCORE_BASED_CHSS_SAMPLE_SIZE: r"^(50|0)"},
+        regex_dict={SSC.METHOD_NAME: r"envelope"},
         num_query_intervals=1,
         merge_csv_datasets=True,
         y_scale="linear",
-        bar_plot_color_attr=SSC.METHOD_NAME,
+        bar_plot_color_attr=None,
+        # bar_plot_color_attr=SSC.METHOD_NAME,
+        # bar_plot_color_attr=ISC.CH_SEGMENTATION_STRATEGY,
         # bar_plot_color_map={
         #     "single": PALETTE["Oranges"][2],
         #     "score_based": PALETTE["Blues"][4],
@@ -683,18 +697,20 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
         # line_plot_x_attr=ISC.POS_PER_ENV,
         # line_plot_included_cols={DSC.DATASET_FILE},
         # x_scale="log",
-        # heat_map_x_attr=ISC.NUM_ENVELOPES,
-        # heat_map_y_attr=ISC.NUM_LEN_GROUPS,
-        # heat_map_included_cols={ISC.NUM_SEGMENTS},
+        heat_map_x_attr=ISC.NUM_SEGMENTS,
+        heat_map_y_attr=ISC.NUM_LEN_GROUPS,
+        heat_map_included_cols={},
         reducer=reducer,
         **target_args_dict,
     )
 
 
 for target_args_dict, reducer in [
-    # (TargetArgs.COMBINED_TIME.value, MeanReducer()),
+    (TargetArgs.QUERY_TIME.value, MeanReducer()),
     (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
+    ({"targets_dict": {ERD.INDEXES_COLS: [ISC.POS_PER_ENV]}}, MeanReducer()),
     (TargetArgs.INDEX_SIZE.value, MeanReducer()),
+    ({"targets_dict": {ERD.INDEXES_COLS: [ISC.ESTIMATED_SIZE_ON_DISK_B]}}, MeanReducer()),
 ]:
     experiment_segmentation_strategy(target_args_dict=target_args_dict, reducer=reducer)
 
