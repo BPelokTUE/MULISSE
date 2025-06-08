@@ -19,9 +19,9 @@ $$
 \begin{array}{rcl}
     E_{i,j,k} & := & \left\{ \dfrac{S_{p,l,k}-\sigma^t_{p:l}}{s\mu^t_{p:l}}  \mid t\in\mathcal{D}, l\in L_i,p\in P_j \right\} \\[4pt]
     & \text{where} & \\[4pt]
-    \mu^t_{p:l} & := & \text{Mean of }t_{p:l} \\[4pt]
-    \sigma^t_{p:l} & := & \text{Standard deviation of }t_{p:l} \\[4pt]
-    S_{p,l,k} & := & \sum_{i'=(k-1)s+1}^{ks}t_{p:l,i'}\\[4pt]
+    \mu^t_{p:l} & := & \sum_{i'=p}^{p+l-1} t_{i'} / l \\[4pt]
+    \sigma^t_{p:l} & := & \sum_{i'=p}^{p+l-1}\left(t_{i'}-\mu^t_{p:l}\right)^2/l \\[4pt]
+    S_{p,l,k}^t & := & \sum_{i'=p+(k-1)s}^{p+ks-1}t_{i'}\\[4pt]
     L_i & := & \left[l_{\min}+(i-1)\beta,l_{\min}+i\beta\right) \\[4pt]
     P_j & := & \left[j\gamma, (j+1)\gamma\right) \\
 \end{array}

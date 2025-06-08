@@ -1,0 +1,265 @@
+\documentclass[12pt,a4paper]{article}
+
+% Packages
+\usepackage{amsmath,amssymb,amsfonts} % Math packages
+\usepackage{graphicx} % For including images
+\usepackage[margin=1in]{geometry} % Page margins
+\usepackage{hyperref} % For hyperlinks
+\usepackage{caption} % For customizing captions
+\usepackage{subcaption} % For subfigures
+
+% Define macros for common mathematical symbols
+\newcommand{\segsum}[3]{S_{#1,#2,#3}^t} % Segment sum S_{p,l,k}^t
+\newcommand{\subsmean}[2]{\mu^t_{#1:#2}} % Segment mean \mu^t_{p:l}
+\newcommand{\subsvar}[2]{\sigma^t_{#1:#2}} % Segment standard deviation \sigma^t_{p:l}
+\newcommand{\expectation}[1]{\mathbb{E}\left[#1\right]} % Expectation
+\newcommand{\variance}[1]{\mathbb{V}\left[#1\right]} % Variance
+\newcommand{\covariance}[2]{\text{Cov}(#1,#2)} % Covariance
+\newcommand{\envelope}[3]{E_{#1,#2,#3}} % The envelope set E_{i,j,k}
+\newcommand{\lengthrange}[1]{L_{#1}} % Length range L_i
+\newcommand{\posrange}[1]{P_{#1}} % Position range P_j
+
+\newcommand{\segsumplk}{\segsum{p}{l}{k}} % Segment sum S_{p,l,k}
+\newcommand{\subsmeanpl}{\subsmean{p}{l}} % Segment mean \mu^t_{p:l}
+\newcommand{\subsvarpl}{\subsvar{p}{l}} % Segment standard deviation \sigma^t_{p:l}
+
+% Document information
+\title{MULISSE: Closed form solution for variance of segments in flat envelope indexes}
+\author{BIP}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+\subsection{Goal}
+
+Our goal is to derive (approximately) optimal parameters for flat envelope indexes for normalized subsequence search, given a size constraint. Namely, we want to find a cost function $f$ such that we can write the constrained optimization problem:
+$$\begin{array}{rl}
+    \text{minimize} & f(\beta, \gamma, s) \\[4pt]
+    \text{s.t.} & g(\beta, \gamma, s) \le \text{Size}
+\end{array}$$
+where $\beta$ is the number of lengths per length group, $\gamma$ is the number of starting positions per envelope, and $s$ is the segment size, and the function $g$ measures the size of the index, and is defined as:
+$$g(\beta,\gamma,s) := \sum_{i=1}^{N_l}\left(\left\lceil\dfrac{m-l_{\max}^i+1}{\gamma}\right\rceil\sum_{c=1}^{|C|}\left(\left\lfloor\dfrac{l_{\max}^i}{s}\right\rfloor+o_\text{env}\right)+o_\text{lg}\right)$$
+where:
+\begin{itemize}
+    \item $m$ is the length of the time series
+    \item $|C|$ is the number of channels
+    \item $l_{\min}$ and $l_{\max}$ are the minimum and maximum lengths of subsequences searched for
+    \item $N_l:=\lceil(l_{\max}-l_{\min}+1)/\beta\rceil$ is the number of length groups
+    \item $l_{\min}^i$ and $l_{\max}^i$ are the minimum and maximum lengths in the $i$-th length group respectively
+    \item $o_\text{env}$ is the memory overhead per envelope
+    \item $o_\text{lg}$ is the memory overhead per length group
+\end{itemize}
+
+\subsection{Cost Function}
+
+Let the set of values summarized in the $k$'th segment of the $j$'th envelope of the $i$'th length group be defined as follows:
+$$
+\begin{array}{rcl}
+    \envelope{i}{j}{k} & := & \left\{ \dfrac{\segsumplk-\subsmeanpl}{s\subsvarpl}  \mid t\in\mathcal{D}, l\in \lengthrange{i},p\in \posrange{j} \right\} \\[4pt]
+    & \text{where} & \\[4pt]
+    \subsmeanpl & := & \sum_{i'=p}^{p+l-1} t_{i'} / l \\[4pt]
+    \subsvarpl & := & \sum_{i'=p}^{p+l-1}\left(t_{i'}-\subsmeanpl\right)^2/l \\[4pt]
+    \segsumplk & := & \sum_{i'=p+(k-1)s}^{p+ks-1}t_{i'}\\[4pt]
+    \lengthrange{i} & := & \left[l_{\min}+(i-1)\beta,l_{\min}+i\beta\right) = [l_{\min}^i,l_{\max}^i] \\[4pt]
+    \posrange{j} & := & \left[j\gamma, (j+1)\gamma\right) \\
+\end{array}
+$$
+then the lower and upper bound of the $i,j,k$ segment are defined as:
+$$\begin{array}{rcl}
+    l_{i,j,k} & := & \min\{\envelope{i}{j}{k}\} \\[4pt]
+    u_{i,j,k} & := & \max\{\envelope{i}{j}{k}\}
+\end{array}$$
+
+\textbf{How can we use these definitions to derive a reasonable cost function?} One approach would be to estimate the expected pruning power of the index based on the parameters $\beta$, $\gamma$, and $s$. To do this, let us order the envelopes in the length group of the query $Q$, denoted by index $i_Q$, in non-descending order of their distance to the query:
+$$d(Q,E_{i_Q,j_1})\le d(Q,E_{i_Q,j_2})\le ...\le d(Q,E_{i_Q,j_{|E_{i_Q}|}})$$
+where the distance of the query to an envelope is defined as the minimum raw distance between the query and any subsequence of length $|Q|$ in the envelope:
+$$d(Q,E_{i_Q,j}):=\min\left\{d(Q,t_{p:|Q|}) \mid p \in \{...\} \right\}$$
+additionally, the min-distance of any envelope to the query is defined as:
+$$d_{\min}(Q,E_{i_Q,j}):=\sum_{k=1}^{\lfloor |Q| / s \rfloor}\begin{cases}
+    (\hat Q_k - u_{i_Q,j,k})^2s & \text{if } \hat Q_k > u_{i_Q,j,k} \\[4pt]
+    (\hat Q_k - l_{i_Q,j,k})^2s & \text{if } \hat Q_k < l_{i_Q,j,k} \\[4pt]
+    0 & \text{otherwise}
+\end{cases}$$
+
+\textbf{Observation}: The fewer min-distances are smaller than the maximum distance of the exact result set to the query (or $R$ in case of $R$-range queries), the higher the pruning power of the index. Therefore, to increase the pruning power, we can \textit{bring the min-distances closer to the actual distances}, i.e. we can:
+$$\underset{\beta,\gamma,s}{\text{minimize}}\quad \expectation{d(Q,E_{i_Q})-d_{\min}\left(Q,E_{i_Q,j'}\right)}$$
+
+This can be achieved by increasing the expected lower bounds and decreasing the expected upper bounds, i.e. \textit{by decreasing the variance of the envelope segments}:
+
+$$\underset{\beta,\gamma,s}{\text{minimize}}\quad\variance{E_{i,j,k}}$$
+
+\textit{Note}: This objective does not take into consideration the $s$ in the summation of segment distances in $d_{\min}$. This may be incorporated in the object later on.
+
+\section{Closed Form}
+
+We wish to find the closed form of $\variance{\envelope{i}{j}{k}}$ so that we can minimize it. We may assume the following:
+
+$$
+\begin{array}{rcll}
+    t_{i'} & = & \begin{cases}
+        0 & \text{if } i' = 0 \\
+        t_{i'-1}+N(0,1) & \text{if } i' > 0
+    \end{cases} & \text{for } i'\in\mathcal{D} \\[4pt]
+    & \text{and} & \\[4pt]
+    \expectation{\dfrac{X}{Y}} & \approx & \dfrac{\expectation{X}}{\expectation{Y}} - \dfrac{\covariance{X}{Y}}{\expectation{Y}^2} + \dfrac{\variance{Y}\expectation{X}}{\expectation{Y}^3} & \text{for r.v.s } X,Y
+\end{array}
+$$
+
+\subsection{Derivation}
+
+$$
+\begin{array}{rcl}
+    \variance{\envelope{i}{j}{k}} & = & \expectation{\left(\dfrac{\segsumplk-\subsmeanpl}{s\subsvarpl}-\expectation{\envelope{i}{j}{k}}\right)^2} \\[16pt]
+    \expectation{\envelope{i}{j}{k}} & = & \expectation{\dfrac{\segsumplk}{s\subsvarpl}} - \expectation{\dfrac{\subsmeanpl}{s\subsvarpl}} \\[16pt]
+    \expectation{\dfrac{\segsumplk}{s\subsvarpl}} & \approx & \dfrac{\overbrace{\expectation{\segsumplk}}^{=0}}{\expectation{s\subsvarpl}} - \dfrac{\covariance{\segsumplk}{s\subsvarpl}}{\expectation{s\subsvarpl}^2} + \dfrac{\variance{s\subsvarpl}\overbrace{\expectation{\segsumplk}}^{=0}}{\expectation{s\subsvarpl}^3} = \dfrac{\covariance{\segsumplk}{s\subsvarpl}}{\expectation{s\subsvarpl}^2} \\[16pt]
+    \covariance{\segsumplk}{s\subsvarpl} & = & \expectation{\segsumplk s\subsvarpl} - \underbrace{\expectation{\segsumplk}}_{=0}\expectation{s\subsvarpl} = \expectation{\segsumplk s\subsvarpl} \\[16pt]
+    \expectation{\segsumplk{s\subsvarpl}} & = & \expectation{\left(\sum_{i'=p+(k-1)s}^{p+ks-1}t_{i'}\right)s\dfrac{\sum_{i'=p}^{p+l-1}\left(t_{i'}-\subsmeanpl\right)^2}{l}} \\[16pt]
+    & = & \dfrac{s}{l} \expectation{\left(\sum_{i'=p+(k-1)s}^{p+ks-1}t_{i'}\right)\sum_{i'=p}^{p+l-1}\left(t_{i'}-\subsmeanpl\right)^2} \\[16pt]
+    & = & \dfrac{s}{l} \expectation{\left(\sum_{i'=p+(k-1)s}^{p+ks-1}t_{i'}\right)\sum_{i'=p}^{p+l-1}\left(t_{i'}^2-2t_{i'}\subsmeanpl+(\subsmeanpl)^2\right)} \\[16pt]
+    & = & \dfrac{s}{l} \sum_{i'=p+(k-1)s}^{p+ks-1}\sum_{j'=p}^{p+l-1}\left(\underbrace{\expectation{t_{i'}t_{j'}^2}}_{\overset{(1)\Rightarrow}{=}0}-\underbrace{\expectation{2t_{i'}t_{j'}\subsmeanpl}}_{\overset{(2)\Rightarrow}{=}0}+\underbrace{\expectation{t_{i'}(\subsmeanpl)^2}}_{\overset{(3)\Rightarrow}{=}0}\right) \overset{(4)}{=} 0
+\end{array}
+$$
+
+$$
+\begin{array}{rcl}
+    \mathbb{E}\left[t_{i'}t_{j'}^2\right] & \overset{(1)}{=} & \begin{cases}
+        \mathbb{E}[t_{i'}^3] = 0 & \text{if } i' = j' \\[4pt]
+        \mathbb{E}[t_{i'}(t_{i'}+N(0,j'-i'))^2] = \underbrace{\mathbb{E}[t_{i'}^3]}_{=0} \\
+            \quad + 2\mathbb{E}[t_{i'}^2]\underbrace{\mathbb{E}[N(0,j'-i')]}_{=0} + \underbrace{\mathbb{E}[t_{i'}]}_{=0}\mathbb{E}[N(0,j'-i')^2] = 0 & \text{if }i' < j' \\[4pt]
+        \mathbb{E}[(t_{j'}+N(0,i'-j'))t_{j'}^2] = \underbrace{\mathbb{E}[t_{j'}^3]}_{=0} + \underbrace{\mathbb{E}[N(0,i'-j')]}_{=0}\mathbb{E}[t_{j'}^2] = 0 & \text{if } i' > j'
+    \end{cases} \\[64pt]
+    \mathbb{E}\left[2t_{i'}t_{j'}\mu_{p:l}^t\right] & \overset{(2)}{=} & \dfrac{2}{l}\mathbb{E}\left[t_{i'}t_{j'}\sum_{k'=p}^{p+l-1}t_{k'}\right] = \dfrac{2}{l}\sum_{k'=p}^{p+l-1}\mathbb{E}\left[t_{i'}t_{j'}t_{k'}\right] \overset{(2.1)\Rightarrow}{=} 0 \\[16pt]
+    && \text{The only new case for }\mathbb{E}\left[t_{i'}t_{j'}t_{k'}\right]\text{ is when no indices are equal.}\\
+    && \text{WLOG we can write this as:} \\[4pt]
+    \mathbb{E}\left[t_{i'}t_{j'}t_{k'}\right] & \overset{(2.1)}{=} & \begin{cases}
+        \mathbb{E}\left[t_{i'}\left(t_{i'}+\underbrace{\epsilon^{j'-i'}}_{\sim N(0,j'-i')}\right)\left(t_{i'}+\underbrace{\epsilon^{j'-i'}}_{\sim N(0,j'-i')}+N(0,k'-j')\right)\right] = 0 \\[24pt]
+        \qquad \text{if } i' < j' < k' \\[4pt]
+        0 \qquad \text{otherwise}
+    \end{cases} \\[40pt]
+\end{array}
+$$
+
+Analogously, we can show that $\mathbb{E}\left[t_{i'}(\mu_{p:l}^t)^2\right] \overset{(3)}{=} 0$. As a consequence of $(1)$, $(2)$, and $(3)$, we know that $(4)$ holds. Following a similar reasoning, we can show that $\mathbb{E}\left[\dfrac{\mu_{p:l}^t}{s\sigma_{p:l}^t}\right]\approx 0$ and as a consequence $\mathbb{E}[E_{i,j,k}]\approx 0$. Therefore we can write:
+$$
+\begin{array}{rcl}
+    \variance{\envelope{i}{j}{k}} & = & \expectation{\left(\dfrac{\segsumplk-\subsmeanpl}{s\subsvarpl}\right)^2} \\[20pt]
+    & \approx & \underbrace{\dfrac{\expectation{(\segsumplk-\subsmeanpl)^2}}{\expectation{(s\subsvarpl)^2}}}_{A} - \underbrace{\dfrac{\covariance{(\segsumplk-\subsmeanpl)^2}{(s\subsvarpl)^2}}{\expectation{(s\subsvarpl)^2}^2}}_{B} + \underbrace{\dfrac{\variance{(s\subsvarpl)^2}\expectation{(\segsumplk-\subsmeanpl)^2}}{\expectation{(s\subsvarpl)^2}^3}}_{C}
+\end{array}
+$$
+
+We start by calculating the denominator:
+$$
+\begin{array}{rcl}
+    \expectation{(s\subsvarpl)^2} & = & \expectation{\left(s\sum_{i'=p}^{p+l-1}\dfrac{\left(t_{i'}-\subsmeanpl\right)^2}{l}\right)^2} \\[16pt]
+    & = & \dfrac{s^2}{l^2}\expectation{\left(\sum_{i'=p}^{p+l-1}\left(t_{i'}-\sum_{j'=p}^{p+l-1}t_{j'}/l\right)^2\right)^2} \\[16pt]
+    & = & \dfrac{s^2}{l^2}\expectation{\left(\sum_{i'=p}^{p+l-1}\left(t_{i'}^2-2t_{i'}\sum_{j'=p}^{p+l-1}t_{j'}/l+(\sum_{j'=p}^{p+l-1}t_{j'}/l)^2\right)\right)^2} \\[16pt]
+    & = & \dfrac{s^2}{l^2}\sum_{i'=p}^{p+l-1}\sum_{i''=p}^{p+l-1}\expectation{h(t_{i'})h(t_{i''})} \\
+    & \text{where} & \\
+    h(t_{i'}) & = & \left(t_{i'}^2-\dfrac{2t_{i'}\sum_{j'=p}^{p+l-1}t_{j'}}{l}+\left(\dfrac{\sum_{j'=p}^{p+l-1}t_{j'}}{l}\right)^2\right) \\
+    h(t_{i'})h(t_{i''}) & = & t_{i'}^{2} t_{i''}^{2} - \frac{2 t_{i'}^{2} t_{i''} \sum_{j'=p}^{l + p - 1} t_{j'}}{l} - \frac{2 t_{i'} t_{i''}^{2} \sum_{j'=p}^{l + p - 1} t_{j'}}{l} + \frac{t_{i'}^{2} \left(\sum_{j'=p}^{l + p - 1} t_{j'}\right)^{2}}{l^{2}} + \frac{4 t_{i'} t_{i''} \left(\sum_{j'=p}^{l + p - 1} t_{j'}\right)^{2}}{l^{2}} \\[4pt]
+    & + & \frac{t_{i''}^{2} \left(\sum_{j'=p}^{l + p - 1} t_{j'}\right)^{2}}{l^{2}} - \frac{2 t_{i'} \left(\sum_{j'=p}^{l + p - 1} t_{j'}\right)^{3}}{l^{3}} - \frac{2 t_{i''} \left(\sum_{j'=p}^{l + p - 1} t_{j'}\right)^{3}}{l^{3}} + \frac{\left(\sum_{j'=p}^{l + p - 1} t_{j'}\right)^{4}}{l^{4}}
+\end{array}
+$$
+
+We need to calculate the expectation of each of the above terms. To help with the calculations, we can first derive the possible values for $t_{i_1}t_{i_2}t_{i_3}t_{i_4}$. WLOG we can assume that $i_1 \le i_2 \le i_3 \le i_4$. The possible cases are:
+
+\textbf{Case 1}: $i_1 = i_2 = i_3 = i_4$:
+$$\expectation{t_{i_1}^4}=3i_1^2$$
+
+\textbf{Case 2}: $i_1 = i_2 = i_3 < i_4$:
+$$\begin{array}{rcl}
+    \expectation{t_{i_1}^3t_{i_4}} & = & \expectation{t_{i_1}^3(t_{i_1}+N(0,i_4-i_1))} \\[8pt]
+    & = & \expectation{t_{i_1}^4} + \expectation{t_{i_1}^3}\expectation{N(0,i_4-i_1)} = 3i_1^2
+\end{array}$$
+
+\textbf{Case 3}: $i_1 = i_2 < i_3 = i_4$:
+$$\begin{array}{rcl}
+    \expectation{t_{i_1}^2t_{i_3}^2} & = & \expectation{t_{i_1}^2(t_{i_1}+N(0,i_3-i_1))^2} \\[8pt]
+    & = & \expectation{t_{i_1}^4} + 2\expectation{t_{i_1}^3}\expectation{N(0,i_3-i_1)} +\expectation{t_{i_1}^2}\expectation{N(0,i_3-i_1)^2} \\[8pt]
+    & = & 3i_1^2 + 0 + i_1(i_3-i_1) = i_1(2i_1 + i_3)
+\end{array}$$
+
+\textbf{Case 4}: $i_1 < i_2 = i_3 = i_4$:
+$$\begin{array}{rcl}
+    \expectation{t_{i_1}t_{i_3}^3} & = & \expectation{t_{i_1}(t_{i_1}+N(0,i_2-i_1))^3} \\[8pt]
+    & = & \expectation{t_{i_1}^4} + 3\expectation{t_{i_1}^3}\expectation{N(0,i_2-i_1)} \\[4pt]
+    && + 3\expectation{t_{i_1}^2}\expectation{N(0,i_2-i_1)^2} + \expectation{t_{i_1}}\expectation{N(0,i_2-i_1)^3} \\[8pt]
+    & = & 3i_1^2 + 0 + 3i_1(i_2-i_1) + 0 = 3i_1i_2
+\end{array}$$
+
+\textbf{Case 5}: $i_1 = i_2 < i_3 < i_4$: The noise added to $t_{i_4}$ also includes the noise from $t_{i_3}$. Let this noise be $\epsilon_{i_3-i_1}\sim N(0,i_3-i_1)$. Then we have:
+$$\begin{array}{rcl}
+    \expectation{t_{i_1}^2t_{i_3}t_{i_4}} & = & \expectation{t_{i_1}^2(t_{i_1}+\epsilon_{i_3-i_1})(t_{i_1}+\epsilon_{i_3-i_1}+N(0,i_4-i_3))} \\[8pt]
+    & = & \expectation{t_{i_1}^4} + \expectation{t_{i_1}^3}\expectation{\epsilon_{i_3-i_1}} + \expectation{t_{i_1}^3}\expectation{N(0,i_4-i_3)} \\[4pt]
+    && + \expectation{t_{i_1}^3}\expectation{\epsilon_{i_3-i_1}} + \expectation{t_{i_1}^2}\expectation{\epsilon_{i_3-i_1}^2} + \expectation{t_{i_1}^2}\expectation{\epsilon_{i_3-i_1}}\expectation{N(0,i_4-i_3)} \\[8pt]
+    & = & 3i_1^2 + 0 + 0 + 0 + i_1(i_3-i_1) + 0 = i_1(2i_1+i_3)
+\end{array}$$
+
+\textbf{Case 6}: $i_1 < i_2 = i_3 < i_4$: The noise added to $t_{i_4}$ also includes the noise from $t_{i_2}$. Let this noise be $\epsilon_{i_2-i_1}\sim N(0,i_2-i_1)$. Then we have:
+$$\begin{array}{rcl}
+    \expectation{t_{i_1}t_{i_2}^2t_{i_4}} & = & \expectation{t_{i_1}(t_{i_1}+\epsilon_{i_2-i_1})^2(t_{i_1}+\epsilon_{i_2-i_1}+N(0,i_4-i_2))} \\[8pt]
+    & = & \expectation{t_{i_1}^4} + \expectation{t_{i_1}^3}\expectation{\epsilon_{i_2-i_1}} + \expectation{t_{i_1}^3}\expectation{N(0,i_4-i_2)} \\[4pt]
+    && + 2\expectation{t_{i_1}^3}\expectation{\epsilon_{i_2-i_1}} + 2\expectation{t_{i_1}^2}\expectation{\epsilon_{i_2-i_1}^2} + 2\expectation{t_{i_1}^2}\expectation{\epsilon_{i_2-i_1}}\expectation{N(0,i_4-i_2)} \\[4pt]
+    && + \expectation{t_{i_1}^2}\expectation{\epsilon_{i_2-i_1}^2} + \expectation{t_{i_1}}\expectation{\epsilon_{i_2-i_1}^3} + \expectation{t_{i_1}}\expectation{\epsilon_{i_2-i_1}^2}\expectation{N(0,i_4-i_2)} \\[8pt]
+    & = & 3i_1^2 + 0 + 0 + 0 + 2i_1(i_2-i_1) + 0 + i_1(i_2-i_1) + 0 + 0 = 3i_1i_2
+\end{array}$$
+
+\textbf{Case 7}: $i_1 < i_2 < i_3 = i_4$: The noise added to $t_{i_3}$ also includes the noise from $t_{i_2}$. Let this noise be $\epsilon_{i_2-i_1}\sim N(0,i_2-i_1)$. Then we have:
+$$\begin{array}{rcl}
+    \expectation{t_{i_1}t_{i_2}t_{i_3}^2} & = & \expectation{t_{i_1}(t_{i_1}+\epsilon_{i_2-i_1})(t_{i_1}+\epsilon_{i_2-i_1}+N(0,i_3-i_2))^2} \\[8pt]
+    & = & \expectation{t_{i_1}^4} + \expectation{t_{i_1}^2}\expectation{\epsilon_{i_2-i_1}^2} + \expectation{t_{i_1}^2}\expectation{N(0,i_3-i_2)^2} \\[4pt]
+    && + 2\expectation{t_{i_1}^3}\expectation{\epsilon_{i_2-i_1}} + 2\expectation{t_{i_1}^3}\expectation{N(0,i_3-i_2)} + 2\expectation{t_{i_1}^2}\expectation{\epsilon_{i_2-i_1}}\expectation{N(0,i_3-i_2)} \\[4pt]
+    && + \expectation{t_{i_1}^3}\expectation{\epsilon_{i_2-i_1}} + \expectation{t_{i_1}}\expectation{\epsilon_{i_2-i_1}^3} + \expectation{t_{i_1}}\expectation{\epsilon_{i_2-i_1}}\expectation{N(0,i_3-i_2)^2} \\[4pt] 
+    && + 2\expectation{t_{i_1}^2}\expectation{\epsilon_{i_2-i_1}^2} + 2\expectation{t_{i_1}^2}\expectation{\epsilon_{i_2-i_1}}\expectation{N(0,i_3-i_2)} \\[4pt]
+    && + 2\expectation{t_{i_1}}\expectation{\epsilon_{i_2-i_1}^2}\expectation{N(0,i_3-i_2)} \\[8pt]
+    & = & 3i_1^2 + i_1(i_2-i_1) + i_1(i_3-i_2) + 0 * 6 + 2i_1(i_2-i_1) + 2*0 = i_1(2i_2 + i_3)
+\end{array}$$
+
+\textbf{Case 8}: $i_1 < i_2 < i_3 < i_4$: The noise added to $t_{i_2}$ is also added to $t_{i_3}$ and $t_{i_4}$, and the additional noise added to $t_{i_3}$ is also added to $t_{i_4}$. Let these be $\epsilon_{i_2-i_1}\sim N(0,i_2-i_1)$ and $\epsilon_{i_3-i_2}\sim N(0,i_3-i_2)$ respectively. Then we have:
+$$\begin{array}{rcl}
+    \expectation{t_{i_1}t_{i_2}t_{i_3}t_{i_4}} & = & \expectation{t_{i_1}(t_{i_1}+\epsilon_{i_2-i_1})(t_{i_1}+\epsilon_{i_2-i_1}+\epsilon_{i_3-i_2})(t_{i_1}+\epsilon_{i_2-i_1}+\epsilon_{i_3-i_2}+N(0,i_4-i_3))} \\[8pt]
+        & = & 3i_1^2 + 3i_1(i_2-i_1) + i_1(i_3-i_2) = i_1(2i_2+i_3)
+\end{array}$$
+
+\begin{table}
+\centering
+\begin{tabular}{|c|c|}
+    \hline
+    Case & Result \\
+    \hline
+    $i_1 = i_2 = i_3 = i_4$ & $3i_1^2$ \\
+    \hline
+    $i_1 = i_2 = i_3 < i_4$ & $3i_1^2$ \\
+    \hline
+    $i_1 = i_2 < i_3 = i_4$ & $i_1(2i_1+i_3)$ \\
+    \hline
+    $i_1 < i_2 = i_3 = i_4$ & $3i_1i_2$ \\
+    \hline
+    $i_1 = i_2 < i_3 < i_4$ & $i_1(2i_1+i_3)$ \\
+    \hline
+    $i_1 < i_2 = i_3 < i_4$ & $3i_1i_2$ \\
+    \hline
+    $i_1 < i_2 < i_3 = i_4$ & $i_1(2i_2+i_3)$ \\
+    \hline
+    $i_1 < i_2 < i_3 < i_4$ & $i_1(2i_2+i_3)$ \\
+    \hline
+\end{tabular}
+\end{table}
+
+In general then $\expectation{t_{i_1}t_{i_2}t_{i_3}t_{i_4}}=i_1(2i_2+i_3)$. Now we can calculate $\expectation{h(t_{i'})h(t_{i''})}$:
+$$\begin{array}{rcl}
+    \expectation{h(t_{i'})h(t_{i''})} & = & \expectation{t_{i'}^{2} t_{i''}^{2}} - \expectation{\frac{2 t_{i'}^{2} t_{i''} \sum_{j'=p}^{l + p - 1} t_{j'}}{l}} - \expectation{\frac{2 t_{i'} t_{i''}^{2} \sum_{j'=p}^{l + p - 1} t_{j'}}{l}} + \expectation{\frac{t_{i'}^{2} \left(\sum_{j'=p}^{l + p - 1} t_{j'}\right)^{2}}{l^{2}}} + \\[12pt]
+    && + \expectation{\frac{4 t_{i'} t_{i''} \left(\sum_{j'=p}^{l + p - 1} t_{j'}\right)^{2}}{l^{2}}} + \expectation{\frac{t_{i''}^{2} \left(\sum_{j'=p}^{l + p - 1} t_{j'}\right)^{2}}{l^{2}}} - \expectation{\frac{2 t_{i'} \left(\sum_{j'=p}^{l + p - 1} t_{j'}\right)^{3}}{l^{3}}} \\[12pt]
+    && - \expectation{\frac{2 t_{i''} \left(\sum_{j'=p}^{l + p - 1} t_{j'}\right)^{3}}{l^{3}}} + \expectation{\frac{\left(\sum_{j'=p}^{l + p - 1} t_{j'}\right)^{4}}{l^{4}}}
+\end{array}$$
+
+\textbf{Case 1}: $i' = i''$:
+$$\begin{array}{rcl}
+    \expectation{h(t_{i'})h(t_{i''})} & = & 3i'^2-\dfrac{4}{l}\left(\left(\sum_{j'=p}^{i'-1}3i'j'\right) + (p-l-i')3i'^2\right) + ... \\[4pt]
+\end{array}$$
+
+\end{document}

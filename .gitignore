@@ -28,6 +28,8 @@ __pycache__
 
 # Doxygen
 docs/mulisse_src/*
+docs/calculation/*
+!docs/calculation/*.tex
 html
 latex
 

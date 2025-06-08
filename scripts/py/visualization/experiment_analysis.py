@@ -678,8 +678,8 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
         separate_plots_dict={
             # (QSC.CHANNEL_MASK,): [],
             # (ISC.NUM_SEGMENTS,): [],
-            (DSC.DATASET_FILE,): [("stocks",)],
-            (ISC.INDEX_SIZE_LIMIT,): [(1.0,)],
+            (DSC.DATASET_FILE,): [],
+            (ISC.INDEX_SIZE_LIMIT,): [(10.0,)],
             (QSC.L_MIN, QSC.L_MAX): [(128, 1024)],
         },
         regex_dict={SSC.METHOD_NAME: r"envelope"},
@@ -706,11 +706,11 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
 
 
 for target_args_dict, reducer in [
-    (TargetArgs.QUERY_TIME.value, MeanReducer()),
+    # (TargetArgs.QUERY_TIME.value, MeanReducer()),
     (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
-    ({"targets_dict": {ERD.INDEXES_COLS: [ISC.POS_PER_ENV]}}, MeanReducer()),
-    (TargetArgs.INDEX_SIZE.value, MeanReducer()),
-    ({"targets_dict": {ERD.INDEXES_COLS: [ISC.ESTIMATED_SIZE_ON_DISK_B]}}, MeanReducer()),
+    ({"targets_dict": {ERD.INDEXES_COLS: [ISC.NUM_ENVELOPES]}}, MeanReducer()),
+    # (TargetArgs.INDEX_SIZE.value, MeanReducer()),
+    # ({"targets_dict": {ERD.INDEXES_COLS: [ISC.ESTIMATED_SIZE_ON_DISK_B]}}, MeanReducer()),
 ]:
     experiment_segmentation_strategy(target_args_dict=target_args_dict, reducer=reducer)
 
