@@ -658,7 +658,7 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
         # logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_env_width_chss2"], # Show correlations
         # logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_env_width_chss3"],  # Using correlations not usable in general
         # logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_clairvoyant_chss2_raw"],  # Clairvoyant raw
-        logs_dirs=["EXPERIMENT_LOGS/envelope_variants/LOGS_size_limiting"],
+        logs_dirs=["EXPERIMENT_LOGS/envelope_variants/LOGS_size_limiting_stats"],
         # logs_dirs=["LOGS"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
@@ -679,7 +679,7 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
             # (QSC.CHANNEL_MASK,): [],
             # (ISC.NUM_SEGMENTS,): [],
             (DSC.DATASET_FILE,): [],
-            (ISC.INDEX_SIZE_LIMIT,): [(10.0,)],
+            (ISC.INDEX_SIZE_LIMIT,): [(0.5,)],
             (QSC.L_MIN, QSC.L_MAX): [(128, 1024)],
         },
         regex_dict={SSC.METHOD_NAME: r"envelope"},
@@ -708,7 +708,8 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
 for target_args_dict, reducer in [
     # (TargetArgs.QUERY_TIME.value, MeanReducer()),
     (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
-    ({"targets_dict": {ERD.INDEXES_COLS: [ISC.NUM_ENVELOPES]}}, MeanReducer()),
+    # ({"targets_dict": {ERD.INDEXES_COLS: [ISC.NUM_ENVELOPES]}}, MeanReducer()),
+    ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.MEAN)]}}, MeanReducer()),
     # (TargetArgs.INDEX_SIZE.value, MeanReducer()),
     # ({"targets_dict": {ERD.INDEXES_COLS: [ISC.ESTIMATED_SIZE_ON_DISK_B]}}, MeanReducer()),
 ]:
