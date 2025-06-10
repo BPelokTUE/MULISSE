@@ -4,6 +4,9 @@
 #include "Enums/DistanceType.hpp"
 #include "Enums/SearchType.hpp"
 #include "Search/DistanceMeasure/DistanceMeasure.hpp"
+#include "Util/HelperFuncs/Conversion.hpp"
+#include "Util/HelperFuncs/Math.hpp"
+#include "Util/Logging/QueryLogger.hpp"
 
 template <SearchType S, bool QS>
 class DistanceMeasure<S, ED, QS> {

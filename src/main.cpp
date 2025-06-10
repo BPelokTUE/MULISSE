@@ -128,7 +128,8 @@ int main(int argc, char **argv) {
     vec<bool> channel_mask;
     bool zero_start = false, raw = false, approximate = false, early_abandon = false, sort_query = false,
          no_use_pq = false, adapt_index = false, merge_in_leaves = false, prefer_first_in_em = false,
-         separate_segment_stats = false, no_log_num_seg_per_ch = false, log_num_seg_all = false;
+         separate_segment_stats = false, no_log_num_seg_per_ch = false, log_num_seg_all = false,
+         estimate_parameters = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -351,6 +352,8 @@ int main(int argc, char **argv) {
                      "Maximum size of FlatEnvelopeIndex as a ratio of the dataset size, 0 by default, meaning no limit")
         ->capture_default_str()
         ->check(non_negative_real);
+    index_subcommand->add_flag("--estimate_parameters", estimate_parameters,
+                               "Estimate optimal parameters of flat envelope index given a size limit");
     index_subcommand
         ->add_option("--index_sample_frac", index_sample_frac,
                      "Fraction of the dataset to index, intended for testing, "
@@ -663,6 +666,11 @@ int main(int argc, char **argv) {
                     std::cerr << "Sequential scan does not require indexation\n";
                     return 1;
             }
+
+            EstimatorParams *estimator_params = nullptr;
+            if (method_type == ENVELOPE && index_size_limit > 0)
+                estimator_params = new EstimatorParams({estimate_parameters, index_size_limit});
+
             IndexOptions index_options{
                 .m_normalized = !raw,
                 .m_adapt = adapt_index,
@@ -675,8 +683,8 @@ int main(int argc, char **argv) {
                 .m_l_max = l_max,
                 .m_series_len = series_len,
                 .m_l_per_group = l_per_group,
-                .m_index_size_limit = index_size_limit,
-                .m_index_params = std::unique_ptr<IIndexParams>(index_params),
+                .m_estimator_params = uptr<EstimatorParams>(estimator_params),
+                .m_index_params = uptr<IIndexParams>(index_params),
             };
             return create_index(index_options, index_sample_frac);
         }

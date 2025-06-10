@@ -56,8 +56,8 @@ vec<vec<std::tuple<Paa, uint, uint>>> PaaEntryGenerator::get_paa_entries_normali
             auto [mu, sigma] = calculate_mu_and_sigma(sum_accs[last_ind + 1] - sum_accs[first_ind],
                                                       sq_sum_accs[last_ind + 1] - sq_sum_accs[first_ind], subs_len);
 
-            uint length_group = RS.get_length_group(subs_len);
-            uint lg_l_max = RS.get_lg_l_max(length_group);
+            uint length_group = RS.get_length_props().get_length_group(subs_len);
+            uint lg_l_max = RS.get_length_props().get_lg_l_max(length_group);
             auto segmentation_strategy = lg_segmentation_strategy->get_const_ch_segmentation_strategy(length_group)
                                              ->get_const_segmentation_strategy(ch_ind);
 

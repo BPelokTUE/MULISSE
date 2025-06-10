@@ -5,12 +5,15 @@
 
 #include "Enums/CommandType.hpp"
 #include "Enums/SearchMethodType.hpp"
+#include "Index/EnvelopeIndex/Flat/FlatEnvelopeParams.hpp"
 #include "Util/RunSettings/BreakpointProperties.hpp"
 #include "Util/RunSettings/DatasetProperties.hpp"
 #include "Util/RunSettings/EnvelopeProperties.hpp"
 #include "Util/RunSettings/LengthProperties.hpp"
 #include "Util/Types/FftArray.hpp"
 #include "Util/Types/SubsequenceInfo.hpp"
+
+struct FlatEnvelopeParams;
 
 class RunSettings {
    public:
@@ -114,44 +117,21 @@ class RunSettings {
 
     const EnvelopeProperties& get_envelope_props() const;
 
+    /**
+     * @brief Set the positions per envelope for the run
+     * @param pos_per_env The number of positions per envelope
+     */
     void set_pos_per_env(uint pos_per_env);
+
+    /**
+     * @brief Set the flat envelope parameters (positions per envelope, lengths per group) for the run
+     * @param flat_envelope_params The flat envelope parameters
+     */
+    void set_flat_envelope_params(const FlatEnvelopeParams& flat_envelope_params);
 
     const LengthProperties& get_length_props() const;
 
     void set_lengths_per_group(uint l_per_group);
-
-    // Length properties
-
-    /**
-     * @brief Get the length group index the subsequence belongs to
-     * @param subs_length Length of the subsequence
-     * @return The index of the length group
-     */
-    virtual inline uint get_length_group(uint subs_length) const {
-        return (subs_length - m_length_props.m_l_min) / m_length_props.m_l_per_group;
-    }
-
-    /**
-     * @brief Get the maximum length of the specified length group
-     * @param lg_ind Length group index
-     * @return The maximum length of the length group
-     */
-    virtual inline uint get_lg_l_min(uint lg_ind) const {
-        return m_length_props.m_use_length_groups ? m_length_props.m_l_min + lg_ind * m_length_props.m_l_per_group
-                                                  : m_length_props.m_l_min;
-    }
-
-    /**
-     * @brief Get the minimum length of the specified length group
-     * @param lg_ind Length group index
-     * @return The minimum length of the length group
-     */
-    virtual inline uint get_lg_l_max(uint lg_ind) const {
-        return m_length_props.m_use_length_groups
-                   ? std::min(m_length_props.m_l_max,
-                              m_length_props.m_l_min + (lg_ind + 1) * m_length_props.m_l_per_group - 1)
-                   : m_length_props.m_l_max;
-    }
 
     // Paths
 

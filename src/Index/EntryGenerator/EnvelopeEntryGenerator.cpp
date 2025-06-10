@@ -106,7 +106,7 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_normalized_envelopes(const vec<Re
                                                       sq_sum_accs[last_ind + 1] - sq_sum_accs[first_ind], subs_len);
 
             uint segment_len_sum = 0;
-            uint length_group = RS.get_length_group(subs_len);
+            uint length_group = RS.get_length_props().get_length_group(subs_len);
             auto segmentation_strategy = lg_segmentation_strategy->get_const_ch_segmentation_strategy(length_group)
                                              ->get_const_segmentation_strategy(ch_ind);
 
@@ -136,8 +136,8 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_envelope_groups(
 
     vec<vec<Envelope>> envelope_groups(m_num_len_groups);
     for (uint lg_ind = 0; lg_ind < m_num_len_groups; ++lg_ind) {
-        uint lg_l_min = RS.get_lg_l_min(lg_ind);  // l_min + (l_max - l_min) * lg_ind / m_num_len_groups;
-        uint lg_l_max = RS.get_lg_l_max(lg_ind);
+        uint lg_l_min = RS.get_length_props().get_lg_l_min(lg_ind);
+        uint lg_l_max = RS.get_length_props().get_lg_l_max(lg_ind);
         uint num_env = U((series_len - lg_l_min + pos_per_env) / pos_per_env);
 
         SaxSegIndT segments_per_env_lg = lg_segmentation_strategy->get_const_ch_segmentation_strategy(lg_ind)

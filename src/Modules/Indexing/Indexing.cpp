@@ -1,5 +1,6 @@
 #include "Modules/Indexing/Indexing.hpp"
 
+#include "Index/Estimator/FlatEnvelopeParamEstimator.hpp"
 #include "Modules/Indexing/ConstructIndex.hpp"
 #include "Modules/Indexing/GetChannelScores.hpp"
 #include "Modules/Indexing/GetEntryGenerator.hpp"
@@ -32,14 +33,16 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
         if (index_params && index_params->m_isax_trie_params.m_num_bits_limit > 0) {
             initialize_sax_breakpoints(index_params->m_sax_params, index_params->m_isax_trie_params.m_num_bits_limit);
         } else {
-            throw std::runtime_error("iSAX index method requires a positive number of bits limit");
+            std::cerr << "iSAX index method requires a positive number of bits limit\n";
+            return 2;
         }
     } else if (arr_contains(METHODS_W_SAX, opts.m_index_method)) {
         auto *index_params = dynamic_cast<SaxIndexParams *>(opts.m_index_params.get());
         if (index_params && index_params->m_sax_params.m_num_bits > 0) {
             initialize_sax_breakpoints(index_params->m_sax_params, index_params->m_sax_params.m_num_bits);
         } else {
-            throw std::runtime_error("SAX index method requires a positive number of bits");
+            std::cerr << "SAX index method requires a positive number of bits\n";
+            return 2;
         }
     } else if (arr_contains(METHODS_W_PAA, opts.m_index_method)) {
         auto *index_params = dynamic_cast<PaaIndexParams *>(opts.m_index_params.get());
@@ -48,9 +51,33 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
             if (merger_sax_params && merger_sax_params->m_num_bits > 0) {
                 initialize_sax_breakpoints(*merger_sax_params, merger_sax_params->m_num_bits);
             } else {
-                throw std::runtime_error("SAX-based envelope entry merger requires a positive number of bits");
+                std::cerr << "SAX-based envelope entry merger requires a positive number of bits\n";
+                return 2;
             }
         }
+    }
+
+    // Estimate approximately optimal parameters if requested
+    Real index_size_limit = opts.m_estimator_params ? opts.m_estimator_params->m_index_size_limit : R(0.0);
+
+    auto envelope_params = dynamic_cast<EnvelopeIndexParams *>(opts.m_index_params.get());
+    if (opts.m_estimator_params) {
+        if (!envelope_params) {
+            std::cerr << "FlatEnvelopeIndex requires EnvelopeIndexParams.\n";
+            return 2;
+        }
+        if (envelope_params->m_segmentation_params.m_lg_strategy_type == ADAPTIVE_MULTI) {
+            std::cerr << "Index size estimation is not supported for AdaptiveMultiSegmentationStrategy.\n";
+            return 2;
+        }
+    }
+
+    if (opts.m_estimator_params && opts.m_estimator_params->m_estimate_parameters) {
+        auto estimator = FlatEnvelopeParamEstimator(opts);
+        auto flat_envelope_params = estimator.get_estimated_params();
+        RS.set_flat_envelope_params(flat_envelope_params);
+        logger.set_flat_envelope_params(flat_envelope_params);
+        envelope_params->set_flat_envelope_params(flat_envelope_params);
     }
 
     // Set up segmentation strategies
@@ -63,24 +90,20 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
 
     // Set pos_per_env based on required index size, if applicable
 
-    if (opts.m_index_size_limit > 0.0 && opts.m_index_method == ENVELOPE) {
-        auto envelope_params = dynamic_cast<EnvelopeIndexParams *>(opts.m_index_params.get());
-        if (envelope_params && envelope_params->m_segmentation_params.m_lg_strategy_type != ADAPTIVE_MULTI) {
-            uint pos_per_env = get_max_pos_per_env(opts.m_index_size_limit, lg_segmentation_strategy.get());
+    if (opts.m_estimator_params && !opts.m_estimator_params->m_estimate_parameters) {
+        uint pos_per_env = get_max_pos_per_env(index_size_limit, lg_segmentation_strategy.get());
+        size_t estimated_size = get_estimated_flat_envelope_size(pos_per_env, lg_segmentation_strategy.get()),
+               size_limit = static_cast<size_t>(index_size_limit * R(get_dataset_size(dataset_path)));
 
-            size_t estimated_size = get_estimated_flat_envelope_size(lg_segmentation_strategy.get(), pos_per_env, true),
-                   size_limit = static_cast<size_t>(opts.m_index_size_limit * R(get_dataset_size(dataset_path)));
-
-            if (estimated_size > size_limit) {
-                std::cerr << "Size limit is insufficient for requested parameters. "
-                          << "Estimated size of the index is " << estimated_size << " bytes, "
-                          << "but the limit is " << size_limit << " bytes." << std::endl;
-                return 2;
-            }
-            RS.set_pos_per_env(pos_per_env);
-            logger.set_pos_per_env(pos_per_env);
-            envelope_params->m_pos_per_env = pos_per_env;
+        if (estimated_size > size_limit) {
+            std::cerr << "Size limit is insufficient for requested parameters. "
+                      << "Estimated size of the index is " << estimated_size << " bytes, "
+                      << "but the limit is " << size_limit << " bytes." << std::endl;
+            return 3;
         }
+        RS.set_pos_per_env(pos_per_env);
+        logger.set_pos_per_env(pos_per_env);
+        envelope_params->m_pos_per_env = pos_per_env;
     }
 
     // Create index

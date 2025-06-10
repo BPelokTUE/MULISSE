@@ -18,8 +18,8 @@ AdaptiveMultiLGSegmentationStrategy::AdaptiveMultiLGSegmentationStrategy(
     auto num_segments_per_lg = calculate_num_segments_per_lg(length_props, pos_per_env, avg_num_segments);
 
     for (uint lg_ind = 0; lg_ind < length_props.m_num_l_groups; ++lg_ind) {
-        uint lg_l_min = RS.get_lg_l_min(lg_ind);
-        uint lg_l_max = RS.get_lg_l_max(lg_ind);
+        uint lg_l_min = RS.get_length_props().get_lg_l_min(lg_ind);
+        uint lg_l_max = RS.get_length_props().get_lg_l_max(lg_ind);
         m_ch_segmentation_strategies.push_back(
             ch_segmentation_strategy_factory(lg_l_min, lg_l_max, num_segments_per_lg[lg_ind]));
     }
@@ -40,7 +40,8 @@ vec<SaxSegIndT> AdaptiveMultiLGSegmentationStrategy::calculate_num_segments_per_
     size_t presence_per_segment = remaining_presence / remaining_segments;
 
     for (uint lg_num = length_props.m_num_l_groups; lg_num > 0; --lg_num) {
-        uint lg_ind = lg_num - 1, lg_l_min = RS.get_lg_l_min(lg_ind), lg_l_max = RS.get_lg_l_max(lg_ind);
+        uint lg_ind = lg_num - 1, lg_l_min = RS.get_length_props().get_lg_l_min(lg_ind),
+             lg_l_max = RS.get_length_props().get_lg_l_max(lg_ind);
         size_t lg_presence_sum = 0;
 
         for (uint l = lg_l_max; l >= lg_l_min; --l) {

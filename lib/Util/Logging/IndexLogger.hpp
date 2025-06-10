@@ -9,6 +9,7 @@
 #include "Util/Logging/Logger.hpp"
 
 class ILengthGroupSegmentationStrategy;
+struct FlatEnvelopeParams;
 
 /** @brief Enum of the columns of the index settings log file */
 enum class IndexSettingsColumn {
@@ -97,6 +98,12 @@ class IndexLogger : public Logger {
      * @param pos_per_env The value of the column
      */
     void set_pos_per_env(uint pos_per_env);
+
+    /**
+     * @brief Set the num_segments, pos_per_env and l_per_group columns in the log
+     * @param flat_envelope_params The parameters for the FlatEnvelopeIndex
+     */
+    void set_flat_envelope_params(const FlatEnvelopeParams &flat_envelope_params);
 
     /**
      * @brief Set columns related to the number of segments, using the length group segmentation strategy

@@ -1,5 +1,6 @@
 #include "Util/Logging/IndexLogger.hpp"
 
+#include "Index/EnvelopeIndex/Flat/FlatEnvelopeParams.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
 #include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
@@ -32,7 +33,9 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         max_width_change_str = "";
     Real score_based_chss_score_exp = 0.0;
 
-    Real index_size_limit = index_options.m_index_method == ENVELOPE ? index_options.m_index_size_limit : 0.0;
+    Real index_size_limit = index_options.m_index_method == ENVELOPE && index_options.m_estimator_params
+                                ? index_options.m_estimator_params->m_index_size_limit
+                                : 0.0;
 
     if (index_options.m_index_params && arr_contains(METHODS_W_PAA, index_options.m_index_method)) {
         auto method_type = index_options.m_index_params->get_type();
@@ -139,6 +142,12 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
 
 void IndexLogger::set_pos_per_env(uint pos_per_env) { m_columns[ISC::POS_PER_ENV] = format_num_param(pos_per_env); }
 
+void IndexLogger::set_flat_envelope_params(const FlatEnvelopeParams &flat_envelope_params) {
+    m_columns[ISC::POS_PER_ENV] = to_string(flat_envelope_params.m_pos_per_env);
+    m_columns[ISC::L_PER_GROUP] = to_string(flat_envelope_params.m_l_per_group);
+    m_columns[ISC::NUM_SEGMENTS] = to_string(flat_envelope_params.m_num_segments);
+}
+
 void IndexLogger::set_num_segments_cols(const ILengthGroupSegmentationStrategy *lg_segmentation_strategy,
                                         bool log_num_seg_per_ch, bool log_num_seg_all) {
     auto &RS = RunSettings::get_instance();
@@ -160,7 +169,7 @@ void IndexLogger::set_num_segments_cols(const ILengthGroupSegmentationStrategy *
         num_seg_all.reserve(num_len_groups * num_channels);
         for (uint lg_ind = 0; lg_ind < num_len_groups; ++lg_ind) {
             auto chss = lg_segmentation_strategy->get_const_ch_segmentation_strategy(lg_ind);
-            uint lg_l_max = RS.get_lg_l_max(lg_ind);
+            uint lg_l_max = RS.get_length_props().get_lg_l_max(lg_ind);
             for (MtsNumChannelsT ch_ind = 0; ch_ind < num_channels; ++ch_ind) {
                 num_seg_all.push_back(chss->get_const_segmentation_strategy(ch_ind)->get_num_segments(lg_l_max));
             }

@@ -38,7 +38,7 @@ class LengthGroupingIndexSearch : public ISearchMethod<S, D, QS> {
                 break;
             }
         }
-        uint length_group = RunSettings::get_instance().get_length_group(query_len);
+        uint length_group = RunSettings::get_instance().get_length_props().get_length_group(query_len);
         return m_search_methods[length_group]->search(query, opts, result_set, distance_measure, dataset_ifs,
                                                       real_query_inds);
     }

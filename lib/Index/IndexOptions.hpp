@@ -4,6 +4,7 @@
 #include "Enums/ArchiveType.hpp"
 #include "Enums/EntryInserterType.hpp"
 #include "Enums/SearchMethodType.hpp"
+#include "Index/Estimator/EstimatorParams.hpp"
 #include "Index/IndexParams.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"
@@ -32,9 +33,8 @@ struct IndexOptions {
     uint m_series_len;
     /** @brief Lengths per group */
     uint m_l_per_group;
-    /** @brief Maximum size of the index as a ratio of the dataset size. Only implemented for FlatEnvelopeIndex with LG
-     * segmentation strategy other than AdaptiveMultiLGSegmentationStrategy. */
-    Real m_index_size_limit;
+    /** @brief Estimator parameters */
+    uptr<EstimatorParams> m_estimator_params;
     /** @brief Unique pointer to the index parameters */
     uptr<IIndexParams> m_index_params;
 };

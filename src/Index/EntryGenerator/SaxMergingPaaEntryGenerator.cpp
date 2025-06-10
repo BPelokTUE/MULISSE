@@ -39,7 +39,7 @@ vec<vec<IndexEntry<Paa>>> SaxMergingPaaEntryGenerator::get_entries(const vec<vec
         uint max_ind = std::min(first_ind + l_max - 1, U(series_len - 1));
         for (uint last_ind = first_ind + l_min - 1; last_ind <= max_ind; ++last_ind) {
             uint subs_len = last_ind - first_ind + 1;
-            uint lg_ind = RS.get_length_group(subs_len);
+            uint lg_ind = RS.get_length_props().get_length_group(subs_len);
 
             auto ch_segmentation_strategy = lg_segmentation_strategy->get_const_ch_segmentation_strategy(lg_ind);
             vec<vec<SaxSymbolT>> symbols(num_channels);
@@ -48,7 +48,8 @@ vec<vec<IndexEntry<Paa>>> SaxMergingPaaEntryGenerator::get_entries(const vec<vec
             // Calculate PAA values and SAX symbols
             for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
                 auto segmentation_strategy = ch_segmentation_strategy->get_const_segmentation_strategy(c);
-                SaxSegIndT lg_num_segments = segmentation_strategy->get_num_segments(RS.get_lg_l_max(lg_ind));
+                SaxSegIndT lg_num_segments =
+                    segmentation_strategy->get_num_segments(RS.get_length_props().get_lg_l_max(lg_ind));
                 paas[c] = Paa(lg_num_segments);
 
                 auto [mu, sigma] =

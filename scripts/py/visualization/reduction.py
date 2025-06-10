@@ -353,6 +353,12 @@ class ExperimentResults(BaseModel):
             cls.add_extra_cols_for_num_envelopes(extra_cols)
             act_cols[ERD.INDEXES_COLS].remove(str(ISC.NUM_ENVELOPES))
 
+        # Handle average min-dist column
+        if str(QC.MIN_DIST_AVG) in cols[ERD.RUNS_COLS]:
+            extra_cols[ERD.RUNS_COLS] += [str(QC.MIN_DIST_TOTAL), str(QC.NUM_MIN_DIST_CALCULATED)]
+            extra_cols[ERD.INDEXES_COLS].append(str(ISC.POS_PER_ENV))
+            act_cols[ERD.RUNS_COLS].remove(str(QC.MIN_DIST_AVG))
+
         extra_cols = {erd: list(set(extra_cols[erd]) - set(act_cols[erd])) for erd in ERD}
         cols_to_load = {erd: act_cols[erd] + extra_cols[erd] for erd in ERD}
         csv_paths = {erd: os.path.join(logs_dir, CSV_FILES[erd]) for erd in ERD}
@@ -416,6 +422,10 @@ class ExperimentResults(BaseModel):
         # Add # envelopes column
         if str(ISC.NUM_ENVELOPES) in cols[ERD.INDEXES_COLS]:
             results.add_num_envelopes_column()
+
+        # Add average min-dist column
+        if str(QC.MIN_DIST_AVG) in cols[ERD.RUNS_COLS]:
+            results.runs_df[str(QC.MIN_DIST_AVG)] = results.runs_df[str(QC.MIN_DIST_TOTAL)] / results.runs_df[str(QC.NUM_MIN_DIST_CALCULATED)]
 
         # Drop extra columns
         results.datasets_df = results.datasets_df.drop(columns=extra_cols[ERD.DATASETS_COLS])

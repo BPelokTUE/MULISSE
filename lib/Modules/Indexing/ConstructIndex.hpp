@@ -1,11 +1,11 @@
 #ifndef MODULES_INDEXING_CONSTRUCTINDEX
 #define MODULES_INDEXING_CONSTRUCTINDEX
 
+#include "Index/Estimator/IndexSizeEstimator.hpp"
 #include "Index/Index.hpp"
 #include "Index/LengthGroupingIndex/LengthGroupingIndex.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
 #include "Modules/Indexing/IndexFactory/IndexFactoryParams.hpp"
-#include "Util/Stats/IndexSizeEstimator.hpp"
 
 template <typename T>
     requires DerivedFromEntryData<T>
@@ -45,7 +45,7 @@ void construct_index(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_
     if (opts.m_index_method == ENVELOPE) {
         logger.increment_count_col(
             ISC::ESTIMATED_SIZE_ON_DISK_B,
-            get_estimated_flat_envelope_size(lg_segmentation_strategy.get(), RS.get_envelope_props().m_pos_per_env));
+            get_estimated_flat_envelope_size(RS.get_envelope_props().m_pos_per_env, lg_segmentation_strategy.get()));
     }
 }
 

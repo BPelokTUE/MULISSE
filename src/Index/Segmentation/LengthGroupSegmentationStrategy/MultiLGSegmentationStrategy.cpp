@@ -13,8 +13,8 @@ MultiLGSegmentationStrategy::MultiLGSegmentationStrategy(
 
     m_ch_segmentation_strategies.reserve(length_props.m_num_l_groups);
     for (uint lg_ind = 0; lg_ind < length_props.m_num_l_groups; ++lg_ind) {
-        uint lg_l_min = RS.get_lg_l_min(lg_ind);
-        uint lg_l_max = RS.get_lg_l_max(lg_ind);
+        uint lg_l_min = RS.get_length_props().get_lg_l_min(lg_ind);
+        uint lg_l_max = RS.get_length_props().get_lg_l_max(lg_ind);
         m_ch_segmentation_strategies.push_back(ch_segmentation_strategy_factory(lg_l_min, lg_l_max));
     }
 }
