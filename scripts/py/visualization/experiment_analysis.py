@@ -712,7 +712,7 @@ for target_args_dict, reducer in [
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.MEAN)]}}, MeanReducer()),
     ({"targets_dict": {ERD.RUNS_COLS: [QC.MIN_DIST_AVG]}}, MeanReducer()),
     # ({"targets_dict": {ERD.RUNS_COLS: [QC.MIN_DIST_TOTAL]}}, MeanReducer()),
-    # ({"targets_dict": {ERD.INDEXES_COLS: [ISC.POS_PER_ENV]}}, MeanReducer()),
+    ({"targets_dict": {ERD.INDEXES_COLS: [ISC.POS_PER_ENV]}}, MeanReducer()),
     # (TargetArgs.INDEX_SIZE.value, MeanReducer()),
     # ({"targets_dict": {ERD.INDEXES_COLS: [ISC.ESTIMATED_SIZE_ON_DISK_B]}}, MeanReducer()),
 ]:

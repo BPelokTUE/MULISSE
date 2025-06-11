@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
          env_width_min_w_update = R(0.0), min_subs_sd = DEFAULT_MIN_SUBS_SD, max_width_change = R(0.0),
          r_range_r = R(1.0), index_size_limit = R(0.0);
     SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT, merger_num_bits = MAX_NUM_BITS_LIMIT;
-    SaxSegIndT num_segments;
+    SaxSegIndT num_segments = 0;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
          num_l_groups = 0, knn_k = 1, seed = 0, num_lags = 5, score_based_chss_segment_len = 1,
          score_based_chss_sample_size = 0;
@@ -305,7 +305,7 @@ int main(int argc, char **argv) {
         ->required()
         ->check(positive_int);
     index_subcommand->add_option("-s,--num_segments", num_segments, "Number of segments")
-        ->required()
+        ->capture_default_str()
         ->check(positive_int);
     index_subcommand->add_option("-p,--pos_per_env", pos_per_env, "Positions per envelope")
         ->capture_default_str()
@@ -464,7 +464,7 @@ int main(int argc, char **argv) {
     CLI11_PARSE(app, argc, argv);
     CommandType command_type = STR_TO_CMD_TYPE.at(app.get_subcommands().front()->get_name());
     SearchMethodType method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str);
-    bool use_length_groups = l_per_group > 0;
+    bool use_length_groups = l_per_group > 0 || estimate_parameters;
 
     // Extra parsing; TODO: handle this with CLI11 if possible
     if (l_min > l_max) {
@@ -480,6 +480,10 @@ int main(int argc, char **argv) {
         return 1;
     }
     if (command_type == INDEX) {
+        if (num_segments == 0 && !estimate_parameters) {
+            std::cerr << "--num_segments is required\n";
+            return 1;
+        }
         if (method_type == ISAX || method_type == ISAX_ENVELOPE) {
             // Leaf capacity required
             if (leaf_capacity == 0) {
@@ -523,7 +527,8 @@ int main(int argc, char **argv) {
                 }
             }
         }
-        if ((method_type == ENVELOPE || method_type == SAX_ENVELOPE || method_type == ISAX_ENVELOPE) &&
+        if (((method_type == ENVELOPE && !estimate_parameters) || method_type == SAX_ENVELOPE ||
+             method_type == ISAX_ENVELOPE) &&
             pos_per_env == 0) {
             std::cerr << "--pos_per_env is required\n";
             return 1;

@@ -1,17 +1,14 @@
 #include "Index/Estimator/FlatEnvelopeParamEstimator.hpp"
 
-#include <random>
+#include <cmath>
 
 #include "Index/Entry/Envelope.hpp"
 #include "Index/Estimator/ConfigGenerator/DummyConfigGenerator.hpp"
 #include "Index/IndexOptions.hpp"
 #include "Search/DistanceMeasure/EuclideanDistance.hpp"
+#include "Util/Constants/Math.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
-
-std::normal_distribution<Real> get_paa_distribution(uint length, uint start_pos, SaxSegIndT seg_ind, uint segment_len) {
-    return std::normal_distribution<Real>(R(0.0), R(1.0));
-}
 
 FlatEnvelopeParamEstimator::FlatEnvelopeParamEstimator(const IndexOptions &opts) {
     // Generate X_c configurations
@@ -25,9 +22,9 @@ FlatEnvelopeParamEstimator::FlatEnvelopeParamEstimator(const IndexOptions &opts)
     //         Update the min-distance accumulators using X_q sampled query PAAs
     // Select the configuration with the biggest average min-distance
 
-    uint seed = 10;                                                   // TMP
-    uint x_p = 100;                                                   // TMP
-    uint x_s = 10;                                                    // TMP
+    uint seed = 100;                                                  // TMP
+    uint x_p = 1000;                                                  // TMP
+    uint x_s = 100;                                                   // TMP
     std::normal_distribution<Real> query_noise_dist(R(0.0), R(0.1));  // TMP
 
     auto &RS = RunSettings::get_instance();
@@ -46,7 +43,7 @@ FlatEnvelopeParamEstimator::FlatEnvelopeParamEstimator(const IndexOptions &opts)
     vec<uint> lengths(x_p), start_positions(x_p);
     for (uint i = 0; i < x_p; ++i) {
         lengths[i] = length_dist(rng);
-        start_positions[i] = start_pos_dist(rng) % (series_len - lengths[i]);
+        start_positions[i] = start_pos_dist(rng) % (series_len - lengths[i] + 1);
     }
 
     DistanceMeasure<KNN, ED> distance_measure(true);
@@ -61,12 +58,15 @@ FlatEnvelopeParamEstimator::FlatEnvelopeParamEstimator(const IndexOptions &opts)
 
         uint num_lg = (l_max - l_min + config.m_l_per_group) / config.m_l_per_group,
              segment_len = l_max / config.m_num_segments;
+
+        length_props.m_use_length_groups = true;
         length_props.m_num_l_groups = num_lg;
+        length_props.m_l_per_group = config.m_l_per_group;
 
         envelopes[i].resize(num_lg);
         for (uint lg_ind = 0; lg_ind < num_lg; ++lg_ind) {
             uint lg_l_max = length_props.get_lg_l_max(lg_ind), lg_l_min = length_props.get_lg_l_min(lg_ind);
-            uint num_env = (series_len - lg_l_min + config.m_l_per_group) / config.m_l_per_group;
+            uint num_env = (series_len - lg_l_min + config.m_pos_per_env) / config.m_pos_per_env;
             envelopes[i][lg_ind].resize(num_env);
             for (uint env_ind = 0; env_ind < num_env; ++env_ind) {
                 envelopes[i][lg_ind][env_ind].resize(lg_l_max / segment_len);
@@ -77,9 +77,11 @@ FlatEnvelopeParamEstimator::FlatEnvelopeParamEstimator(const IndexOptions &opts)
         for (uint j = 0; j < x_p; ++j) {
             uint lg_ind = length_props.get_length_group(lengths[j]),
                  env_ind = start_positions[j] / config.m_pos_per_env;
+            SaxSegIndT num_segments = length_props.get_lg_l_max(lg_ind) / segment_len;
 
-            for (SaxSegIndT seg_ind = 0; seg_ind < config.m_num_segments; ++seg_ind) {
-                auto paa_distribution = get_paa_distribution(lengths[j], start_positions[j], seg_ind, segment_len);
+            for (SaxSegIndT seg_ind = 0; seg_ind < num_segments; ++seg_ind) {
+                PaaDistributionInputs paa_dist_inputs{seg_ind, lengths[j], start_positions[j], segment_len};
+                auto paa_distribution = get_paa_distribution(paa_dist_inputs);
                 for (uint paa_sample_ind = 0; paa_sample_ind < x_s; ++paa_sample_ind) {
                     Real paa_segment = paa_distribution(rng);
                     auto &env_segment = envelopes[i][lg_ind][env_ind];
@@ -112,3 +114,30 @@ FlatEnvelopeParamEstimator::FlatEnvelopeParamEstimator(const IndexOptions &opts)
 }
 
 FlatEnvelopeParams FlatEnvelopeParamEstimator::get_estimated_params() { return m_estimated_params; }
+
+std::normal_distribution<Real> FlatEnvelopeParamEstimator::get_paa_distribution(const PaaDistributionInputs &inputs) {
+    Real denominator_ev_term = get_denominator_ev_term(inputs);
+    Real squared_diff_ev_term = get_squared_diff_ev_term(inputs);
+    Real covariance_term = get_covariance_term(inputs);
+    Real variance_term = get_variance_term(inputs);
+
+    Real paa_var = squared_diff_ev_term / denominator_ev_term - covariance_term / R(std::pow(denominator_ev_term, 2)) +
+                   variance_term / R(std::pow(denominator_ev_term, 3));
+
+    return std::normal_distribution<Real>(R(0.0), std::max(paa_var, EPS));
+}
+
+Real FlatEnvelopeParamEstimator::get_denominator_ev_term(const PaaDistributionInputs &inputs) {
+    Real l = R(inputs.length), p = R(inputs.start_pos), s = R(inputs.segment_len);
+    return R(s * s * (l * l + 6 * p * p - 6 * p - 1) / (6 * l));
+}
+
+Real FlatEnvelopeParamEstimator::get_squared_diff_ev_term(const PaaDistributionInputs &inputs) {
+    Real k = R(inputs.seg_ind), l = R(inputs.length), p = R(inputs.start_pos), s = R(inputs.segment_len);
+    return R((std::pow(s, 3) * (6 * k * k - 6 * k + 2) + 6 * p * p - 6 * p - 2 * s + 1) / (6 * l) +
+             (2 * l + 6 * p - 3 * s * s + 3 * s - 3) / 6);
+}
+
+Real FlatEnvelopeParamEstimator::get_covariance_term(const PaaDistributionInputs &inputs) { return R(0.0); }  // TMP
+
+Real FlatEnvelopeParamEstimator::get_variance_term(const PaaDistributionInputs &inputs) { return R(0.0); }  // TMP

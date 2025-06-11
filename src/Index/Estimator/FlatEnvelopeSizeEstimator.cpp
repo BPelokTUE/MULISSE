@@ -1,4 +1,4 @@
-#include "Index/Estimator/IndexSizeEstimator.hpp"
+#include "Index/Estimator/FlatEnvelopeSizeEstimator.hpp"
 
 #include "Enums/ChannelSegmentationStrategyType.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
@@ -10,29 +10,30 @@
 
 using CHSS = ChannelSegmentationStrategyType;
 
-size_t get_overhead_size() { return 107; }
+FlatEnvelopeSizeEstimator::FlatEnvelopeSizeEstimator(LengthProperties length_props,
+                                                     const ILengthGroupSegmentationStrategy *lg_segmentation_strategy,
+                                                     SaxSegIndT num_segments)
+    : m_lg_segmentation_strategy(lg_segmentation_strategy),
+      m_length_props(length_props),
+      m_segment_len(num_segments > 0 ? length_props.m_l_max / num_segments : 0) {}
 
-size_t get_estimated_flat_envelope_size(uint pos_per_env,
-                                        const ILengthGroupSegmentationStrategy *lg_segmentation_strategy,
-                                        SaxSegIndT num_segments, bool add_entry_vec_size) {
-    auto &RS = RunSettings::get_instance();
-
-    uint num_len_groups = RS.get_length_props().m_num_l_groups;
-    auto [num_channels, series_len, num_series, ds_file] = RS.get_dataset_props();
+size_t FlatEnvelopeSizeEstimator::get_estimated_flat_envelope_size(uint pos_per_env, bool add_entry_vec_size) {
+    auto [num_channels, series_len, num_series, ds_file] = RunSettings::get_instance().get_dataset_props();
 
     size_t estimated_size = 0;
-    for (uint lg_ind = 0; lg_ind < num_len_groups; ++lg_ind) {
-        uint l_min = RS.get_length_props().get_lg_l_min(lg_ind), l_max = RS.get_length_props().get_lg_l_max(lg_ind);
+    for (uint lg_ind = 0; lg_ind < m_length_props.m_num_l_groups; ++lg_ind) {
+        uint l_min = m_length_props.get_lg_l_min(lg_ind), l_max = m_length_props.get_lg_l_max(lg_ind);
         uint num_envelopes = (series_len - l_min + pos_per_env) / pos_per_env * num_series;
         const IChannelSegmentationStrategy *ch_segmentation_strategy =
-            lg_segmentation_strategy ? lg_segmentation_strategy->get_const_ch_segmentation_strategy(lg_ind) : nullptr;
+            m_lg_segmentation_strategy ? m_lg_segmentation_strategy->get_const_ch_segmentation_strategy(lg_ind)
+                                       : nullptr;
 
         size_t num_segments_total = 0;
         for (MtsNumChannelsT ch_ind = 0; ch_ind < num_channels; ++ch_ind) {
             SaxSegIndT ch_num_segments =
                 ch_segmentation_strategy
                     ? ch_segmentation_strategy->get_const_segmentation_strategy(ch_ind)->get_num_segments(l_max)
-                    : num_segments;
+                    : l_max / m_segment_len;
             num_segments_total += static_cast<size_t>(ch_num_segments);
         }
         // The estimated size of an IndexEntry<Envelope> is:
@@ -50,23 +51,22 @@ size_t get_estimated_flat_envelope_size(uint pos_per_env,
     return estimated_size;
 }
 
-uint get_max_pos_per_env(Real index_size_limit, const ILengthGroupSegmentationStrategy *lg_segmentation_strategy,
-                         SaxSegIndT num_segments) {
+uint FlatEnvelopeSizeEstimator::get_max_pos_per_env(Real index_size_limit) {
     auto &RS = RunSettings::get_instance();
 
     uint series_len = RS.get_dataset_props().m_series_len;
-    auto &length_props = RS.get_length_props();
 
-    size_t bytes_limit =
-        static_cast<size_t>(index_size_limit * R(get_dataset_size(RunSettings::get_instance().get_dataset_path())));
+    size_t bytes_limit = static_cast<size_t>(index_size_limit * R(get_dataset_size(RS.get_dataset_path())));
 
-    size_t numerator = get_estimated_flat_envelope_size(1, lg_segmentation_strategy, num_segments, false);
-    size_t min_size = get_estimated_flat_envelope_size(series_len, lg_segmentation_strategy, num_segments, false);
-    for (uint lg_ind = 0; lg_ind < length_props.m_num_l_groups; ++lg_ind) min_size += get_overhead_size();
+    size_t numerator = get_estimated_flat_envelope_size(1, false);
+    size_t min_size = get_estimated_flat_envelope_size(series_len, false);
+    for (uint lg_ind = 0; lg_ind < m_length_props.m_num_l_groups; ++lg_ind) min_size += get_overhead_size();
     size_t denominator = min_size < bytes_limit ? bytes_limit - min_size : 1;
 
     uint min_pos_per_env = RS.get_envelope_props().m_pos_per_env;
-    uint max_pos_per_env = length_props.m_l_max - length_props.m_l_min + 1;
+    uint max_pos_per_env = m_length_props.m_l_max - m_length_props.m_l_min + 1;
     return std::min(max_pos_per_env,
                     std::max(min_pos_per_env, static_cast<uint>((numerator + denominator - 1) / denominator)));
 }
+
+size_t FlatEnvelopeSizeEstimator::get_overhead_size() { return 107; }

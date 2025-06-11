@@ -91,9 +91,10 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
     // Set pos_per_env based on required index size, if applicable
 
     if (opts.m_estimator_params && !opts.m_estimator_params->m_estimate_parameters) {
-        uint pos_per_env = get_max_pos_per_env(index_size_limit, lg_segmentation_strategy.get());
-        size_t estimated_size = get_estimated_flat_envelope_size(pos_per_env, lg_segmentation_strategy.get()),
-               size_limit = static_cast<size_t>(index_size_limit * R(get_dataset_size(dataset_path)));
+        FlatEnvelopeSizeEstimator size_estimator(RS.get_length_props(), lg_segmentation_strategy.get());
+        uint pos_per_env = size_estimator.get_max_pos_per_env(index_size_limit);
+        size_t estimated_size = size_estimator.get_estimated_flat_envelope_size(pos_per_env);
+        size_t size_limit = static_cast<size_t>(index_size_limit * R(get_dataset_size(dataset_path)));
 
         if (estimated_size > size_limit) {
             std::cerr << "Size limit is insufficient for requested parameters. "

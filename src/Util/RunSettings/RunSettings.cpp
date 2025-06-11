@@ -48,8 +48,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
         instance->m_length_props.m_num_l_groups = 1;
         instance->m_length_props.m_l_per_group = length_props.m_l_max - length_props.m_l_min + 1;
     } else {
-        instance->m_length_props.m_num_l_groups =
-            U((length_props.m_l_max - length_props.m_l_min + length_props.m_l_per_group) / length_props.m_l_per_group);
+        instance->set_lengths_per_group(length_props.m_l_per_group);
     }
 
     instance->set_pos_per_env(pos_per_env);
@@ -245,7 +244,10 @@ void RunSettings::set_pos_per_env(uint pos_per_env) {
 
 void RunSettings::set_lengths_per_group(uint l_per_group) {
     m_length_props.m_l_per_group = l_per_group;
-    m_length_props.m_num_l_groups = U((m_length_props.m_l_max - m_length_props.m_l_min + l_per_group) / l_per_group);
+    if (l_per_group > 0) {
+        m_length_props.m_num_l_groups =
+            U((m_length_props.m_l_max - m_length_props.m_l_min + l_per_group) / l_per_group);
+    }
 }
 
 void RunSettings::set_flat_envelope_params(const FlatEnvelopeParams &flat_envelope_params) {
