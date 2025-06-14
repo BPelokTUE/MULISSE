@@ -33,7 +33,7 @@ size_t FlatEnvelopeSizeEstimator::get_estimated_flat_envelope_size(uint pos_per_
             SaxSegIndT ch_num_segments =
                 ch_segmentation_strategy
                     ? ch_segmentation_strategy->get_const_segmentation_strategy(ch_ind)->get_num_segments(l_max)
-                    : l_max / m_segment_len;
+                    : static_cast<SaxSegIndT>(l_max / m_segment_len);
             num_segments_total += static_cast<size_t>(ch_num_segments);
         }
         // The estimated size of an IndexEntry<Envelope> is:

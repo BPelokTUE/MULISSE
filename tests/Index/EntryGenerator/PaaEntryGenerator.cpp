@@ -28,10 +28,14 @@ TEST_CASE("get_paa_entries_normalized works") {
     fakeit::When(Method(lg_segmentation_strategy_mock, get_const_ch_segmentation_strategy))
         .AlwaysReturn(&ch_segmentation_strategy_mock.get());
 
+    LengthProperties length_props{
+        .m_l_min = l_min,
+        .m_l_max = l_max,
+        .m_l_per_group = l_max - l_min + 1,
+    };
+
     fakeit::Mock<RunSettings> run_settings_mock;
-    fakeit::When(Method(run_settings_mock, get_length_group)).AlwaysReturn(0);
-    fakeit::When(Method(run_settings_mock, get_lg_l_min)).AlwaysReturn(l_min);
-    fakeit::When(Method(run_settings_mock, get_lg_l_max)).AlwaysReturn(l_max);
+    fakeit::When(Method(run_settings_mock, get_length_props)).AlwaysReturn(length_props);
 
 #ifdef ENABLE_TEST_CODE
     // Pass empty deleter function, because fakeit manages the lifetime of the mock

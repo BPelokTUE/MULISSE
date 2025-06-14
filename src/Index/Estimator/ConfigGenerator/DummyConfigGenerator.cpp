@@ -1,5 +1,7 @@
 #include "Index/Estimator/ConfigGenerator/DummyConfigGenerator.hpp"
 
+#include <cmath>
+
 #include "Index/EnvelopeIndex/Flat/FlatEnvelopeParams.hpp"
 #include "Index/Estimator/FlatEnvelopeSizeEstimator.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"

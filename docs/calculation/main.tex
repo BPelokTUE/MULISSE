@@ -116,35 +116,19 @@ $$
 \begin{array}{rcl}
     \variance{\envelopeijkt} & = & \expectation{\left(\frac{\segsumplk-\subsmeanpl}{s\subsvarpl}-\expectation{\envelopeijkt}\right)^2} \\[16pt]
     \expectation{\envelopeijkt} & = & \expectation{\frac{\segsumplk}{s\subsvarpl}} - \expectation{\frac{\subsmeanpl}{s\subsvarpl}} \\[16pt]
-    \expectation{\frac{\segsumplk}{s\subsvarpl}} & \approx & \frac{\overbrace{\expectation{\segsumplk}}^{=0}}{\expectation{s\subsvarpl}} - \frac{\covariance{\segsumplk}{s\subsvarpl}}{\expectation{s\subsvarpl}^2} + \frac{\variance{s\subsvarpl}\overbrace{\expectation{\segsumplk}}^{=0}}{\expectation{s\subsvarpl}^3} = \frac{\covariance{\segsumplk}{s\subsvarpl}}{\expectation{s\subsvarpl}^2} \\[16pt]
-    \covariance{\segsumplk}{s\subsvarpl} & = & \expectation{\segsumplk s\subsvarpl} - \underbrace{\expectation{\segsumplk}}_{=0}\expectation{s\subsvarpl} = \expectation{\segsumplk s\subsvarpl} \\[16pt]
-    \expectation{\segsumplk{s\subsvarpl}} & = & \expectation{\left(\sum_{i'=p+(k-1)s}^{p+ks-1}t_{i'}\right)s\frac{\sum_{i'=p}^{p+l-1}\left(t_{i'}-\subsmeanpl\right)^2}{l}} \\[16pt]
-    & = & \frac{s}{l} \expectation{\left(\sum_{i'=p+(k-1)s}^{p+ks-1}t_{i'}\right)\sum_{i'=p}^{p+l-1}\left(t_{i'}-\subsmeanpl\right)^2} \\[16pt]
-    & = & \frac{s}{l} \expectation{\left(\sum_{i'=p+(k-1)s}^{p+ks-1}t_{i'}\right)\sum_{i'=p}^{p+l-1}\left(t_{i'}^2-2t_{i'}\subsmeanpl+(\subsmeanpl)^2\right)} \\[16pt]
-    & = & \frac{s}{l} \sum_{i'=p+(k-1)s}^{p+ks-1}\sum_{j'=p}^{p+l-1}\left(\underbrace{\expectation{t_{i'}t_{j'}^2}}_{\overset{(1)\Rightarrow}{=}0}-\underbrace{\expectation{2t_{i'}t_{j'}\subsmeanpl}}_{\overset{(2)\Rightarrow}{=}0}+\underbrace{\expectation{t_{i'}(\subsmeanpl)^2}}_{\overset{(3)\Rightarrow}{=}0}\right) \overset{(4)}{=} 0
 \end{array}
 $$
-
+the expectation $\expectation{\frac{\segsumplk}{s\subsvarpl}}$ is $0$, because the joint distribution of $\segsumplk$ and $\subsvarpl$ is symmetric around $0$, since $\segsumplk$ is normally distributed with mean $0$ and $\subsvarpl$ is invariant under sign change of $t_{i'}$. Therefore the joint distribution, denoted as $p_{S,\sigma}$ is an odd function, leading to:
 $$
 \begin{array}{rcl}
-    \mathbb{E}\left[t_{i'}t_{j'}^2\right] & \overset{(1)}{=} & \begin{cases}
-        \mathbb{E}[t_{i'}^3] = 0 & \text{if } i' = j' \\[4pt]
-        \mathbb{E}[t_{i'}(t_{i'}+N(0,j'-i'))^2] = \underbrace{\mathbb{E}[t_{i'}^3]}_{=0} \\
-            \quad + 2\mathbb{E}[t_{i'}^2]\underbrace{\mathbb{E}[N(0,j'-i')]}_{=0} + \underbrace{\mathbb{E}[t_{i'}]}_{=0}\mathbb{E}[N(0,j'-i')^2] = 0 & \text{if }i' < j' \\[4pt]
-        \mathbb{E}[(t_{j'}+N(0,i'-j'))t_{j'}^2] = \underbrace{\mathbb{E}[t_{j'}^3]}_{=0} + \underbrace{\mathbb{E}[N(0,i'-j')]}_{=0}\mathbb{E}[t_{j'}^2] = 0 & \text{if } i' > j'
-    \end{cases} \\[64pt]
-    \mathbb{E}\left[2t_{i'}t_{j'}\mu_{p:l}^t\right] & \overset{(2)}{=} & \frac{2}{l}\mathbb{E}\left[t_{i'}t_{j'}\sum_{k'=p}^{p+l-1}t_{k'}\right] = \frac{2}{l}\sum_{k'=p}^{p+l-1}\mathbb{E}\left[t_{i'}t_{j'}t_{k'}\right] \overset{(2.1)\Rightarrow}{=} 0 \\[16pt]
-    && \text{The only new case for }\mathbb{E}\left[t_{i'}t_{j'}t_{k'}\right]\text{ is when no indices are equal.}\\
-    && \text{WLOG we can write this as:} \\[4pt]
-    \mathbb{E}\left[t_{i'}t_{j'}t_{k'}\right] & \overset{(2.1)}{=} & \begin{cases}
-        \mathbb{E}\left[t_{i'}\left(t_{i'}+\underbrace{\epsilon^{j'-i'}}_{\sim N(0,j'-i')}\right)\left(t_{i'}+\underbrace{\epsilon^{j'-i'}}_{\sim N(0,j'-i')}+N(0,k'-j')\right)\right] = 0 \\[24pt]
-        \qquad \text{if } i' < j' < k' \\[4pt]
-        0 \qquad \text{otherwise}
-    \end{cases} \\[40pt]
+    \expectation{\frac{\segsumplk}{s\subsvarpl}} & = & \iint_{\mathbb{R}^2}\frac{x}{y}p_{S,\sigma}(x,y)dxdy \\[8pt]
+    & = & \iint_{\mathbb{R}^2}\frac{-x}{y}p_{S,\sigma}(-x,y)dxdy \\[8pt]
+    & = & -\iint_{\mathbb{R}^2}\frac{x}{y}p_{S,\sigma}(x,y)dxdy = -\expectation{\frac{\segsumplk}{s\subsvarpl}} \\[12pt]
+    & \Rightarrow & \expectation{\frac{\segsumplk}{s\subsvarpl}} \overset{(1)}{=} 0
 \end{array}
 $$
 
-Analogously, we can show that $\mathbb{E}\left[t_{i'}(\mu_{p:l}^t)^2\right] \overset{(3)}{=} 0$. As a consequence of $(1)$, $(2)$, and $(3)$, we know that $(4)$ holds. Following a similar reasoning, we can show that $\mathbb{E}\left[\frac{\mu_{p:l}^t}{s\sigma_{p:l}^t}\right]\approx 0$ and as a consequence $\mathbb{E}[E_{i,j,k}]\approx 0$. Therefore we can write:
+Following a similar reasoning, we can show that $\mathbb{E}\left[\frac{\mu_{p:l}^t}{s\sigma_{p:l}^t}\right]=0$ and as a consequence $\mathbb{E}[E_{i,j,k}]=0$. Therefore we can write:
 $$
 \begin{array}{rcl}
     \variance{\envelopeijkt} & = & \expectation{\left(\frac{\segsumplk-\subsmeanpl}{s\subsvarpl}\right)^2} \\[20pt]
@@ -184,18 +168,15 @@ $$\begin{array}{rcl}
 and:
 $$\begin{array}{rcl}
     \sum_{j'=p}^{p+l-1}\sum_{j''=p}^{p+l-1}\min(j',j'') & = & \sum_{j'=p}^{p+l-1}\frac{-j'^2-j'-p^2+p+2j'p+2j'l}{2} \\[8pt]
-    & = & \frac{-1}{2}\sum_{j'=p}^{p+l-1}j^2 + \frac{2p+2l-1}{2}\sum_{j'=p}^{p+l-1}j' + \frac{p^2-p}{2}l \\[8pt]
+    & = & \frac{-1}{2}\sum_{j'=p}^{p+l-1}j'^2 + \frac{2p+2l-1}{2}\sum_{j'=p}^{p+l-1}j' - \frac{p^2-p}{2}l \\[8pt]
     & = & \frac{(p-1)p(2p-1)-(p+l-1)(p+l)(2p+2l-1)}{12} \\[8pt]
-    && + \frac{(2p+2l-1)((p+l-1)(p+l)-(p-1)p)}{4} + \frac{p^2l-pl}{2} \\[8pt]
-    & = & \dfrac{l}{6}\left(2 l^{2} + 6 l p - 3 l + 6 p^{2} - 6 p + 1\right)
+    && + \frac{(2p+2l-1)((p+l-1)(p+l)-(p-1)p)}{4} - \frac{p^2l-pl}{2} \\[8pt]
+    & = & \frac{l}{6} \left(2 l^{2} + 6l p - 3 l + 1\right)
 \end{array}$$
 plugging these results into the denominator, we get:
 $$\begin{array}{rcl}
-    \expectation{(s\subsvarpl)^2} & = & \frac{s^2}{l}\sum_{i'=p}^{p+l-1}\left(i'-\frac{2}{l}\left(\frac{-i'^2-i'-p^2+p+2i'p+2i'l}{2}\right)\right. \\[8pt]
-    && \left.+\frac{1}{l^2}\left(\frac{l \left(2 l^{2} + 6 l p - 3 l + 6 p^{2} - 6 p + 1\right)}{6}\right)\right) \\[16pt]
-    & = & \frac{s^2}{l^2}\left(\sum_{i'=p}^{p+l-1}\frac{2 l^2 + l (6 p - 6 i' - 3) + 12 p^2 - 12 p (i' + 1) + 6 i'^2 + 6 i' + 1}{6}\right) \\[12pt]
-    & = & \frac{s^2}{l^2}\left(\sum_{i'=p}^{p+l-1}i'^2 + \sum_{i'=p}^{p+l-1}(1-l-2p)i'+l\frac{2l^2+6lp-3l+12p^2-12p+1}{6}\right) \\[12pt]
-    & \overset{(D)}{=} & \dfrac{s^2}{6l} \left(l^{2} + 6p^{2} - 6p - 1\right)
+    \expectation{(s\subsvarpl)^2} & = & \frac{s^2}{l}\sum_{i'=p}^{p+l-1}\left(i'-\frac{2}{l}\left(\frac{-i'^2-i'-p^2+p+2i'p+2i'l}{2}\right)+ \frac{1}{l^2}\left(\frac{l \left(2 l^{2} + 6 l p - 3 l +  1\right)}{6}\right)\right) \\[16pt]
+    & = & ... \; = \dfrac{s^2}{6l} \left(l^{2} - 1\right)
 \end{array}$$
 
 Next we calculate $\expectation{(\segsumplk-\subsmeanpl)^2}$, which appears in both $A$ and $C$:
@@ -208,22 +189,17 @@ we can reuse the result $\expectation{t_{i'}t_{j'}}=\min(i',j')$ to calculate th
 $$\begin{array}{rcl}
     \expectation{\left(\sum_{i'=p+(k-1)s}^{p+ks-1}t_{i'}\right)^2} & = & \sum_{i'=p+(k-1)s}^{p+ks-1}\sum_{i''=p+(k-1)s}^{p+ks-1}\expectation{t_{i'}t_{i''}} \\[8pt]
     & = & \sum_{i'=p+(k-1)s}^{p+ks-1}\left(\sum_{i''=p+(k-1)s}^{i'-1}i'' + (p+ks-i')i'\right) \\[8pt]
-    & = & \sum_{i'=p+(k-1)s}^{p+ks-1}\left(\frac{(p+(k-1)s)(p+(k-1)+s+1)}{2} \right. \\[8pt]
-    && \left. - \frac{(i'-1)i'}{2} +(p+ks-i')i'\right) \\[8pt]
-    & = & \dfrac{s}{2} \left(4 k s + 4 p - 3 s - 1\right) \\[16pt]
+    & = & \dfrac{s}{6} \left(6 k s^{2} + 6 p s - 4 s^{2} - 3 s + 1\right) \\[16pt]
     \expectation{\left(\sum_{i'=p+(k-1)s}^{p+ks-1}t_{i'}\right)\left(\sum_{j'=p}^{p+l-1}t_{j'}\right)} & = & \sum_{i'=p+(k-1)s}^{p+ks-1}\sum_{j'=p}^{p+l-1}\expectation{t_{i'}t_{j'}} \\[8pt]
     & = & \sum_{i'=p+(k-1)s}^{p+ks-1}\left(\sum_{j'=p}^{i'-1}j' + \sum_{j'=i'}^{p+l-1}i'\right) \\[8pt]
-    & = & \dfrac{s}{6}\left(- 3 k^{2} s^{2} + 6 k l s + 3 k s^{2} + 6 l p - 3 l s - 3 l - s^{2} + 1\right) \\[16pt]
+    & = & \dfrac{s}{6} \left(- 3 k^{2} s^{2} + 6 k l s + 3 k s^{2} + 6 l p - 3 l s - 3 l - s^{2} + 1\right) \\[16pt]
     \expectation{\left(\sum_{i'=p}^{p+l-1}t_{i'}\right)^2} & = & \sum_{i'=p}^{p+l-1}\sum_{i''=p}^{p+l-1}\expectation{t_{i'}t_{i''}} \\[8pt]
-    & = & \dfrac{l}{6}\left(2 l^{2} + 6 l p - 3 l + 6 p^{2} - 6 p + 1\right)
+    & = & \dfrac{l}{6} \left(2 l^{2} + 6 l p - 3 l + 1\right)
 \end{array}$$
 plugging these results back into the expectation, we get:
 $$\begin{array}{rcl}
-    \expectation{(\segsumplk-\subsmeanpl)^2} & = & \dfrac{s}{2} \left(4 k s + 4 p - 3 s - 1\right) \\[8pt]
-    && - \dfrac{s}{3l}\left(- 3 k^{2} s^{2} + 6 k l s + 3 k s^{2} + 6 l p - 3 l s - 3 l - s^{2} + 1\right) \\[8pt]
-    && + \dfrac{1}{6l}\left(2 l^{2} + 6 l p - 3 l + 6 p^{2} - 6 p + 1\right) \\[16pt]
-    & = & \dfrac{6k^{2} s^{3} - 6k s^{3} + 6p^{2} - 6p + 2s^{3} - 2s + 1}{6l} \\[8pt]
-    && + \dfrac{2 l + 6 p - 3 s^{2} + 3 s - 3}{6}
+    \expectation{(\segsumplk-\subsmeanpl)^2} & = & \dfrac{6k^{2} s^{3} - 6k s^{3} + 2s^{3} - 2s + 1}{6l} \\[12pt]
+    && + \dfrac{6 k s^{3} - 12 k s^{2} + 2 l + 6 p s^{2} - 12 p s + 6 p - 4 s^{3} + 3 s^{2} + 7 s - 3}{6}\\
 \end{array}$$
 
 Next we calculate the covariance term in $B$:
@@ -285,5 +261,15 @@ $$\begin{array}{rcl}
     && + \frac{1}{l^4}\sum_{i_1,...,i_6=p}^{p+l-1}\expectation{\prod_{i'\in\{i_1,...,i_6\}}t_{i'}} - \frac{4}{l}\sum_{i_1,i_2,i_3=p}^{p+l-1}\expectation{t_{i_1}t_{i_2}t_{i_3}} \\[8pt]
     && + \left. \frac{2}{l^2}\sum_{i_1,...,i_4=p}^{p+l-1}\expectation{t_{i_1}t_{i_2}t_{i_3}t_{i_4}} - \frac{4}{l^3}\sum_{i_1,...,i_5=p}^{p+l-1}\expectation{\prod_{i'\in\{i_1,...,i_5\}}t_{i'}} \right) \\[8pt]
 \end{array}$$
+
+Formula for expectation of two squared terms:
+
+$$
+\begin{array}{rcl}
+    \sum_{i'=p}^{p+l-1}\sum_{i''=p}^{p+l-1}\expectation{t_{i'}^2t_{i''}^2} & = & \sum_{i'=p}^{p+l-1}\sum_{i''=p}^{p+l-1}\left(\expectation{t_{i'}^2}\expectation{t_{i''}^2} + 2\expectation{t_{i'}t_{i''}}\expectation{t_{i'}t_{i''}} \right) \\[8pt]
+    & = & \sum_{i'=p}^{p+l-1}i'\sum_{i''=p}^{p+l-1}i'' + 2\sum_{i'=p}^{p+l-1}\sum_{i''=p}^{p+l-1}\min(i',i'')^2 \\[8pt]
+    & = & ... + 2\sum_{i'=p}^{p+l-1}\left(\sum_{i''=p}^{i'-1}i''^2 + (p+l-i')i'^2\right) \\[8pt]
+\end{array}
+$$
 
 \end{document}

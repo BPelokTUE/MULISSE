@@ -27,10 +27,14 @@ TEST_CASE("get_entries works") {
     fakeit::When(Method(lg_segmentation_strategy_mock, get_const_ch_segmentation_strategy))
         .AlwaysReturn(&ch_segmentation_strategy_mock.get());
 
+    LengthProperties length_props{
+        .m_l_min = l_min,
+        .m_l_max = l_max,
+        .m_l_per_group = l_max - l_min + 1,
+    };
+
     fakeit::Mock<RunSettings> run_settings_mock;
-    fakeit::When(Method(run_settings_mock, get_length_group)).AlwaysReturn(0);
-    fakeit::When(Method(run_settings_mock, get_lg_l_min)).AlwaysReturn(l_min);
-    fakeit::When(Method(run_settings_mock, get_lg_l_max)).AlwaysReturn(l_max);
+    fakeit::When(Method(run_settings_mock, get_length_props)).AlwaysReturn(length_props);
 
     vec<Real> breakpoints_mock = {R(-1.5), R(-0.67), R(-0.4), R(0.0), R(0.4), R(0.67), R(1.5)};
     BreakpointProperties breakpoint_props_mock;
