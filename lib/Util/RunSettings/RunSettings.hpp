@@ -129,7 +129,11 @@ class RunSettings {
      */
     void set_flat_envelope_params(const FlatEnvelopeParams& flat_envelope_params);
 
-    const LengthProperties& get_length_props() const;
+    /**
+     * @brief Get the length properties for the run. NOTE: this function is virtual for testing purposes.
+     * @return The length properties
+     */
+    virtual const LengthProperties& get_length_props() const;
 
     void set_lengths_per_group(uint l_per_group);
 

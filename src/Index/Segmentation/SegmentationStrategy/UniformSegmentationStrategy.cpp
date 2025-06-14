@@ -1,7 +1,7 @@
 #include "Index/Segmentation/SegmentationStrategy/UniformSegmentationStrategy.hpp"
 
 UniformSegmentationStrategy::UniformSegmentationStrategy(uint l_max, SaxSegIndT num_segments)
-    : m_segment_len((l_max + num_segments - 1) / num_segments), m_l_max(l_max) {}
+    : m_segment_len(l_max / num_segments), m_l_max(l_max) {}
 
 SaxSegIndT UniformSegmentationStrategy::get_num_segments(uint subs_len) const {
     return static_cast<SaxSegIndT>(subs_len / m_segment_len);

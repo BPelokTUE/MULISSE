@@ -27,6 +27,7 @@ from scripts.py.visualization.style import CATEGORY_COLORS, PALETTE
 METHOD_COLORS = {
     "sequential_scan-ed": PALETTE["Yellows"][2],
     "base_ed-ed": PALETTE["Yellows"][3],
+    "base_ed-ed-early": PALETTE["Yellows"][3],
     "sequential_scan-ed-early": PALETTE["Yellows"][5],
     "sequential_scan-mass": PALETTE["Oranges"][0],
     "base_mass-mass": PALETTE["Oranges"][1],
@@ -72,7 +73,8 @@ METHOD_COLORS = {
 }
 METHOD_LABELS = {
     "sequential_scan-ed": "BF",
-    "base_ed-ed": "ED, EAb (C)",
+    "base_ed-ed": "ED (C)",
+    "base_ed-ed-early": "ED, EAb (C)",
     "sequential_scan-ed-early": "ED, EAb",
     "base_mass-mass": "MASS (C)",
     "sequential_scan-mass": "MASS, no pre.",

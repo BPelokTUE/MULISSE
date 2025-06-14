@@ -283,6 +283,8 @@ class ExperimentResults(BaseModel):
             available_cols = pd.read_csv(path, nrows=0).columns
             valid_cols = [col for col in cols if col in available_cols]
             return pd.read_csv(path, usecols=valid_cols)
+        else:
+            print(f"CSV file {path} does not exist. Returning empty DataFrame.")
         return pd.DataFrame()
 
     @classmethod
@@ -425,7 +427,9 @@ class ExperimentResults(BaseModel):
 
         # Add average min-dist column
         if str(QC.MIN_DIST_AVG) in cols[ERD.RUNS_COLS]:
-            results.runs_df[str(QC.MIN_DIST_AVG)] = results.runs_df[str(QC.MIN_DIST_TOTAL)] / results.runs_df[str(QC.NUM_MIN_DIST_CALCULATED)]
+            results.runs_df[str(QC.MIN_DIST_AVG)] = (
+                results.runs_df[str(QC.MIN_DIST_TOTAL)] / results.runs_df[str(QC.NUM_MIN_DIST_CALCULATED)]
+            )
 
         # Drop extra columns
         results.datasets_df = results.datasets_df.drop(columns=extra_cols[ERD.DATASETS_COLS])

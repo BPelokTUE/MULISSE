@@ -29,15 +29,7 @@ class FlatEnvelopeParamEstimator {
     FlatEnvelopeParams get_estimated_params();
 
    private:
-    std::normal_distribution<Real> get_paa_distribution(const PaaDistributionInputs &inputs);
-
-    Real get_denominator_ev_term(const PaaDistributionInputs &inputs);
-
-    Real get_squared_diff_ev_term(const PaaDistributionInputs &inputs);
-
-    Real get_covariance_term(const PaaDistributionInputs &inputs);
-
-    Real get_variance_term(const PaaDistributionInputs &inputs);
+    Real get_paa_stdev(const PaaDistributionInputs &inputs);
 
     FlatEnvelopeParams m_estimated_params;
 };
