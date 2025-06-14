@@ -6,38 +6,38 @@
 
 **ULISSE 2018 performs below expectations**. The unmodified version does not reach the promised speed, and it was found that this version is parallelized. **After making it sequential, ULISSE performs only marginally better than MASS** on a synthetic dataset with $n=5*10^6, m=4096$.
 
-![ULISSE vs MASS](images/ULISSE_5M.png)
+![ULISSE vs MASS](images/ULISSE/ULISSE_5M.png)
 
 ### 1.2 Pruning power
 
 Inspecting queries by length, we can see that the **pruning power increases substantially with the length of the query**. The current hypothesis is that this is caused by the relative tightness of later segments, which are included in longer envelopes, but not in shorter ones (to be investigated).
 
-![ULISSE vs MASS pruning rate](images/ULISSE_5M_pruning.png)
+![ULISSE vs MASS pruning rate](images/ULISSE/ULISSE_5M_pruning.png)
 
-![ULISSE vs MASS per query length](images/ULISSE_5M_per_length.png)
+![ULISSE vs MASS per query length](images/ULISSE/ULISSE_5M_per_length.png)
 
 
 ## 2. MASS vs Euclidean distance with early abandoning
 
 Across a wide range of methods run on synthetic data with $n=10^5, m=4096$, **MASS was found to be faster than ED w EA**, even without precomputed FFTs. In general, *MASS scales more favorably with the length of time series*, so taking a hybrid approach, i.e. picking between ED and MASS based on time series and query characteristics, looks promising.
 
-![ED w EA vs MASS](images/EDEA_vs_MASS.png) 
+![ED w EA vs MASS](images/ULISSE/EDEA_vs_MASS.png) 
 
 ## 3. Envelopes vs iSAX trie
 
 **A simple flat envelope index is consistently faster than an iSAX trie with or without envelopes**. Tests were run on multiple datasets, query length ranges, leaf capacities and envelope sizes, and *pure envelopes always perform better than prefix-tree based methods*. This result also holds for the large $n=10^5, m=4096$ dataset.
 
-![Envelope vs iSAX trie](images/Envelope_vs_iSAX_256_stocks.png)
+![Envelope vs iSAX trie](images/ULISSE/Envelope_vs_iSAX_256_stocks.png)
 
 Additionally, even with parallelization, 16 cores, and 128GB memory capacity, **index construction without envelopes is 1.5-2 orders of magnitude slower than with envelopes**, making amortized query time significantly slower for pure iSAX:
 
-![Envelope vs iSAX trie](images/Envelope_vs_iSAX_256_stocks_indexing.png)
+![Envelope vs iSAX trie](images/ULISSE/Envelope_vs_iSAX_256_stocks_indexing.png)
 
 ## 4. Pruning ratio, envelope size, query range
 
 **Pruning ratio is highly dependent on envelope size and query range**, both of which influence the number of subsequences summarized by a single envelope:
 
-![Pruning ratio by envelope size and query range](images/PR_ES_QR_stocks.png)
+![Pruning ratio by envelope size and query range](images/ULISSE/PR_ES_QR_stocks.png)
 
 ### 4.1 Potential solutions:
 - **Grouping subsequences by length**: grouping subsequences by length (possibly in addition to grouping by starting position as done in envelopes) could have the following benefits:
@@ -51,14 +51,14 @@ Additionally, even with parallelization, 16 cores, and 128GB memory capacity, **
 
 Length-based grouping leads to **consistent but modest performance gains**. The effect is very similar, regardless of dataset or query range, with the optimal number of length groups being roughly 32. On the weather dataset with $l\in[128,2048]$ we see the following results:
 
-![Length-based grouping results](images/LG_weather_128-2048.png)
+![Length-based grouping results](images/ULISSE/LG_weather_128-2048.png)
 
-![Length-based grouping PR](images/LG_weather_128-2048_PR.png)
+![Length-based grouping PR](images/ULISSE/LG_weather_128-2048_PR.png)
 
 Indexing time is largely unaffected by length-based grouping, since most of the preparation time is taken up by envelope calculation not insertion into the index(es):
 
-![Length-based grouping results w prep time](images/LG_weather_128-2048_prep_time.png)
+![Length-based grouping results w prep time](images/ULISSE/LG_weather_128-2048_prep_time.png)
 
 *Note*: on shorter length ranges envelope indexes perform better than sequential scans, even with preparation time factored in:
 
-![Length-based grouping results w prep time, short range](images/LG_weather_1024-2048_prep_time.png)
+![Length-based grouping results w prep time, short range](images/ULISSE/LG_weather_1024-2048_prep_time.png)

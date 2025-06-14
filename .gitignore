@@ -30,6 +30,7 @@ __pycache__
 docs/mulisse_src/*
 docs/calculation/*
 !docs/calculation/*.tex
+!docs/calculation/*.py
 html
 latex
 

@@ -1,0 +1,52 @@
+{
+    "csv_data_dirs": [],
+    "dataset_sizes": [1000],
+    "series_lengths": [1024],
+    "syn_num_channels": [1, 2],
+    "syn_step_stdevs": [1.0],
+    "query_set_sizes": [10],
+    "l_range_ratios": [[0.125, 1.0]],
+    "used_channel_ratios": [1.0],
+    "query_noise_stdevs": [0.1],
+    "search_methods": {
+        "scan": ["scan"],
+        "isax": ["isax"],
+        "isax_envelope": ["isax_envelope"],
+        "envelope": ["envelope"]
+    },
+    "merger_types": {
+        "isax": ["in_paa_generator"],
+        "isax_envelope": ["lower_sax"]
+    },
+    "merger_num_bit_numbers": [1],
+    "isax_num_bits_limits": {
+        "isax": [2, 4, 6],
+        "isax_envelope": [2, 4, 6]
+    },
+    "isax_merge_in_leaves": [true],
+    "isax_split_strategies": ["em"],
+    "isax_breakpoint_strategies": ["equiprobable"],
+    "isax_leaf_cap_ratios": [0.0128],
+    "isax_start_bit_numbers": [1],
+    "num_segments": [8, 16, 24],
+    "envelope_size_ratios": {
+        "envelope": [0.05],
+        "isax_envelope": [0.01, 0.05]
+    },
+    "length_group_size_ratios": [0.05],
+    "distance_measures": {
+        "scan": ["mass", "ed"],
+        "isax": ["ed"],
+        "isax_envelope": ["ed"],
+        "envelope": ["ed"]
+    },
+    "early_abandon": [true],
+    "precalculate_ffts": [false],
+    "adapt_index": [false],
+    "index_inserters": ["isax_parallel"],
+    "search_types": ["knn"],
+    "search_ks": [1],
+    "search_rs": [],
+    "search_approx": [false],
+    "search_raw": [false]
+}

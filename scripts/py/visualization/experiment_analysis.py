@@ -654,40 +654,22 @@ Experiment: Segmentation strategy
 
 def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
     visualize_experiments(
-        # logs_dirs=["EXPERIMENT_LOGS/envelope_variants/LOGS_vl_envelope"],
-        # logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_env_width_chss2"], # Show correlations
-        # logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_env_width_chss3"],  # Using correlations not usable in general
-        # logs_dirs=["EXPERIMENT_LOGS/segmentation/LOGS_clairvoyant_chss2_raw"],  # Clairvoyant raw
-        logs_dirs=["EXPERIMENT_LOGS/envelope_variants/LOGS_size_limiting_stats"],
-        # logs_dirs=["LOGS"],
+        logs_dirs=["LOGS"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE],
-            ERD.INDEXES_COLS: [
-                # ISC.CH_SEGMENTATION_STRATEGY,
-                # ISC.MULTI_CHSS_NUM_SEG_FILE,
-                # ISC.ENV_WIDTH_SCORE_MIN_W_UPDATE,
-                # ISC.SCORE_BASED_CHSS_SCORE_EXP,
-                ISC.NUM_SEGMENTS,
-                # ISC.NUM_ENVELOPES,
-                ISC.NUM_LEN_GROUPS,
-                ISC.INDEX_SIZE_LIMIT,
-            ],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
         },
         separate_plots_dict={
-            # (QSC.CHANNEL_MASK,): [],
-            # (ISC.NUM_SEGMENTS,): [],
             (DSC.DATASET_FILE,): [],
-            (ISC.INDEX_SIZE_LIMIT,): [(1.0,)],
-            (QSC.L_MIN, QSC.L_MAX): [(128, 1024)],
+            # (DSC.DATASET_FILE, DSC.NUM_CHANNELS): [("synthetic", 1)],
         },
-        regex_dict={SSC.METHOD_NAME: r"envelope"},
+        # regex_dict={SSC.METHOD_NAME: r"envelope"},
         num_query_intervals=1,
-        merge_csv_datasets=True,
+        merge_csv_datasets=False,
         y_scale="linear",
-        bar_plot_color_attr=None,
-        # bar_plot_color_attr=SSC.METHOD_NAME,
+        # bar_plot_color_attr=None,
+        bar_plot_color_attr=SSC.METHOD_NAME,
         # bar_plot_color_attr=ISC.CH_SEGMENTATION_STRATEGY,
         # bar_plot_color_map={
         #     "single": PALETTE["Oranges"][2],
@@ -697,9 +679,9 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
         # line_plot_x_attr=ISC.POS_PER_ENV,
         # line_plot_included_cols={DSC.DATASET_FILE},
         # x_scale="log",
-        heat_map_x_attr=ISC.NUM_SEGMENTS,
-        heat_map_y_attr=ISC.NUM_LEN_GROUPS,
-        heat_map_included_cols={},
+        # heat_map_x_attr=ISC.NUM_SEGMENTS,
+        # heat_map_y_attr=ISC.NUM_LEN_GROUPS,
+        # heat_map_included_cols={},
         reducer=reducer,
         **target_args_dict,
     )
@@ -710,9 +692,9 @@ for target_args_dict, reducer in [
     # (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
     # ({"targets_dict": {ERD.INDEXES_COLS: [ISC.NUM_ENVELOPES]}}, MeanReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.MEAN)]}}, MeanReducer()),
-    ({"targets_dict": {ERD.RUNS_COLS: [QC.MIN_DIST_AVG]}}, MeanReducer()),
+    # ({"targets_dict": {ERD.RUNS_COLS: [QC.MIN_DIST_AVG]}}, MeanReducer()),
     # ({"targets_dict": {ERD.RUNS_COLS: [QC.MIN_DIST_TOTAL]}}, MeanReducer()),
-    ({"targets_dict": {ERD.INDEXES_COLS: [ISC.POS_PER_ENV]}}, MeanReducer()),
+    # ({"targets_dict": {ERD.INDEXES_COLS: [ISC.POS_PER_ENV]}}, MeanReducer()),
     # (TargetArgs.INDEX_SIZE.value, MeanReducer()),
     # ({"targets_dict": {ERD.INDEXES_COLS: [ISC.ESTIMATED_SIZE_ON_DISK_B]}}, MeanReducer()),
 ]:
