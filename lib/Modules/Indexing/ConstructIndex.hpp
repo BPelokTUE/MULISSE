@@ -24,7 +24,6 @@ void construct_index(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_
         vec<sptr<IIndex<T>>> group_indexes(num_len_groups);
         for (uint lg_ind = 0; lg_ind < num_len_groups; lg_ind++) {
             IndexFactoryParams lg_factory_params{
-                .m_discretize_flat_index = factory_params.m_discretize_flat_index,
                 .m_ch_segmentation_strategy = lg_segmentation_strategy->get_ch_segmentation_strategy(lg_ind),
                 .m_opts = opts,
             };

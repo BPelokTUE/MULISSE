@@ -112,8 +112,8 @@ class RunSettings {
 
     const DatasetProperties& get_dataset_props() const;
 
-    virtual const BreakpointProperties& get_breakpoint_props()
-        const;  // NOTE: virtual is needed for mocking with fakeit
+    // NOTE: virtual is needed for mocking with fakeit
+    virtual const BreakpointProperties& get_breakpoint_props() const;
 
     const EnvelopeProperties& get_envelope_props() const;
 

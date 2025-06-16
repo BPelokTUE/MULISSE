@@ -5,7 +5,6 @@
 #include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 
 struct IndexFactoryParams {
-    bool m_discretize_flat_index = false;
     sptr<IChannelSegmentationStrategy> m_ch_segmentation_strategy;
     const IndexOptions &m_opts;
 };

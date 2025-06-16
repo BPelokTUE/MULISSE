@@ -4,6 +4,7 @@
 #include "Enums/DistanceType.hpp"
 #include "Enums/SearchType.hpp"
 #include "Index/ChainIndex/ChainIndex.hpp"
+#include "Index/Entry/SaxEnvelope.hpp"
 #include "Index/EnvelopeIndex/Flat/FinalizedFlatEnvelopeIndex.hpp"
 #include "Index/EnvelopeIndex/Tree/TreeEnvelopeIndex.hpp"
 #include "Index/FinalizedIndex.hpp"
@@ -97,12 +98,12 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
                 },
                 opts);
         case ISAX_ENV_W_ENV:
-        case ISAX_ENV_W_SAX_ENV:
             return load_index_based_method<EnvelopeTag, S, D, QS>(
                 []() {
                     vec<uptr<IFinalizedIndex<EnvelopeTag>>> approx_indexes(1);
                     approx_indexes[0] = std::make_unique<FinalizedISaxIndex<EnvelopeTag>>();
-                    auto exact_index = uptr<IFinalizedIndex<EnvelopeTag>>(new FinalizedFlatEnvelopeIndex());
+                    uptr<IFinalizedIndex<EnvelopeTag>> exact_index =
+                        std::make_unique<FinalizedFlatEnvelopeIndex<Envelope>>();
                     return std::make_unique<FinalizedChainIndex<EnvelopeTag>>(std::move(approx_indexes),
                                                                               std::move(exact_index));
                 },
@@ -113,9 +114,33 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
                     approx_methods[0] =
                         std::make_unique<iSaxIndexSearch<EnvelopeTag, S, D, QS>>(uptr<FinalizedISaxIndex<EnvelopeTag>>(
                             static_cast<FinalizedISaxIndex<EnvelopeTag> *>(chain_index->release_approx_index(0))));
-                    auto exact_method =
-                        std::make_unique<FlatEnvelopeIndexSearch<S, D, QS>>(uptr<FinalizedFlatEnvelopeIndex>(
-                            static_cast<FinalizedFlatEnvelopeIndex *>(chain_index->release_exact_index())));
+                    auto exact_method = std::make_unique<FlatEnvelopeIndexSearch<Envelope, S, D, QS>>(
+                        uptr<FinalizedFlatEnvelopeIndex<Envelope>>(
+                            static_cast<FinalizedFlatEnvelopeIndex<Envelope> *>(chain_index->release_exact_index())));
+                    return std::make_unique<ChainSearch<S, D, QS>>(std::move(approx_methods), std::move(exact_method));
+                },
+                opts);
+        case ISAX_ENV_W_SAX_ENV:
+            return load_index_based_method<EnvelopeTag, S, D, QS>(
+                []() {
+                    vec<uptr<IFinalizedIndex<EnvelopeTag>>> approx_indexes(1);
+                    approx_indexes[0] = std::make_unique<FinalizedISaxIndex<EnvelopeTag>>();
+                    uptr<IFinalizedIndex<EnvelopeTag>> exact_index =
+                        std::make_unique<FinalizedFlatEnvelopeIndex<SaxEnvelope>>();
+                    return std::make_unique<FinalizedChainIndex<EnvelopeTag>>(std::move(approx_indexes),
+                                                                              std::move(exact_index));
+                },
+                [](uptr<IFinalizedIndex<EnvelopeTag>> index) {
+                    auto chain_index = uptr<FinalizedChainIndex<EnvelopeTag>>(
+                        static_cast<FinalizedChainIndex<EnvelopeTag> *>(index.release()));
+                    vec<uptr<ISearchMethod<S, D, QS>>> approx_methods(1);
+                    approx_methods[0] =
+                        std::make_unique<iSaxIndexSearch<EnvelopeTag, S, D, QS>>(uptr<FinalizedISaxIndex<EnvelopeTag>>(
+                            static_cast<FinalizedISaxIndex<EnvelopeTag> *>(chain_index->release_approx_index(0))));
+                    auto exact_method = std::make_unique<FlatEnvelopeIndexSearch<SaxEnvelope, S, D, QS>>(
+                        uptr<FinalizedFlatEnvelopeIndex<SaxEnvelope>>(
+                            static_cast<FinalizedFlatEnvelopeIndex<SaxEnvelope> *>(
+                                chain_index->release_exact_index())));
                     return std::make_unique<ChainSearch<S, D, QS>>(std::move(approx_methods), std::move(exact_method));
                 },
                 opts);
@@ -128,12 +153,22 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
                 },
                 opts);
         case ENVELOPE:
+            return load_index_based_method<EnvelopeTag, S, D, QS>(
+                []() { return std::make_unique<FinalizedFlatEnvelopeIndex<Envelope>>(); },
+                [opts](uptr<IFinalizedIndex<EnvelopeTag>> index) {
+                    return std::make_unique<FlatEnvelopeIndexSearch<Envelope, S, D, QS>>(
+                        uptr<FinalizedFlatEnvelopeIndex<Envelope>>(
+                            static_cast<FinalizedFlatEnvelopeIndex<Envelope> *>(index.release())),
+                        opts.m_use_priority_queue);
+                },
+                opts);
         case SAX_ENVELOPE:
             return load_index_based_method<EnvelopeTag, S, D, QS>(
-                []() { return std::make_unique<FinalizedFlatEnvelopeIndex>(); },
+                []() { return std::make_unique<FinalizedFlatEnvelopeIndex<SaxEnvelope>>(); },
                 [opts](uptr<IFinalizedIndex<EnvelopeTag>> index) {
-                    return std::make_unique<FlatEnvelopeIndexSearch<S, D, QS>>(
-                        uptr<FinalizedFlatEnvelopeIndex>(static_cast<FinalizedFlatEnvelopeIndex *>(index.release())),
+                    return std::make_unique<FlatEnvelopeIndexSearch<SaxEnvelope, S, D, QS>>(
+                        uptr<FinalizedFlatEnvelopeIndex<SaxEnvelope>>(
+                            static_cast<FinalizedFlatEnvelopeIndex<SaxEnvelope> *>(index.release())),
                         opts.m_use_priority_queue);
                 },
                 opts);

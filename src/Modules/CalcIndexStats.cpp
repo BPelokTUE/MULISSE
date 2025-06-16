@@ -1,6 +1,7 @@
 #include "Modules/CalcIndexStats.hpp"
 
 #include "Index/ChainIndex/FinalizedChainIndex.hpp"
+#include "Index/Entry/SaxEnvelope.hpp"
 #include "Index/EnvelopeIndex/Flat/FinalizedFlatEnvelopeIndex.hpp"
 #include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
 #include "Util/Stats/IndexAnalyzer.hpp"
@@ -20,16 +21,24 @@ int calculate_index_stats(SearchMethodType method_type, uint num_l_groups, Archi
                                                                                            separate_segment_stats);
             break;
         }
-        case ENVELOPE:
-        case SAX_ENVELOPE: {
-            IndexAnalyzer<FinalizedFlatEnvelopeIndex, EnvelopeTag>::analyze_run_index(index_format, num_l_groups,
-                                                                                      separate_segment_stats);
+        case ENVELOPE: {
+            IndexAnalyzer<FinalizedFlatEnvelopeIndex<Envelope>, EnvelopeTag, Envelope>::analyze_run_index(
+                index_format, num_l_groups, separate_segment_stats);
             break;
         }
-        case ISAX_ENV_W_ENV:
+        case SAX_ENVELOPE: {
+            IndexAnalyzer<FinalizedFlatEnvelopeIndex<SaxEnvelope>, EnvelopeTag, SaxEnvelope>::analyze_run_index(
+                index_format, num_l_groups, separate_segment_stats);
+            break;
+        }
+        case ISAX_ENV_W_ENV: {
+            IndexAnalyzer<FinalizedChainIndex<EnvelopeTag>, EnvelopeTag, Envelope>::analyze_run_index(
+                index_format, num_l_groups, separate_segment_stats);
+            break;
+        }
         case ISAX_ENV_W_SAX_ENV: {
-            IndexAnalyzer<FinalizedChainIndex<EnvelopeTag>, EnvelopeTag>::analyze_run_index(index_format, num_l_groups,
-                                                                                            separate_segment_stats);
+            IndexAnalyzer<FinalizedChainIndex<EnvelopeTag>, EnvelopeTag, SaxEnvelope>::analyze_run_index(
+                index_format, num_l_groups, separate_segment_stats);
             break;
         }
         default:

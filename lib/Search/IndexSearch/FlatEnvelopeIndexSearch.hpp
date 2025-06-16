@@ -15,14 +15,15 @@ struct PQueueEnvelopeEntry {
 
 /**
  * @brief Flat envelope index search method
+ * @tparam EnvT Envelope type to use
  * @tparam S SearchType to execute
  * @tparam D DistanceType to use
  * @tparam QS Whether the query is sorted or not
  */
-template <SearchType S, DistanceType D, bool QS = false>
+template <typename EnvT, SearchType S, DistanceType D, bool QS = false>
 class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
    public:
-    FlatEnvelopeIndexSearch(uptr<FinalizedFlatEnvelopeIndex> index, bool use_priority_queue = true)
+    FlatEnvelopeIndexSearch(uptr<FinalizedFlatEnvelopeIndex<EnvT>> index, bool use_priority_queue = true)
         : m_index(std::move(index)), m_use_priority_queue(use_priority_queue) {}
 
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
@@ -55,7 +56,9 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
         logger.start_timer(QC::FIRST_LAYER_TIME_S);
 
         Real min_dist_total = 0;
-        for (auto entry : m_index->get_entries()) {
+        uint num_entries = m_index->size();
+        for (uint i = 0; i < num_entries; ++i) {
+            const auto &entry = m_index->get_entry(i);
             if (this->skip_entry(query_len, series_len, entry.m_subs_info)) continue;
 
             Real min_dist_squared =
@@ -92,7 +95,9 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
         auto ch_segmentation_strategy = m_index->get_ch_segmentation_strategy();
 
         logger.start_timer(QC::TREE_TRAVERSAL_TIME_S);
-        for (auto entry : m_index->get_entries()) {
+        uint num_entries = m_index->size();
+        for (uint i = 0; i < num_entries; ++i) {
+            const auto &entry = m_index->get_entry(i);
             if (this->skip_entry(query_len, series_len, entry.m_subs_info)) continue;
 
             Real min_dist_squared =
@@ -108,7 +113,7 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
         return {result_set.get_results(), true};
     }
 
-    uptr<FinalizedFlatEnvelopeIndex> m_index;
+    uptr<FinalizedFlatEnvelopeIndex<EnvT>> m_index;
     bool m_use_priority_queue;
 };
 

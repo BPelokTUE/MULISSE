@@ -1,5 +1,5 @@
-#ifndef ENVELOPE_HPP
-#define ENVELOPE_HPP
+#ifndef INDEX_ENTRY_ENVELOPE_HPP
+#define INDEX_ENTRY_ENVELOPE_HPP
 
 #include "Index/Entry/EntryData.hpp"
 #include "Util/Constants/Math.hpp"
@@ -56,10 +56,6 @@ struct Envelope : IEntryData {
     }
 };
 
-// ----------------------------------------------- //
-// --------------- ULISSE ENVELOPE --------------- //
-// ----------------------------------------------- //
-
 struct EnvelopeParams {
     /** @brief The minimum length of a subsequence */
     uint m_l_min;
@@ -71,4 +67,4 @@ struct EnvelopeParams {
     const ILengthGroupSegmentationStrategy *m_lg_segmentation_strategy;
 };
 
-#endif  // ENVELOPE_HPP
+#endif  // INDEX_ENTRY_ENVELOPE_HPP

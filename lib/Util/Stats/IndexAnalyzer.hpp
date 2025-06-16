@@ -15,7 +15,13 @@
 template <typename IndexType, typename FTag>
 concept ValidIndexType = std::is_base_of<IFinalizedIndex<FTag>, IndexType>::value;
 
-template <typename IndexType, typename FTag>
+/**
+ * @brief Class for analyzing indexes
+ * @tparam IndexType The type of index to analyze, must extend IFinalizedIndex
+ * @tparam FTag The finalized tag of the index, must be a valid entry traits
+ * @tparam EnvT The type of envelope in the index if applicable, defaults to void
+ */
+template <typename IndexType, typename FTag, typename EnvT = void>
     requires ValidIndexType<IndexType, FTag>
 class IndexAnalyzer {
    public:
@@ -45,12 +51,12 @@ class IndexAnalyzer {
 
             for (uint l_ind = 0; l_ind < num_l_groups; l_ind++) {
                 auto sub_index = uptr<IndexType>(static_cast<IndexType *>(index->release_index(l_ind)));
-                IndexAnalyzer<IndexType, FTag>(std::move(sub_index)).analyze(l_ind, separate_segment_stats);
+                IndexAnalyzer<IndexType, FTag, EnvT>(std::move(sub_index)).analyze(l_ind, separate_segment_stats);
             }
         } else {
             auto index = create_index();
             load_index(index, index_format);
-            IndexAnalyzer<IndexType, FTag>(std::move(index)).analyze(0, separate_segment_stats);
+            IndexAnalyzer<IndexType, FTag, EnvT>(std::move(index)).analyze(0, separate_segment_stats);
         }
     }
 
@@ -95,60 +101,31 @@ class IndexAnalyzer {
      * @param height The height of the node in the index
      */
     void analyze_isax_node(const FinalizedISaxIndex<FTag> *index, const FinalizedISaxNode<FTag> *node,
-                           const vec<iSaxType> &isax_words, IndexStats &stats, size_t height) {
-        if (node->is_leaf()) {
-            size_t num_entries = node->get_subsequence_infos().size();
-            stats.update_leaf_stats(num_entries, height);
-            for (MtsNumChannelsT c = 0; c < isax_words.size(); ++c) {
-                auto channel_num_bits = isax_words[c].get_num_bits();
-                for (SaxSegIndT s = 0; s < isax_words[c].size(); ++s) {
-                    auto [lower, upper] =
-                        index->get_interval_limits(channel_num_bits[s], isax_words[c].symbol_no_shift(s));
-                    stats.update_seg_stats(lower, upper, c, s, num_entries);
-                }
-            }
-        } else {
-            auto [s, c] = node->get_split_ind();
-            auto [left_isax_words, right_isax_words] = index->get_children_isax_words(node, isax_words, c, s);
-            auto [left, right] = node->get_children();
-            analyze_isax_node(index, left, left_isax_words, stats, height + 1);
-            analyze_isax_node(index, right, right_isax_words, stats, height + 1);
-        }
-    }
+                           const vec<iSaxType> &isax_words, IndexStats &stats, size_t height);
 
     /**
-     * @brief Analyze the iSAX index
+     * @brief Analyze iSAX index
      * @param length_group_id The ID of the length group within the index (0 for non-length-grouped indexes)
      * @param separate_segment_stats Whether to calculate segment statistics for each segment separately
      * */
-    void analyze_isax(uint length_group_id = 0, bool separate_segment_stats = false) {
-        const FinalizedISaxIndex<FTag> *index = dynamic_cast<FinalizedISaxIndex<FTag> *>(m_index.get());
-        if (!index) throw std::runtime_error("Could not cast index to FinalizedISaxIndex");
+    void analyze_isax(uint length_group_id = 0, bool separate_segment_stats = false);
 
-        const auto &first_layer_symbols = index->get_first_layer_symbols();
-        if (first_layer_symbols.empty()) {
-            throw std::runtime_error("First layer symbols are empty");
-        }
-        MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(first_layer_symbols[0].size());
-        if (num_channels == 0) {
-            throw std::runtime_error("Number of channels is 0");
-        }
-        SaxSegIndT num_segments = static_cast<SaxSegIndT>(first_layer_symbols[0][0].size());
-        if (num_segments == 0) {
-            throw std::runtime_error("Number of segments is 0");
-        }
-        IndexStats stats(num_channels, num_segments);
+    // Flat envelope
 
-        for (size_t i = 0; i < first_layer_symbols.size(); ++i) {
-            vec<iSaxType> isax_words(num_channels);
-            for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-                isax_words[c] = iSaxType(first_layer_symbols[i][c], index->get_first_layer_num_bits());
-            }
-            analyze_isax_node(index, index->get_first_layer_node(i), isax_words, stats, 1);
-        }
-        stats.calculate();
-        IndexStatsLogger::write_entry(stats, length_group_id, m_sub_index_id);
-    }
+    /**
+     * @brief Analyze flat envelope index
+     * @param separate_segment_stats Whether to calculate segment statistics for each segment separately
+     * */
+    void analyze_flat_envelope(uint length_group_id = 0, bool separate_segment_stats = false);
+
+    // Two-stage iSAX with envelope / SAX envelope
+
+    /**
+     * @brief Analyze two-stage iSAX envelope index
+     * @param length_group_id The ID of the length group within the index (0 for non-length-grouped indexes)
+     * @param separate_segment_stats Whether to calculate segment statistics for each segment separately
+     */
+    void analyze_two_stage_isax_envelope(uint length_group_id = 0, bool separate_segment_stats = false);
 };
 
 #endif  // UTIL_STATS_INDEXANALYZER_HPP

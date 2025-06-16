@@ -1,5 +1,6 @@
 #include "Modules/Indexing/Indexing.hpp"
 
+#include "Index/Entry/SaxEnvelope.hpp"
 #include "Index/Estimator/FlatEnvelopeParamEstimator.hpp"
 #include "Modules/Indexing/ConstructIndex.hpp"
 #include "Modules/Indexing/GetChannelScores.hpp"
@@ -109,10 +110,7 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
 
     // Create index
 
-    IndexFactoryParams factory_params{
-        .m_discretize_flat_index = false,
-        .m_opts = opts,
-    };
+    IndexFactoryParams factory_params{.m_opts = opts};
 
 #define CONSTRUCT_INDEX(Type, index_factory)                                                                          \
     construct_index<Type>(                                                                                            \
@@ -134,20 +132,24 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
             CONSTRUCT_ENVELOPE_INDEX(get_isax_index<Envelope>);
             break;
         }
-        case ISAX_ENV_W_SAX_ENV:
-            factory_params.m_discretize_flat_index = true;
+        case ISAX_ENV_W_SAX_ENV: {
+            CONSTRUCT_ENVELOPE_INDEX(get_two_stage_isax_envelope_index<SaxEnvelope>);
+            break;
+        }
         case ISAX_ENV_W_ENV: {
-            CONSTRUCT_ENVELOPE_INDEX(get_two_stage_isax_envelope_index);
+            CONSTRUCT_ENVELOPE_INDEX(get_two_stage_isax_envelope_index<Envelope>);
             break;
         }
         case ISAX: {
             CONSTRUCT_PAA_INDEX(get_isax_index<Paa>);
             break;
         }
-        case SAX_ENVELOPE:
-            factory_params.m_discretize_flat_index = true;
+        case SAX_ENVELOPE: {
+            CONSTRUCT_ENVELOPE_INDEX(get_flat_envelope_index<SaxEnvelope>);
+            break;
+        }
         case ENVELOPE: {
-            CONSTRUCT_ENVELOPE_INDEX(get_flat_envelope_index);
+            CONSTRUCT_ENVELOPE_INDEX(get_flat_envelope_index<Envelope>);
             break;
         }
         case TREE_ENVELOPE:

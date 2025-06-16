@@ -5,8 +5,12 @@
 
 class IChannelSegmentationStrategy;
 
-/** @brief Flat envelope index */
-class FlatEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_this<FlatEnvelopeIndex> {
+/**
+ * @brief Flat envelope index
+ * @tparam EnvT The type of envelope to store in the index, can be Envelope or SaxEnvelope
+ * */
+template <typename EnvT>
+class FlatEnvelopeIndex : public EnvelopeIndex<EnvT>, public std::enable_shared_from_this<FlatEnvelopeIndex<EnvT>> {
    public:
     /**
      * @brief Construct a new FlatEnvelopeIndex instance
@@ -15,8 +19,7 @@ class FlatEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_t
      * @param sax_num_bits Number of bits used for SAX discretization. Defaults to 0, indicating no discretization.
      * If greater than 0, the breakpoints are assumed to have the same cardinality.
      */
-    FlatEnvelopeIndex(sptr<IChannelSegmentationStrategy> ch_segmentation_strategy, uint pos_per_env,
-                      SaxNumBitsT sax_num_bits = 0);
+    FlatEnvelopeIndex(sptr<IChannelSegmentationStrategy> ch_segmentation_strategy, uint pos_per_env);
 
     FlatEnvelopeIndex() = default;
 
@@ -25,9 +28,6 @@ class FlatEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_t
     void insert(IndexEntry<Envelope> &entry) override;
 
     uptr<IFinalizedIndex<EnvelopeTag>> finalize() override;
-
-   protected:
-    SaxNumBitsT m_sax_num_bits;
 };
 
 #endif  // INDEX_ENVELOPEINDEX_FLATENVELOPEINDEX_HPP

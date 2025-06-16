@@ -6,7 +6,7 @@
 class IEnvelopeGrouper;
 class EnvelopeNode;
 
-class TreeEnvelopeIndex : public EnvelopeIndex, public std::enable_shared_from_this<TreeEnvelopeIndex> {
+class TreeEnvelopeIndex : public EnvelopeIndex<Envelope>, public std::enable_shared_from_this<TreeEnvelopeIndex> {
    public:
     /**
      * @brief Construct a new TreeEnvelopeIndex instance

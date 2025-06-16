@@ -1,8 +1,5 @@
 #include "Index/Sax/SaxWord.hpp"
 
-#include <algorithm>
-#include <cassert>
-
 SaxWord::SaxWord(vec<SaxSymbolT> symbols, SaxNumBitsT num_bits) : m_symbols(symbols), m_alphabet_num_bits(num_bits) {
     assert(num_bits > 0);
 };

@@ -2,7 +2,6 @@
 #define INDEX_SAX_SAXWORD_HPP
 
 #include <cassert>
-#include <functional>
 
 #include "Index/Entry/Paa.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
@@ -12,6 +11,7 @@
 /** @brief Symbolic Aggregate approXimation (SAX) word */
 class SaxWord {
     friend class SaxSymbolsFactory;
+    friend class SaxEnvelope;
 
    public:
     virtual ~SaxWord() = default;

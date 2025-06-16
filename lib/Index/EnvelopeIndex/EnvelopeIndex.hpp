@@ -7,7 +7,11 @@
 
 class IChannelSegmentationStrategy;
 
-/** @brief Abstract base class for envelope-based indexes */
+/**
+ * @brief Abstract base class for envelope-based indexes
+ * @param EnvT The type of envelope to store in the index, can be Envelope or SaxEnvelope
+ * */
+template <typename EnvT>
 class EnvelopeIndex : public IIndex<Envelope> {
    public:
     EnvelopeIndex() = default;
@@ -22,15 +26,23 @@ class EnvelopeIndex : public IIndex<Envelope> {
     void insert(IndexEntry<Envelope> &entry) override;
 
     /**
-     * @brief Get the entries of the index
-     * @return The entries of the index
+     * @brief Get the entry of the index at the given index
+     * @param ind The index of the entry to get
+     * @return The entry at the given index
      */
-    const vec<IndexEntry<Envelope>> &get_entries() const;
+    auto get_entry(uint ind) const -> decltype(auto);
+
+    /**
+     * @brief Get the number of entries in the index
+     * @return The number of entries in the index
+     */
+    const uint size() const;
 
    protected:
     uint m_pos_per_env;
     sptr<IChannelSegmentationStrategy> m_ch_segmentation_strategy;
-    vec<IndexEntry<Envelope>> m_entries;
+    vec<IndexEntry<EnvT>> m_entries;
+    const vec<Real> *m_breakpoints = nullptr;
 };
 
 #endif  // INDEX_ENVELOPEINDEX_ENVELOPEINDEX_HPP
