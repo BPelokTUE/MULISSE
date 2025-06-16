@@ -40,7 +40,7 @@ struct SegmentationParams {
 };
 
 struct SaxParams {
-    /** @brief Number of symbols to use for the SAX representations */
+    /** @brief Number of bits to use for the SAX breakpoints */
     SaxNumBitsT m_num_bits;
     /** @brief Strategy for getting the breakpoints of the symbol intervals */
     SaxBreakpointStrategyType m_breakpoint_strategy_type;
@@ -135,8 +135,8 @@ struct iSaxTrieParams {
     /** @brief Only used for EntropyMaximizingSplitStrategy: whether to select the segment with the min number of bits
      * in case of a tie */
     bool m_min_num_bits_on_tie;
-    /** @brief Maximum number of bits per segment */
-    SaxNumBitsT m_num_bits_limit;
+    /** @brief Starting number of bits per segment */
+    SaxNumBitsT m_first_layer_num_bits;
     /** @brief Strategy for choosing the index to split on */
     iSaxSplitStrategyType m_split_strategy_type;
     /** @brief Maximum number of entries in a leaf */

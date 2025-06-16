@@ -4,7 +4,12 @@
 #include "Search/IndexSearch/IndexSearchMethod.hpp"
 #include "Util/Logging/QueryLogger.hpp"
 
-/** @brief Abstract base class for envelope-index-based search methods */
+/**
+ * @brief Abstract base class for envelope-index-based search methods
+ * @tparam S SearchType to execute
+ * @tparam D DistanceType to use
+ * @tparam QS Whether the method takes sorted queries
+ * */
 template <SearchType S, DistanceType D, bool QS = false>
 class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, QS> {
    protected:

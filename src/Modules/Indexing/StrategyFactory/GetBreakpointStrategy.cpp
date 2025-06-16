@@ -2,6 +2,7 @@
 
 #include "Index/Sax/BreakpointStrategy/EquiprobableBreakpointStrategy.hpp"
 #include "Index/Sax/BreakpointStrategy/FixedBreakpointStrategy.hpp"
+#include "Index/Sax/BreakpointStrategy/SaxBreakpointStrategy.hpp"
 
 uptr<ISaxBreakpointStrategy> get_breakpoint_strategy(const SaxParams &sax_params) {
     switch (sax_params.m_breakpoint_strategy_type) {

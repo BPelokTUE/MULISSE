@@ -117,7 +117,8 @@ int main(int argc, char **argv) {
     Real step_sd = R(1.0), noise = R(0.1), score_based_chss_score_exp = R(1.0), index_sample_frac = R(1.0),
          env_width_min_w_update = R(0.0), min_subs_sd = DEFAULT_MIN_SUBS_SD, max_width_change = R(0.0),
          r_range_r = R(1.0), index_size_limit = R(0.0);
-    SaxNumBitsT first_layer_num_bits = 1, num_bits_limit = MAX_NUM_BITS_LIMIT, merger_num_bits = MAX_NUM_BITS_LIMIT;
+    SaxNumBitsT first_layer_num_bits = 1, breakpoint_num_bits = MAX_NUM_BITS_LIMIT,
+                merger_num_bits = MAX_NUM_BITS_LIMIT;
     SaxSegIndT num_segments = 0;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
          num_l_groups = 0, knn_k = 1, seed = 0, num_lags = 5, score_based_chss_segment_len = 1,
@@ -326,13 +327,10 @@ int main(int argc, char **argv) {
         ->capture_default_str()
         ->check(non_negative_real);
     index_subcommand->add_flag("--raw", raw, "Do not normalize");
-    index_subcommand
-        ->add_option("-b,--first_layer_bits", first_layer_num_bits,
-                     "Number of bits for first layer in the case of iSAX, number of bits in the case of flat SAX "
-                     "envelope and number of bits for the invSAX representation in case of tree envelope.")
+    index_subcommand->add_option("-b,--num_bits", breakpoint_num_bits, "Number of bits for the SAX breakpoints")
         ->check(positive_int)
         ->capture_default_str();
-    index_subcommand->add_option("--num_bits_limit", num_bits_limit, "Maximum number of bits per segment")
+    index_subcommand->add_option("--first_layer_bits", first_layer_num_bits, "Starting number of bits in iSAX indexes")
         ->check(positive_int)
         ->capture_default_str();
     index_subcommand->add_option("-I,--inserter_type", inserter_type_str, "Entry inserter type")
@@ -430,6 +428,13 @@ int main(int argc, char **argv) {
     search_subcommand->add_option("-f,--format", index_format_str, "Index format")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ARCHIVE_TYPE_STRS));
+    search_subcommand->add_option("-B,--breakpoint_strategy", breakpoint_strategy_str, "Breakpoint strategy")
+        ->capture_default_str()
+        ->check(CLI::IsMember(ACCEPTED_ISAX_BREAKPOINT_STRATEGY_STRS));
+    search_subcommand->add_option("-b,--num_bits", breakpoint_num_bits, "Number of bits for the SAX breakpoints")
+        ->check(positive_int)
+        ->capture_default_str();
+    search_subcommand->add_option("--breakpoints", breakpoints_path, "Path to breakpoints file")->capture_default_str();
     search_subcommand->add_option("-D,--distance", distance_measure_str, "Distance measure")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_DISTANCE_TYPE_STRS));
@@ -491,7 +496,7 @@ int main(int argc, char **argv) {
                 return 1;
             }
             // Number of bits limit cannot be too high
-            if (num_bits_limit > MAX_NUM_BITS_LIMIT) {
+            if (breakpoint_num_bits > MAX_NUM_BITS_LIMIT) {
                 std::cerr << "Maximum number of bits per segment must be less than or equal to " << MAX_NUM_BITS_LIMIT
                           << '\n';
                 return 1;
@@ -519,9 +524,9 @@ int main(int argc, char **argv) {
                 Real breakpoint;
                 while (breakpoints_ifs >> breakpoint) ++alphabet_size;
 
-                if (alphabet_size < (1 << num_bits_limit)) {
+                if (alphabet_size < (1 << breakpoint_num_bits)) {
                     std::cerr << "The file " << breakpoints_path << " contains " << alphabet_size - 1
-                              << " breakpoints, but " << (1 << num_bits_limit) - 1
+                              << " breakpoints, but " << (1 << breakpoint_num_bits) - 1
                               << " are required. Provide a different file or lower the number of bits limit.\n";
                     return 1;
                 }
@@ -592,11 +597,11 @@ int main(int argc, char **argv) {
 
             uptr<SaxParams> merger_sax_params = nullptr;
             if (arr_contains(MERGERS_W_SAX, env_entry_merger_type)) {
-                if (arr_contains(METHODS_W_ISAX, method_type) && merger_num_bits < num_bits_limit) {
+                if (arr_contains(METHODS_W_ISAX, method_type) && merger_num_bits < breakpoint_num_bits) {
                     std::cout << "Warning: The number of bits for the SAX-based merger is less than the bit limit for "
                                  "the iSAX trie. The merger will use "
-                              << U(num_bits_limit) << " bits (instead of " << U(merger_num_bits) << ").\n";
-                    merger_num_bits = num_bits_limit;
+                              << U(breakpoint_num_bits) << " bits (instead of " << U(merger_num_bits) << ").\n";
+                    merger_num_bits = breakpoint_num_bits;
                 }
                 merger_sax_params =
                     std::make_unique<SaxParams>(merger_num_bits, breakpoint_strategy_type, breakpoints_path);
@@ -622,7 +627,7 @@ int main(int argc, char **argv) {
                 .m_score_based_chss_params = score_based_chss_params.get(),
             };
             SaxParams sax_params{
-                .m_num_bits = first_layer_num_bits,
+                .m_num_bits = breakpoint_num_bits,
                 .m_breakpoint_strategy_type = breakpoint_strategy_type,
                 .m_breakpoints_file = breakpoints_path,
             };
@@ -633,7 +638,7 @@ int main(int argc, char **argv) {
             iSaxTrieParams isax_trie_params{
                 .m_merge_in_leaves = merge_in_leaves,
                 .m_min_num_bits_on_tie = !prefer_first_in_em,
-                .m_num_bits_limit = num_bits_limit,
+                .m_first_layer_num_bits = first_layer_num_bits,
                 .m_split_strategy_type = split_strategy_type,
                 .m_leaf_capacity = leaf_capacity,
             };
@@ -721,6 +726,12 @@ int main(int argc, char **argv) {
                 .m_knn_k = knn_k,
                 .m_r_range_r = r_range_r,
                 .m_max_leaves_to_visit = max_leaves_to_visit,
+                .m_sax_params =
+                    SaxParams{
+                        .m_num_bits = breakpoint_num_bits,
+                        .m_breakpoint_strategy_type = STR_TO_ISAX_BREAKPOINT_STRATEGY.at(breakpoint_strategy_str),
+                        .m_breakpoints_file = breakpoints_path,
+                    },
             };
 
             switch (distance_type) {

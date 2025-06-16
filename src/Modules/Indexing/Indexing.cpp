@@ -31,8 +31,8 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
 
     if (arr_contains(METHODS_W_ISAX, opts.m_index_method)) {
         auto *index_params = dynamic_cast<iSaxIndexParams *>(opts.m_index_params.get());
-        if (index_params && index_params->m_isax_trie_params.m_num_bits_limit > 0) {
-            initialize_sax_breakpoints(index_params->m_sax_params, index_params->m_isax_trie_params.m_num_bits_limit);
+        if (index_params && index_params->m_sax_params.m_num_bits > 0) {
+            initialize_sax_breakpoints(index_params->m_sax_params);
         } else {
             std::cerr << "iSAX index method requires a positive number of bits limit\n";
             return 2;
@@ -40,7 +40,7 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
     } else if (arr_contains(METHODS_W_SAX, opts.m_index_method)) {
         auto *index_params = dynamic_cast<SaxIndexParams *>(opts.m_index_params.get());
         if (index_params && index_params->m_sax_params.m_num_bits > 0) {
-            initialize_sax_breakpoints(index_params->m_sax_params, index_params->m_sax_params.m_num_bits);
+            initialize_sax_breakpoints(index_params->m_sax_params);
         } else {
             std::cerr << "SAX index method requires a positive number of bits\n";
             return 2;
@@ -50,7 +50,7 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
         if (index_params && arr_contains(MERGERS_W_SAX, index_params->m_merger_params.m_entry_merger_type)) {
             auto merger_sax_params = index_params->m_merger_params.m_merger_sax_params;
             if (merger_sax_params && merger_sax_params->m_num_bits > 0) {
-                initialize_sax_breakpoints(*merger_sax_params, merger_sax_params->m_num_bits);
+                initialize_sax_breakpoints(*merger_sax_params);
             } else {
                 std::cerr << "SAX-based envelope entry merger requires a positive number of bits\n";
                 return 2;

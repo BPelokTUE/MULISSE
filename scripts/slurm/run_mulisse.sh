@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --time=1-00:00:00
+#SBATCH --time=3-00:00:00
 #SBATCH -p mcs.default.q
 #SBATCH -N 1
 #SBATCH --ntasks 1

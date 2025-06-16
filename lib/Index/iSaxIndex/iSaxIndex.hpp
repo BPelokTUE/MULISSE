@@ -120,7 +120,7 @@ class iSaxIndex : public IIndex<T>, public std::enable_shared_from_this<iSaxInde
         uint pos_per_env = RunSettings::get_instance().get_envelope_props().m_pos_per_env;
         return std::make_unique<FinalizedISaxIndex<FTag>>(m_ch_segmentation_strategy, std::move(first_layer_symbols),
                                                           std::move(finalized_nodes), m_first_layer_num_bits,
-                                                          m_alphabet_num_bits, *m_breakpoints, pos_per_env);
+                                                          m_alphabet_num_bits, pos_per_env);
     }
 
     const SplittableISaxNode<T> *get_first_layer_node(const vec<iSaxWord> &isax_words) const {

@@ -68,12 +68,13 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
 
         if (arr_contains(METHODS_W_SAX, method_type)) {
             auto *sax_index_params = dynamic_cast<SaxIndexParams *>(index_options.m_index_params.get());
-            first_layer_num_bits = sax_index_params->m_sax_params.m_num_bits;
+            num_bits_limit = sax_index_params->m_sax_params.m_num_bits;
             brs_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(sax_index_params->m_sax_params.m_breakpoint_strategy_type);
 
             if (arr_contains(METHODS_W_ISAX, method_type)) {
                 auto *isax_index_params = dynamic_cast<iSaxIndexParams *>(index_options.m_index_params.get());
                 leaf_capacity = isax_index_params->m_isax_trie_params.m_leaf_capacity;
+                first_layer_num_bits = isax_index_params->m_isax_trie_params.m_first_layer_num_bits;
 
                 auto split_strategy = isax_index_params->m_isax_trie_params.m_split_strategy_type;
                 sps_str = ISAX_SPLIT_STRATEGY_TO_STR.at(split_strategy);
@@ -81,7 +82,6 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
                 merge_in_leaves_str = to_string(isax_index_params->m_isax_trie_params.m_merge_in_leaves);
                 if (split_strategy == ENTROPY_MAXIMIZING)
                     min_num_bits_on_tie_str = to_string(isax_index_params->m_isax_trie_params.m_min_num_bits_on_tie);
-                num_bits_limit = isax_index_params->m_isax_trie_params.m_num_bits_limit;
             }
 
             if (arr_contains(METHODS_W_ENV_GROUPING, method_type)) {

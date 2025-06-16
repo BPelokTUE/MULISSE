@@ -56,14 +56,14 @@ CK_CALCULATE_QUERY_STATS = "calculate_query_stats"
 CK_CALCULATE_INDEX_STATS = "calculate_index_stats"
 CK_SEPARATE_SEGMENT_STATS = "separate_segment_stats"
 CK_ADAPT_INDEX = "adapt_index"
-CK_ISAX_BREAKPOINTS_FILE = "isax_breakpoints_file"
+CK_SAX_BREAKPOINTS_FILE = "sax_breakpoints_file"
 CK_ISAX_MERGE_IN_LEAVES = "isax_merge_in_leaves"
 CK_ISAX_PREFER_FIRST_IN_EM = "isax_prefer_first_in_em"
 CK_ISAX_SPLIT_STRATEGIES = "isax_split_strategies"
 CK_ISAX_LEAF_CAP_RATIOS = "isax_leaf_cap_ratios"
 CK_BUCKET_SIZES = "bucket_sizes"
 CK_MAX_WIDTH_CHANGES = "max_width_changes"
-CK_ISAX_NUM_BITS_LIMITS = "isax_num_bits_limits"
+CK_SAX_NUM_BITS = "sax_num_bits"
 CK_ENVELOPE_SIZE_RATIOS = "envelope_size_ratios"
 CK_ENVELOPE_SIZES = "envelope_sizes"
 CK_INDEX_SIZE_LIMITS = "index_size_limits"
@@ -113,14 +113,14 @@ RK_CALCULATE_INDEX_STATS = "calculate_index_stats"
 RK_SEPARATE_SEGMENT_STATS = "separate_segment_stats"
 RK_FIRST_LAYER_BITS = "first_layer_bits"
 RK_ADAPT = "adapt"
-RK_ISAX_BREAKPOINTS_FILE = "isax_breakpoints_file"
+RK_SAX_BREAKPOINTS_FILE = "sax_breakpoints_file"
 RK_ISAX_MERGE_IN_LEAVES = "isax_merge_in_leaves"
 RK_ISAX_PREFER_FIRST_IN_EM = "isax_prefer_first_in_em"
 RK_SPLIT_STRATEGY = "split_strategy"
 RK_LEAF_CAPACITY = "leaf_capacity"
 RK_BUCKET_SIZE = "bucket_size"
 RK_MAX_WIDTH_CHANGE = "max_width_change"
-RK_ISAX_NUM_BITS_LIMIT = "isax_num_bits_limit"
+RK_SAX_NUM_BITS = "sax_num_bits"
 RK_ENVLEOPE_SIZE_RATIO = "envelope_size_ratio"
 RK_ENVELOPE_SIZE = "envelope_size"
 RK_INDEX_SIZE_LIMIT = "size_limit"
@@ -375,15 +375,15 @@ def parse_config_file(input_config) -> ParsedConfig:
             sax_settings = {
                 **common_settings,
                 **get_key_or_none(RK_BREAKPOINT_STRATEGY, CK_ISAX_BREAKPOINT_STRATEGIES),
-                **get_key_or_none(RK_FIRST_LAYER_BITS, CK_ISAX_START_BIT_NUMBERS),
+                **get_key_or_none(RK_SAX_NUM_BITS, CK_SAX_NUM_BITS),
                 **get_key_or_none(RK_ADAPT, CK_ADAPT_INDEX),
-                **get_key_or_none(RK_ISAX_BREAKPOINTS_FILE, CK_ISAX_BREAKPOINTS_FILE),
+                **get_key_or_none(RK_SAX_BREAKPOINTS_FILE, CK_SAX_BREAKPOINTS_FILE),
             }
             isax_settings = {
                 **sax_settings,
                 RK_LEAF_CAPACITY: config.get(CK_ISAX_LEAF_CAP_RATIOS, []),
                 **get_key_or_none(RK_SPLIT_STRATEGY, CK_ISAX_SPLIT_STRATEGIES),
-                **get_key_or_none(RK_ISAX_NUM_BITS_LIMIT, CK_ISAX_NUM_BITS_LIMITS),
+                **get_key_or_none(RK_FIRST_LAYER_BITS, CK_ISAX_START_BIT_NUMBERS),
                 **get_key_or_none(RK_ISAX_MERGE_IN_LEAVES, CK_ISAX_MERGE_IN_LEAVES),
                 **get_key_or_none(RK_ISAX_PREFER_FIRST_IN_EM, CK_ISAX_PREFER_FIRST_IN_EM),
             }
@@ -925,12 +925,13 @@ if __name__ == "__main__":
                             leaf_capacity = max(1, leaf_capacity)
                             args += ["--leaf_capacity", str(leaf_capacity)]
 
-                        if breakpoints_file := index_setting_copy.pop(RK_ISAX_BREAKPOINTS_FILE, ""):
+                        breakpoint_strategy = index_setting_copy.get(RK_BREAKPOINT_STRATEGY, "")
+                        if breakpoints_file := index_setting_copy.pop(RK_SAX_BREAKPOINTS_FILE, ""):
                             if len(breakpoints_file) > 0:
                                 args += ["--breakpoints", breakpoints_file]
-                        if num_bits_limit := index_setting_copy.pop(RK_ISAX_NUM_BITS_LIMIT, ""):
-                            if num_bits_limit > 0:
-                                args += ["--num_bits_limit", str(num_bits_limit)]
+                        if sax_num_bits := index_setting_copy.pop(RK_SAX_NUM_BITS, 0):
+                            if sax_num_bits > 0:
+                                args += ["--num_bits", str(sax_num_bits)]
 
                         calculate_index_stats = index_setting_copy.pop(RK_CALCULATE_INDEX_STATS, False)
                         separate_segment_stats = index_setting_copy.pop(RK_SEPARATE_SEGMENT_STATS, False)
@@ -979,6 +980,13 @@ if __name__ == "__main__":
                                         query_file, "-i", index_file
                                     ]
                                     # fmt: on
+                                    if len(breakpoint_strategy) > 0:
+                                        args += ["-B", breakpoint_strategy]
+                                    if sax_num_bits > 0:
+                                        args += ["-b", str(sax_num_bits)]
+                                    if len(breakpoints_file) > 0:
+                                        args += ["--breakpoints", breakpoints_file]
+
                                     if lens_per_group > 0:
                                         args += ["-g", str(lens_per_group), "-l", str(l_min), "-L", str(l_max)]
 

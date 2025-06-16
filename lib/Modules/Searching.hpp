@@ -11,6 +11,7 @@
 #include "Index/LengthGroupingIndex/FinalizedLengthGroupingIndex.hpp"
 #include "Index/Traits/EntryTags.hpp"
 #include "Index/iSaxIndex/FinalizedISaxIndex.hpp"
+#include "Modules/Indexing/InitializeBreakpoints.hpp"
 #include "Search/ChainSearch.hpp"
 #include "Search/DistanceMeasure/DistanceMeasure.hpp"
 #include "Search/IndexSearch/FlatEnvelopeIndexSearch.hpp"
@@ -87,6 +88,8 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
  */
 template <SearchType S, DistanceType D, bool QS>
 uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
+    if (arr_contains(METHODS_W_SAX, opts.m_search_method_type)) initialize_sax_breakpoints(opts.m_sax_params);
+
     switch (opts.m_search_method_type) {
         case ISAX_ENVELOPE:
             return load_index_based_method<EnvelopeTag, S, D, QS>(

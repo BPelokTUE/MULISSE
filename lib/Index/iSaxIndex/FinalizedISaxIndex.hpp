@@ -11,6 +11,7 @@
 #include "Index/iSaxIndex/FinalizedISaxNode.hpp"
 #include "Serialization/Macros.hpp"
 #include "Util/Constants/Math.hpp"
+#include "Util/RunSettings/RunSettings.hpp"
 
 /**
  * @brief Priority queue entry, intended to be used in FinalizedISaxIndex
@@ -39,7 +40,10 @@ class FinalizedISaxIndex : public IFinalizedIndex<FTag> {
     using SymbolType = typename SaxTraits<FTag>::SymbolType;
 
    public:
-    FinalizedISaxIndex() = default;
+    FinalizedISaxIndex() {
+        auto& RS = RunSettings::get_instance();
+        m_breakpoints = &RS.get_breakpoints();
+    }
 
     /**
      * @brief Construct a new FinalizedISaxIndex object
@@ -49,22 +53,21 @@ class FinalizedISaxIndex : public IFinalizedIndex<FTag> {
      * @param first_layer_nodes First layer nodes
      * @param first_layer_num_bits Number of bits used for symbols in the first layer
      * @param alphabet_num_bits The maximum number of bits used for any symbol in any node of the index
-     * @param breakpoints Breakpoints used for the iSAX index; assumed to be `2^alphabet_num_bits-1` long;
-     *        does not include `-inf` and `inf`
      * @param pos_per_env Number of positions per envelope. 0 if not applicable.
      */
     FinalizedISaxIndex(sptr<IChannelSegmentationStrategy> ch_segmentation_strategy,
                        vec<vec<vec<SymbolType>>> first_layer_symbols,
                        vec<uptr<FinalizedISaxNode<FTag>>> first_layer_nodes, SaxNumBitsT first_layer_num_bits,
-                       SaxNumBitsT alphabet_num_bits, vec<Real> breakpoints, uint pos_per_env = 0)
+                       SaxNumBitsT alphabet_num_bits, uint pos_per_env = 0)
         : m_ch_segmentation_strategy(ch_segmentation_strategy),
           m_pos_per_env(pos_per_env),
           m_first_layer_symbols(std::move(first_layer_symbols)),
           m_first_layer_nodes(std::move(first_layer_nodes)),
           m_first_layer_num_bits(first_layer_num_bits),
-          m_alphabet_num_bits(alphabet_num_bits),
-          m_breakpoints(breakpoints) {  // TODO: try to remove this copy
+          m_alphabet_num_bits(alphabet_num_bits) {
         assert(m_first_layer_symbols.size() > 0);
+        auto& RS = RunSettings::get_instance();
+        m_breakpoints = &RS.get_breakpoints();
     }
 
     ~FinalizedISaxIndex() = default;
@@ -79,8 +82,8 @@ class FinalizedISaxIndex : public IFinalizedIndex<FTag> {
         uint num_shift = m_alphabet_num_bits - num_bits;
         auto [lower_ind, upper_ind] = get_limit_breakpoint_indexes(symbol, num_shift);
         return {
-            lower_ind == -1 ? -INF : m_breakpoints[U(lower_ind)],
-            upper_ind == m_breakpoints.size() ? INF : m_breakpoints[U(upper_ind)],
+            lower_ind == -1 ? -INF : m_breakpoints->at(U(lower_ind)),
+            upper_ind == m_breakpoints->size() ? INF : m_breakpoints->at(U(upper_ind)),
         };
     }
 
@@ -126,15 +129,15 @@ class FinalizedISaxIndex : public IFinalizedIndex<FTag> {
    private:
     SaxNumBitsT m_first_layer_num_bits, m_alphabet_num_bits;
     uint m_pos_per_env;
+    const vec<Real>* m_breakpoints;
     sptr<IChannelSegmentationStrategy> m_ch_segmentation_strategy;
     vec<vec<vec<SymbolType>>> m_first_layer_symbols;
     vec<uptr<FinalizedISaxNode<FTag>>> m_first_layer_nodes;
-    vec<Real> m_breakpoints;
 
     std::pair<int, int> get_limit_breakpoint_indexes(SymbolType symbol, uint num_shift) const;
 
     MAKE_SERIALIZABLE((m_first_layer_num_bits, m_alphabet_num_bits, m_pos_per_env, m_ch_segmentation_strategy,
-                       m_first_layer_symbols, m_first_layer_nodes, m_breakpoints));
+                       m_first_layer_symbols, m_first_layer_nodes));
 };
 
 #endif  // ISAX_FINALIZED_INDEX_HPP

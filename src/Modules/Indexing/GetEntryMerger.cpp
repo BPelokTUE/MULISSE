@@ -3,7 +3,7 @@
 #include "Index/IndexOptions.hpp"
 
 template <typename T>
-uptr<IEntryMerger<T>> get_entry_merger(const IndexOptions &opts) {
+uptr<IEntryMerger<T>> get_entry_merger_impl(const IndexOptions &opts) {
     auto *params = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get());
     switch (params->m_merger_params.m_entry_merger_type) {
         case DUMMY:
@@ -30,10 +30,10 @@ uptr<IEntryMerger<T>> get_entry_merger(const IndexOptions &opts) {
 
 template <>
 uptr<IEntryMerger<Paa>> get_entry_merger<Paa>(const IndexOptions &opts) {
-    return get_entry_merger<Paa>(opts);
+    return get_entry_merger_impl<Paa>(opts);
 }
 
 template <>
 uptr<IEntryMerger<Envelope>> get_entry_merger<Envelope>(const IndexOptions &opts) {
-    return get_entry_merger<Envelope>(opts);
+    return get_entry_merger_impl<Envelope>(opts);
 }

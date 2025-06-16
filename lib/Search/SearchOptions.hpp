@@ -5,6 +5,7 @@
 #include "Enums/DistanceType.hpp"
 #include "Enums/SearchMethodType.hpp"
 #include "Enums/SearchType.hpp"
+#include "Index/IndexParams.hpp"
 #include "Util/Types/Numbers.hpp"
 
 /** @brief Options for searching */
@@ -43,6 +44,8 @@ struct SearchOptions {
     Real m_r_range_r = 0.0;
     /** @brief Maximum number of leaves to visit if approximate search is used. Defaults to 0, indicating no max. */
     size_t m_max_leaves_to_visit = 0;
+    /** @brief SAX paramethers; Temporary solution for loading SAX breakpoints during search */
+    SaxParams m_sax_params;
 };
 
 #endif  // SEARCH_SEARCHOPTIONS_HPP
