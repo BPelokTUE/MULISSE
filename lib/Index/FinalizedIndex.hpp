@@ -13,8 +13,8 @@ namespace fs = std::filesystem;
  * @brief Interface for finalized indexes
  * @tparam T Traits of the entries in the index
  * */
-template <typename T>
-    requires ValidEntryTraitsTag<T>
+template <typename FTag>
+    requires ValidEntryTraitsTag<FTag>
 class IFinalizedIndex {
    public:
     virtual ~IFinalizedIndex() = default;

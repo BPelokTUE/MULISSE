@@ -1,8 +1,9 @@
-#include "Index/Estimator/FlatEnvelopeParamEstimator.hpp"
+#include "Index/Estimator/FlatEnvelopeTheoParamEstimator.hpp"
 
 #include <cmath>
 
 #include "Index/Entry/Envelope.hpp"
+#include "Index/EnvelopeIndex/Flat/FlatEnvelopeParams.hpp"
 #include "Index/Estimator/ConfigGenerator/DummyConfigGenerator.hpp"
 #include "Index/IndexOptions.hpp"
 #include "Search/DistanceMeasure/EuclideanDistance.hpp"
@@ -12,7 +13,7 @@
 
 using std::pow;
 
-FlatEnvelopeParamEstimator::FlatEnvelopeParamEstimator(const IndexOptions &opts) {
+FlatEnvelopeParamTheoEstimator::FlatEnvelopeParamTheoEstimator(const IndexOptions &opts) {
     // Generate X_c configurations
     // Sample X_p l-p pairs
     // For each configuration
@@ -116,9 +117,9 @@ FlatEnvelopeParamEstimator::FlatEnvelopeParamEstimator(const IndexOptions &opts)
     m_estimated_params = configurations[selected_config_index];
 }
 
-FlatEnvelopeParams FlatEnvelopeParamEstimator::get_estimated_params() { return m_estimated_params; }
+FlatEnvelopeParams FlatEnvelopeParamTheoEstimator::get_estimated_params() { return m_estimated_params; }
 
-Real FlatEnvelopeParamEstimator::get_paa_stdev(const PaaDistributionInputs &inputs) {
+Real FlatEnvelopeParamTheoEstimator::get_paa_stdev(const PaaDistributionInputs &inputs) {
     Real k = R(inputs.seg_ind) + 1, l = R(inputs.length), p = R(inputs.start_pos) + 1, s = R(inputs.segment_len);
     Real paa_var =
         R(l * pow(4 * pow(l, 2) + 12 * l * p - 6 * l + 12 * pow(p, 2) - 12 * p - 3 * pow(l + 2 * p - 1, 2) + 2, 2) *

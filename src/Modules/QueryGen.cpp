@@ -19,12 +19,17 @@ struct QueryDescriptor {
     bool operator<(const QueryDescriptor &other) const { return subs_info < other.subs_info; }
 };
 
+std::pair<bool, uint> get_use_random_lengths_and_total_num_queries(const QuerySetOptions &opts) {
+    bool random_lengths = (opts.m_l_min > 0 && opts.m_l_max >= opts.m_l_min);
+    uint total_num_queries = random_lengths ? opts.m_num_queries : opts.m_num_queries * U(opts.m_exact_lengths.size());
+    return {random_lengths, total_num_queries};
+}
+
 int create_queries(QuerySetOptions opts) {
     auto &RS = RunSettings::get_instance();
     const str &dataset_path = RS.get_dataset_path();
     const str &query_path = RS.get_query_path();
     MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
-    uint series_len = RS.get_dataset_props().m_series_len;
 
     if (!std::filesystem::exists(dataset_path)) {
         std::cerr << "Error: Dataset " << dataset_path << " does not exist." << std::endl;
@@ -52,19 +57,39 @@ int create_queries(QuerySetOptions opts) {
     }
 
     // Extract time series from dataset
-    std::default_random_engine rng(opts.m_seed);
-    std::normal_distribution<Real> noise_normal_dist(0.0, opts.m_noise);
-
-    uint num_series = U(get_dataset_size(dataset_path) / (num_channels * series_len * sizeof(Real)));
-    std::uniform_int_distribution<uint> series_uniform_dist(0, num_series - 1), channel_uniform_dist(1, num_channels),
-        length_uniform_dist(opts.m_l_min, opts.m_l_max);
-
     std::ifstream data_file(dataset_path, std::ios::binary);
     std::ofstream query_file(query_path);
+    auto [random_lengths, total_num_queries] = get_use_random_lengths_and_total_num_queries(opts);
 
-    bool random_lengths = (opts.m_l_min > 0 && opts.m_l_max >= opts.m_l_min);
-    uint total_num_queries = random_lengths ? opts.m_num_queries : opts.m_num_queries * U(opts.m_exact_lengths.size());
+    generate_queries(data_file, query_file, opts);
+
+    auto opts_to_log = opts;
+    opts_to_log.m_num_queries = total_num_queries;
+    if (random_lengths) {
+        opts_to_log.m_exact_lengths = vec<uint>{};
+    } else {
+        opts_to_log.m_l_min = 0;
+        opts_to_log.m_l_max = 0;
+    }
+    opts_to_log.m_used_channels = opts.m_channel_mask.empty() ? opts.m_used_channels : 0;
+    QuerySetLogger::write_entry(opts_to_log);
+
+    return 0;
+}
+
+void generate_queries(std::istream &data_is, std::ostream &query_os, const QuerySetOptions &opts,
+                      const vec<uint> &series_inds) {
+    auto [random_lengths, total_num_queries] = get_use_random_lengths_and_total_num_queries(opts);
     vec<QueryDescriptor> query_descriptors(total_num_queries);
+
+    auto &RS = RunSettings::get_instance();
+    auto [num_channels, series_len, num_series, dataset_file] = RS.get_dataset_props();
+    uint num_series_inds = series_inds.empty() ? num_series : U(series_inds.size());
+
+    std::default_random_engine rng(opts.m_seed);
+    std::normal_distribution<Real> noise_normal_dist(0.0, opts.m_noise);
+    std::uniform_int_distribution<uint> series_uniform_dist(0, num_series_inds - 1),
+        channel_uniform_dist(1, num_channels), length_uniform_dist(opts.m_l_min, opts.m_l_max);
 
     auto generate_query_descriptor = [&](uint length) -> QueryDescriptor {
         uint included_channels = opts.m_used_channels == 0 ? channel_uniform_dist(rng) : opts.m_used_channels;
@@ -77,7 +102,8 @@ int create_queries(QuerySetOptions opts) {
         }
 
         auto start_pos_dist = std::uniform_int_distribution<uint>(0, series_len - length);
-        SubsequenceInfo subs_info = {series_uniform_dist(rng), start_pos_dist(rng)};
+        uint series_ind = series_inds.empty() ? series_uniform_dist(rng) : series_inds[series_uniform_dist(rng)];
+        SubsequenceInfo subs_info = {series_ind, start_pos_dist(rng)};
         return {subs_info, length, channels};
     };
 
@@ -99,39 +125,26 @@ int create_queries(QuerySetOptions opts) {
 
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             if (channels[c]) {
-                data_file.seekg(series_start.get_file_pos(series_len, num_channels, c));
+                data_is.seekg(series_start.get_file_pos(series_len, num_channels, c));
                 Real sum = 0, sum_sq = 0, value;
                 for (uint j = 0; j < series_len; ++j) {
-                    data_file.read(reinterpret_cast<char *>(&value), sizeof(value));
+                    data_is.read(reinterpret_cast<char *>(&value), sizeof(value));
                     sum += value;
                     sum_sq += value * value;
                 }
                 Real sigma = calculate_mu_and_sigma(sum, sum_sq, series_len).second;
 
-                data_file.seekg(subs_info.get_file_pos(series_len, num_channels, c));
+                data_is.seekg(subs_info.get_file_pos(series_len, num_channels, c));
                 for (uint j = 0; j < length; ++j) {
-                    data_file.read(reinterpret_cast<char *>(&value), sizeof(value));
+                    data_is.read(reinterpret_cast<char *>(&value), sizeof(value));
                     value += noise_normal_dist(rng) * sigma;
-                    query_file << value;
-                    if (j < length - 1) query_file << ' ';
+                    query_os << value;
+                    if (j < length - 1) query_os << ' ';
                 }
             }
             if (q < query_descriptors.size() - 1 || c < num_channels - 1) {
-                query_file << '\n';
+                query_os << '\n';
             }
         }
     }
-
-    auto opts_to_log = opts;
-    opts_to_log.m_num_queries = total_num_queries;
-    if (random_lengths) {
-        opts_to_log.m_exact_lengths = vec<uint>{};
-    } else {
-        opts_to_log.m_l_min = 0;
-        opts_to_log.m_l_max = 0;
-    }
-    opts_to_log.m_used_channels = opts.m_channel_mask.empty() ? opts.m_used_channels : 0;
-    QuerySetLogger::write_entry(opts_to_log);
-
-    return 0;
 }

@@ -11,7 +11,7 @@ using CHSS = ChannelSegmentationStrategyType;
 
 sptr<IChannelSegmentationStrategy> get_ch_segmentation_strategy(const IndexOptions &opts, uint l_min, uint l_max,
                                                                 SaxSegIndT num_segments,
-                                                                const vec<Real> &channel_scores) {
+                                                                const vec<Real> *channel_scores) {
     auto index_params = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get());
 
     switch (index_params->m_segmentation_params.m_ch_strategy_type) {
@@ -25,6 +25,9 @@ sptr<IChannelSegmentationStrategy> get_ch_segmentation_strategy(const IndexOptio
                 },
                 num_segments, index_params->m_segmentation_params.m_ch_num_seg_props_file);
         case CHSS::SCORE_BASED: {
+            if (!channel_scores) {
+                throw std::runtime_error("Channel scores must be provided for ScoreBasedChSegmentationStrategy.");
+            }
             auto score_to_strategy = std::make_unique<ScoreToProportionalNumSegments>(
                 num_segments, opts.m_num_channels,
                 [&opts, l_min, l_max](SaxSegIndT num_prop_segments) {
@@ -32,7 +35,7 @@ sptr<IChannelSegmentationStrategy> get_ch_segmentation_strategy(const IndexOptio
                 },
                 index_params->m_segmentation_params.m_score_based_chss_params->m_score_exp);
 
-            return std::make_unique<ScoreBasedChSegmentationStrategy>(channel_scores, std::move(score_to_strategy));
+            return std::make_unique<ScoreBasedChSegmentationStrategy>(*channel_scores, std::move(score_to_strategy));
         }
     }
     return nullptr;

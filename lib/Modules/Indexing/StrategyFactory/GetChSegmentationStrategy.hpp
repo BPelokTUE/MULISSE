@@ -14,6 +14,6 @@
  */
 sptr<IChannelSegmentationStrategy> get_ch_segmentation_strategy(const IndexOptions &opts, uint l_min, uint l_max,
                                                                 SaxSegIndT num_segments,
-                                                                const vec<Real> &channel_scores);
+                                                                const vec<Real> *channel_scores = nullptr);
 
 #endif  // MODULES_INDEXING_GETCHSEGMENTATIONSTRATEGY_HPP

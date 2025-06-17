@@ -12,14 +12,19 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
      * @param normalized Whether to normalize the subsequences
      * @param env_params Parameters for the ULISSE envelope computation
      * @param num_length_groups Number of length groups
+     * @param last_ind_step Optional for creating dummy envelopes, defaults to 1. Other values will result in envelopes
+     * that do not guarantee exact results when used for min-dist calculation.
+     * @param first_ind_step Optional for creating dummy envelopes, defaults to 1. Other values will result in envelopes
+     * that do not guarantee exact results when used for min-dist calculation in the normalized case.
      */
-    EnvelopeEntryGenerator(bool normalized, const EnvelopeParams &env_params, uint num_length_groups = 1);
+    EnvelopeEntryGenerator(bool normalized, const EnvelopeParams &env_params, uint num_length_groups = 1,
+                           uint last_ind_step = 1, uint first_ind_step = 1);
 
     vec<vec<IndexEntry<Envelope>>> get_entries(const vec<vec<Real>> &mts, uint series_ind) override;
 
    private:
     bool m_normalized;
-    uint m_num_len_groups;
+    uint m_num_len_groups, m_last_ind_step, m_first_ind_step;
     EnvelopeParams m_env_params;
 
     /**

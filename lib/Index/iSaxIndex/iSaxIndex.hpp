@@ -15,6 +15,8 @@
 #include "Index/iSaxIndex/FinalizedISaxNode.hpp"
 #include "Index/iSaxIndex/SplitStrategy/iSaxSplitStrategy.hpp"
 #include "Index/iSaxIndex/SplittableISaxNode.hpp"
+#include "Util/HelperFuncs/Parallelism.hpp"
+#include "Util/Logging/IndexLogger.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 #include "Util/Types/Pointers.hpp"
 

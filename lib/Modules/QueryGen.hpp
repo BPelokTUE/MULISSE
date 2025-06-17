@@ -1,6 +1,8 @@
 #ifndef MODULES_QUERYGEN_HPP
 #define MODULES_QUERYGEN_HPP
 
+#include <iostream>
+
 #include "Search/QuerySetOptions.hpp"
 
 /**
@@ -16,5 +18,16 @@
  * @param opts Options for generating the queries
  */
 int create_queries(QuerySetOptions opts);
+
+/**
+ * @brief Generate queries from the data stream and write them to the query stream
+ * @param data Input stream containing the dataset
+ * @param query Output stream to write the queries to
+ * @param opts Options for generating the queries
+ * @param series_inds Optional vector of series indices to use for generating queries. If empty, all series will be
+ * used.
+ */
+void generate_queries(std::istream &data, std::ostream &query, const QuerySetOptions &opts,
+                      const vec<uint> &series_inds = {});
 
 #endif  // MODULES_QUERYGEN_HPP

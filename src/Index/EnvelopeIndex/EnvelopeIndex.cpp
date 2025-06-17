@@ -5,6 +5,7 @@
 #include "Index/Sax/SaxWord.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
+#include "Util/RunSettings/RunSettings.hpp"
 
 // Envelope
 

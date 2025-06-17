@@ -11,8 +11,13 @@
 
 using CHSS = ChannelSegmentationStrategyType;
 
-EnvelopeEntryGenerator::EnvelopeEntryGenerator(bool normalized, const EnvelopeParams &env_params, uint num_len_groups)
-    : m_normalized(normalized), m_env_params(env_params), m_num_len_groups(num_len_groups) {}
+EnvelopeEntryGenerator::EnvelopeEntryGenerator(bool normalized, const EnvelopeParams &env_params, uint num_len_groups,
+                                               uint last_ind_step, uint first_ind_step)
+    : m_normalized(normalized),
+      m_env_params(env_params),
+      m_num_len_groups(num_len_groups),
+      m_last_ind_step(last_ind_step),
+      m_first_ind_step(first_ind_step) {}
 
 vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec<Real>> &mts, uint series_ind) {
     uint series_len = U(mts[0].size());
@@ -58,7 +63,7 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_raw_envelopes(const vec<Real> &ts
 
     Real paa_acc = 0.0, segment_len_r = R(segment_len);
 
-    for (uint last_ind = 0; last_ind < ts.size(); ++last_ind) {
+    for (uint last_ind = 0; last_ind < ts.size(); last_ind += m_last_ind_step) {
         paa_acc += ts[last_ind];
         uint prefix_len = last_ind + 1;
         if (prefix_len > segment_len) paa_acc -= ts[last_ind - segment_len];
@@ -93,14 +98,14 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_normalized_envelopes(const vec<Re
 
     vec<Real> sum_accs(ts.size() + 1, 0.0), sq_sum_accs(ts.size() + 1, 0.0);
 
-    for (uint last_ind = 0; last_ind < ts.size(); ++last_ind) {
+    for (uint last_ind = 0; last_ind < ts.size(); last_ind += m_last_ind_step) {
         sum_accs[last_ind + 1] = sum_accs[last_ind] + ts[last_ind];
         sq_sum_accs[last_ind + 1] = sq_sum_accs[last_ind] + ts[last_ind] * ts[last_ind];
 
         uint start_min = U(std::max(0, static_cast<int>(last_ind + 1 - l_max)));
         int start_max = static_cast<int>(last_ind + 1 - l_min);
 
-        for (uint first_ind = start_min; static_cast<int>(first_ind) <= start_max; ++first_ind) {
+        for (uint first_ind = start_min; static_cast<int>(first_ind) <= start_max; first_ind += m_first_ind_step) {
             uint subs_len = last_ind - first_ind + 1;
             auto [mu, sigma] = calculate_mu_and_sigma(sum_accs[last_ind + 1] - sum_accs[first_ind],
                                                       sq_sum_accs[last_ind + 1] - sq_sum_accs[first_ind], subs_len);

@@ -10,21 +10,28 @@
 #include "Enums/EntryInserterType.hpp"
 #include "Enums/SearchType.hpp"
 #include "Index/Entry/EntryData.hpp"
-#include "Index/EntryGenerator/EntryGenerator.hpp"
-#include "Index/EntryMerger/EntryMerger.hpp"
-#include "Index/FinalizedIndex.hpp"
 #include "Index/Traits/EntryTags.hpp"
 #include "Index/Traits/IndexTraits.hpp"
-#include "Util/HelperFuncs/Parallelism.hpp"
-#include "Util/Logging/IndexLogger.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
+#include "Util/Types/Pointers.hpp"
+
+template <typename T>
+class IEntryGenerator;
+
+template <typename T>
+class IEntryMerger;
+
+template <typename FTag>
+    requires ValidEntryTraitsTag<FTag>
+class IFinalizedIndex;
+
+template <typename T>
+class IndexEntry;
 
 /**
  * @brief Interface for indexes
  * @tparam The type of entry to insert into the index
  * */
 template <typename T>
-    requires DerivedFromEntryData<T>
 class IIndex {
    public:
     using EntryType = T;
@@ -102,61 +109,7 @@ class IIndex {
      */
     void construct(const str &dataset_path, uptr<IEntryGenerator<T>> generator, uptr<IEntryMerger<T>> merger,
                    EntryInserterType inserter_type, MtsNumChannelsT num_channels, uint series_len, bool adapt = false,
-                   Real sample_frac = 1.0) {
-        auto &logger = IndexLogger::get_instance();
-
-        size_t N = get_dataset_size(dataset_path), channel_size = series_len * sizeof(Real),
-               series_size = channel_size * num_channels, num_series = N / series_size;
-
-        vec<uint> mts_inds(num_series);
-        std::iota(mts_inds.begin(), mts_inds.end(), 0);
-
-        assert(sample_frac >= 0.0 && sample_frac <= 1.0);
-        if (sample_frac < 1.0) {
-            num_series = U(R(num_series) * sample_frac);
-            std::shuffle(mts_inds.begin(), mts_inds.end(), std::mt19937{std::random_device{}()});
-        }
-
-        uint num_length_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
-        vec<vec<IndexEntry<T>>> dataset_entry_groups(num_length_groups);
-
-        logger.start_timer(ISC::SUMMARIZATION_TIME_S);
-        OMP_PRAGMA(omp parallel) {
-            std::ifstream data_stream(dataset_path, std::ios::binary);
-
-            OMP_PRAGMA(omp for)
-            for (size_t i = 0; i < num_series; ++i) {
-                uint mts_ind = mts_inds[i];
-                vec<vec<Real>> mts(num_channels, vec<Real>(series_len));
-                data_stream.seekg(static_cast<std::streamsize>(mts_ind * series_size));
-                for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-                    data_stream.read(reinterpret_cast<char *>(mts[c].data()),
-                                     static_cast<std::streamsize>(channel_size));
-                }
-                auto mts_entries = generator->get_entries(mts, U(mts_ind));
-                for (uint l = 0; l < num_length_groups; ++l) {
-                    mts_entries[l] = merger->merge_entries(std::move(mts_entries[l]));
-                }
-                OMP_PRAGMA(omp critical) {
-                    for (uint l = 0; l < num_length_groups; ++l) {
-                        dataset_entry_groups[l].insert(dataset_entry_groups[l].end(),
-                                                       std::make_move_iterator(mts_entries[l].begin()),
-                                                       std::make_move_iterator(mts_entries[l].end()));
-                    }
-                }
-            }
-        }
-        logger.stop_timer(ISC::SUMMARIZATION_TIME_S);
-
-        // TODO: adapt for length groups
-        logger.increment_count_col(ISC::NUM_ENTRIES, dataset_entry_groups[0].size());
-
-        if (adapt) adapt_to_dataset_groups(dataset_entry_groups);
-
-        logger.start_timer(ISC::INSERTION_TIME_S);
-        insert_entry_groups(dataset_entry_groups, inserter_type);
-        logger.stop_timer(ISC::INSERTION_TIME_S);
-    }
+                   Real sample_frac = 1.0);
 };
 
 #endif  // INDEX_INDEX_HPP

@@ -15,6 +15,6 @@ class IndexOptions;
  * @return The length group segmentation strategy.
  */
 uptr<ILengthGroupSegmentationStrategy> get_lg_segmentation_strategy(const IndexOptions &opts,
-                                                                    const vec<Real> &channel_scores);
+                                                                    const vec<Real> *channel_scores = nullptr);
 
 #endif  // MODULES_INDEXING_GETLGSEGMENTATIONSTRATEGY_HPP
