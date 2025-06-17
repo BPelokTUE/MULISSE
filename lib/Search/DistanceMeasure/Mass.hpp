@@ -4,6 +4,7 @@
 #include "Enums/DistanceType.hpp"
 #include "Enums/SearchType.hpp"
 #include "Search/DistanceMeasure/DistanceMeasure.hpp"
+#include "Search/SearchMethod.hpp"
 
 template <SearchType S>
 class DistanceMeasure<S, MASS> {
@@ -20,7 +21,11 @@ class DistanceMeasure<S, MASS> {
     }
 
     inline bool update_result_set(ResultSet<S> &result_set, SubsequenceInfo subs_info, const vec<vec<Real>> &query,
-                                  const vec<vec<Real>> &mts, const vec<uint> *real_query_inds = nullptr) const {
+                                  const vec<vec<Real>> &mts, ISearchMethod<S, MASS> &search_method,
+                                  const vec<uint> *real_query_inds = nullptr) const {
+        // TODO: Check if query normalization can be removed in Z-normalized formula
+        // TODO: Check if position skipping can or should be applied
+        // TODO: Check if time series skipping can or should be applied
         auto &logger = QueryLogger::get_instance();
 
         bool updated = false;
@@ -86,7 +91,7 @@ class DistanceMeasure<S, MASS> {
 
         for (uint start_pos = 0; start_pos < squared_dists.size(); ++start_pos) {
             if (squared_dists[start_pos] < result_set.get_distance_lb()) {
-                SubsequenceInfo result_pos = {subs_info.m_series_ind, subs_info.m_start_pos + start_pos};
+                SubsequenceInfo result_pos = {subs_info.m_position.m_series, subs_info.m_position.m_start + start_pos};
                 result_set.insert({result_pos, squared_dists[start_pos]});
                 updated = true;
             }

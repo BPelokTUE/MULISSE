@@ -46,15 +46,15 @@ void SaxBasedEntryMerger<T>::merge_and_add_entries(vec<IndexEntry<T>> &&symbol_e
     uint rightmost = 0;
     vec<IndexEntry<T>> symbol_merged_entries;
     for (auto &entry : symbol_entries) {
-        uint entry_rightmost = entry.m_subs_info.m_start_pos + entry.m_subs_info.m_length - 1;
-        if (symbol_merged_entries.empty() || entry.m_subs_info.m_start_pos > rightmost + 1) {
+        uint entry_rightmost = entry.m_subs_info.m_position.m_start + entry.m_subs_info.m_length - 1;
+        if (symbol_merged_entries.empty() || entry.m_subs_info.m_position.m_start > rightmost + 1) {
             symbol_merged_entries.push_back(std::move(entry));
             rightmost = entry_rightmost;
         } else {
             auto &last_entry = symbol_merged_entries.back();
             if (entry_rightmost > rightmost) {
                 rightmost = entry_rightmost;
-                last_entry.m_subs_info.m_length = rightmost - last_entry.m_subs_info.m_start_pos + 1;
+                last_entry.m_subs_info.m_length = rightmost - last_entry.m_subs_info.m_position.m_start + 1;
             }
             for (MtsNumChannelsT c = 0; c < entry.m_mts_summary.size(); ++c)
                 last_entry.m_mts_summary[c].merge(entry.m_mts_summary[c]);

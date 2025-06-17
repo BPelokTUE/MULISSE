@@ -28,9 +28,13 @@ class LengthGroupingIndexSearch : public ISearchMethod<S, D, QS> {
         assert(l_min <= l_max);
     }
 
+    inline void reset() override {
+        for (auto &search_method : m_search_methods) search_method->reset();
+    }
+
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
                          const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
-                         const vec<uint> *real_query_inds) const override {
+                         const vec<uint> *real_query_inds) override {
         uint query_len;
         for (auto &channel : query) {
             if (!channel.empty()) {

@@ -95,7 +95,7 @@ int create_queries(QuerySetOptions opts) {
 
     for (size_t q = 0; q < query_descriptors.size(); ++q) {
         const auto [subs_info, length, channels] = query_descriptors[q];
-        SubsequenceInfo series_start = {subs_info.m_series_ind, 0, series_len};
+        SubsequenceInfo series_start = {subs_info.m_position.m_series, 0, series_len};
 
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             if (channels[c]) {

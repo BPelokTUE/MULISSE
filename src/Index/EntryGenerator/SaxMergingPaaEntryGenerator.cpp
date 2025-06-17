@@ -76,12 +76,13 @@ vec<vec<IndexEntry<Paa>>> SaxMergingPaaEntryGenerator::get_entries(const vec<vec
                 symbols_to_entry[lg_ind][symbols] = {{series_ind, first_ind, subs_len}, std::move(paas)};
             } else {
                 auto &last_entry = it->second;
-                uint last_entry_rightmost = last_entry.m_subs_info.m_start_pos + last_entry.m_subs_info.m_length - 1;
+                uint last_entry_rightmost =
+                    last_entry.m_subs_info.m_position.m_start + last_entry.m_subs_info.m_length - 1;
                 if (first_ind > last_entry_rightmost + 1) {
                     entry_groups[lg_ind].push_back(std::move(last_entry));
                     symbols_to_entry[lg_ind][symbols] = {{series_ind, first_ind, subs_len}, std::move(paas)};
                 } else if (last_entry_rightmost < last_ind) {
-                    last_entry.m_subs_info.m_length = last_ind - last_entry.m_subs_info.m_start_pos + 1;
+                    last_entry.m_subs_info.m_length = last_ind - last_entry.m_subs_info.m_position.m_start + 1;
                 }
             }
         }

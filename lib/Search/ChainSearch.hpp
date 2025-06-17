@@ -2,7 +2,9 @@
 #define SEARCH_INDEXSEARCH_CHAININDEXSEARCH_HPP
 
 #include "Index/ChainIndex/FinalizedChainIndex.hpp"
+#include "Search/Results/SearchResult.hpp"
 #include "Search/SearchMethod.hpp"
+#include "Search/SearchOptions.hpp"
 
 /**
  * @brief Set of search methods intended to be used in a chain, with the approximate methods being used first and the
@@ -17,9 +19,14 @@ class ChainSearch : public ISearchMethod<S, D, QS> {
     ChainSearch(vec<uptr<ISearchMethod<S, D, QS>>> approx_methods, uptr<ISearchMethod<S, D, QS>> exact_method)
         : m_approx_methods(std::move(approx_methods)), m_exact_method(std::move(exact_method)) {}
 
+    inline void reset() override {
+        for (auto &method : m_approx_methods) method->reset();
+        m_exact_method->reset();
+    }
+
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
                          const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
-                         const vec<uint> *real_query_inds) const override {
+                         const vec<uint> *real_query_inds) override {
         auto opts_approx = opts;
         opts_approx.m_exact = false;
         for (auto &method : m_approx_methods) {

@@ -23,7 +23,7 @@ class TreeEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
 
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
                          const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
-                         const vec<uint> *real_query_inds) const override {
+                         const vec<uint> *real_query_inds) override {
         auto &logger = QueryLogger::get_instance();
 
         uint series_len = RunSettings::get_instance().get_dataset_props().m_series_len;

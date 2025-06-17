@@ -7,6 +7,9 @@
 #include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 
+template <SearchType S, DistanceType D, bool QS>
+class ISearchMethod;
+
 /**
  * @brief Interface for distance measures
  * @tparam S SearchType to execute
@@ -29,7 +32,8 @@ class DistanceMeasure {
      * @return true if the result set was updated, false otherwise
      */
     bool update_result_set(ResultSet<S> &result_set, SubsequenceInfo subs_info, const vec<vec<Real>> &query,
-                           const vec<vec<Real>> &mts, const vec<uint> *real_query_inds = nullptr) const;
+                           const vec<vec<Real>> &mts, ISearchMethod<S, D, QS> &search_method,
+                           const vec<uint> *real_query_inds = nullptr) const;
 
     /**
      * @brief Calculate the minimum distance squared between a PAA value and a segment

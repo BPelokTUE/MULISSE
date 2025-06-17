@@ -47,15 +47,16 @@ uptr<FinalizationResult> iSaxSplittableLeaf<Paa>::finalize(bool merge) {
         vec<SubsequenceInfo> merged_subsequence_infos;
         uint ts_ind = 0, rightmost = 0;
         for (auto &subs_info : m_subsequence_infos) {
-            uint subs_rightmost = subs_info.m_start_pos + subs_info.m_length - 1;
-            if (merged_subsequence_infos.empty() || subs_info.m_series_ind != ts_ind ||
-                subs_info.m_start_pos > rightmost + 1) {
+            uint subs_rightmost = subs_info.m_position.m_start + subs_info.m_length - 1;
+            if (merged_subsequence_infos.empty() || subs_info.m_position.m_series != ts_ind ||
+                subs_info.m_position.m_start > rightmost + 1) {
                 merged_subsequence_infos.push_back(std::move(subs_info));
-                ts_ind = subs_info.m_series_ind;
+                ts_ind = subs_info.m_position.m_series;
                 rightmost = subs_rightmost;
             } else if (subs_rightmost > rightmost) {
                 rightmost = subs_rightmost;
-                merged_subsequence_infos.back().m_length = rightmost - merged_subsequence_infos.back().m_start_pos + 1;
+                merged_subsequence_infos.back().m_length =
+                    rightmost - merged_subsequence_infos.back().m_position.m_start + 1;
             }
         }
         m_subsequence_infos = std::move(merged_subsequence_infos);
@@ -119,18 +120,18 @@ uptr<FinalizationResult> iSaxSplittableLeaf<Envelope>::finalize(bool merge) {
 
             uint ts_ind = 0, rightmost = 0;
             for (auto &[subs_info, summary] : merged_subsequences) {
-                uint subs_rightmost = subs_info.m_start_pos + subs_info.m_length - 1;
-                if (merged_subsequence_infos.empty() || subs_info.m_series_ind != ts_ind ||
-                    subs_info.m_start_pos > rightmost + 1) {
+                uint subs_rightmost = subs_info.m_position.m_start + subs_info.m_length - 1;
+                if (merged_subsequence_infos.empty() || subs_info.m_position.m_series != ts_ind ||
+                    subs_info.m_position.m_start > rightmost + 1) {
                     merged_subsequence_infos.push_back(std::move(subs_info));
                     merged_summaries.push_back(std::move(summary));
-                    ts_ind = subs_info.m_series_ind;
+                    ts_ind = subs_info.m_position.m_series;
                     rightmost = subs_rightmost;
                 } else {
                     auto &last_subs_info = merged_subsequence_infos.back();
                     if (subs_rightmost > rightmost) {
                         rightmost = subs_rightmost;
-                        last_subs_info.m_length = rightmost - last_subs_info.m_start_pos + 1;
+                        last_subs_info.m_length = rightmost - last_subs_info.m_position.m_start + 1;
                     }
                     auto &last_summary = merged_summaries.back();
                     for (MtsNumChannelsT c = 0; c < summary.size(); ++c) last_summary[c].merge(summary[c]);

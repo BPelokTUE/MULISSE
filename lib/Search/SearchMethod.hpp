@@ -5,9 +5,16 @@
 #include "Enums/SearchType.hpp"
 #include "Index/Entry/Envelope.hpp"
 #include "Index/Entry/Paa.hpp"
-#include "Search/DistanceMeasure/DistanceMeasure.hpp"
-#include "Search/Results/SearchResult.hpp"
-#include "Search/SearchOptions.hpp"
+#include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
+
+template <SearchType S, DistanceType D, bool QS>
+class DistanceMeasure;
+
+template <SearchType S>
+class ResultSet;
+
+class SearchOptions;
+class SearchResults;
 
 /**
  * @brief Interface for search methods
@@ -32,7 +39,18 @@ class ISearchMethod {
      */
     virtual SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
                                  const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
-                                 const vec<uint> *real_query_inds = nullptr) const = 0;
+                                 const vec<uint> *real_query_inds = nullptr) = 0;
+
+    /** @brief Reset the search method after a query. The default implementation does nothing. */
+    virtual inline void reset() {}
+
+    /**
+     * @brief Check if the given starting position can be ignored/skipped during search
+     * @param query_len Length of the query
+     * @param subs_position Position of the subsequence in the dataset
+     * @return `true` if the position can be skipped, `false` otherwise
+     */
+    virtual inline bool skip_position(const uint query_len, const SubsequencePosition &subs_position) { return false; }
 
    protected:
     /**

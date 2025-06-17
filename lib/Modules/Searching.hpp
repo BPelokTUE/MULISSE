@@ -242,6 +242,7 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
 
             dataset_ifs.seekg(0);
             result_set.clear();
+            method->reset();
             if constexpr (D == MASS) {
                 fftwr_forget_wisdom();
                 fftwr_cleanup();

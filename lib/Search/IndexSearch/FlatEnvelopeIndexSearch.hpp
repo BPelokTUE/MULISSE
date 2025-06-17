@@ -28,7 +28,7 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
 
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
                          const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
-                         const vec<uint> *real_query_inds) const override {
+                         const vec<uint> *real_query_inds) override {
         auto [query_paa, query_len] =
             this->get_query_paa_and_len(query, m_index->get_ch_segmentation_strategy(), real_query_inds);
 
@@ -45,8 +45,7 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
     inline SearchResults search_with_priority_queue(const vec<vec<Real>> &query, const vec<vec<Real>> &query_paa,
                                                     uint query_len, ResultSet<S> &result_set,
                                                     const DistanceMeasure<S, D, QS> &distance_measure,
-                                                    std::ifstream &dataset_ifs,
-                                                    const vec<uint> *real_query_inds) const {
+                                                    std::ifstream &dataset_ifs, const vec<uint> *real_query_inds) {
         uint series_len = RunSettings::get_instance().get_dataset_props().m_series_len;
         auto &logger = QueryLogger::get_instance();
 
@@ -89,7 +88,7 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
     inline SearchResults search_sequentially(const vec<vec<Real>> &query, const vec<vec<Real>> &query_paa,
                                              uint query_len, ResultSet<S> &result_set,
                                              const DistanceMeasure<S, D, QS> &distance_measure,
-                                             std::ifstream &dataset_ifs, const vec<uint> *real_query_inds) const {
+                                             std::ifstream &dataset_ifs, const vec<uint> *real_query_inds) {
         auto &logger = QueryLogger::get_instance();
         uint series_len = RunSettings::get_instance().get_dataset_props().m_series_len;
         auto ch_segmentation_strategy = m_index->get_ch_segmentation_strategy();

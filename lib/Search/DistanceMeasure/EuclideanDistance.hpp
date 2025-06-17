@@ -4,6 +4,7 @@
 #include "Enums/DistanceType.hpp"
 #include "Enums/SearchType.hpp"
 #include "Search/DistanceMeasure/DistanceMeasure.hpp"
+#include "Search/SearchMethod.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/Logging/QueryLogger.hpp"
@@ -25,11 +26,12 @@ class DistanceMeasure<S, ED, QS> {
     }
 
     inline bool update_result_set(ResultSet<S> &result_set, SubsequenceInfo subs_info, const vec<vec<Real>> &query,
-                                  const vec<vec<Real>> &mts, const vec<uint> *real_query_inds = nullptr) const {
+                                  const vec<vec<Real>> &mts, ISearchMethod<S, ED, QS> &search_method,
+                                  const vec<uint> *real_query_inds = nullptr) const {
         auto &logger = QueryLogger::get_instance();
 
         bool updated = false;
-        uint num_start_pos, mts_len, query_len;
+        uint num_start_pos, mts_len, query_len, num_start_pos_examined = 0;
         vec<MtsNumChannelsT> present_channels;
 
         if constexpr (QS) {
@@ -58,31 +60,34 @@ class DistanceMeasure<S, ED, QS> {
             }
 
             for (uint start_pos = 0; start_pos < num_start_pos; ++start_pos) {
-                Real dist_squared = 0;
-                uint64_t points_examined = 0, point_in_entry = 0;
+                uint64_t points_examined = 0, points_in_entry = 0;
+                if (!search_method.skip_position(query_len, subs_info.m_position)) {
+                    ++num_start_pos_examined;
+                    Real dist_squared = 0;
 
-                for (MtsNumChannelsT c : present_channels) {
-                    auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], query_len);
+                    for (MtsNumChannelsT c : present_channels) {
+                        auto [mu, sigma] = calculate_mu_and_sigma(sums[c], sq_sums[c], query_len);
 
-                    for (uint query_ind = 0; query_ind < query_len; ++query_ind) {
-                        uint actual_ind = query_ind;
-                        if constexpr (QS) actual_ind = real_query_inds->at(query_ind);
+                        for (uint query_ind = 0; query_ind < query_len; ++query_ind) {
+                            uint actual_ind = query_ind;
+                            if constexpr (QS) actual_ind = real_query_inds->at(query_ind);
 
-                        Real diff = (mts[c][start_pos + actual_ind] - mu) / sigma - query[c][query_ind];
-                        dist_squared += diff * diff;
-                        if (c_use_early_abandoning && dist_squared >= result_set.get_distance_lb()) {
-                            points_examined += query_ind + 1;
-                            point_in_entry += query_len;
-                            goto start_pos_it_end_normalized;
+                            Real diff = (mts[c][start_pos + actual_ind] - mu) / sigma - query[c][query_ind];
+                            dist_squared += diff * diff;
+                            if (c_use_early_abandoning && dist_squared >= result_set.get_distance_lb()) {
+                                points_examined += query_ind + 1;
+                                points_in_entry += query_len;
+                                goto start_pos_it_end_normalized;
+                            }
                         }
+                        points_examined += query_len;
+                        points_in_entry += query_len;
                     }
-                    points_examined += query_len;
-                    point_in_entry += query_len;
+                    result_set.insert({{subs_info.m_position.m_series, subs_info.m_position.m_start + start_pos,
+                                        subs_info.m_length - start_pos},
+                                       dist_squared});
+                    updated = true;
                 }
-                result_set.insert(
-                    {{subs_info.m_series_ind, subs_info.m_start_pos + start_pos, subs_info.m_length - start_pos},
-                     dist_squared});
-                updated = true;
             start_pos_it_end_normalized:;
                 uint end_pos = start_pos + query_len;
                 if (end_pos < mts_len) {
@@ -92,39 +97,42 @@ class DistanceMeasure<S, ED, QS> {
                     }
                 }
                 logger.increment_num_points_examined(points_examined);
-                logger.increment_num_points_in_examined_entries(point_in_entry);
+                logger.increment_num_points_in_examined_entries(points_in_entry);
             }
         } else {
             for (uint start_pos = 0; start_pos < num_start_pos; ++start_pos) {
-                Real dist_squared = 0;
                 uint64_t points_examined = 0, point_in_entry = 0;
+                if (!search_method.skip_position(query_len, subs_info.m_position)) {
+                    ++num_start_pos_examined;
+                    Real dist_squared = 0;
 
-                for (MtsNumChannelsT c : present_channels) {
-                    for (uint query_ind = 0; query_ind < query_len; ++query_ind) {
-                        uint actual_ind = query_ind;
-                        if constexpr (QS) actual_ind = real_query_inds->at(query_ind);
+                    for (MtsNumChannelsT c : present_channels) {
+                        for (uint query_ind = 0; query_ind < query_len; ++query_ind) {
+                            uint actual_ind = query_ind;
+                            if constexpr (QS) actual_ind = real_query_inds->at(query_ind);
 
-                        Real diff = mts[c][start_pos + actual_ind] - query[c][query_ind];
-                        dist_squared += diff * diff;
-                        if (c_use_early_abandoning && dist_squared >= result_set.get_distance_lb()) {
-                            points_examined += query_ind + 1;
-                            point_in_entry += query_len;
-                            goto start_pos_it_end_raw;
+                            Real diff = mts[c][start_pos + actual_ind] - query[c][query_ind];
+                            dist_squared += diff * diff;
+                            if (c_use_early_abandoning && dist_squared >= result_set.get_distance_lb()) {
+                                points_examined += query_ind + 1;
+                                point_in_entry += query_len;
+                                goto start_pos_it_end_raw;
+                            }
                         }
+                        points_examined += query_len;
+                        point_in_entry += query_len;
                     }
-                    points_examined += query_len;
-                    point_in_entry += query_len;
+                    result_set.insert({{subs_info.m_position.m_series, subs_info.m_position.m_start + start_pos,
+                                        subs_info.m_length - start_pos},
+                                       dist_squared});
+                    updated = true;
                 }
-                result_set.insert(
-                    {{subs_info.m_series_ind, subs_info.m_start_pos + start_pos, subs_info.m_length - start_pos},
-                     dist_squared});
-                updated = true;
             start_pos_it_end_raw:
                 logger.increment_num_points_examined(points_examined);
                 logger.increment_num_points_in_examined_entries(point_in_entry);
             }
         }
-        logger.increment_count_col(QC::NUM_SUBS_EXAMINED, num_start_pos);
+        logger.increment_count_col(QC::NUM_SUBS_EXAMINED, num_start_pos_examined);
 
         return updated;
     }

@@ -29,7 +29,7 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
 
     SearchResults search(const vec<vec<Real>>& query, const SearchOptions& opts, ResultSet<S>& result_set,
                          const DistanceMeasure<S, D, QS>& distance_measure, std::ifstream& dataset_ifs,
-                         const vec<uint>* real_query_inds) const override {
+                         const vec<uint>* real_query_inds) override {
         uint series_len = RunSettings::get_instance().get_dataset_props().m_series_len;
         MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(query.size());
         SaxNumBitsT first_layer_num_bits = m_index->get_first_layer_num_bits();
@@ -118,7 +118,8 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
                     size_t data_to_read;
                     if constexpr (std::is_same_v<FTag, EnvelopeTag>) {
                         uint num_start_pos = subs_info.m_length;
-                        data_to_read = std::min(query_len + num_start_pos - 1, series_len - subs_info.m_start_pos);
+                        data_to_read =
+                            std::min(query_len + num_start_pos - 1, series_len - subs_info.m_position.m_start);
                     } else {
                         data_to_read = subs_info.m_length;
                     }
@@ -136,8 +137,8 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
                     logger.stop_timer(QC::IO_TIME_S);
 
                     logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-                    updated |=
-                        distance_measure.update_result_set(result_set, subs_info, query, subsequence, real_query_inds);
+                    updated |= distance_measure.update_result_set(result_set, subs_info, query, subsequence, *this,
+                                                                  real_query_inds);
                     logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
 
                     ++entries_checked;

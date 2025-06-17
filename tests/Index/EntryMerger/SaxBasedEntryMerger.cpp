@@ -27,9 +27,9 @@ TEST_CASE("SaxBasedEntryMerger with Paa type") {
         SaxBasedEntryMerger<Paa> merger(3);
 
         vec<IndexEntry<Paa>> entries{
-            {SubsequenceInfo(0, 0, 5), {Paa({R(-0.1), R(-0.2), R(0.3)})}},
-            {SubsequenceInfo(0, 7, 3), {Paa({R(-1.6), R(0.2), R(-0.3)})}},
-            {SubsequenceInfo(0, 11, 5), {Paa({R(-0.5), R(-1.0), R(-2.3)})}},
+            {SubsequenceInfo({0, 0}, 5), {Paa({R(-0.1), R(-0.2), R(0.3)})}},
+            {SubsequenceInfo({0, 7}, 3), {Paa({R(-1.6), R(0.2), R(-0.3)})}},
+            {SubsequenceInfo({0, 11}, 5), {Paa({R(-0.5), R(-1.0), R(-2.3)})}},
         };
         auto expected_merged_entries = entries;
 
@@ -41,9 +41,9 @@ TEST_CASE("SaxBasedEntryMerger with Paa type") {
         SaxBasedEntryMerger<Paa> merger(3);
 
         vec<IndexEntry<Paa>> entries{
-            {SubsequenceInfo(0, 1, 3), {Paa({R(-0.1), R(-0.2), R(0.3)})}},
-            {SubsequenceInfo(0, 4, 3), {Paa({R(-1.6), R(0.2), R(-0.3)})}},
-            {SubsequenceInfo(0, 6, 5), {Paa({R(-0.5), R(-1.0), R(-2.3)})}},
+            {SubsequenceInfo({0, 1}, 3), {Paa({R(-0.1), R(-0.2), R(0.3)})}},
+            {SubsequenceInfo({0, 4}, 3), {Paa({R(-1.6), R(0.2), R(-0.3)})}},
+            {SubsequenceInfo({0, 6}, 5), {Paa({R(-0.5), R(-1.0), R(-2.3)})}},
         };
         auto expected_merged_entries = entries;
 
@@ -55,9 +55,9 @@ TEST_CASE("SaxBasedEntryMerger with Paa type") {
         SaxBasedEntryMerger<Paa> merger(3);
 
         vec<IndexEntry<Paa>> entries{
-            {SubsequenceInfo(0, 2, 4), {Paa({R(-1.0), R(-0.5), R(-0.3)})}},
-            {SubsequenceInfo(0, 7, 3), {Paa({R(-1.4), R(-0.6), R(-0.15)})}},
-            {SubsequenceInfo(0, 20, 5), {Paa({R(-0.9), R(-0.55), R(-0.2)})}},
+            {SubsequenceInfo({0, 2}, 4), {Paa({R(-1.0), R(-0.5), R(-0.3)})}},
+            {SubsequenceInfo({0, 7}, 3), {Paa({R(-1.4), R(-0.6), R(-0.15)})}},
+            {SubsequenceInfo({0, 20}, 5), {Paa({R(-0.9), R(-0.55), R(-0.2)})}},
         };
         auto expected_merged_entries = entries;
 
@@ -69,12 +69,12 @@ TEST_CASE("SaxBasedEntryMerger with Paa type") {
         SaxBasedEntryMerger<Paa> merger(3);
 
         vec<IndexEntry<Paa>> entries{
-            {SubsequenceInfo(0, 1, 3), {Paa({R(-1.0), R(-0.5), R(-0.3)})}},
-            {SubsequenceInfo(0, 4, 3), {Paa({R(-1.4), R(-0.6), R(-0.15)})}},
-            {SubsequenceInfo(0, 6, 5), {Paa({R(-0.9), R(-0.55), R(-0.2)})}},
+            {SubsequenceInfo({0, 1}, 3), {Paa({R(-1.0), R(-0.5), R(-0.3)})}},
+            {SubsequenceInfo({0, 4}, 3), {Paa({R(-1.4), R(-0.6), R(-0.15)})}},
+            {SubsequenceInfo({0, 6}, 5), {Paa({R(-0.9), R(-0.55), R(-0.2)})}},
         };
         vec<IndexEntry<Paa>> expected_merged_entries{
-            {SubsequenceInfo(0, 1, 10), {Paa({R(-1.4), R(-0.6), R(-0.3)})}},
+            {SubsequenceInfo({0, 1}, 10), {Paa({R(-1.4), R(-0.6), R(-0.3)})}},
         };
 
         auto merged_entries = merger.merge_entries(std::move(entries));
@@ -85,13 +85,13 @@ TEST_CASE("SaxBasedEntryMerger with Paa type") {
         SaxBasedEntryMerger<Paa> merger(3);
 
         vec<IndexEntry<Paa>> entries{
-            {SubsequenceInfo(0, 1, 4), {Paa({R(-1.0), R(-0.5), R(-0.3)})}},
-            {SubsequenceInfo(0, 4, 3), {Paa({R(-2.4), R(-0.6), R(-1.15)})}},
-            {SubsequenceInfo(0, 3, 5), {Paa({R(-0.9), R(-0.55), R(-0.2)})}},
+            {SubsequenceInfo({0, 1}, 4), {Paa({R(-1.0), R(-0.5), R(-0.3)})}},
+            {SubsequenceInfo({0, 4}, 3), {Paa({R(-2.4), R(-0.6), R(-1.15)})}},
+            {SubsequenceInfo({0, 3}, 5), {Paa({R(-0.9), R(-0.55), R(-0.2)})}},
         };
         vec<IndexEntry<Paa>> expected_merged_entries{
-            {SubsequenceInfo(0, 1, 7), {Paa({R(-1.0), R(-0.55), R(-0.3)})}},
-            {SubsequenceInfo(0, 4, 3), {Paa({R(-2.4), R(-0.6), R(-1.15)})}},
+            {SubsequenceInfo({0, 1}, 7), {Paa({R(-1.0), R(-0.55), R(-0.3)})}},
+            {SubsequenceInfo({0, 4}, 3), {Paa({R(-2.4), R(-0.6), R(-1.15)})}},
         };
 
         auto merged_entries = merger.merge_entries(std::move(entries));
@@ -102,13 +102,13 @@ TEST_CASE("SaxBasedEntryMerger with Paa type") {
         SaxBasedEntryMerger<Paa> merger(2);
 
         vec<IndexEntry<Paa>> entries{
-            {SubsequenceInfo(0, 1, 4), {Paa({R(-1.7), R(-0.2), R(-1.3)})}},
-            {SubsequenceInfo(0, 4, 5), {Paa({R(-1.5), R(-0.25), R(-0.5)})}},
-            {SubsequenceInfo(0, 4, 6), {Paa({R(-1.55), R(-0.3), R(-0.9)})}},
+            {SubsequenceInfo({0, 1}, 4), {Paa({R(-1.7), R(-0.2), R(-1.3)})}},
+            {SubsequenceInfo({0, 4}, 5), {Paa({R(-1.5), R(-0.25), R(-0.5)})}},
+            {SubsequenceInfo({0, 4}, 6), {Paa({R(-1.55), R(-0.3), R(-0.9)})}},
         };
         vec<IndexEntry<Paa>> expected_merged_entries = {
-            {SubsequenceInfo(0, 1, 9), {Paa({R(-1.7), R(-0.3), R(-1.3)})}},
-            {SubsequenceInfo(0, 4, 5), {Paa({R(-1.5), R(-0.25), R(-0.5)})}},
+            {SubsequenceInfo({0, 1}, 9), {Paa({R(-1.7), R(-0.3), R(-1.3)})}},
+            {SubsequenceInfo({0, 4}, 5), {Paa({R(-1.5), R(-0.25), R(-0.5)})}},
         };
 
         auto merged_entries = merger.merge_entries(std::move(entries));
@@ -138,9 +138,9 @@ TEST_CASE("SaxBasedEntryMerger with Envelope type") {
         SaxBasedEntryMerger<Envelope> merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 0, 5), {Envelope({R(-0.1), R(-0.2), R(0.3)}, {R(0.5), R(1.1), R(1.3)})}},
-            {SubsequenceInfo(0, 7, 3), {Envelope({R(-1.6), R(0.2), R(-0.3)}, {R(-0.6), R(0.7), R(0.8)})}},
-            {SubsequenceInfo(0, 11, 5), {Envelope({R(-0.5), R(-1.0), R(-2.3)}, {R(1.9), R(-0.1), R(-0.4)})}},
+            {SubsequenceInfo({0, 0}, 5), {Envelope({R(-0.1), R(-0.2), R(0.3)}, {R(0.5), R(1.1), R(1.3)})}},
+            {SubsequenceInfo({0, 7}, 3), {Envelope({R(-1.6), R(0.2), R(-0.3)}, {R(-0.6), R(0.7), R(0.8)})}},
+            {SubsequenceInfo({0, 11}, 5), {Envelope({R(-0.5), R(-1.0), R(-2.3)}, {R(1.9), R(-0.1), R(-0.4)})}},
         };
         auto expected_merged_entries = entries;
 
@@ -152,9 +152,9 @@ TEST_CASE("SaxBasedEntryMerger with Envelope type") {
         SaxBasedEntryMerger<Envelope> merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 1, 3), {Envelope({R(-0.1), R(-0.2), R(0.3)}, {R(0.5), R(1.1), R(1.3)})}},
-            {SubsequenceInfo(0, 4, 3), {Envelope({R(-1.6), R(0.2), R(-0.3)}, {R(-0.6), R(0.7), R(0.8)})}},
-            {SubsequenceInfo(0, 6, 5), {Envelope({R(-0.5), R(-1.0), R(-2.3)}, {R(1.9), R(-0.1), R(-0.4)})}},
+            {SubsequenceInfo({0, 1}, 3), {Envelope({R(-0.1), R(-0.2), R(0.3)}, {R(0.5), R(1.1), R(1.3)})}},
+            {SubsequenceInfo({0, 4}, 3), {Envelope({R(-1.6), R(0.2), R(-0.3)}, {R(-0.6), R(0.7), R(0.8)})}},
+            {SubsequenceInfo({0, 6}, 5), {Envelope({R(-0.5), R(-1.0), R(-2.3)}, {R(1.9), R(-0.1), R(-0.4)})}},
         };
         auto expected_merged_entries = entries;
 
@@ -166,9 +166,9 @@ TEST_CASE("SaxBasedEntryMerger with Envelope type") {
         SaxBasedEntryMerger<Envelope> merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 1, 3), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(0.5), R(1.1), R(1.3)})}},
-            {SubsequenceInfo(0, 4, 3), {Envelope({R(-1.4), R(-0.6), R(-0.15)}, {R(-0.6), R(0.7), R(0.8)})}},
-            {SubsequenceInfo(0, 6, 5), {Envelope({R(-0.9), R(-0.55), R(-0.2)}, {R(1.9), R(-0.1), R(0.4)})}},
+            {SubsequenceInfo({0, 1}, 3), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(0.5), R(1.1), R(1.3)})}},
+            {SubsequenceInfo({0, 4}, 3), {Envelope({R(-1.4), R(-0.6), R(-0.15)}, {R(-0.6), R(0.7), R(0.8)})}},
+            {SubsequenceInfo({0, 6}, 5), {Envelope({R(-0.9), R(-0.55), R(-0.2)}, {R(1.9), R(-0.1), R(0.4)})}},
         };
         auto expected_merged_entries = entries;
 
@@ -180,9 +180,9 @@ TEST_CASE("SaxBasedEntryMerger with Envelope type") {
         SaxBasedEntryMerger<Envelope> merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 1, 3), {Envelope({R(-0.1), R(-0.2), R(0.3)}, {R(1.55), R(0.3), R(1.3)})}},
-            {SubsequenceInfo(0, 4, 3), {Envelope({R(-1.6), R(0.2), R(-0.3)}, {R(1.6), R(0.25), R(0.8)})}},
-            {SubsequenceInfo(0, 6, 5), {Envelope({R(-0.5), R(-1.0), R(-2.3)}, {R(1.9), R(0.1), R(1.4)})}},
+            {SubsequenceInfo({0, 1}, 3), {Envelope({R(-0.1), R(-0.2), R(0.3)}, {R(1.55), R(0.3), R(1.3)})}},
+            {SubsequenceInfo({0, 4}, 3), {Envelope({R(-1.6), R(0.2), R(-0.3)}, {R(1.6), R(0.25), R(0.8)})}},
+            {SubsequenceInfo({0, 6}, 5), {Envelope({R(-0.5), R(-1.0), R(-2.3)}, {R(1.9), R(0.1), R(1.4)})}},
         };
         auto expected_merged_entries = entries;
 
@@ -194,9 +194,9 @@ TEST_CASE("SaxBasedEntryMerger with Envelope type") {
         SaxBasedEntryMerger<Envelope> merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 2, 4), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(1.55), R(0.3), R(1.3)})}},
-            {SubsequenceInfo(0, 7, 3), {Envelope({R(-1.4), R(-0.6), R(-0.15)}, {R(1.6), R(0.25), R(0.8)})}},
-            {SubsequenceInfo(0, 20, 5), {Envelope({R(-0.9), R(-0.55), R(-0.2)}, {R(1.9), R(0.1), R(1.4)})}},
+            {SubsequenceInfo({0, 2}, 4), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(1.55), R(0.3), R(1.3)})}},
+            {SubsequenceInfo({0, 7}, 3), {Envelope({R(-1.4), R(-0.6), R(-0.15)}, {R(1.6), R(0.25), R(0.8)})}},
+            {SubsequenceInfo({0, 20}, 5), {Envelope({R(-0.9), R(-0.55), R(-0.2)}, {R(1.9), R(0.1), R(1.4)})}},
         };
         auto expected_merged_entries = entries;
 
@@ -208,12 +208,12 @@ TEST_CASE("SaxBasedEntryMerger with Envelope type") {
         SaxBasedEntryMerger<Envelope> merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 1, 3), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(1.55), R(0.3), R(1.3)})}},
-            {SubsequenceInfo(0, 4, 3), {Envelope({R(-1.4), R(-0.6), R(-0.15)}, {R(1.6), R(0.25), R(0.8)})}},
-            {SubsequenceInfo(0, 6, 5), {Envelope({R(-0.9), R(-0.55), R(-0.2)}, {R(1.9), R(0.1), R(1.4)})}},
+            {SubsequenceInfo({0, 1}, 3), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(1.55), R(0.3), R(1.3)})}},
+            {SubsequenceInfo({0, 4}, 3), {Envelope({R(-1.4), R(-0.6), R(-0.15)}, {R(1.6), R(0.25), R(0.8)})}},
+            {SubsequenceInfo({0, 6}, 5), {Envelope({R(-0.9), R(-0.55), R(-0.2)}, {R(1.9), R(0.1), R(1.4)})}},
         };
         vec<IndexEntry<Envelope>> expected_merged_entries{
-            {SubsequenceInfo(0, 1, 10), {Envelope({R(-1.4), R(-0.6), R(-0.3)}, {R(1.9), R(0.3), R(1.4)})}},
+            {SubsequenceInfo({0, 1}, 10), {Envelope({R(-1.4), R(-0.6), R(-0.3)}, {R(1.9), R(0.3), R(1.4)})}},
         };
 
         auto merged_entries = merger.merge_entries(std::move(entries));
@@ -224,13 +224,13 @@ TEST_CASE("SaxBasedEntryMerger with Envelope type") {
         SaxBasedEntryMerger<Envelope> merger(3);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 1, 4), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(1.55), R(0.3), R(1.3)})}},
-            {SubsequenceInfo(0, 4, 3), {Envelope({R(-2.4), R(-0.6), R(-1.15)}, {R(-1.6), R(0.7), R(-0.8)})}},
-            {SubsequenceInfo(0, 3, 5), {Envelope({R(-0.9), R(-0.55), R(-0.2)}, {R(1.9), R(0.1), R(1.4)})}},
+            {SubsequenceInfo({0, 1}, 4), {Envelope({R(-1.0), R(-0.5), R(-0.3)}, {R(1.55), R(0.3), R(1.3)})}},
+            {SubsequenceInfo({0, 4}, 3), {Envelope({R(-2.4), R(-0.6), R(-1.15)}, {R(-1.6), R(0.7), R(-0.8)})}},
+            {SubsequenceInfo({0, 3}, 5), {Envelope({R(-0.9), R(-0.55), R(-0.2)}, {R(1.9), R(0.1), R(1.4)})}},
         };
         vec<IndexEntry<Envelope>> expected_merged_entries{
-            {SubsequenceInfo(0, 1, 7), {Envelope({R(-1.0), R(-0.55), R(-0.3)}, {R(1.9), R(0.3), R(1.4)})}},
-            {SubsequenceInfo(0, 4, 3), {Envelope({R(-2.4), R(-0.6), R(-1.15)}, {R(-1.6), R(0.7), R(-0.8)})}},
+            {SubsequenceInfo({0, 1}, 7), {Envelope({R(-1.0), R(-0.55), R(-0.3)}, {R(1.9), R(0.3), R(1.4)})}},
+            {SubsequenceInfo({0, 4}, 3), {Envelope({R(-2.4), R(-0.6), R(-1.15)}, {R(-1.6), R(0.7), R(-0.8)})}},
         };
 
         auto merged_entries = merger.merge_entries(std::move(entries));
@@ -241,13 +241,13 @@ TEST_CASE("SaxBasedEntryMerger with Envelope type") {
         SaxBasedEntryMerger<Envelope> merger(2);
 
         vec<IndexEntry<Envelope>> entries{
-            {SubsequenceInfo(0, 1, 4), {Envelope({R(-1.7), R(-0.2), R(-1.3)}, {R(1.5), R(0.6), R(0.3)})}},
-            {SubsequenceInfo(0, 4, 5), {Envelope({R(-1.5), R(-0.25), R(-0.5)}, {R(0.35), R(0.6), R(1.8)})}},
-            {SubsequenceInfo(0, 4, 6), {Envelope({R(-1.55), R(-0.3), R(-0.9)}, {R(1.9), R(0.6), R(0.5)})}},
+            {SubsequenceInfo({0, 1}, 4), {Envelope({R(-1.7), R(-0.2), R(-1.3)}, {R(1.5), R(0.6), R(0.3)})}},
+            {SubsequenceInfo({0, 4}, 5), {Envelope({R(-1.5), R(-0.25), R(-0.5)}, {R(0.35), R(0.6), R(1.8)})}},
+            {SubsequenceInfo({0, 4}, 6), {Envelope({R(-1.55), R(-0.3), R(-0.9)}, {R(1.9), R(0.6), R(0.5)})}},
         };
         vec<IndexEntry<Envelope>> expected_merged_entries = {
-            {SubsequenceInfo(0, 1, 9), {Envelope({R(-1.7), R(-0.3), R(-1.3)}, {R(1.9), R(0.6), R(0.5)})}},
-            {SubsequenceInfo(0, 4, 5), {Envelope({R(-1.5), R(-0.25), R(-0.5)}, {R(0.35), R(0.6), R(1.8)})}},
+            {SubsequenceInfo({0, 1}, 9), {Envelope({R(-1.7), R(-0.3), R(-1.3)}, {R(1.9), R(0.6), R(0.5)})}},
+            {SubsequenceInfo({0, 4}, 5), {Envelope({R(-1.5), R(-0.25), R(-0.5)}, {R(0.35), R(0.6), R(1.8)})}},
         };
 
         auto merged_entries = merger.merge_entries(std::move(entries));

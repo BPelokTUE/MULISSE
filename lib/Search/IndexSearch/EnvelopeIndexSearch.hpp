@@ -51,7 +51,7 @@ class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, QS> {
     inline void update_result_set(const SubsequenceInfo &subs_info, const uint pos_per_env, const vec<vec<Real>> &query,
                                   const uint query_len, ResultSet<S> &result_set,
                                   const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
-                                  const vec<uint> *real_query_inds) const {
+                                  const vec<uint> *real_query_inds) {
         auto &logger = QueryLogger::get_instance();
 
         auto &RS = RunSettings::get_instance();
@@ -60,7 +60,7 @@ class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, QS> {
 
         vec<vec<Real>> subsequence(num_channels);
         uint num_start_pos = subs_info.m_length;
-        size_t data_to_read = std::min(query_len + num_start_pos - 1, series_len - subs_info.m_start_pos);
+        size_t data_to_read = std::min(query_len + num_start_pos - 1, series_len - subs_info.m_position.m_start);
 
         logger.start_timer(QC::IO_TIME_S);
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
@@ -74,7 +74,7 @@ class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, QS> {
         logger.stop_timer(QC::IO_TIME_S);
 
         logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-        distance_measure.update_result_set(result_set, subs_info, query, subsequence, real_query_inds);
+        distance_measure.update_result_set(result_set, subs_info, query, subsequence, *this, real_query_inds);
         logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
 
         logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED);

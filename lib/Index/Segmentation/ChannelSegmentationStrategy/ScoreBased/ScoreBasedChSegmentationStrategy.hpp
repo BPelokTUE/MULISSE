@@ -3,6 +3,7 @@
 
 #include "Index/Segmentation/ChannelSegmentationStrategy/MultiChSegmentationStrategy.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
+#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 
 class IScoreToSegmentationStrategy;
