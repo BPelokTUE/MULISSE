@@ -658,10 +658,11 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS],
+            ERD.INDEXES_COLS: [ISC.NUM_BITS_LIMIT, ISC.POS_PER_ENV, ISC.ENTRY_MERGER_TYPE],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
         },
         separate_plots_dict={
-            (DSC.DATASET_FILE,): [],
+            (DSC.DATASET_FILE, DSC.NUM_CHANNELS): [],
             # (DSC.DATASET_FILE, DSC.NUM_CHANNELS): [("synthetic", 1)],
         },
         # regex_dict={SSC.METHOD_NAME: r"envelope"},
@@ -688,8 +689,8 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
 
 
 for target_args_dict, reducer in [
-    (TargetArgs.QUERY_TIME.value, MeanReducer()),
-    # (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
+    # (TargetArgs.QUERY_TIME.value, MeanReducer()),
+    (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
     # ({"targets_dict": {ERD.INDEXES_COLS: [ISC.NUM_ENVELOPES]}}, MeanReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.MEAN)]}}, MeanReducer()),
     # ({"targets_dict": {ERD.RUNS_COLS: [QC.MIN_DIST_AVG]}}, MeanReducer()),

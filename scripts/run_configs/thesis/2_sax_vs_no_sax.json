@@ -1,24 +1,26 @@
 {
-    "csv_data_dirs": ["weather", "stocks"],
-    "dataset_sizes": [5000],
+    "csv_data_dirs": ["stocks", "weather"],
+    "dataset_sizes": [1000],
     "series_lengths": [1024, 2048, 4096],
     "syn_num_channels": [1],
     "syn_step_stdevs": [1.0],
-    "query_set_sizes": [50],
+    "query_set_sizes": [100],
     "l_range_ratios": [[0.125, 1.0]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {
-        "first_stage": ["isax_envelope"],
-        "second_stage": ["sax_envelope"],
-        "both_stages": ["isax_env_w_sax_env"]
+        "both_stages_no_sax": ["isax_env_w_env"],
+        "both_stages_sax": ["isax_env_w_sax_env"],
+        "second_stage_no_sax": ["envelope"],
+        "second_stage_sax": ["sax_envelope"]
     },
     "isax_split_strategies": ["em"],
-    "isax_breakpoint_strategies": ["equiprobable"],
-    "isax_num_bits_limits": [15],
     "isax_leaf_cap_ratios": [0.05],
+    "sax_breakpoint_strategies": ["equiprobable"],
+    "sax_num_bits": [15],
     "max_leaves_to_visit": {
-        "both_stages": [5]
+        "both_stages_no_sax": [5],
+        "both_stages_sax": [5]
     },
     "isax_start_bit_numbers": [1],
     "num_segments": [16],
@@ -32,5 +34,5 @@
     "search_raw": [false],
     "dataset_seeds": [42],
     "query_set_seeds": [42],
-    "separate_csv_datasets": false
+    "separate_csv_datasets": true
 }

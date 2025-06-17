@@ -1,7 +1,7 @@
 {
-    "csv_data_dirs": [],
+    "csv_data_dirs": ["stocks", "weather"],
     "dataset_sizes": [1000],
-    "series_lengths": [1024],
+    "series_lengths": [256, 512, 1024],
     "syn_num_channels": [1, 2],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [10],
@@ -9,37 +9,27 @@
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {
-        "scan": ["scan"],
         "isax": ["isax"],
-        "isax_envelope": ["isax_envelope"],
-        "envelope": ["envelope"]
+        "sax_envelope": ["sax_envelope"]
     },
     "merger_types": {
-        "isax": ["in_paa_generator"],
-        "isax_envelope": ["lower_sax"]
+        "isax": ["in_paa_generator"]
     },
     "merger_num_bit_numbers": [1],
-    "isax_num_bits_limits": {
+    "sax_num_bits": {
         "isax": [2, 4, 6],
-        "isax_envelope": [2, 4, 6]
+        "sax_envelope": [15]
     },
+    "sax_breakpoint_strategies": ["equiprobable"],
     "isax_merge_in_leaves": [true],
     "isax_split_strategies": ["em"],
-    "isax_breakpoint_strategies": ["equiprobable"],
-    "isax_leaf_cap_ratios": [0.0128],
+    "isax_leaf_cap_ratios": [0.001],
     "isax_start_bit_numbers": [1],
-    "num_segments": [8, 16, 24],
+    "num_segments": [16],
     "envelope_size_ratios": {
-        "envelope": [0.05],
-        "isax_envelope": [0.01, 0.05]
+        "sax_envelope": [0.05, 1.0]
     },
-    "length_group_size_ratios": [0.05],
-    "distance_measures": {
-        "scan": ["mass", "ed"],
-        "isax": ["ed"],
-        "isax_envelope": ["ed"],
-        "envelope": ["ed"]
-    },
+    "distance_measures": ["ed"],
     "early_abandon": [true],
     "precalculate_ffts": [false],
     "adapt_index": [false],
