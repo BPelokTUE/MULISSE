@@ -46,11 +46,10 @@ class ISearchMethod {
 
     /**
      * @brief Check if the given starting position can be ignored/skipped during search
-     * @param query_len Length of the query
      * @param subs_position Position of the subsequence in the dataset
      * @return `true` if the position can be skipped, `false` otherwise
      */
-    virtual inline bool skip_position(const uint query_len, const SubsequencePosition &subs_position) { return false; }
+    virtual inline bool skip_position(const SubsequencePosition &subs_position) { return false; }
 
    protected:
     /**

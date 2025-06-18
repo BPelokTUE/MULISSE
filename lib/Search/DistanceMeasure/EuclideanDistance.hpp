@@ -61,7 +61,9 @@ class DistanceMeasure<S, ED, QS> {
 
             for (uint start_pos = 0; start_pos < num_start_pos; ++start_pos) {
                 uint64_t points_examined = 0, points_in_entry = 0;
-                if (!search_method.skip_position(query_len, subs_info.m_position)) {
+                SubsequencePosition act_subs_pos = {subs_info.m_position.m_series,
+                                                    subs_info.m_position.m_start + start_pos};
+                if (!search_method.skip_position(act_subs_pos)) {
                     ++num_start_pos_examined;
                     Real dist_squared = 0;
 
@@ -83,9 +85,7 @@ class DistanceMeasure<S, ED, QS> {
                         points_examined += query_len;
                         points_in_entry += query_len;
                     }
-                    result_set.insert({{subs_info.m_position.m_series, subs_info.m_position.m_start + start_pos,
-                                        subs_info.m_length - start_pos},
-                                       dist_squared});
+                    result_set.insert({act_subs_pos, dist_squared});
                     updated = true;
                 }
             start_pos_it_end_normalized:;
@@ -102,7 +102,9 @@ class DistanceMeasure<S, ED, QS> {
         } else {
             for (uint start_pos = 0; start_pos < num_start_pos; ++start_pos) {
                 uint64_t points_examined = 0, point_in_entry = 0;
-                if (!search_method.skip_position(query_len, subs_info.m_position)) {
+                SubsequencePosition act_subs_pos = {subs_info.m_position.m_series,
+                                                    subs_info.m_position.m_start + start_pos};
+                if (!search_method.skip_position(act_subs_pos)) {
                     ++num_start_pos_examined;
                     Real dist_squared = 0;
 
@@ -122,9 +124,7 @@ class DistanceMeasure<S, ED, QS> {
                         points_examined += query_len;
                         point_in_entry += query_len;
                     }
-                    result_set.insert({{subs_info.m_position.m_series, subs_info.m_position.m_start + start_pos,
-                                        subs_info.m_length - start_pos},
-                                       dist_squared});
+                    result_set.insert({act_subs_pos, dist_squared});
                     updated = true;
                 }
             start_pos_it_end_raw:

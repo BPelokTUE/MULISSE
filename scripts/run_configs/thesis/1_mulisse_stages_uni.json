@@ -1,7 +1,7 @@
 {
-    "csv_data_dirs": ["weather", "stocks"],
+    "csv_data_dirs": ["stocks", "weather"],
     "dataset_sizes": [5000],
-    "series_lengths": [1024, 2048, 4096],
+    "series_lengths": [1024, 2048],
     "syn_num_channels": [1],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [50],

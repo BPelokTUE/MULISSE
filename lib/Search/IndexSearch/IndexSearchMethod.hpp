@@ -34,7 +34,7 @@ class IndexSearchMethod : public ISearchMethod<S, D, QS> {
         }
     }
 
-    inline bool skip_position(const uint query_len, const SubsequencePosition &subs_position) override {
+    inline bool skip_position(const SubsequencePosition &subs_position) override {
         if constexpr (std::is_same_v<FTag, PaaTag>) {
             if (m_extras.m_examined_positions.contains(subs_position)) return true;
             m_extras.m_examined_positions.insert(subs_position);

@@ -20,8 +20,7 @@ uptr<IEntryMerger<T>> get_entry_merger_impl(const IndexOptions &opts) {
             }
         case SAX_PAA_GENERATOR:
             if constexpr (std::is_same_v<T, Paa>) {
-                return std::make_unique<SaxBasedEntryMerger<Paa>>(
-                    params->m_merger_params.m_merger_sax_params->m_num_bits);
+                return std::make_unique<DummyEntryMerger<Paa>>();  // SAX-merging for PAA is handled in the generator
             } else {
                 throw std::runtime_error("SAX-merging PAA generator is only available for indexes with Paa entries");
             }

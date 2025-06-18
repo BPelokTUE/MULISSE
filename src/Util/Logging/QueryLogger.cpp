@@ -103,9 +103,9 @@ void QueryLogger::log_query(const vec<vec<Real>> &query) {
 
 void QueryLogger::log_results(const SearchResults &results) {
     for (auto result : results.m_results) {
-        auto [subs_position, ts_length] = result.m_subs_info;
-        instance.m_collection_cols[QC::RESULT_SET_TS_INDICES].push_back(to_string(subs_position.m_series));
-        instance.m_collection_cols[QC::RESULT_SET_TS_POSITIONS].push_back(to_string(subs_position.m_start));
+        auto [subs_series, subs_start] = result.m_subs_pos;
+        instance.m_collection_cols[QC::RESULT_SET_TS_INDICES].push_back(to_string(subs_series));
+        instance.m_collection_cols[QC::RESULT_SET_TS_POSITIONS].push_back(to_string(subs_start));
         instance.m_collection_cols[QC::RESULT_SET_DISTANCES].push_back(to_string(std::sqrt(result.m_distance)));
     }
     instance.m_settable_cols[QC::EXACT_RESULTS] = to_string(results.m_exact);

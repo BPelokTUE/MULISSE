@@ -8,7 +8,7 @@
 /** @brief Search result */
 struct SearchResult {
     /** @brief Position within the dataset and length of the result */
-    SubsequenceInfo m_subs_info;
+    SubsequencePosition m_subs_pos;
     /** @brief Distance of the result to the query */
     Real m_distance;
 
@@ -19,7 +19,7 @@ struct SearchResult {
      * @return `true` if the distance of this result is less than the distance of the other result
      */
     bool operator<(const SearchResult &other) const {
-        return m_distance < other.m_distance || (m_distance == other.m_distance && m_subs_info < other.m_subs_info);
+        return m_distance < other.m_distance || (m_distance == other.m_distance && m_subs_pos < other.m_subs_pos);
     }
 };
 

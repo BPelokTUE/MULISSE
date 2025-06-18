@@ -91,7 +91,8 @@ class DistanceMeasure<S, MASS> {
 
         for (uint start_pos = 0; start_pos < squared_dists.size(); ++start_pos) {
             if (squared_dists[start_pos] < result_set.get_distance_lb()) {
-                SubsequenceInfo result_pos = {subs_info.m_position.m_series, subs_info.m_position.m_start + start_pos};
+                SubsequencePosition result_pos = {subs_info.m_position.m_series,
+                                                  subs_info.m_position.m_start + start_pos};
                 result_set.insert({result_pos, squared_dists[start_pos]});
                 updated = true;
             }
