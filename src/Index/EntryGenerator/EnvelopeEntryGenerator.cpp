@@ -7,29 +7,30 @@
 #include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Math.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
 
 using CHSS = ChannelSegmentationStrategyType;
 
-EnvelopeEntryGenerator::EnvelopeEntryGenerator(bool normalized, const EnvelopeParams &env_params, uint num_len_groups,
+EnvelopeEntryGenerator::EnvelopeEntryGenerator(bool normalized, uint pos_per_env, const LengthProperties &length_props,
+                                               const ILengthGroupSegmentationStrategy *lg_segmentation_strategy,
                                                uint last_ind_step, uint first_ind_step)
     : m_normalized(normalized),
-      m_env_params(env_params),
-      m_num_len_groups(num_len_groups),
+      m_pos_per_env(pos_per_env),
+      m_length_props(length_props),
+      m_lg_segmentation_strategy(lg_segmentation_strategy),
       m_last_ind_step(last_ind_step),
       m_first_ind_step(first_ind_step) {}
 
 vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec<Real>> &mts, uint series_ind) {
     uint series_len = U(mts[0].size());
-    vec<vec<IndexEntry<Envelope>>> entries(m_num_len_groups);
+    vec<vec<IndexEntry<Envelope>>> entries(m_length_props.m_num_l_groups);
 
     for (MtsNumChannelsT c = 0; c < mts.size(); ++c) {
         auto channel_envs_groups = m_normalized ? get_normalized_envelopes(mts[c], c) : get_raw_envelopes(mts[c], c);
-        for (uint l = 0; l < m_num_len_groups; ++l) {
+        for (uint l = 0; l < m_length_props.m_num_l_groups; ++l) {
             auto &channel_envs = channel_envs_groups[l];
             for (uint i = 0; i < channel_envs.size(); ++i) {
-                uint start_pos = i * m_env_params.m_pos_per_env;
-                uint num_start_pos = std::min(m_env_params.m_pos_per_env, series_len - start_pos);
+                uint start_pos = i * m_pos_per_env;
+                uint num_start_pos = std::min(m_pos_per_env, series_len - start_pos);
 
                 if (c == 0) {
                     entries[l].resize(channel_envs.size());
@@ -44,29 +45,31 @@ vec<vec<IndexEntry<Envelope>>> EnvelopeEntryGenerator::get_entries(const vec<vec
 }
 
 vec<vec<Envelope>> EnvelopeEntryGenerator::get_raw_envelopes(const vec<Real> &ts, MtsNumChannelsT ch_ind) {
-    if (m_num_len_groups != 1) {
+    if (m_length_props.m_num_l_groups != 1) {
         throw std::runtime_error("Length-based grouping is not supported for raw envelopes");
     }
 
-    auto [l_min, l_max, pos_per_env, lg_segmentation_strategy] = m_env_params;
+    auto [use_lg, l_min, l_max, l_per_group, num_l_groups] = m_length_props;
 
-    auto ch_segmentation_strategy = lg_segmentation_strategy->get_const_ch_segmentation_strategy(0);
+    auto ch_segmentation_strategy = m_lg_segmentation_strategy->get_const_ch_segmentation_strategy(0);
     auto segmentation_strategy = ch_segmentation_strategy->get_const_segmentation_strategy(ch_ind);
-    if (lg_segmentation_strategy->get_type() != SINGLE || segmentation_strategy->get_type() != UNIFORM) {
+    if (m_lg_segmentation_strategy->get_type() != SINGLE || segmentation_strategy->get_type() != UNIFORM) {
         throw std::runtime_error(
             "get_raw_envelopes is only supported for SingleLGSegmentationStrategy + UniformSegmentationStrategy");
     }
     uint segment_len = segmentation_strategy->get_segment_len(0);
 
     vec<vec<Envelope>> envelope_groups =
-        get_envelope_groups(U(ts.size()), pos_per_env, l_min, l_max, lg_segmentation_strategy, ch_ind);
+        get_envelope_groups(U(ts.size()), m_pos_per_env, l_min, l_max, m_lg_segmentation_strategy, ch_ind);
 
     Real paa_acc = 0.0, segment_len_r = R(segment_len);
 
-    for (uint last_ind = 0; last_ind < ts.size(); last_ind += m_last_ind_step) {
+    for (uint last_ind = 0; last_ind < ts.size(); ++last_ind) {
         paa_acc += ts[last_ind];
         uint prefix_len = last_ind + 1;
         if (prefix_len > segment_len) paa_acc -= ts[last_ind - segment_len];
+
+        if (last_ind % m_last_ind_step != 0) continue;
 
         uint segments_in_subs = std::min(l_max, prefix_len) / segment_len;
 
@@ -74,33 +77,34 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_raw_envelopes(const vec<Real> &ts
         for (uint seg_ind = 0; seg_ind < segments_in_subs; ++seg_ind) {
             uint first_ind = last_ind + 1 - (seg_ind + 1) * segment_len;
             if (ts.size() - first_ind >= l_min) {
-                auto &envelope = envelope_groups[0][first_ind / pos_per_env];
+                auto &envelope = envelope_groups[0][first_ind / m_pos_per_env];
                 envelope.m_lower[seg_ind] = std::min(envelope.m_lower[seg_ind], paa_val);
                 envelope.m_upper[seg_ind] = std::max(envelope.m_upper[seg_ind], paa_val);
             }
         }
     }
 
-    for (uint lg_ind = 0; lg_ind < m_num_len_groups - 1; ++lg_ind)
+    for (uint lg_ind = 0; lg_ind < num_l_groups - 1; ++lg_ind)
         for (uint seg_ind = 0; seg_ind < envelope_groups[lg_ind].size(); ++seg_ind)
-            envelope_groups[lg_ind][seg_ind] = envelope_groups[m_num_len_groups - 1][seg_ind];
+            envelope_groups[lg_ind][seg_ind] = envelope_groups[num_l_groups - 1][seg_ind];
 
     flip_env_infinities(envelope_groups);
     return envelope_groups;
 }
 
 vec<vec<Envelope>> EnvelopeEntryGenerator::get_normalized_envelopes(const vec<Real> &ts, MtsNumChannelsT ch_ind) {
-    auto &RS = RunSettings::get_instance();
-    auto [l_min, l_max, pos_per_env, lg_segmentation_strategy] = m_env_params;
+    auto [use_lg, l_min, l_max, l_per_group, num_l_groups] = m_length_props;
 
     vec<vec<Envelope>> envelope_groups =
-        get_envelope_groups(U(ts.size()), pos_per_env, l_min, l_max, lg_segmentation_strategy, ch_ind);
+        get_envelope_groups(U(ts.size()), m_pos_per_env, l_min, l_max, m_lg_segmentation_strategy, ch_ind);
 
     vec<Real> sum_accs(ts.size() + 1, 0.0), sq_sum_accs(ts.size() + 1, 0.0);
 
-    for (uint last_ind = 0; last_ind < ts.size(); last_ind += m_last_ind_step) {
+    for (uint last_ind = 0; last_ind < ts.size(); ++last_ind) {
         sum_accs[last_ind + 1] = sum_accs[last_ind] + ts[last_ind];
         sq_sum_accs[last_ind + 1] = sq_sum_accs[last_ind] + ts[last_ind] * ts[last_ind];
+
+        if (last_ind % m_last_ind_step != 0) continue;
 
         uint start_min = U(std::max(0, static_cast<int>(last_ind + 1 - l_max)));
         int start_max = static_cast<int>(last_ind + 1 - l_min);
@@ -111,8 +115,8 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_normalized_envelopes(const vec<Re
                                                       sq_sum_accs[last_ind + 1] - sq_sum_accs[first_ind], subs_len);
 
             uint segment_len_sum = 0;
-            uint length_group = RS.get_length_props().get_length_group(subs_len);
-            auto segmentation_strategy = lg_segmentation_strategy->get_const_ch_segmentation_strategy(length_group)
+            uint length_group = m_length_props.get_length_group(subs_len);
+            auto segmentation_strategy = m_lg_segmentation_strategy->get_const_ch_segmentation_strategy(length_group)
                                              ->get_const_segmentation_strategy(ch_ind);
 
             SaxSegIndT num_segments = segmentation_strategy->get_num_segments(subs_len);
@@ -124,7 +128,7 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_normalized_envelopes(const vec<Re
                 segment_len_sum += segment_len;
                 paa_val = (paa_val - mu) / sigma;
 
-                auto &envelope = envelope_groups[length_group][first_ind / pos_per_env];
+                auto &envelope = envelope_groups[length_group][first_ind / m_pos_per_env];
                 envelope.m_lower[seg_ind] = std::min(envelope.m_lower[seg_ind], paa_val);
                 envelope.m_upper[seg_ind] = std::max(envelope.m_upper[seg_ind], paa_val);
             }
@@ -137,12 +141,10 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_normalized_envelopes(const vec<Re
 vec<vec<Envelope>> EnvelopeEntryGenerator::get_envelope_groups(
     const uint series_len, const uint pos_per_env, const uint l_min, const uint l_max,
     const ILengthGroupSegmentationStrategy *lg_segmentation_strategy, MtsNumChannelsT ch_ind) {
-    auto &RS = RunSettings::get_instance();
-
-    vec<vec<Envelope>> envelope_groups(m_num_len_groups);
-    for (uint lg_ind = 0; lg_ind < m_num_len_groups; ++lg_ind) {
-        uint lg_l_min = RS.get_length_props().get_lg_l_min(lg_ind);
-        uint lg_l_max = RS.get_length_props().get_lg_l_max(lg_ind);
+    vec<vec<Envelope>> envelope_groups(m_length_props.m_num_l_groups);
+    for (uint lg_ind = 0; lg_ind < m_length_props.m_num_l_groups; ++lg_ind) {
+        uint lg_l_min = m_length_props.get_lg_l_min(lg_ind);
+        uint lg_l_max = m_length_props.get_lg_l_max(lg_ind);
         uint num_env = U((series_len - lg_l_min + pos_per_env) / pos_per_env);
 
         SaxSegIndT segments_per_env_lg = lg_segmentation_strategy->get_const_ch_segmentation_strategy(lg_ind)

@@ -654,23 +654,24 @@ Experiment: Segmentation strategy
 
 def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
     visualize_experiments(
-        logs_dirs=["LOGS"],
+        logs_dirs=["EXPERIMENT_LOGS/envelope_variants/LOGS_size_limiting"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS],
-            ERD.INDEXES_COLS: [ISC.NUM_BITS_LIMIT, ISC.POS_PER_ENV, ISC.ENTRY_MERGER_TYPE],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+            ERD.INDEXES_COLS: [ISC.INDEX_SIZE_LIMIT, ISC.NUM_LEN_GROUPS, ISC.NUM_SEGMENTS],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
         },
         separate_plots_dict={
-            (DSC.DATASET_FILE, DSC.NUM_CHANNELS): [],
-            # (DSC.DATASET_FILE, DSC.NUM_CHANNELS): [("synthetic", 1)],
+            (DSC.DATASET_FILE,): [("synthetic",)],
+            (ISC.INDEX_SIZE_LIMIT,): [(1.0,)],
+            (QSC.L_MIN, QSC.L_MAX): [(128, 1024)],
         },
         # regex_dict={SSC.METHOD_NAME: r"envelope"},
         num_query_intervals=1,
         merge_csv_datasets=False,
         y_scale="linear",
-        # bar_plot_color_attr=None,
-        bar_plot_color_attr=SSC.METHOD_NAME,
+        bar_plot_color_attr=None,
+        # bar_plot_color_attr=SSC.METHOD_NAME,
         # bar_plot_color_attr=ISC.CH_SEGMENTATION_STRATEGY,
         # bar_plot_color_map={
         #     "single": PALETTE["Oranges"][2],
@@ -679,21 +680,21 @@ def experiment_segmentation_strategy(target_args_dict: dict, reducer: Reducer):
         # },
         # line_plot_x_attr=ISC.POS_PER_ENV,
         # line_plot_included_cols={DSC.DATASET_FILE},
-        # x_scale="log",
-        # heat_map_x_attr=ISC.NUM_SEGMENTS,
-        # heat_map_y_attr=ISC.NUM_LEN_GROUPS,
-        # heat_map_included_cols={},
+        x_scale="log",
+        heat_map_x_attr=ISC.NUM_SEGMENTS,
+        heat_map_y_attr=ISC.NUM_LEN_GROUPS,
+        heat_map_included_cols={},
         reducer=reducer,
         **target_args_dict,
     )
 
 
 for target_args_dict, reducer in [
-    # (TargetArgs.QUERY_TIME.value, MeanReducer()),
+    (TargetArgs.QUERY_TIME.value, MeanReducer()),
     (TargetArgs.PRUNING_RATIO.value, MeanReducer()),
     # ({"targets_dict": {ERD.INDEXES_COLS: [ISC.NUM_ENVELOPES]}}, MeanReducer()),
     # ({"targets_dict": {ERD.INDEX_STATS_COLS: [StatsColumn(ISTC.SEG_RANGE_STATS, SCP.MEAN)]}}, MeanReducer()),
-    # ({"targets_dict": {ERD.RUNS_COLS: [QC.MIN_DIST_AVG]}}, MeanReducer()),
+    ({"targets_dict": {ERD.RUNS_COLS: [QC.MIN_DIST_AVG]}}, MeanReducer()),
     # ({"targets_dict": {ERD.RUNS_COLS: [QC.MIN_DIST_TOTAL]}}, MeanReducer()),
     # ({"targets_dict": {ERD.INDEXES_COLS: [ISC.POS_PER_ENV]}}, MeanReducer()),
     # (TargetArgs.INDEX_SIZE.value, MeanReducer()),

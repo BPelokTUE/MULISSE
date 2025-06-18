@@ -1,7 +1,7 @@
 #include "Modules/Indexing/Indexing.hpp"
 
 #include "Index/Entry/SaxEnvelope.hpp"
-#include "Index/Estimator/FlatEnvelopeTheoParamEstimator.hpp"
+#include "Index/Estimator/FlatEnvelopeMinDistParamEstimator.hpp"
 #include "Modules/Indexing/ConstructIndex.hpp"
 #include "Modules/Indexing/GetChannelScores.hpp"
 #include "Modules/Indexing/GetEntryGenerator.hpp"
@@ -74,7 +74,8 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
     }
 
     if (opts.m_estimator_params && opts.m_estimator_params->m_estimate_parameters) {
-        auto estimator = FlatEnvelopeParamTheoEstimator(opts);
+        // auto estimator = FlatEnvelopeParamTheoEstimator(opts);
+        auto estimator = FlatEnvelopeMinDistParamEstimator(opts);
         auto flat_envelope_params = estimator.get_estimated_params();
         RS.set_flat_envelope_params(flat_envelope_params);
         logger.set_flat_envelope_params(flat_envelope_params);

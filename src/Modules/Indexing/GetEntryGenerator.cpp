@@ -28,13 +28,8 @@ uptr<IEntryGenerator<Paa>> get_paa_generator(const IndexOptions &opts,
 uptr<IEntryGenerator<Envelope>> get_envelope_generator(
     const IndexOptions &opts, const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
     auto *params = dynamic_cast<const EnvelopeIndexParams *>(opts.m_index_params.get());
-    EnvelopeParams env_params = {
-        .m_l_min = opts.m_l_min,
-        .m_l_max = opts.m_l_max,
-        .m_pos_per_env = params->m_pos_per_env,
-        .m_lg_segmentation_strategy = lg_segmentation_strategy,
-    };
-    uint num_len_groups = RunSettings::get_instance().get_length_props().m_num_l_groups;
 
-    return std::make_unique<EnvelopeEntryGenerator>(opts.m_normalized, env_params, num_len_groups);
+    auto &length_props = RunSettings::get_instance().get_length_props();
+    return std::make_unique<EnvelopeEntryGenerator>(opts.m_normalized, params->m_pos_per_env, length_props,
+                                                    lg_segmentation_strategy);
 }

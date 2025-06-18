@@ -13,6 +13,17 @@ struct LengthProperties {
     uint m_num_l_groups;
 
     /**
+     * @brief Set the number of lengths per length group and update the number of length groups accordingly.
+     * @param l_per_group The number of lengths per length group.
+     */
+    void set_lengths_per_group(uint l_per_group) {
+        m_l_per_group = l_per_group;
+        if (m_l_per_group > 0) {
+            m_num_l_groups = static_cast<uint>((m_l_max - m_l_min + m_l_per_group) / m_l_per_group);
+        }
+    }
+
+    /**
      * @brief Get the length group of a given subsequence length.
      * @param subs_length The length of the subsequence.
      * @return The length group index.

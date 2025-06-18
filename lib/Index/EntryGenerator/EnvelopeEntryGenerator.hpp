@@ -3,6 +3,7 @@
 
 #include "Index/Entry/Envelope.hpp"
 #include "Index/EntryGenerator/EntryGenerator.hpp"
+#include "Util/RunSettings/LengthProperties.hpp"
 
 /** @brief Envelope generator for MULISSE envelopes */
 class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
@@ -10,22 +11,25 @@ class EnvelopeEntryGenerator : public IEntryGenerator<Envelope> {
     /**
      * @brief Construct a new EnvelopeEntryGenerator object
      * @param normalized Whether to normalize the subsequences
-     * @param env_params Parameters for the ULISSE envelope computation
-     * @param num_length_groups Number of length groups
+     * @param pos_per_env Positions per envelope
+     * @param length_props Length properties
+     * @param lg_segmentation_strategy ILengthGroupSegmentationStrategy to use for length-based grouping
      * @param last_ind_step Optional for creating dummy envelopes, defaults to 1. Other values will result in envelopes
      * that do not guarantee exact results when used for min-dist calculation.
      * @param first_ind_step Optional for creating dummy envelopes, defaults to 1. Other values will result in envelopes
      * that do not guarantee exact results when used for min-dist calculation in the normalized case.
      */
-    EnvelopeEntryGenerator(bool normalized, const EnvelopeParams &env_params, uint num_length_groups = 1,
-                           uint last_ind_step = 1, uint first_ind_step = 1);
+    EnvelopeEntryGenerator(bool normalized, uint pos_per_env, const LengthProperties &length_props,
+                           const ILengthGroupSegmentationStrategy *lg_segmentation_strategy, uint last_ind_step = 1,
+                           uint first_ind_step = 1);
 
     vec<vec<IndexEntry<Envelope>>> get_entries(const vec<vec<Real>> &mts, uint series_ind) override;
 
    private:
     bool m_normalized;
-    uint m_num_len_groups, m_last_ind_step, m_first_ind_step;
-    EnvelopeParams m_env_params;
+    uint m_pos_per_env, m_last_ind_step, m_first_ind_step;
+    LengthProperties m_length_props;
+    const ILengthGroupSegmentationStrategy *m_lg_segmentation_strategy;
 
     /**
      * @brief Compute the ULISSE envelopes of subsequences of a time series WITHOUT normalization

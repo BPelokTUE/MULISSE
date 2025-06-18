@@ -13,14 +13,19 @@
 
 class EnvelopeTest {
    public:
-    static vec<Envelope> get_raw_envelope(const vec<Real> &ts, EnvelopeParams env_params, MtsNumChannelsT ch_ind) {
-        EnvelopeEntryGenerator generator(false, env_params);
+    static vec<Envelope> get_raw_envelope(const vec<Real> &ts, uint pos_per_env, uint l_min, uint l_max,
+                                          const ILengthGroupSegmentationStrategy *lg_segmentation_strategy,
+                                          MtsNumChannelsT ch_ind) {
+        EnvelopeEntryGenerator generator(false, pos_per_env, {.m_l_min = l_min, .m_l_max = l_max},
+                                         lg_segmentation_strategy);
         return generator.get_raw_envelopes(ts, ch_ind)[0];
     }
 
-    static vec<Envelope> get_normalized_envelope(const vec<Real> &ts, MtsNumChannelsT ch_ind,
-                                                 EnvelopeParams env_params) {
-        EnvelopeEntryGenerator generator(true, env_params);
+    static vec<Envelope> get_normalized_envelope(const vec<Real> &ts, MtsNumChannelsT ch_ind, uint pos_per_env,
+                                                 uint l_min, uint l_max,
+                                                 const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
+        EnvelopeEntryGenerator generator(true, pos_per_env, {.m_l_min = l_min, .m_l_max = l_max},
+                                         lg_segmentation_strategy);
         return generator.get_normalized_envelopes(ts, ch_ind)[0];
     }
 };
@@ -68,7 +73,7 @@ TEST_CASE("get_raw_envelope envelope happy-flow works") {
     */
 
     auto envelopes =
-        EnvelopeTest::get_raw_envelope(ts, {l_min, l_max, pos_per_env, &lg_segmentation_strategy_mock.get()}, 0);
+        EnvelopeTest::get_raw_envelope(ts, pos_per_env, l_min, l_max, &lg_segmentation_strategy_mock.get(), 0);
     vec<Envelope> expected = {
         {{R(2.25), R(2.5), R(-0.5)}, {3, 9, 9}},
         {{R(-0.5), R(-0.5), R(1.5)}, {9, R(7.25), R(7.25)}},
@@ -87,7 +92,7 @@ TEST_CASE("get_raw_envelope envelope happy-flow works") {
 
 TEST_CASE("get_normalized_envelope happy-flow works") {
     const vec<Real> ts = {1, 3.5, 1, 4, 2, 8, 10, -3.5, 2.5, 12, -9};
-    uint ms_per_env = 4, segment_len = 2, l_min = 3, l_max = 7;
+    uint pos_per_env = 4, segment_len = 2, l_min = 3, l_max = 7;
 
     fakeit::Mock<ISegmentationStrategy> segmentation_strategy_mock;
     fakeit::When(Method(segmentation_strategy_mock, get_num_segments)).AlwaysDo([segment_len](uint subs_len) {
@@ -129,7 +134,7 @@ TEST_CASE("get_normalized_envelope happy-flow works") {
     [0.6308598694087654, inf, inf]
     */
     auto envelopes =
-        EnvelopeTest::get_normalized_envelope(ts, 0, {l_min, l_max, ms_per_env, &lg_segmentation_strategy_mock.get()});
+        EnvelopeTest::get_normalized_envelope(ts, 0, pos_per_env, l_min, l_max, &lg_segmentation_strategy_mock.get());
 
     vec<Envelope> expected = {{{R(-0.9486832980505138), R(-0.5449492609130661), R(-1.1111677990074318)},
                                {R(0.35355339059327384), R(1.1835854998978794), R(1.323448205074589)}},

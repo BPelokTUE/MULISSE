@@ -56,15 +56,4 @@ struct Envelope : IEntryData {
     }
 };
 
-struct EnvelopeParams {
-    /** @brief The minimum length of a subsequence */
-    uint m_l_min;
-    /** @brief The maximum length of a subsequence */
-    uint m_l_max;
-    /** @brief The (max) number of master series in each envelope */
-    uint m_pos_per_env;
-    /** @brief The segmentation strategies to use for each length group. */
-    const ILengthGroupSegmentationStrategy *m_lg_segmentation_strategy;
-};
-
 #endif  // INDEX_ENTRY_ENVELOPE_HPP

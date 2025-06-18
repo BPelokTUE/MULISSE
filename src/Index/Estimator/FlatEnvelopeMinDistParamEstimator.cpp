@@ -78,6 +78,7 @@ FlatEnvelopeMinDistParamEstimator::FlatEnvelopeMinDistParamEstimator(const Index
         for (uint q = 0; q < num_queries; ++q) {
             for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
                 Real query_sum = R(0.0), query_sq_sum = R(0.0);
+                query_accs[q][c].push_back(R(0.0));
 
                 str line;
                 std::getline(query_stream, line);
@@ -93,10 +94,10 @@ FlatEnvelopeMinDistParamEstimator::FlatEnvelopeMinDistParamEstimator(const Index
                 if (query_accs[q][c].empty()) continue;
 
                 auto [mu, sigma] = calculate_mu_and_sigma(query_sum, query_sq_sum, U(query_accs[q][c].size()));
-                query_accs[q][c][0] = (query_accs[q][c][0] - mu) / sigma;
                 for (uint i = 1; i < query_accs[q][c].size(); ++i) {
                     query_accs[q][c][i] = query_accs[q][c][i - 1] + (query_accs[q][c][i] - mu) / sigma;
                 }
+                query_accs[q][c].push_back(query_accs[q][c].back());
             }
         }
     }
@@ -130,13 +131,7 @@ FlatEnvelopeMinDistParamEstimator::FlatEnvelopeMinDistParamEstimator(const Index
             .m_l_per_group = config.m_l_per_group,
             .m_index_params = std::move(envelope_index_params),
         };
-        auto lg_segmentation_strategy = get_lg_segmentation_strategy(opts);
-        EnvelopeParams env_params{
-            .m_l_min = l_min,
-            .m_l_max = l_max,
-            .m_pos_per_env = config.m_pos_per_env,
-            .m_lg_segmentation_strategy = lg_segmentation_strategy.get(),
-        };
+        auto lg_segmentation_strategy = get_lg_segmentation_strategy(config_opts);
         uint num_l_groups = (l_max - l_min + config.m_l_per_group) / config.m_l_per_group;
         LengthProperties length_props{
             .m_use_length_groups = true,
@@ -145,8 +140,9 @@ FlatEnvelopeMinDistParamEstimator::FlatEnvelopeMinDistParamEstimator(const Index
             .m_l_per_group = config.m_l_per_group,
             .m_num_l_groups = num_l_groups,
         };
-        auto generator = std::make_unique<EnvelopeEntryGenerator>(opts.m_normalized, env_params, num_l_groups,
-                                                                  last_ind_step, first_ind_step);
+        auto generator =
+            std::make_unique<EnvelopeEntryGenerator>(config_opts.m_normalized, config.m_pos_per_env, length_props,
+                                                     lg_segmentation_strategy.get(), last_ind_step, first_ind_step);
         auto merger = std::make_unique<DummyEntryMerger<Envelope>>();
 
         // 4.1. Create a FlatEnvelopeIndex, skipping positions and lengths in the envelopes
@@ -168,15 +164,17 @@ FlatEnvelopeMinDistParamEstimator::FlatEnvelopeMinDistParamEstimator(const Index
                 uint seg_start = 0;
                 for (SaxSegIndT seg_ind = 0; seg_ind < query_ch_paa.size(); ++seg_ind) {
                     uint seg_len = segmentation_strategy->get_segment_len(seg_ind), seg_end = seg_start + seg_len;
-                    query_ch_paa[seg_ind] = (query_acc[c][seg_end] - query_acc[c][seg_start]) / R(seg_len);
+                    query_ch_paa[seg_ind] = (query_acc[c][seg_end + 1] - query_acc[c][seg_start + 1]) / R(seg_len);
                     seg_start = seg_end;
                 }
 
                 for (auto &entry : entries[lg_ind]) {
-                    for (SaxSegIndT seg_ind = 0; seg_ind < entry.m_mts_summary.size(); ++seg_ind) {
+                    for (SaxSegIndT seg_ind = 0; seg_ind < query_ch_paa.size(); ++seg_ind) {
+                        Real segment_len_r = R(segmentation_strategy->get_segment_len(seg_ind));
                         min_dist_sum_query += distance_measure.min_dist_squared(
-                            query_ch_paa[seg_ind], entry.m_mts_summary[c].m_lower[seg_ind],
-                            entry.m_mts_summary[c].m_upper[seg_ind]);
+                                                  query_ch_paa[seg_ind], entry.m_mts_summary[c].m_lower[seg_ind],
+                                                  entry.m_mts_summary[c].m_upper[seg_ind]) *
+                                              segment_len_r;
                     }
                 }
                 min_dist_totals[config_ind] += min_dist_sum_query / R(entries[lg_ind].size());

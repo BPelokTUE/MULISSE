@@ -50,17 +50,13 @@ vec<Real> EnvelopeScoreEstimator::estimate_scores(const ScoreBasedChSSParams &sc
 
     uint pos_per_env = series_len - l_min + 1;
     auto lg_segmentation_strategy = std::make_unique<SingleLGSegmentationStrategy>(std::move(ch_segmentation_strategy));
-    EnvelopeParams envelope_params{.m_l_min = l_min,
-                                   .m_l_max = l_max,
-                                   .m_pos_per_env = pos_per_env,
-                                   .m_lg_segmentation_strategy = lg_segmentation_strategy.get()};
 
-    auto generator = std::make_unique<EnvelopeEntryGenerator>(score_based_chss_params.m_normalized, envelope_params);
+    LengthProperties tmp_length_props = length_props;
+    tmp_length_props.set_lengths_per_group(l_max - l_min + 1);
+    auto generator = std::make_unique<EnvelopeEntryGenerator>(score_based_chss_params.m_normalized, pos_per_env,
+                                                              tmp_length_props, lg_segmentation_strategy.get());
 
     // 4. Initialize segmentation strategies according to the implementation
-    uint original_l_per_group = length_props.m_l_per_group;
-    RS.set_lengths_per_group(l_max - l_min + 1);  // Ugly hack
-
     volatile bool early_stop = false;
 
     OMP_PRAGMA(omp parallel) {
@@ -81,8 +77,6 @@ vec<Real> EnvelopeScoreEstimator::estimate_scores(const ScoreBasedChSSParams &sc
             }
         }
     }
-
-    RS.set_lengths_per_group(original_l_per_group);  // Ugly hack
 
     return m_envelope_scores->get_scores();
 }
