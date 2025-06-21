@@ -125,13 +125,6 @@ ORDERED_DATASETS = [
     "synthetic",
 ]
 
-# %%[markdown]
-"""
-### Bar plot function
-"""
-
-# %%
-
 
 def plot_bars(
     reduction_result: ReductionResult,

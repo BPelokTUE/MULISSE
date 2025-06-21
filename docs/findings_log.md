@@ -299,3 +299,16 @@ $$
     - [ ] Test (cited) functions for distributing segments across channels
 - [ ] Threshold for single channel segments
     - [ ] Simple upper limit
+
+## 18-06-2025
+
+- Share Overleaf and GitHub of thesis
+- Include MASS in preliminaries before Related Work: MASS can be used as a part of an index, MASS should help if the subsequences are long
+- Rename Methodology to Algorithms
+- Do not talk about exact parameter values in the Algorithms
+- Split Results:
+    - Empirical Parameterization
+    - Experimental Evaluation
+- Failed Experiments --> Negative Results, added after Algorithms
+- Use envelopes progressively, this is an experiment not an algorithm extension. Try to think of some extension for progressive queries.
+- Try to see if there is something that can be done with the distribution of the distances
