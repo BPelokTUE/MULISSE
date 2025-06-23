@@ -52,6 +52,7 @@ enum class IndexSettingsColumn {
     LEAF_CAPACITY,                 // Maximum number of entries in a leaves / buckets (if applicable)
     NUM_BITS_LIMIT,                // Maximum number of bits per segment for iSAX indexes
     MAX_WIDTH_CHANGE,              // Maximum mean width change to allow in VarianceLimitingEnvelopeGrouper
+    USE_INV_SAX,                   // Whether to use invSAX sorting before grouping envelopes
     ADAPT_TO_DATASET,              // Whether to adapt the index properties to the dataset
     INSERTER_TYPE,                 // Type of inserter used for the index
     NUM_LEAVES,                    // Number of leaves in the index

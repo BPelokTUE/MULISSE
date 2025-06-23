@@ -17,7 +17,7 @@ class AdaptiveSegmentationStrategy : public ISegmentationStrategy {
      * @param l_min Minimum length of queries
      * @param l_max Maximum length of queries
      * @param series_len Length of the whole time series
-     * @param num_segments Number of segments
+     * @param avg_num_segments Number of segments
      * @param pos_per_env Number of positions per envelope, defaults to 0 indicating no enveloping
      */
     AdaptiveSegmentationStrategy(uint l_min, uint l_max, uint series_len, SaxSegIndT num_segments,

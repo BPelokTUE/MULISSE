@@ -79,6 +79,7 @@ class IndexSettingsColumn(Enum):
     LEAF_CAPACITY = auto()
     NUM_BITS_LIMIT = auto()
     MAX_WIDTH_CHANGE = auto()
+    USE_INV_SAX = auto()
     ADAPT_TO_DATASET = auto()
     NUM_LEAVES = auto()
     NUM_NODES = auto()

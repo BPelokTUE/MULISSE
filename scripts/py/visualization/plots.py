@@ -577,6 +577,9 @@ def get_config_label(
             case ISC.MAX_WIDTH_CHANGE:
                 if val is not None and val > 0:
                     label_parts.append(f"MWC={val:.2f}")
+            case ISC.USE_INV_SAX:
+                if val == 1:
+                    label_parts.append("InvSAX")
             case ISC.ADAPT_TO_DATASET:
                 if val == 1:
                     label_parts.append("Adapt")

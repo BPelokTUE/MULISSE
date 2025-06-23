@@ -189,6 +189,8 @@ struct iSaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual iSaxIndexP
 };
 
 struct EnvelopeGroupingParams {
+    /** @brief Whether to use invSAX sorting or not */
+    bool m_use_inv_sax_sorting;
     /** @brief The maximum allowed width update VarianceLimitingEnvelopeGrouper */
     Real m_max_width_change;
     /** @brief The size of each bucket for BucketingEnvelopeMerger */

@@ -1,5 +1,6 @@
 #include "Index/EnvelopeIndex/Tree/EnvelopeNode.hpp"
 
+#include <algorithm>
 #include <cassert>
 
 #include "Index/Entry/Envelope.hpp"
@@ -39,6 +40,10 @@ const vec<const EnvelopeNode *> EnvelopeInternal::get_children() const {
 
 const vec<SubsequenceInfo> *EnvelopeInternal::get_subsequence_infos() const { return nullptr; }
 
+void EnvelopeInternal::merge_subsequence_infos() {
+    for (auto &child : m_children) child->merge_subsequence_infos();
+}
+
 // EnvelopeLeaf
 
 EnvelopeLeaf::~EnvelopeLeaf() = default;
@@ -62,3 +67,21 @@ const vec<Envelope> &EnvelopeLeaf::get_envelopes() const { return m_envelopes; }
 const vec<const EnvelopeNode *> EnvelopeLeaf::get_children() const { return {}; }
 
 const vec<SubsequenceInfo> *EnvelopeLeaf::get_subsequence_infos() const { return &m_subs_infos; }
+
+void EnvelopeLeaf::merge_subsequence_infos() {
+    if (m_subs_infos.empty()) return;
+
+    std::sort(m_subs_infos.begin(), m_subs_infos.end());
+    vec<SubsequenceInfo> merged_subs_infos;
+    merged_subs_infos.push_back(m_subs_infos[0]);
+
+    for (size_t i = 1; i < m_subs_infos.size(); ++i) {
+        if (m_subs_infos[i].m_position.m_series == merged_subs_infos.back().m_position.m_series &&
+            m_subs_infos[i].m_position.m_start ==
+                merged_subs_infos.back().m_position.m_start + merged_subs_infos.back().m_length) {
+            merged_subs_infos.back().m_length += m_subs_infos[i].m_length;
+        } else {
+            merged_subs_infos.push_back(m_subs_infos[i]);
+        }
+    }
+}

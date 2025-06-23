@@ -16,7 +16,7 @@ from scripts.py.visualization.wrapper import TargetArgs, visualize_experiments
 # 1 - ULISSE stage comparison
 
 
-for suffix in ["uni", "multi"]:
+for suffix in ["uni"]:
     for target_args_dict in [TargetArgs.QUERY_TIME.value]:
         visualize_experiments(
             logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_1_mulisse_stages_{suffix}"],
@@ -76,6 +76,42 @@ for target_args_dict in [TargetArgs.QUERY_TIME.value, TargetArgs.PRUNING_RATIO.v
         bar_plot_label_map={
             "isax-ed-early": "iSAX",
             "sax_envelope-ed-early": "MT-Env",
+        },
+        **target_args_dict,
+    )
+
+# %%
+# 4 - MT-Env parametrization
+
+# %%
+# 5 - Constrained size
+
+# %%
+# 6 - Presence
+
+# %%
+# 7 - Channel prioritization
+
+# %%
+# 8 - Envelope merging
+
+for target_args_dict in [TargetArgs.QUERY_TIME.value, TargetArgs.INDEX_SIZE.value]:
+    visualize_experiments(
+        # logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_8_envelope_merging"],
+        logs_dirs=["LOGS"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+            ERD.INDEXES_COLS: [ISC.NUM_BITS_LIMIT, ISC.USE_INV_SAX, ISC.POS_PER_ENV, ISC.L_PER_GROUP, ISC.NUM_SEGMENTS],
+        },
+        separate_plots_dict={(DSC.DATASET_FILE,): []},
+        bar_plot_color_attr=SSC.METHOD_NAME,
+        bar_plot_legend_max_cols=2,
+        bar_plot_label_map={
+            "bucketing_envelope-ed-early": "Bucket merger",
+            "envelope-ed-early": "No merger",
+            "vl_envelope-ed-early": "Variance-limiting merger",
         },
         **target_args_dict,
     )

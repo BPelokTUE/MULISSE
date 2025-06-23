@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
     bool zero_start = false, raw = false, approximate = false, early_abandon = false, sort_query = false,
          no_use_pq = false, adapt_index = false, merge_in_leaves = false, prefer_first_in_em = false,
          separate_segment_stats = false, no_log_num_seg_per_ch = false, log_num_seg_all = false,
-         estimate_parameters = false;
+         estimate_parameters = false, use_inv_sax = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -326,6 +326,7 @@ int main(int argc, char **argv) {
                      "Maximum mean width change to allow in VarianceLimitingEnvelopeGrouper")
         ->capture_default_str()
         ->check(non_negative_real);
+    index_subcommand->add_option("--use_inv_sax", use_inv_sax, "Use invSAX sorting before grouping envelopes");
     index_subcommand->add_flag("--raw", raw, "Do not normalize");
     index_subcommand->add_option("-b,--num_bits", breakpoint_num_bits, "Number of bits for the SAX breakpoints")
         ->check(positive_int)
@@ -643,6 +644,7 @@ int main(int argc, char **argv) {
                 .m_leaf_capacity = leaf_capacity,
             };
             EnvelopeGroupingParams env_grouping_params{
+                .m_use_inv_sax_sorting = use_inv_sax,
                 .m_max_width_change = max_width_change,
                 .m_bucket_size = leaf_capacity,
                 .m_type = method_type,

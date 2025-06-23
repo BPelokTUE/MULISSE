@@ -30,7 +30,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
     str lg_ss_str = "", ch_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "",
         merge_in_leaves_str = "", method_type_str = "", entry_merger_type_str = "", env_stats_chss_weights_file = "",
         multi_chss_num_seg_file = "", chss_scores_type_str = "", env_width_chss_min_w_update_str = "",
-        max_width_change_str = "";
+        max_width_change_str = "", use_inv_sax_str = "";
     Real score_based_chss_score_exp = 0.0;
 
     Real index_size_limit = index_options.m_index_method == ENVELOPE && index_options.m_estimator_params
@@ -87,6 +87,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
             if (arr_contains(METHODS_W_ENV_GROUPING, method_type)) {
                 auto grouping_params =
                     dynamic_cast<TreeEnvelopeIndexParams *>(index_options.m_index_params.get())->m_env_grouping_params;
+                use_inv_sax_str = to_string(grouping_params.m_use_inv_sax_sorting);
                 if (method_type == TREE_ENVELOPE || method_type == BUCKETING_ENVELOPE)
                     leaf_capacity = grouping_params.m_bucket_size;
                 else if (method_type == VL_ENVELOPE)
@@ -124,6 +125,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         {ISC::FIRST_LAYER_NUM_BITS, format_num_param(first_layer_num_bits)},
         {ISC::LEAF_CAPACITY, format_num_param(leaf_capacity)},
         {ISC::MAX_WIDTH_CHANGE, max_width_change_str},
+        {ISC::USE_INV_SAX, use_inv_sax_str},
         {ISC::LG_SEGMENTATION_STRATEGY, lg_ss_str},
         {ISC::CH_SEGMENTATION_STRATEGY, ch_ss_str},
         {ISC::SEGMENTATION_STRATEGY, ss_str},

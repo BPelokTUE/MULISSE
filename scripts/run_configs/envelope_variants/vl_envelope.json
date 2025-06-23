@@ -1,5 +1,5 @@
 {
-    "csv_data_dirs": ["stocks", "weather"],
+    "csv_data_dirs": [],
     "dataset_sizes": [1000],
     "series_lengths": [1024],
     "syn_num_channels": [1],
@@ -9,24 +9,33 @@
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {
-        "scan": ["scan"],
         "envelope": ["envelope"],
         "envelope_half_lg": ["envelope"],
         "envelope_half_pg": ["envelope"],
         "envelope_half_seg": ["envelope"],
+        "vl_envelope_inv_sax": ["vl_envelope"],
         "vl_envelope": ["vl_envelope"],
         "bucketing_env": ["bucketing_envelope"]
     },
+    "sax_breakpoint_strategies": ["equiprobable"],
     "isax_split_strategies": ["em"],
-    "isax_breakpoint_strategies": ["equiprobable"],
-    "isax_start_bit_numbers": [15],
+    "sax_num_bits": [15],
     "bucket_sizes": [2],
-    "max_width_changes": [1.25],
+    "max_width_changes": {
+        "vl_envelope_inv_sax": [1.25],
+        "vl_envelope": [0.75]
+    },
+    "use_inv_sax": {
+        "vl_envelope_inv_sax": [true],
+        "vl_envelope": [false],
+        "bucketing_env": [true, false]
+    },
     "length_group_size_ratios": {
         "envelope": [0.05],
         "envelope_half_lg": [0.1],
         "envelope_half_pg": [0.05],
         "envelope_half_seg": [0.05],
+        "vl_envelope_inv_sax": [0.05],
         "vl_envelope": [0.05],
         "bucketing_env": [0.05]
     },
@@ -35,6 +44,7 @@
         "envelope_half_lg": [0.05],
         "envelope_half_pg": [0.1],
         "envelope_half_seg": [0.05],
+        "vl_envelope_inv_sax": [0.05],
         "vl_envelope": [0.05],
         "bucketing_env": [0.05]
     },
@@ -43,6 +53,7 @@
         "envelope_half_lg": [32],
         "envelope_half_pg": [32],
         "envelope_half_seg": [16],
+        "vl_envelope_inv_sax": [32],
         "vl_envelope": [32],
         "bucketing_env": [32]
     },

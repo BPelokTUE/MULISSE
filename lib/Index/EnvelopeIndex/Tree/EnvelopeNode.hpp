@@ -40,6 +40,9 @@ class EnvelopeNode {
      */
     virtual const vec<SubsequenceInfo> *get_subsequence_infos() const = 0;
 
+    /** @brief Merge subsequence informations in the the node or its children */
+    virtual void merge_subsequence_infos() = 0;
+
    protected:
     vec<Envelope> m_envelopes;
 };
@@ -60,6 +63,8 @@ class EnvelopeInternal : public EnvelopeNode {
     const vec<const EnvelopeNode *> get_children() const override;
 
     const vec<SubsequenceInfo> *get_subsequence_infos() const override;
+
+    void merge_subsequence_infos() override;
 
    private:
     vec<uptr<EnvelopeNode>> m_children;
@@ -91,6 +96,8 @@ class EnvelopeLeaf : public EnvelopeNode {
     const vec<const EnvelopeNode *> get_children() const override;
 
     const vec<SubsequenceInfo> *get_subsequence_infos() const override;
+
+    void merge_subsequence_infos() override;
 
    private:
     vec<SubsequenceInfo> m_subs_infos;

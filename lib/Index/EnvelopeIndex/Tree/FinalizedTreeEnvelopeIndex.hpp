@@ -15,9 +15,10 @@ class FinalizedTreeEnvelopeIndex : public FinalizedEnvelopeIndex {
      * @param ch_segmentation_strategy The channel segmentation strategy to use
      * @param pos_per_env The number of positions per envelope
      * @param nodes The envelope nodes in the first layer of the tree
+     * @param merge_subs Whether to merge neighboring envelopes in the same leaves, defaults to `true`
      */
     FinalizedTreeEnvelopeIndex(sptr<IChannelSegmentationStrategy> ch_segmentation_strategy, const uint pos_per_env,
-                               vec<uptr<EnvelopeNode>> &&nodes);
+                               vec<uptr<EnvelopeNode>> &&nodes, bool merge_subs = true);
 
     /**
      * @brief Get the first layer nodes of the tree

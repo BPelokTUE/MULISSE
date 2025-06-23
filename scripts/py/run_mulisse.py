@@ -63,6 +63,7 @@ CK_ISAX_SPLIT_STRATEGIES = "isax_split_strategies"
 CK_ISAX_LEAF_CAP_RATIOS = "isax_leaf_cap_ratios"
 CK_BUCKET_SIZES = "bucket_sizes"
 CK_MAX_WIDTH_CHANGES = "max_width_changes"
+CK_USE_INV_SAX = "use_inv_sax"
 CK_SAX_NUM_BITS = "sax_num_bits"
 CK_ENVELOPE_SIZE_RATIOS = "envelope_size_ratios"
 CK_ENVELOPE_SIZES = "envelope_sizes"
@@ -120,6 +121,7 @@ RK_SPLIT_STRATEGY = "split_strategy"
 RK_LEAF_CAPACITY = "leaf_capacity"
 RK_BUCKET_SIZE = "bucket_size"
 RK_MAX_WIDTH_CHANGE = "max_width_change"
+RK_USE_INV_SAX = "use_inv_sax"
 RK_SAX_NUM_BITS = "sax_num_bits"
 RK_ENVLEOPE_SIZE_RATIO = "envelope_size_ratio"
 RK_ENVELOPE_SIZE = "envelope_size"
@@ -398,6 +400,7 @@ def parse_config_file(input_config) -> ParsedConfig:
                 **sax_settings,
                 **get_key_or_none(RK_BUCKET_SIZE, CK_BUCKET_SIZES),
                 **get_key_or_none(RK_MAX_WIDTH_CHANGE, CK_MAX_WIDTH_CHANGES),
+                **get_key_or_none(RK_USE_INV_SAX, CK_USE_INV_SAX),
             }
             isax_envelope_settings = {**isax_settings, **envelope_settings}
 

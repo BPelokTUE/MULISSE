@@ -1,4 +1,3 @@
-# PowerShell version (create a run_mulisse_docker.ps1)
 $configsDir = "scripts/run_configs"
 
 $configs = @()
@@ -19,7 +18,12 @@ foreach ($arg in $args) {
 
 docker build --rm -t mulisse .
 foreach ($config in $configs) {
-    $logsDir = "EXPERIMENT_LOGS/$(Split-Path -Parent $config)/LOGS_$(Split-Path -Leaf $config -Replace '\.json$','')"
+    # Fixed line with proper parentheses
+    $logsDir = "EXPERIMENT_LOGS/$(Split-Path -Parent $config)/LOGS_$((Split-Path -Leaf $config) -Replace '\.json$','')"
+    
+    # Print the directory name for verification
+    Write-Host "Creating logs directory: $logsDir"
+    
     New-Item -Path $logsDir -ItemType Directory -Force
     docker run --rm -v "${PWD}/${logsDir}:/mulisse/LOGS" -v "${PWD}/mulisse_pack:/mulisse/mulisse_pack" mulisse -i "/mulisse/scripts/run_configs/$config"
 }
