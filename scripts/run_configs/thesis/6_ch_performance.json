@@ -3,38 +3,23 @@
     "dataset_sizes": [1000],
     "series_lengths": [1024],
     "syn_num_channels": [1],
-    "syn_step_stdevs": [0.1],
+    "syn_step_stdevs": [0.1, 1.0, 10.0],
     "query_set_sizes": [100],
     "l_range_ratios": [[0.125, 1.0]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
-    "search_methods": {
-        "envelope": ["envelope"],
-        "vl_envelope": ["vl_envelope"]
-    },
+    "search_methods": ["sax_envelope"],
     "sax_breakpoint_strategies": ["equiprobable"],
-    "isax_split_strategies": ["em"],
     "sax_num_bits": [15],
-    "max_width_changes": {
-        "vl_envelope": [0.001, 0.0025, 0.005, 0.0075, 0.01, 0.025, 0.05, 0.075, 0.1]
-    },
-    "use_inv_sax": {
-        "vl_envelope": [true, false]
-    },
-    "length_group_size_ratios": [0.05],
-    "envelope_sizes": {
-        "envelope": [48],
-        "vl_envelope": [1]
-    },
     "num_segments": [32],
+    "envelope_sizes": [48],
     "distance_measures": ["ed"],
     "early_abandon": [true],
-    "adapt_index": [false],
     "index_inserters": ["parallel"],
     "search_types": ["knn"],
     "search_ks": [1],
-    "search_approx": [false],
     "search_raw": [false],
     "dataset_seeds": [42],
-    "query_seeds": [42]
+    "query_set_seeds": [42],
+    "separate_csv_datasets": true
 }

@@ -1,0 +1,44 @@
+{
+    "csv_data_dirs": ["stocks", "weather"],
+    "dataset_sizes": [1000],
+    "series_lengths": [1024],
+    "syn_num_channels": [3],
+    "syn_step_stdevs": [1.0],
+    "query_set_sizes": [1],
+    "l_range_ratios": [[0.125, 1.0]],
+    "used_channel_ratios": [1.0],
+    "query_noise_stdevs": [0.1],
+    "search_methods": ["sax_envelope"],
+    "sax_breakpoint_strategies": ["equiprobable"],
+    "sax_num_bits": [15],
+    "lg_segmentation_strategies": {
+        "su": ["single"],
+        "sa": ["single"],
+        "au": ["adaptive_multi"],
+        "aa": ["adaptive_multi"]
+    },
+    "segmentation_strategies": {
+        "su": ["uniform"],
+        "sa": ["adaptive"],
+        "au": ["uniform"],
+        "aa": ["adaptive"]
+    },
+    "num_segments": {
+        "su": [8, 12, 16],
+        "sa": [6, 9, 12],
+        "au": [4, 6, 8],
+        "aa": [4, 6, 8]
+    },
+    "envelope_sizes": [48],
+    "length_group_size_ratios": [0.05],
+    "distance_measures": ["ed"], 
+    "early_abandon": [true],
+    "precalculate_ffts": [true],
+    "adapt_index": [false],
+    "index_inserters": ["parallel"],
+    "search_types": ["knn"],
+    "search_ks": [1],
+    "search_rs": [1.0],
+    "search_approx": [false],
+    "search_raw": [false]
+}

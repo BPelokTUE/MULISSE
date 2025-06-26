@@ -10,6 +10,7 @@ from scripts.py.common.columns import IndexSettingsColumn as ISC
 from scripts.py.common.columns import QueryColumn as QC
 from scripts.py.common.columns import QuerySetSettingsColumn as QSC
 from scripts.py.common.columns import SearchSettingsColumn as SSC
+from scripts.py.visualization.predict_runtime import visualize_clusters
 from scripts.py.visualization.reduction import ERD
 from scripts.py.visualization.wrapper import TargetArgs, visualize_experiments
 
@@ -91,8 +92,28 @@ for target_args_dict in [TargetArgs.QUERY_TIME.value, TargetArgs.PRUNING_RATIO.v
 # %%
 # 6 - Presence
 
+for target_args_dict in [TargetArgs.INDEX_SIZE.value]:
+    visualize_experiments(
+        logs_dirs=["LOGS"],
+        # logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_6_presence"],
+        groups_dict={
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+            ERD.METHODS_COLS: [SSC.METHOD_NAME],  # Legends in the final plot should be based on the ID
+            ERD.INDEXES_COLS: [
+                ISC.NUM_SEGMENTS,
+                ISC.SEGMENTATION_STRATEGY,
+                ISC.LG_SEGMENTATION_STRATEGY,
+            ],
+        },
+        separate_plots_dict={(DSC.DATASET_FILE,): []},
+        bar_plot_color_attr=SSC.METHOD_NAME,
+        bar_plot_legend_max_cols=2,
+        **target_args_dict,
+    )
+
 # %%
 # 7 - Channel prioritization
+visualize_clusters(logs_dir="LOGS")
 
 # %%
 # 8 - Envelope merging
@@ -110,7 +131,6 @@ for target_args_dict in [
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
             ERD.INDEXES_COLS: [
                 ISC.USE_INV_SAX,
                 ISC.POS_PER_ENV,
