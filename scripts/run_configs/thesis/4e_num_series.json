@@ -11,7 +11,7 @@
     "search_methods": ["sax_envelope"],
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
-    "length_group_size_ratios": [0.05],
+    "length_group_size_ratios": [0.025],
     "envelope_sizes": [48],
     "num_segments": [32],
     "distance_measures": ["ed"],

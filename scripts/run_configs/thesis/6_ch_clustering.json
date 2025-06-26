@@ -19,11 +19,11 @@
     },
     "envelope_size_ratios": {
         "bands": [1.0],
-        "index": [0.05]
+        "index": [0.025]
     },
     "length_group_size_ratios": {
         "bands": [1.0],
-        "index": [0.05]
+        "index": [0.025]
     },
     "distance_measures": {
         "bands": [],

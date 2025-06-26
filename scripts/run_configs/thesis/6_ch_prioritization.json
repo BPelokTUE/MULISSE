@@ -54,7 +54,7 @@
         "single3": [16]
     },
     "envelope_size_ratios": [0.05],
-    "length_group_size_ratios": [0.05],
+    "length_group_size_ratios": [0.025],
     "distance_measures": ["ed"],
     "early_abandon": [true],
     "dataset_seeds": [0],

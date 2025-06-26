@@ -324,7 +324,7 @@ def plot_lines(
     ax.set_yscale(y_scale)
     ax.set_ylim(y_lim)
     ax.set_xticks(sorted(list(x_coords)))
-    ax.set_xticklabels(sorted(list(x_coords)))
+    ax.set_xticklabels(sorted(list(x_coords)), rotation=90, ha="center")
     ax.set_title(title)
     ax.grid(True)
     ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))

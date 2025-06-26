@@ -21,7 +21,7 @@
     "use_inv_sax": {
         "vl_envelope": [true, false]
     },
-    "length_group_size_ratios": [0.05],
+    "length_group_size_ratios": [0.025],
     "envelope_sizes": {
         "envelope": [48],
         "vl_envelope": [1]

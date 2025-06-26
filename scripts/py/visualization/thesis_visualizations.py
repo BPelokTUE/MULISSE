@@ -83,8 +83,145 @@ for target_args_dict in [TargetArgs.QUERY_TIME.value, TargetArgs.PRUNING_RATIO.v
     )
 
 # %%
-# 4 - MT-Env parametrization
+# 4a - Low resolution univariate
 
+for target_args_dict in [TargetArgs.QUERY_TIME.value]:
+    visualize_experiments(
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4a_low_res_uni"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+            ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS, ISC.POS_PER_ENV, ISC.NUM_LEN_GROUPS],
+        },
+        merge_csv_datasets=True,
+        separate_plots_dict={
+            (DSC.DATASET_FILE, DSC.SERIES_LENGTH): [],
+            (QSC.L_MIN, QSC.L_MAX): [],
+        },
+        bar_plot_color_attr=None,
+        heat_map_x_attr=ISC.POS_PER_ENV,
+        heat_map_y_attr=ISC.NUM_LEN_GROUPS,
+        heat_map_included_cols={ISC.NUM_SEGMENTS},
+        **target_args_dict,
+    )
+
+# %%
+# 4a - Low resolution multivariate
+
+for target_args_dict in [TargetArgs.QUERY_TIME.value]:
+    visualize_experiments(
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4a_low_res_multi"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+            ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS, ISC.POS_PER_ENV, ISC.NUM_LEN_GROUPS],
+        },
+        merge_csv_datasets=False,
+        separate_plots_dict={
+            (DSC.DATASET_FILE, DSC.SERIES_LENGTH): [],
+            (QSC.L_MIN, QSC.L_MAX): [],
+        },
+        bar_plot_color_attr=None,
+        heat_map_x_attr=ISC.POS_PER_ENV,
+        heat_map_y_attr=ISC.NUM_LEN_GROUPS,
+        heat_map_included_cols={ISC.NUM_SEGMENTS},
+        **target_args_dict,
+    )
+
+# %%
+# 4b - Number of lengths per LG (λ) univariate
+
+for target_args_dict in [TargetArgs.QUERY_TIME.value]:
+    visualize_experiments(
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4b_length_group_uni"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+            ERD.INDEXES_COLS: [ISC.NUM_LEN_GROUPS],
+        },
+        merge_csv_datasets=True,
+        separate_plots_dict={
+            (DSC.SERIES_LENGTH,): [],
+            (QSC.L_MIN, QSC.L_MAX): [],
+        },
+        bar_plot_color_attr=None,
+        line_plot_x_attr=ISC.NUM_LEN_GROUPS,
+        line_plot_included_cols={DSC.DATASET_FILE},
+        x_scale="log",
+        **target_args_dict,
+    )
+
+# %%
+# 4c - Positions per envelope (γ) univariate
+
+for target_args_dict in [TargetArgs.QUERY_TIME.value]:
+    visualize_experiments(
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4c_ppe_uni"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+            ERD.INDEXES_COLS: [ISC.POS_PER_ENV],
+        },
+        merge_csv_datasets=True,
+        separate_plots_dict={
+            (DSC.SERIES_LENGTH,): [],
+            (QSC.L_MIN, QSC.L_MAX): [],
+        },
+        bar_plot_color_attr=None,
+        line_plot_x_attr=ISC.POS_PER_ENV,
+        line_plot_included_cols={DSC.DATASET_FILE},
+        x_scale="log",
+        **target_args_dict,
+    )
+
+# %%
+# 4d - Segment size (σ) univariate
+
+for target_args_dict in [TargetArgs.QUERY_TIME.value]:
+    visualize_experiments(
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4d_num_segments_uni"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+            ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS],
+        },
+        merge_csv_datasets=True,
+        separate_plots_dict={
+            (DSC.SERIES_LENGTH,): [],
+            (QSC.L_MIN, QSC.L_MAX): [],
+        },
+        bar_plot_color_attr=None,
+        line_plot_x_attr=ISC.NUM_SEGMENTS,
+        line_plot_included_cols={DSC.DATASET_FILE},
+        **target_args_dict,
+    )
+
+# %%
+# 4e - Showing linear relationship between runtime and dataset size
+
+for target_args_dict in [TargetArgs.QUERY_TIME.value]:
+    visualize_experiments(
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4e_num_series"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH, DSC.NUM_SERIES],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+        },
+        merge_csv_datasets=True,
+        separate_plots_dict={
+            (DSC.SERIES_LENGTH,): [],
+            (QSC.L_MIN, QSC.L_MAX): [],
+        },
+        bar_plot_color_attr=None,
+        line_plot_x_attr=DSC.NUM_SERIES,
+        line_plot_included_cols={DSC.DATASET_FILE},
+        **target_args_dict,
+    )
 
 # %%
 # 5 - Constrained size
