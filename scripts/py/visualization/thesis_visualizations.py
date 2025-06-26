@@ -224,15 +224,11 @@ for target_args_dict in [TargetArgs.QUERY_TIME.value]:
     )
 
 # %%
-# 5 - Constrained size
-
-# %%
-# 6 - Presence
+# 5 - Presence
 
 for target_args_dict in [TargetArgs.INDEX_SIZE.value]:
     visualize_experiments(
-        logs_dirs=["LOGS"],
-        # logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_6_presence"],
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_5_presence"],
         groups_dict={
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
             ERD.METHODS_COLS: [SSC.METHOD_NAME],  # Legends in the final plot should be based on the ID
@@ -249,11 +245,11 @@ for target_args_dict in [TargetArgs.INDEX_SIZE.value]:
     )
 
 # %%
-# 7 - Channel prioritization
+# 6 - Channel prioritization
 visualize_clusters(logs_dir="LOGS")
 
 # %%
-# 8 - Envelope merging
+# 7 - Envelope merging
 
 for target_args_dict in [
     TargetArgs.QUERY_TIME.value,

@@ -50,11 +50,12 @@ vec<SaxSegIndT> AdaptiveMultiLGSegmentationStrategy::calculate_num_segments_per_
         lg_presence_sum += (presences[lg_l_min] - accounted_presence) * (lg_l_min - 1);
         accounted_presence += presences[lg_l_min] - accounted_presence;
 
-        num_segments_per_lg[lg_ind] = static_cast<SaxSegIndT>(lg_presence_sum / presence_per_segment);
+        num_segments_per_lg[lg_ind] =
+            static_cast<SaxSegIndT>(std::min(U(lg_presence_sum / presence_per_segment), remaining_segments - lg_ind));
 
         remaining_presence -= lg_presence_sum;
         remaining_segments -= num_segments_per_lg[lg_ind];
-        presence_per_segment = remaining_presence / remaining_segments;
+        presence_per_segment = remaining_segments > 0 ? remaining_presence / remaining_segments : 0;
     }
     return num_segments_per_lg;
 }

@@ -5,6 +5,10 @@
 AdaptiveSegmentationStrategy::AdaptiveSegmentationStrategy(uint l_min, uint l_max, uint series_len,
                                                            SaxSegIndT num_segments, uint pos_per_env)
     : m_l_max(l_max) {
+    if (num_segments == 0) {
+        throw std::invalid_argument("AdaptiveSegmentationStrategy received num_segments == 0");
+    }
+
     PresenceArray presence_array(l_min, l_max, series_len, pos_per_env);
     const auto &presences = presence_array.get_presences();
     auto presence_sum = presence_array.get_presence_sum();
@@ -16,6 +20,7 @@ AdaptiveSegmentationStrategy::AdaptiveSegmentationStrategy(uint l_min, uint l_ma
     size_t presences_acc = 0;
     uint l_start = 1;
     for (uint l = 1; l <= l_max; ++l) {
+        if (segments_remaining == 1) break;
         presences_acc += presences[l];
         presence_sum -= presences[l];
         if (presences_acc >= segment_presence) {
@@ -26,7 +31,6 @@ AdaptiveSegmentationStrategy::AdaptiveSegmentationStrategy(uint l_min, uint l_ma
 
             --segments_remaining;
             segment_presence = presence_sum / segments_remaining;
-            if (segments_remaining == 1) break;
         }
     }
     m_segment_ends.push_back(l_max);
