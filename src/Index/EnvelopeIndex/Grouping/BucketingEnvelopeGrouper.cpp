@@ -29,7 +29,7 @@ vec<uptr<EnvelopeNode>> BucketingEnvelopeGrouper::group_envelope_entries(vec<Ind
         vec<Envelope> bucket_mts_envelope(envelope_entries[bucket_start_ind].m_mts_summary);
         vec<SubsequenceInfo> bucket_subs_infos({envelope_entries[bucket_start_ind].m_subs_info});
 
-        for (size_t i = 0; i < act_bucket_size; ++i) {
+        for (size_t i = 1; i < act_bucket_size; ++i) {
             size_t entry_ind = bucket_start_ind + i;
             const auto &entry = envelope_entries[entry_ind];
 

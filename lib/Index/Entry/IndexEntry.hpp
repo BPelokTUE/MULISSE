@@ -24,6 +24,13 @@ struct IndexEntry {
         return m_subs_info == other.m_subs_info && m_mts_summary == other.m_mts_summary;
     }
 
+    /**
+     * @brief Less than operator
+     * @param other The other object to compare to
+     * @return True if this object is less than the other, false otherwise
+     */
+    bool operator<(const IndexEntry &other) const { return m_subs_info < other.m_subs_info; }
+
     template <class Archive>
     void serialize(Archive &ar) {
         ar(m_subs_info, m_mts_summary);

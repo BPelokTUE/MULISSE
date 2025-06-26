@@ -7,6 +7,7 @@ if True:
 
 from scripts.py.common.columns import DatasetSettingsColumn as DSC
 from scripts.py.common.columns import IndexSettingsColumn as ISC
+from scripts.py.common.columns import QueryColumn as QC
 from scripts.py.common.columns import QuerySetSettingsColumn as QSC
 from scripts.py.common.columns import SearchSettingsColumn as SSC
 from scripts.py.visualization.reduction import ERD
@@ -83,6 +84,7 @@ for target_args_dict in [TargetArgs.QUERY_TIME.value, TargetArgs.PRUNING_RATIO.v
 # %%
 # 4 - MT-Env parametrization
 
+
 # %%
 # 5 - Constrained size
 
@@ -95,15 +97,25 @@ for target_args_dict in [TargetArgs.QUERY_TIME.value, TargetArgs.PRUNING_RATIO.v
 # %%
 # 8 - Envelope merging
 
-for target_args_dict in [TargetArgs.QUERY_TIME.value, TargetArgs.INDEX_SIZE.value]:
+for target_args_dict in [
+    TargetArgs.QUERY_TIME.value,
+    TargetArgs.MINDIST_TIME.value,
+    TargetArgs.PRUNING_RATIO.value,
+    # TargetArgs.INDEX_SIZE.value,
+    # {"targets_dict": {ERD.RUNS_COLS: [QC.TS_EXAMINATION_TIME_S]}},
+]:
     visualize_experiments(
-        # logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_8_envelope_merging"],
-        logs_dirs=["LOGS"],
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_8_vl_envelope"],
+        # logs_dirs=["LOGS"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
-            ERD.INDEXES_COLS: [ISC.NUM_BITS_LIMIT, ISC.USE_INV_SAX, ISC.POS_PER_ENV, ISC.L_PER_GROUP, ISC.NUM_SEGMENTS],
+            ERD.INDEXES_COLS: [
+                ISC.USE_INV_SAX,
+                ISC.POS_PER_ENV,
+                ISC.MAX_WIDTH_CHANGE,
+            ],
         },
         separate_plots_dict={(DSC.DATASET_FILE,): []},
         bar_plot_color_attr=SSC.METHOD_NAME,
@@ -115,3 +127,5 @@ for target_args_dict in [TargetArgs.QUERY_TIME.value, TargetArgs.INDEX_SIZE.valu
         },
         **target_args_dict,
     )
+
+# %%

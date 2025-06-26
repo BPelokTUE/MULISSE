@@ -84,4 +84,5 @@ void EnvelopeLeaf::merge_subsequence_infos() {
             merged_subs_infos.push_back(m_subs_infos[i]);
         }
     }
+    m_subs_infos = std::move(merged_subs_infos);
 }

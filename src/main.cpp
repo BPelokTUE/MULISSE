@@ -326,7 +326,7 @@ int main(int argc, char **argv) {
                      "Maximum mean width change to allow in VarianceLimitingEnvelopeGrouper")
         ->capture_default_str()
         ->check(non_negative_real);
-    index_subcommand->add_option("--use_inv_sax", use_inv_sax, "Use invSAX sorting before grouping envelopes");
+    index_subcommand->add_flag("--use_inv_sax", use_inv_sax, "Use invSAX sorting before grouping envelopes");
     index_subcommand->add_flag("--raw", raw, "Do not normalize");
     index_subcommand->add_option("-b,--num_bits", breakpoint_num_bits, "Number of bits for the SAX breakpoints")
         ->check(positive_int)

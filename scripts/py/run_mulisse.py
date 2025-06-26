@@ -939,7 +939,7 @@ if __name__ == "__main__":
                         calculate_index_stats = index_setting_copy.pop(RK_CALCULATE_INDEX_STATS, False)
                         separate_segment_stats = index_setting_copy.pop(RK_SEPARATE_SEGMENT_STATS, False)
 
-                        for flag in [RK_ADAPT, RK_ISAX_MERGE_IN_LEAVES, RK_ISAX_PREFER_FIRST_IN_EM]:
+                        for flag in [RK_ADAPT, RK_ISAX_MERGE_IN_LEAVES, RK_ISAX_PREFER_FIRST_IN_EM, RK_USE_INV_SAX]:
                             if index_setting_copy.pop(flag, False):
                                 args.append(f"--{flag}")
 

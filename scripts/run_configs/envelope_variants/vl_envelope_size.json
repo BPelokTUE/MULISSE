@@ -39,14 +39,14 @@
         "vl_envelope": [0.05],
         "bucketing_env": [0.05]
     },
-    "envelope_size_ratios": {
-        "envelope": [0.05],
-        "envelope_half_lg": [0.05],
-        "envelope_half_pg": [0.1],
-        "envelope_half_seg": [0.05],
-        "vl_envelope_inv_sax": [0.05],
-        "vl_envelope": [0.05],
-        "bucketing_env": [0.05]
+    "envelope_sizes": {
+        "envelope": [46],
+        "envelope_half_lg": [46],
+        "envelope_half_pg": [92],
+        "envelope_half_seg": [46],
+        "vl_envelope_inv_sax": [46],
+        "vl_envelope": [46],
+        "bucketing_env": [46]
     },
     "num_segments": {
         "envelope": [32],

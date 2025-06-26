@@ -3,12 +3,12 @@
 
 #include "Index/EnvelopeIndex/Grouping/EnvelopeGrouper.hpp"
 
-/** @brief Abstract class for enveloper groupers that use invSAX-based sorting */
+/** @brief Envelope grouper that uses invSAX-based sorting, intended as a first step in the grouping process */
 class InvSaxSortingEnvelopeGrouper : public IEnvelopeGrouper {
    public:
     /**
      * @brief Construct a new InvSaxSortingEnvelopeGrouper instance
-     * @param grouper The IEnvelopeGrouper to use after sorting
+     * @param extra_grouper The IEnvelopeGrouper to use after sorting
      * @param num_bits Number of bits for the iSAX representation
      */
     InvSaxSortingEnvelopeGrouper(uptr<IEnvelopeGrouper> extra_grouper, SaxNumBitsT num_bits);

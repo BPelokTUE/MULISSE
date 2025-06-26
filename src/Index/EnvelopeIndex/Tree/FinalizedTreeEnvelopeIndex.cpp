@@ -7,7 +7,8 @@ FinalizedTreeEnvelopeIndex::FinalizedTreeEnvelopeIndex(sptr<IChannelSegmentation
                                                        bool merge_subs)
     : FinalizedEnvelopeIndex(ch_segmentation_strategy, pos_per_env), m_first_layer_nodes(std::move(nodes)) {
     if (merge_subs) {
-        //
+        for (auto &node : m_first_layer_nodes)
+            if (node) node->merge_subsequence_infos();
     }
 }
 

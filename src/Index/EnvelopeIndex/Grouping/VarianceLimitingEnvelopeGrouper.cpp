@@ -25,18 +25,20 @@ vec<uptr<EnvelopeNode>> VarianceLimitingEnvelopeGrouper::group_envelope_entries(
 
     for (size_t i = 1; i < envelope_entries.size(); ++i) {
         auto &entry = envelope_entries[i];
-        Real width_update = 0.0;
+        Real new_width = 0.0, old_width = 0.0;
         for (MtsNumChannelsT c = 0; c < entry.m_mts_summary.size(); ++c) {
             for (SaxSegIndT s = 0; s < entry.m_mts_summary[c].size(); ++s) {
+                old_width += minimal_envelopes[c].m_upper[s] - minimal_envelopes[c].m_lower[s];
+
                 minimal_envelopes[c].m_lower[s] =
                     std::max(entry.m_mts_summary[c].m_lower[s], minimal_envelopes[c].m_lower[s]);
                 minimal_envelopes[c].m_upper[s] =
                     std::min(entry.m_mts_summary[c].m_upper[s], minimal_envelopes[c].m_upper[s]);
 
-                width_update += std::abs(minimal_envelopes[c].m_upper[s] - minimal_envelopes[c].m_lower[s] -
-                                         (entry.m_mts_summary[c].m_upper[s] - entry.m_mts_summary[c].m_lower[s]));
+                new_width += minimal_envelopes[c].m_upper[s] - minimal_envelopes[c].m_lower[s];
             }
         }
+        Real width_update = (new_width - old_width) / old_width;
         width_update /= num_channels * num_segments;
         if (width_update <= m_max_width_change) {
             for (MtsNumChannelsT c = 0; c < num_channels; ++c) node_envelopes[c].merge(entry.m_mts_summary[c]);
