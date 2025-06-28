@@ -494,7 +494,7 @@ class ExperimentResults(BaseModel):
                     how="left",
                 )
 
-        if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.METHODS_COLS])):
+        if self.add_runs and os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.METHODS_COLS])):
             qsc_query_file = get_merged_col_name(ERD.QUERY_SETS_COLS, str(QSC.QUERY_FILE))
             ssc_dataset_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.DATASET_FILE))
             ssc_query_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.QUERY_FILE))

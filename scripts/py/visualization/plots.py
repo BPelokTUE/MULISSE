@@ -128,7 +128,7 @@ ORDERED_DATASETS = [
 
 def plot_bars(
     reduction_result: ReductionResult,
-    color_group_ind: int,
+    color_group_inds: int | list[int],
     color_map: dict = METHOD_COLORS,
     label_map: dict = METHOD_LABELS,
     x_labels: dict[tuple, str] = {},
@@ -145,7 +145,7 @@ def plot_bars(
     Plot bars for the given reduction result.
 
     :param reduction_result: The reduction result to plot.
-    :param color_group_ind: The index of the group to use for coloring the bars.
+    :param color_group_ind: The index / indices of the group to use for coloring the bars.
     :param color_map: The color map to use for coloring the bars.
     :param label_map: The label map to use for labeling the bars.
     :param x_labels: The labels for the x-axis for each group.
@@ -160,11 +160,20 @@ def plot_bars(
 
     bar_groups: dict[tuple, tuple[Any, list[float]]] = {}
     num_bars = 0
+
+    color_group_inds_list = color_group_inds if isinstance(color_group_inds, list) else [color_group_inds]
+    color_group_inds_key = tuple(color_group_inds) if isinstance(color_group_inds, list) else color_group_inds
+
     for group, target_values in reduction_result.items():
-        bar_group_key = tuple([group[i] for i in range(len(group)) if i != color_group_ind])
+        bar_group_key = tuple([group[i] for i in range(len(group)) if i not in color_group_inds_list])
         if bar_group_key not in bar_groups:
             bar_groups[bar_group_key] = []
-        bar_groups[bar_group_key].append((group[color_group_ind], target_values))
+        color_group = (
+            tuple([group[ind] for ind in color_group_inds_key])
+            if isinstance(color_group_inds_key, tuple)
+            else group[color_group_inds_key]
+        )
+        bar_groups[bar_group_key].append((color_group, target_values))
         num_bars += 1
     if len(bar_groups) == 0:
         return

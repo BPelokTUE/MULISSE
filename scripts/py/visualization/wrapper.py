@@ -15,6 +15,7 @@ from scripts.py.common.columns import SearchSettingsColumn as SSC
 from scripts.py.visualization.helpers import (
     dict_to_tuples,
     get_col_index,
+    get_col_indexes,
     iterate_columns,
     merge_univariate_datasets,
     sort_dict,
@@ -101,7 +102,7 @@ def visualize_experiments(
     hatch_labels=None,
     bar_plot_label_padding: bool = True,
     bar_width_inches: float = 0.4,
-    bar_plot_color_attr: Column | None = SSC.METHOD_NAME,
+    bar_plot_color_attrs: Column | list[Column] | None = SSC.METHOD_NAME,
     bar_plot_color_map: dict[str, str] = METHOD_COLORS,
     bar_plot_label_map: dict[str, str] = METHOD_LABELS,
     bar_plot_legend_max_cols: int = 4,
@@ -205,26 +206,45 @@ def visualize_experiments(
             title = f"{title_base}: " if title_base else ""
             title += get_config_label(tuple(title_key), title_columns, sep=", ", max_line_length=64)
 
-            if bar_plot_color_attr is not None:
-                bar_plot_color_attr_ind = get_col_index(bar_plot_color_attr, groups)
+            if bar_plot_color_attrs is not None:
+                use_tuple_keys = isinstance(bar_plot_color_attrs, list)
+                bar_plot_color_attrs_inds = (
+                    get_col_indexes(bar_plot_color_attrs, groups)
+                    if use_tuple_keys
+                    else get_col_index(bar_plot_color_attrs, groups)
+                )
                 if bar_plot_label_map is not None:
-                    method_keys_list = list(bar_plot_label_map.keys())
-                    reduced_values_subset = sort_dict(
-                        reduced_values_subset,
-                        lambda x: (
-                            method_keys_list.index(x[0][bar_plot_color_attr_ind]),
-                            *x[0][:bar_plot_color_attr_ind],
-                            *x[0][1 + bar_plot_color_attr_ind :],
-                        ),
-                    )
+                    label_keys_list = list(bar_plot_label_map.keys())
+
+                    if use_tuple_keys:
+
+                        def key_func(x):
+                            return (
+                                label_keys_list.index(tuple([x[0][ind] for ind in bar_plot_color_attrs_inds]))
+                                * [val for ind, val in enumerate(x[0]) if ind not in bar_plot_color_attrs_inds],
+                            )
+                    else:
+
+                        def key_func(x):
+                            return (
+                                label_keys_list.index(x[0][bar_plot_color_attrs_inds]),
+                                *x[0][:bar_plot_color_attrs_inds],
+                                *x[0][1 + bar_plot_color_attrs_inds :],
+                            )
+
+                    reduced_values_subset = sort_dict(reduced_values_subset, key_func=key_func)
+
+                discard_cols = (
+                    set(bar_plot_color_attrs) if isinstance(bar_plot_color_attrs, list) else {bar_plot_color_attrs},
+                )
 
                 plot_bars(
                     reduced_values_subset,
-                    bar_plot_color_attr_ind,
+                    bar_plot_color_attrs_inds,
                     x_labels=get_config_labels(
                         reduced_values_subset,
                         groups_dict,
-                        discard_cols={bar_plot_color_attr},
+                        discard_cols=discard_cols,
                         padding_rows=padding_rows,
                     ),
                     y_label=y_label,

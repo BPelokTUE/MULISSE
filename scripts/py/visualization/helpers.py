@@ -21,11 +21,17 @@ def get_tuple_strings(tuples: list[tuple[ERD, Column]]) -> list[str]:
     return [str(col) for _, col in tuples]
 
 
-def get_col_index(col: str, tuples: list[tuple[ERD, str]]) -> int:
+def get_col_index(col: Column, tuples: list[tuple[ERD, str]]) -> int:
     for i, (_, col_name) in enumerate(tuples):
         if col_name == col:
             return i
     return -1
+
+
+def get_col_indexes(cols: Column | list[Column], tuples: list[tuple[ERD, str]]) -> list[int]:
+    if isinstance(cols, list):
+        return [get_col_index(col, tuples) for col in cols]
+    return [get_col_index(cols, tuples)]
 
 
 def merge_univariate_datasets(reduced_values, ds_index: int = 0):

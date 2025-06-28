@@ -31,6 +31,7 @@ from scripts.py.visualization.reduction import (
     StdReducer,
     execute_reduction,
 )
+from scripts.py.visualization.style import COLD_TO_HOT_COLORS
 from sklearn.decomposition import PCA
 from sklearn.ensemble import AdaBoostRegressor, GradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import ElasticNet, Lasso, Ridge
@@ -241,8 +242,6 @@ def visualize_clusters(logs_dir: str):
     for i, (comp, var) in enumerate(zip(pca_components, explained_variance)):
         print(f"Principal Component {i + 1}: {comp} ; var: {var:.4f}")
 
-    # %%
-
     ys_lims = (ys.min(), ys.max())
     ys_range = ys_lims[1] - ys_lims[0]
     cbar_lims = (max(0.0, ys_lims[0] - 0.1 * ys_range), 1.0)
@@ -296,7 +295,7 @@ def visualize_clusters(logs_dir: str):
                         xs_masked[:, ind2],
                         c=ys_masked,
                         marker=marker,
-                        cmap="viridis",
+                        cmap=COLD_TO_HOT_COLORS,
                         vmin=cbar_lims[0],
                         vmax=cbar_lims[1],
                         label=channel_name if ax_ind == 0 else None,
