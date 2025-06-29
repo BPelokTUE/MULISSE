@@ -171,7 +171,7 @@ def visualize_experiments(
         title_key: list,
         title_columns: list[Column],
         remaining_separate_plots_dict: dict[tuple, set],
-        reduced_values_subset: dict[tuple, list[float]],
+        reduced_values_subset: dict[tuple, list],
     ):
         if len(remaining_separate_plots_dict) > 0:
             sp_cols, sp_accepted_vals = next(iter(remaining_separate_plots_dict.items()))
@@ -235,7 +235,7 @@ def visualize_experiments(
                     reduced_values_subset = sort_dict(reduced_values_subset, key_func=key_func)
 
                 discard_cols = (
-                    set(bar_plot_color_attrs) if isinstance(bar_plot_color_attrs, list) else {bar_plot_color_attrs},
+                    set(bar_plot_color_attrs) if isinstance(bar_plot_color_attrs, list) else {bar_plot_color_attrs}
                 )
 
                 plot_bars(

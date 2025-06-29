@@ -237,31 +237,36 @@ size_to_ids = {
 size_regexes = {size: rf"^({'|'.join(map(str, ids))})(\.0){{0,1}}$" for size, ids in size_to_ids.items()}
 #
 
-for target_args_dict in [TargetArgs.INDEX_SIZE.value, TargetArgs.QUERY_TIME.value]:
-    for size, regex in size_regexes.items():
-        visualize_experiments(
-            logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_5_presence"],
-            groups_dict={
-                ERD.DATASETS_COLS: [DSC.DATASET_FILE],
-                ERD.INDEXES_COLS: [
-                    ISC.ID,
-                    ISC.NUM_SEGMENTS,
-                    ISC.SEGMENTATION_STRATEGY,
-                    ISC.LG_SEGMENTATION_STRATEGY,
-                ],
-            },
-            regex_dict={ISC.ID: regex},
-            separate_plots_dict={(DSC.DATASET_FILE,): []},
-            bar_plot_color_attrs=[ISC.SEGMENTATION_STRATEGY, ISC.LG_SEGMENTATION_STRATEGY],
-            bar_plot_label_map={
-                ("uniform", "single"): "Simple",
-                ("adaptive", "single"): "Adaptive Segmentation",
-                ("uniform", "adaptive_multi"): "Adaptive LG",
-                ("adaptive", "adaptive_multi"): "Adaptive LG + Segmentation",
-            },
-            bar_plot_legend_max_cols=2,
-            **target_args_dict,
-        )
+for target_args_dict in [
+    TargetArgs.INDEX_SIZE.value,
+    TargetArgs.QUERY_TIME.value,
+]:
+    # for size, regex in size_regexes.items():
+    visualize_experiments(
+        # logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_5_presence"],
+        logs_dirs=["LOGS"],
+        groups_dict={
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+            ERD.INDEXES_COLS: [
+                ISC.ID,
+                ISC.NUM_SEGMENTS,
+                ISC.SEGMENTATION_STRATEGY,
+                ISC.LG_SEGMENTATION_STRATEGY,
+            ],
+        },
+        # regex_dict={ISC.ID: regex},
+        separate_plots_dict={(DSC.DATASET_FILE,): [], (QSC.L_MIN, QSC.L_MAX): [], (DSC.SERIES_LENGTH,): []},
+        bar_plot_color_attrs=[ISC.SEGMENTATION_STRATEGY, ISC.LG_SEGMENTATION_STRATEGY],
+        bar_plot_label_map={
+            ("uniform", "single"): "Simple",
+            ("adaptive", "single"): "Adaptive Segmentation",
+            ("uniform", "adaptive_multi"): "Adaptive LG",
+            ("adaptive", "adaptive_multi"): "Adaptive LG + Segmentation",
+        },
+        bar_plot_legend_max_cols=2,
+        **target_args_dict,
+    )
 
 # %%
 # 6 - Channel performance
