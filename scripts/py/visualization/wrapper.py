@@ -39,6 +39,8 @@ from scripts.py.visualization.plots import (
 from scripts.py.visualization.reduction import ERD, ExperimentResults, MeanReducer, Reducer, execute_reduction
 from scripts.py.visualization.style import COLD_TO_HOT_COLORS
 
+SAVE_EXTENSION = "pdf"
+
 # %%[markdown]
 """
 ## Experiment functions
@@ -93,6 +95,8 @@ def visualize_experiments(
     separate_plots_dict: dict[tuple, set] = {},
     # Filtering
     regex_dict: dict[Column, str] = {},
+    regex_sep: str = "::",
+    ignored_attrs: set = set(),
     # Plotting
     x_scale: str = "linear",
     y_scale: str = "linear",
@@ -113,6 +117,8 @@ def visualize_experiments(
     heat_map_x_attr: Column | None = None,
     heat_map_y_attr: Column | None = None,
     heat_map_included_cols: set[Column] | None = None,
+    # Output
+    save_dir: str | None = None,
 ):
     if num_query_intervals > 1:
         groups_dict[ERD.RUNS_COLS] = [QC.QUERY_INTERVAL]
@@ -120,10 +126,11 @@ def visualize_experiments(
     for erd, target_cols in targets_dict.items():
         columns[erd] = target_cols + groups_dict.get(erd, [])
 
-    add_runs = any([len(d.get(ERD.RUNS_COLS, [])) > 0 for d in [groups_dict, targets_dict]])
-    add_dataset_stats = any([len(d.get(ERD.DATASET_STATS_COLS, [])) > 0 for d in [groups_dict, targets_dict]])
-    add_query_stats = any([len(d.get(ERD.QUERY_STATS_COLS, [])) > 0 for d in [groups_dict, targets_dict]])
-    add_index_stats = any([len(d.get(ERD.INDEX_STATS_COLS, [])) > 0 for d in [groups_dict, targets_dict]])
+    def should_add(erd: ERD) -> bool:
+        return any([len(d.get(erd, [])) > 0 for d in [groups_dict, targets_dict]])
+
+    add_runs = should_add(ERD.RUNS_COLS)
+    add_methods = add_runs or should_add(ERD.METHODS_COLS)
 
     results_list = [
         ExperimentResults.load(
@@ -131,9 +138,10 @@ def visualize_experiments(
             cols=columns,
             num_query_intervals=num_query_intervals,
             add_runs=add_runs,
-            add_dataset_stats=add_dataset_stats,
-            add_query_stats=add_query_stats,
-            add_index_stats=add_index_stats,
+            add_methods=add_methods,
+            add_dataset_stats=should_add(ERD.DATASET_STATS_COLS),
+            add_query_stats=should_add(ERD.QUERY_STATS_COLS),
+            add_index_stats=should_add(ERD.INDEX_STATS_COLS),
         )
         for logs_dir in logs_dirs
     ]
@@ -156,16 +164,16 @@ def visualize_experiments(
             }
 
     groups_list = [col for col in iterate_columns(groups_dict)]
-    for col, regex in regex_dict.items():
-        if col in groups_list:
-            ind = groups_list.index(col)
-            reduced_values = {key: values for key, values in reduced_values.items() if re.search(regex, str(key[ind]))}
+    for re_key, regex in regex_dict.items():
+        cols = re_key if isinstance(re_key, tuple) else (re_key,)
+        inds = [groups_list.index(col) for col in cols if col in groups_list]
+        reduced_values = {
+            key: values
+            for key, values in reduced_values.items()
+            if re.search(regex, regex_sep.join([str(key[ind]) for ind in inds]))
+        }
 
-    padding_rows = (
-        max([label.count("\n") + 1 for label in get_config_labels(reduced_values, groups_dict).values()])
-        if bar_plot_label_padding
-        else 0
-    )
+    ignored_attr_inds = [get_col_index(attr, groups) for attr in ignored_attrs]
 
     def create_plots(
         title_key: list,
@@ -206,12 +214,35 @@ def visualize_experiments(
             title = f"{title_base}: " if title_base else ""
             title += get_config_label(tuple(title_key), title_columns, sep=", ", max_line_length=64)
 
+            reduced_values_subset = {
+                tuple([k for i, k in enumerate(key) if i not in ignored_attr_inds]): val
+                for key, val in reduced_values_subset.items()
+            }
+
+            groups_dict_filtered = {
+                erd: [col for col in cols if col not in ignored_attrs] for erd, cols in groups_dict.items()
+            }
+            groups_filtered = dict_to_tuples(groups_dict_filtered)
+
+            labels_dict = get_config_labels(reduced_values_subset, groups_dict_filtered)
+            padding_rows = (
+                max([label.count("\n") + 1 for label in labels_dict.values()]) if bar_plot_label_padding else 0
+            )
+
+            if save_dir is not None:
+                os.makedirs(save_dir, exist_ok=True)
+
+            def get_plot_save_path(type: str) -> str | None:
+                if save_dir is not None:
+                    return os.path.join(save_dir, f"{'-'.join([str(k) for k in title_key])}_{type}.{SAVE_EXTENSION}")
+                return None
+
             if bar_plot_color_attrs is not None:
                 use_tuple_keys = isinstance(bar_plot_color_attrs, list)
                 bar_plot_color_attrs_inds = (
-                    get_col_indexes(bar_plot_color_attrs, groups)
+                    get_col_indexes(bar_plot_color_attrs, groups_filtered)
                     if use_tuple_keys
-                    else get_col_index(bar_plot_color_attrs, groups)
+                    else get_col_index(bar_plot_color_attrs, groups_filtered)
                 )
                 if bar_plot_label_map is not None:
                     label_keys_list = list(bar_plot_label_map.keys())
@@ -243,7 +274,7 @@ def visualize_experiments(
                     bar_plot_color_attrs_inds,
                     x_labels=get_config_labels(
                         reduced_values_subset,
-                        groups_dict,
+                        groups_dict_filtered,
                         discard_cols=discard_cols,
                         padding_rows=padding_rows,
                     ),
@@ -257,15 +288,16 @@ def visualize_experiments(
                     color_map=bar_plot_color_map,
                     label_map=bar_plot_label_map,
                     legend_max_cols=bar_plot_legend_max_cols,
+                    save_path=get_plot_save_path("bar"),
                 )
 
             if line_plot_x_attr is not None:
                 plot_lines(
                     reduced_values_subset,
-                    get_col_index(line_plot_x_attr, groups),
+                    get_col_index(line_plot_x_attr, groups_filtered),
                     legend=get_config_labels(
                         reduced_values_subset,
-                        groups_dict,
+                        groups_dict_filtered,
                         discard_cols={line_plot_x_attr},
                         include_cols=line_plot_included_cols,
                     ),
@@ -276,23 +308,28 @@ def visualize_experiments(
                     y_lim=y_lim,
                     title=title,
                     mark_minimum=True,
+                    save_path=get_plot_save_path("line"),
                 )
 
             if heat_map_x_attr is not None and heat_map_y_attr is not None:
                 plot_heat_map(
                     reduced_values_subset,
-                    get_col_index(heat_map_x_attr, groups),
-                    get_col_index(heat_map_y_attr, groups),
+                    get_col_index(heat_map_x_attr, groups_filtered),
+                    get_col_index(heat_map_y_attr, groups_filtered),
                     title=f"{y_label} for {title}",
                     subtitles=get_config_labels(
                         reduced_values_subset,
-                        groups_dict,
+                        groups_dict_filtered,
                         discard_cols={heat_map_x_attr, heat_map_y_attr},
                         include_cols=heat_map_included_cols,
                     ),
                     x_label=str(heat_map_x_attr).replace("_", " ").capitalize(),
                     y_label=str(heat_map_y_attr).replace("_", " ").capitalize(),
                     color_map=COLD_TO_HOT_COLORS,
+                    save_path=get_plot_save_path("hm"),
                 )
 
     create_plots([], [], separate_plots_dict, reduced_values)
+
+
+# %%

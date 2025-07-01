@@ -1,11 +1,11 @@
 {
     "csv_data_dirs": [],
     "dataset_sizes": [1000],
-    "series_lengths": [1024],
+    "series_lengths": [512, 1024, 2048],
     "syn_num_channels": [3],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [100],
-    "l_range_ratios": [[0.125, 1.0]],
+    "l_range_ratios": [[0.125, 1.0], [0.25, 1.0], [0.5, 1.0]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": ["sax_envelope"],
@@ -26,8 +26,8 @@
     "num_segments": {
         "su": [8, 12, 16],
         "sa": [6, 9, 12],
-        "au": [4, 6, 8],
-        "aa": [4, 6, 8]
+        "au": [4, 7, 10],
+        "aa": [4, 7, 10]
     },
     "envelope_sizes": [48],
     "length_group_size_ratios": [0.025],

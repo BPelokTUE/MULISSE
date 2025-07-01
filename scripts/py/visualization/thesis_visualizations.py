@@ -12,14 +12,34 @@ from scripts.py.common.columns import QuerySetSettingsColumn as QSC
 from scripts.py.common.columns import SearchSettingsColumn as SSC
 from scripts.py.visualization.predict_runtime import visualize_clusters
 from scripts.py.visualization.reduction import ERD
+from scripts.py.visualization.style import CATEGORY_COLORS, PALETTE
 from scripts.py.visualization.wrapper import TargetArgs, visualize_experiments
+
+IMPORTANT_METRICS = [
+    TargetArgs.QUERY_TIME,
+    TargetArgs.PRUNING_RATIO,
+    TargetArgs.INDEX_SIZE,
+]
+
+FIGURE_DIR = os.path.join("..", "MasterThesis", "figures")
+PARAMETRIZATION_FIGS_DIR = os.path.join(FIGURE_DIR, "parametrization")
+EXPERIMENT_FIGS_DIR = os.path.join(FIGURE_DIR, "experiments")
+
+SAVE_FIGURES = True
+
+if SAVE_FIGURES:
+    os.makedirs(PARAMETRIZATION_FIGS_DIR, exist_ok=True)
+    os.makedirs(EXPERIMENT_FIGS_DIR, exist_ok=True)
 
 # %%
 # 1 - ULISSE stage comparison
 
+for suffix in ["uni", "multi"]:
+    ignored_attrs = {DSC.DATASET_FILE}
+    if suffix == "uni":
+        ignored_attrs.add(DSC.NUM_CHANNELS)
 
-for suffix in ["uni"]:
-    for target_args_dict in [TargetArgs.QUERY_TIME.value]:
+    for target_args in IMPORTANT_METRICS:
         visualize_experiments(
             logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_1_mulisse_stages_{suffix}"],
             groups_dict={
@@ -28,6 +48,7 @@ for suffix in ["uni"]:
                 ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
             },
             separate_plots_dict={(DSC.DATASET_FILE,): []},
+            title_base="Univariate" if suffix == "uni" else "Multivariate",
             bar_plot_label_padding=False,
             merge_csv_datasets=True,
             bar_plot_label_map={
@@ -35,12 +56,14 @@ for suffix in ["uni"]:
                 "isax_env_w_sax_env-ed-early": "Both phases",
                 "sax_envelope-ed-early": "Second phase",
             },
-            **target_args_dict,
+            ignored_attrs=ignored_attrs,
+            save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"1_stages_{target_args.name.lower()}_{suffix}"),
+            **target_args.value,
         )
 
 # %%
 # 2 - SAX vs no SAX envelope
-for target_args_dict in [TargetArgs.QUERY_TIME.value]:
+for target_args in IMPORTANT_METRICS:
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_2_sax_vs_no_sax"],
         groups_dict={
@@ -58,215 +81,226 @@ for target_args_dict in [TargetArgs.QUERY_TIME.value]:
             "isax_env_w_env-ed-early": "Two-phase MULISSE no SAX",
             "isax_env_w_sax_env-ed-early": "Two-phase MULISSE",
         },
-        **target_args_dict,
+        ignored_attrs={DSC.DATASET_FILE},
+        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"2_sax_vs_no_sax_{target_args.name.lower()}"),
+        **target_args.value,
     )
 
 # %%
 # 3- iSAX vs MT-Env
-for target_args_dict in [TargetArgs.QUERY_TIME.value, TargetArgs.PRUNING_RATIO.value]:
+for target_args in IMPORTANT_METRICS:
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_3_isax_vs_envelope"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
-            ERD.INDEXES_COLS: [ISC.NUM_BITS_LIMIT, ISC.POS_PER_ENV],
+            ERD.INDEXES_COLS: [ISC.NUM_BITS_LIMIT, ISC.NUM_ENVELOPES],
         },
-        separate_plots_dict={(DSC.DATASET_FILE,): []},
-        bar_plot_color_attrs=SSC.METHOD_NAME,
-        bar_plot_legend_max_cols=2,
+        separate_plots_dict={(DSC.DATASET_FILE, DSC.NUM_CHANNELS): []},
+        bar_plot_color_attrs=[SSC.METHOD_NAME, ISC.NUM_BITS_LIMIT],
+        bar_plot_legend_max_cols=3,
         bar_plot_label_map={
-            "isax-ed-early": "iSAX",
-            "sax_envelope-ed-early": "MT-Env",
+            ("isax-ed-early", 1): "iSAX, Blim=1",
+            ("isax-ed-early", 2): "iSAX, Blim=2",
+            ("isax-ed-early", 4): "iSAX, Blim=4",
+            ("sax_envelope-ed-early", 15): "MT-Env",
         },
-        **target_args_dict,
+        bar_plot_color_map={
+            ("isax-ed-early", 1): PALETTE["Reds"][0],
+            ("isax-ed-early", 2): PALETTE["Reds"][1],
+            ("isax-ed-early", 4): PALETTE["Reds"][2],
+            ("sax_envelope-ed-early", 15): PALETTE["Blues"][6],
+        },
+        ignored_attrs={DSC.DATASET_FILE, ISC.NUM_ENVELOPES},
+        bar_plot_label_padding=0,
+        regex_dict={ISC.NUM_ENVELOPES: r"^(0|1)(\.0){0,1}$"},
+        y_scale="log" if target_args.name != "pruning_ratio" else "linear",
+        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"3_mt-env_vs_isax_{target_args.name.lower()}"),
+        **target_args.value,
     )
 
 # %%
-# 4a - Low resolution univariate
+# 4a - Low resolution grid search
 
-for target_args_dict in [TargetArgs.QUERY_TIME.value]:
-    visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4a_low_res_uni"],
-        groups_dict={
-            ERD.METHODS_COLS: [SSC.METHOD_NAME],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
-            ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS, ISC.POS_PER_ENV, ISC.NUM_LEN_GROUPS],
-        },
-        merge_csv_datasets=True,
-        separate_plots_dict={
-            (DSC.DATASET_FILE, DSC.SERIES_LENGTH): [],
-            (QSC.L_MIN, QSC.L_MAX): [],
-        },
-        bar_plot_color_attrs=None,
-        heat_map_x_attr=ISC.POS_PER_ENV,
-        heat_map_y_attr=ISC.NUM_LEN_GROUPS,
-        heat_map_included_cols={ISC.NUM_SEGMENTS},
-        **target_args_dict,
-    )
-
-# %%
-# 4a - Low resolution multivariate
-
-for target_args_dict in [TargetArgs.QUERY_TIME.value]:
-    visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4a_low_res_multi"],
-        groups_dict={
-            ERD.METHODS_COLS: [SSC.METHOD_NAME],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
-            ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS, ISC.POS_PER_ENV, ISC.NUM_LEN_GROUPS],
-        },
-        merge_csv_datasets=False,
-        separate_plots_dict={
-            (DSC.DATASET_FILE, DSC.SERIES_LENGTH): [],
-            (QSC.L_MIN, QSC.L_MAX): [],
-        },
-        bar_plot_color_attrs=None,
-        heat_map_x_attr=ISC.POS_PER_ENV,
-        heat_map_y_attr=ISC.NUM_LEN_GROUPS,
-        heat_map_included_cols={ISC.NUM_SEGMENTS},
-        **target_args_dict,
-    )
+for suffix in ["uni", "multi"]:
+    for target_args in [TargetArgs.QUERY_TIME]:
+        visualize_experiments(
+            logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_4a_low_res_{suffix}"],
+            groups_dict={
+                ERD.METHODS_COLS: [SSC.METHOD_NAME],
+                ERD.DATASETS_COLS: [
+                    # DSC.DATASET_FILE,
+                    DSC.SERIES_LENGTH,
+                ],
+                ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
+                ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS, ISC.NUM_ENVELOPES, ISC.NUM_LEN_GROUPS],
+            },
+            merge_csv_datasets=True,
+            separate_plots_dict={
+                (DSC.SERIES_LENGTH,): [],
+                (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
+            },
+            title_base="Univariate" if suffix == "uni" else "Multivariate",
+            bar_plot_color_attrs=None,
+            heat_map_x_attr=ISC.NUM_ENVELOPES,
+            heat_map_y_attr=ISC.NUM_LEN_GROUPS,
+            heat_map_included_cols={ISC.NUM_SEGMENTS},
+            save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4a_low_res_{target_args.name.lower()}_{suffix}"),
+            **target_args.value,
+        )
 
 # %%
 # 4b - Number of lengths per LG (λ) univariate
 
-for target_args_dict in [TargetArgs.QUERY_TIME.value]:
+for target_args in [TargetArgs.QUERY_TIME]:
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4b_length_group_uni"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
             ERD.INDEXES_COLS: [ISC.NUM_LEN_GROUPS],
         },
         merge_csv_datasets=True,
         separate_plots_dict={
             (DSC.SERIES_LENGTH,): [],
-            (QSC.L_MIN, QSC.L_MAX): [],
+            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
         },
         bar_plot_color_attrs=None,
         line_plot_x_attr=ISC.NUM_LEN_GROUPS,
         line_plot_included_cols={DSC.DATASET_FILE},
         x_scale="log",
-        **target_args_dict,
+        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4b_Nl_{target_args.name.lower()}"),
+        **target_args.value,
     )
 
 # %%
 # 4c - Positions per envelope (γ) univariate
 
-for target_args_dict in [TargetArgs.QUERY_TIME.value]:
+for target_args in [TargetArgs.QUERY_TIME]:
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4c_ppe_uni"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
             ERD.INDEXES_COLS: [ISC.POS_PER_ENV],
         },
         merge_csv_datasets=True,
         separate_plots_dict={
             (DSC.SERIES_LENGTH,): [],
-            (QSC.L_MIN, QSC.L_MAX): [],
+            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
         },
         bar_plot_color_attrs=None,
         line_plot_x_attr=ISC.POS_PER_ENV,
         line_plot_included_cols={DSC.DATASET_FILE},
         x_scale="log",
-        **target_args_dict,
+        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4c_ppe_{target_args.name.lower()}"),
+        **target_args.value,
     )
 
 # %%
 # 4d - Segment size (σ) univariate
 
-for target_args_dict in [TargetArgs.QUERY_TIME.value]:
+for target_args in [TargetArgs.QUERY_TIME]:
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4d_num_segments_uni"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
             ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS],
         },
         merge_csv_datasets=True,
         separate_plots_dict={
             (DSC.SERIES_LENGTH,): [],
-            (QSC.L_MIN, QSC.L_MAX): [],
+            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
         },
         bar_plot_color_attrs=None,
         line_plot_x_attr=ISC.NUM_SEGMENTS,
         line_plot_included_cols={DSC.DATASET_FILE},
-        **target_args_dict,
+        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4d_Ns_{target_args.name.lower()}"),
+        **target_args.value,
     )
 
 # %%
 # 4e - Showing linear relationship between runtime and dataset size
 
-for target_args_dict in [TargetArgs.QUERY_TIME.value]:
+for target_args in [TargetArgs.QUERY_TIME]:
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4e_num_series"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH, DSC.NUM_SERIES],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
         },
         merge_csv_datasets=True,
         separate_plots_dict={
             (DSC.SERIES_LENGTH,): [],
-            (QSC.L_MIN, QSC.L_MAX): [],
+            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
         },
         bar_plot_color_attrs=None,
         line_plot_x_attr=DSC.NUM_SERIES,
         line_plot_included_cols={DSC.DATASET_FILE},
-        **target_args_dict,
+        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4e_num_series_{target_args.name.lower()}"),
+        **target_args.value,
     )
 
 # %%
 # 5 - Presence
 
-# The visualization function does not easily support separate plots on combinations of attributes (in this case
-# LG segmentation strategy + Segmentation strategy + Number of segments would be needed), so this ID-based solution
-# is needed
-size_to_ids = {
-    "small": [9, 0, 6, 3],
-    "medium": [10, 1, 7, 4],
-    "large": [11, 2, 8, 5],
+sizes = {
+    "small": [8, 6, 4, 4],
+    "medium": [12, 9, 7, 7],
+    "large": [16, 12, 10, 10],
 }
-size_regexes = {size: rf"^({'|'.join(map(str, ids))})(\.0){{0,1}}$" for size, ids in size_to_ids.items()}
-#
+strategies = [
+    ("uniform", "single"),
+    ("adaptive", "single"),
+    ("uniform", "adaptive_multi"),
+    ("adaptive", "adaptive_multi"),
+]
+re_sep = "::"
+size_regexes = {}
 
-for target_args_dict in [
-    TargetArgs.INDEX_SIZE.value,
-    TargetArgs.QUERY_TIME.value,
-]:
-    # for size, regex in size_regexes.items():
-    visualize_experiments(
-        # logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_5_presence"],
-        logs_dirs=["LOGS"],
-        groups_dict={
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
-            ERD.INDEXES_COLS: [
-                ISC.ID,
-                ISC.NUM_SEGMENTS,
-                ISC.SEGMENTATION_STRATEGY,
-                ISC.LG_SEGMENTATION_STRATEGY,
-            ],
-        },
-        # regex_dict={ISC.ID: regex},
-        separate_plots_dict={(DSC.DATASET_FILE,): [], (QSC.L_MIN, QSC.L_MAX): [], (DSC.SERIES_LENGTH,): []},
-        bar_plot_color_attrs=[ISC.SEGMENTATION_STRATEGY, ISC.LG_SEGMENTATION_STRATEGY],
-        bar_plot_label_map={
-            ("uniform", "single"): "Simple",
-            ("adaptive", "single"): "Adaptive Segmentation",
-            ("uniform", "adaptive_multi"): "Adaptive LG",
-            ("adaptive", "adaptive_multi"): "Adaptive LG + Segmentation",
-        },
-        bar_plot_legend_max_cols=2,
-        **target_args_dict,
-    )
+for size_key, size_values in sizes.items():
+    size_regexes[size_key] = []
+    for (ss, lgss), size in zip(strategies, size_values):
+        size_regexes[size_key].append(re_sep.join([ss, lgss, str(size)]))
+    size_regexes[size_key] = rf"^({'|'.join(size_regexes[size_key])})"
+
+for target_args in [TargetArgs.INDEX_SIZE, TargetArgs.QUERY_TIME]:
+    for size, regex in size_regexes.items():
+        visualize_experiments(
+            logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_5_presence"],
+            # logs_dirs=["LOGS"],
+            groups_dict={
+                ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+                ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
+                ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS, ISC.SEGMENTATION_STRATEGY, ISC.LG_SEGMENTATION_STRATEGY],
+            },
+            regex_dict={(ISC.SEGMENTATION_STRATEGY, ISC.LG_SEGMENTATION_STRATEGY, ISC.NUM_SEGMENTS): regex},
+            regex_sep=re_sep,
+            separate_plots_dict={
+                (DSC.DATASET_FILE,): [],
+                (DSC.SERIES_LENGTH,): [],
+            },
+            bar_plot_color_attrs=[ISC.SEGMENTATION_STRATEGY, ISC.LG_SEGMENTATION_STRATEGY],
+            bar_plot_label_map={
+                ("uniform", "single"): "Simple",
+                ("adaptive", "single"): "Adaptive Segmentation",
+                ("uniform", "adaptive_multi"): "Adaptive LG",
+                ("adaptive", "adaptive_multi"): "Adaptive LG + Segmentation",
+            },
+            bar_plot_color_map={strat: color for strat, color in zip(strategies, CATEGORY_COLORS)},
+            bar_plot_legend_max_cols=2,
+            bar_plot_label_padding=False,
+            title_base=f"{size.capitalize()} Ns",
+            ignored_attrs={DSC.DATASET_FILE, ISC.NUM_SEGMENTS, DSC.SERIES_LENGTH},
+            save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"5_presence_{size}_{target_args.name.lower()}"),
+            **target_args.value,
+        )
 
 # %%
 # 6 - Channel performance
@@ -297,7 +331,7 @@ dataset_cols_map = {
     "weather": [DSC.DATASET_FILE],
 }
 
-for target_args_dict in [TargetArgs.QUERY_TIME.value]:
+for target_args in [TargetArgs.QUERY_TIME]:
     for dataset, dataset_cols in dataset_cols_map.items():
         visualize_experiments(
             logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_6_ch_performance"],
@@ -306,16 +340,20 @@ for target_args_dict in [TargetArgs.QUERY_TIME.value]:
             bar_plot_color_attrs=dataset_cols[-1],
             bar_plot_legend_max_cols=2,
             bar_plot_label_map=label_maps[dataset],
-            **target_args_dict,
+            save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"6_ch_performance_{target_args.name.lower()}_{dataset}"),
+            **target_args.value,
         )
 
 # %%
 # 6 - Channel clustering
-visualize_clusters(logs_dir="EXPERIMENT_LOGS/thesis/LOGS_6_ch_clustering")
+visualize_clusters(
+    logs_dir="EXPERIMENT_LOGS/thesis/LOGS_6_ch_clustering",
+    save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, "6_ch_clustering"),
+)
 
 # %%
 # 6 - Channel prioritization
-for target_args_dict in [TargetArgs.QUERY_TIME.value]:
+for target_args in [TargetArgs.QUERY_TIME]:
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_6_ch_prioritization"],
         groups_dict={
@@ -330,7 +368,8 @@ for target_args_dict in [TargetArgs.QUERY_TIME.value]:
             ("score_based", -1): "Prioritize Easy",
             ("score_based", 1): "Prioritize Hard",
         },
-        **target_args_dict,
+        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"6_ch_prioritization_{target_args.name.lower()}"),
+        **target_args.value,
     )
 
 # %%
@@ -338,13 +377,13 @@ for target_args_dict in [TargetArgs.QUERY_TIME.value]:
 
 for target_args_dict in [
     TargetArgs.QUERY_TIME.value,
-    TargetArgs.MINDIST_TIME.value,
-    TargetArgs.PRUNING_RATIO.value,
+    # TargetArgs.MINDIST_TIME.value,
+    # TargetArgs.PRUNING_RATIO.value,
     # TargetArgs.INDEX_SIZE.value,
-    # {"targets_dict": {ERD.RUNS_COLS: [QC.TS_EXAMINATION_TIME_S]}},
+    {"targets_dict": {ERD.RUNS_COLS: [QC.TS_EXAMINATION_TIME_S]}},
 ]:
     visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_8_vl_envelope"],
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_7_vl_envelope"],
         # logs_dirs=["LOGS"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
@@ -356,7 +395,7 @@ for target_args_dict in [
             ],
         },
         separate_plots_dict={(DSC.DATASET_FILE,): []},
-        bar_plot_color_attr=SSC.METHOD_NAME,
+        bar_plot_color_attrs=SSC.METHOD_NAME,
         bar_plot_legend_max_cols=2,
         bar_plot_label_map={
             "bucketing_envelope-ed-early": "Bucket merger",

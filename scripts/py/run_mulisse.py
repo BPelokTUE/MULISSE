@@ -912,7 +912,7 @@ if __name__ == "__main__":
                         pos_per_env = 1
                         if RK_ENVLEOPE_SIZE_RATIO in index_setting_copy:
                             max_pos_per_env = series_len - l_min + 1
-                            pos_per_env = max(1, int(max_pos_per_env * index_setting_copy.pop(RK_ENVLEOPE_SIZE_RATIO)))
+                            pos_per_env = math.ceil(max_pos_per_env * index_setting_copy.pop(RK_ENVLEOPE_SIZE_RATIO))
                             args += ["-p", str(pos_per_env)]
                         elif RK_ENVELOPE_SIZE in index_setting_copy:
                             pos_per_env = index_setting_copy.pop(RK_ENVELOPE_SIZE)

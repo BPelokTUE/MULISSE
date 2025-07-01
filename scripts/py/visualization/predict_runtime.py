@@ -104,7 +104,7 @@ def get_tensor_data(logs_dir: str) -> tuple[np.ndarray, np.ndarray, dict[str, li
     results = ExperimentResults.load(
         logs_dir=logs_dir,
         cols=columns,
-        add_runs=False,
+        add_methods=False,
         add_dataset_stats=add_dataset_stats,
         add_index_stats=add_index_stats,
     )
@@ -231,7 +231,7 @@ def get_tensor_data(logs_dir: str) -> tuple[np.ndarray, np.ndarray, dict[str, li
 """
 
 
-def visualize_clusters(logs_dir: str):
+def visualize_clusters(logs_dir: str, save_dir: str | None = None):
     xs, ys, artifacts = get_tensor_data(logs_dir)
 
     # PCA
@@ -262,6 +262,7 @@ def visualize_clusters(logs_dir: str):
         channel_symbols: list[str] = channel_symbols,
         draw_bounding_boxes: bool = False,
         verbose: bool = False,
+        save_path: str | None = None,
     ):
         if isinstance(axis_indices, tuple):
             fig, ax = plt.subplots()
@@ -315,8 +316,8 @@ def visualize_clusters(logs_dir: str):
                         )
 
         targets = artifacts["targets"]
-        if plot is not None:
-            fig.colorbar(plot, label=str(targets[0][1]))
+        fig.colorbar(plot, label=str(targets[0][1]))
+
         if verbose:
             channel_stats = {}
             for channel_idx in np.unique(channel_inds):
@@ -331,6 +332,9 @@ def visualize_clusters(logs_dir: str):
 
         fig.suptitle(title)
         fig.legend(title="Channels", loc="center left", bbox_to_anchor=(0.95, 0.5))
+        if save_path is not None:
+            plt.savefig(save_path, bbox_inches="tight")
+
         plt.show()
 
     ds_masks = artifacts["ds_masks"]
@@ -338,6 +342,9 @@ def visualize_clusters(logs_dir: str):
     channel_names = artifacts["channel_names"]
     groups = artifacts["groups"]
     labels = artifacts["labels"]
+
+    if save_dir is not None:
+        os.makedirs(save_dir, exist_ok=True)
 
     for ds, ds_mask in ds_masks.items():
         plot_props = {
@@ -365,6 +372,8 @@ def visualize_clusters(logs_dir: str):
             x_label=labels[len(groups)],
             y_labels=[labels[len(groups) + i] for i in y_axes],
             axis_indices=[(0, i) for i in y_axes],
+            cbar_lims=cbar_lims,
+            save_path=os.path.join(save_dir, f"channel_clusters_{ds}.pdf") if save_dir is not None else None,
             **plot_props,
         )
 

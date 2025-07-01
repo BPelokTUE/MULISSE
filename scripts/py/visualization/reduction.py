@@ -84,6 +84,7 @@ class ExperimentResults(BaseModel):
     index_stats_df: pd.DataFrame
     query_stats_df: pd.DataFrame
     add_runs: bool = True
+    add_methods: bool = True
     add_dataset_stats: bool = False
     add_query_stats: bool = False
     add_index_stats: bool = False
@@ -293,6 +294,7 @@ class ExperimentResults(BaseModel):
         logs_dir: str,
         cols: dict[ERD, list[Column]],
         add_runs: bool = True,
+        add_methods: bool = True,
         add_dataset_stats: bool = False,
         add_query_stats: bool = False,
         add_index_stats: bool = False,
@@ -377,6 +379,7 @@ class ExperimentResults(BaseModel):
             index_stats_df=dfs[ERD.INDEX_STATS_COLS],
             query_stats_df=dfs[ERD.QUERY_STATS_COLS],
             add_runs=add_runs,
+            add_methods=add_methods,
             add_dataset_stats=add_dataset_stats,
             add_query_stats=add_query_stats,
             add_index_stats=add_index_stats,
@@ -494,7 +497,7 @@ class ExperimentResults(BaseModel):
                     how="left",
                 )
 
-        if self.add_runs and os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.METHODS_COLS])):
+        if self.add_methods and os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.METHODS_COLS])):
             qsc_query_file = get_merged_col_name(ERD.QUERY_SETS_COLS, str(QSC.QUERY_FILE))
             ssc_dataset_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.DATASET_FILE))
             ssc_query_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.QUERY_FILE))

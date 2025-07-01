@@ -140,6 +140,7 @@ def plot_bars(
     title: str = None,
     hatches: list[str] = None,
     hatch_labels: list[str] = None,
+    save_path: str | None = None,
 ):
     """
     Plot bars for the given reduction result.
@@ -156,6 +157,7 @@ def plot_bars(
     :param title: The title of the plot.
     :param hatches: The hatches to use for the bars. If `None`, no hatches are used.
     :param hatch_labels: The labels for the hatches. If `None`, no hatch labels are used.
+    :param save_path: The path to save the plot to. If `None`, the plot are not saved.
     """
 
     bar_groups: dict[tuple, tuple[Any, list[float]]] = {}
@@ -251,6 +253,10 @@ def plot_bars(
     ax.set_title(title)
 
     fig.set_size_inches((num_bars + len(bar_groups)) * bar_width_inches, 6)
+
+    if save_path is not None:
+        fig.savefig(save_path, bbox_inches="tight")
+
     plt.show()
 
 
@@ -264,12 +270,13 @@ def plot_lines(
     colors: list[str] = CATEGORY_COLORS,
     x_label: str = "",
     y_label: str = "",
-    y_lim: tuple[float, float] | None = None,
     x_scale: str = "linear",
     y_scale: str = "linear",
+    y_lim: tuple[float, float] | None = None,
     title: str = None,
     only_max_points: bool = True,
     mark_minimum: bool = False,
+    save_path: str | None = None,
 ):
     """
     Plot lines for the given reduction result.
@@ -280,11 +287,13 @@ def plot_lines(
     :param colors: The list of colors for the lines.
     :param x_label: The label for the x-axis.
     :param y_label: The label for the y-axis.
-    :param y_lim: The range to use for the y-axis. If `None`, the range is automatically determined.
+    :param x_scale: The scale to use for the x-axis.
     :param y_scale: The scale to use for the y-axis.
+    :param y_lim: The range to use for the y-axis. If `None`, the range is automatically determined.
     :param title: The title of the plot.
     :param only_max_points: If `True`, only plot lines with the maximum number of points.
     :param mark_minimum: If `True`, mark the minimum points on each line.
+    :param save_path: The path to save the plot to. If `None`, the plot is not saved.
     """
     values = {}
     max_points = 0
@@ -338,6 +347,9 @@ def plot_lines(
     ax.grid(True)
     ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
+    if save_path is not None:
+        fig.savefig(save_path, bbox_inches="tight")
+
     plt.show()
 
 
@@ -357,6 +369,7 @@ def plot_heat_map(
     only_max_points_y: bool = True,
     max_maps_per_row: int = 3,
     map_inches: float = 5.0,
+    save_path: str | None = None,
 ):
     """
     Plot lines for the given reduction result.
@@ -373,6 +386,7 @@ def plot_heat_map(
     :param only_max_points_y: If `True`, only heat maps with maximum number of points on the y-axis are plotted.
     :param max_maps_per_row: The maximum number of heat maps to plot per row.
     :param map_inches: The width and height of the heat maps in inches.
+    :param save_path: The path to save the plot to. If `None`, the plot is not saved.
     """
 
     values = {}
@@ -459,6 +473,10 @@ def plot_heat_map(
 
     fig.suptitle(title)
     plt.tight_layout(rect=[0, 0, 1, 0.96])  # Make room for the suptitle
+
+    if save_path is not None:
+        fig.savefig(save_path, bbox_inches="tight")
+
     plt.show()
 
 
