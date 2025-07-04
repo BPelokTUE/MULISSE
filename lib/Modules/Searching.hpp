@@ -32,17 +32,17 @@
  * @tparam FTag The traits of the entries in the index
  * @tparam S SearchType to execute
  * @tparam D DistanceType to use
- * @tparam QS Whether the method takes sorted queries
+ * @tparam SQ Whether the method takes sorted queries
  * @param finalized_index_factory Function to create the finalized index
  * @param search_method_factory Function to create the search method
  * @param opts Options for searching
  * @return Pointer to the search method
  */
-template <typename FTag, SearchType S, DistanceType D, bool QS = false>
+template <typename FTag, SearchType S, DistanceType D, bool SQ = false>
     requires ValidEntryTraitsTag<FTag>
-uptr<ISearchMethod<S, D, QS>> load_index_based_method(
+uptr<ISearchMethod<S, D, SQ>> load_index_based_method(
     std::function<uptr<IFinalizedIndex<FTag>>()> finalized_index_factory,
-    std::function<uptr<ISearchMethod<S, D, QS>>(uptr<IFinalizedIndex<FTag>>)> search_method_factory,
+    std::function<uptr<ISearchMethod<S, D, SQ>>(uptr<IFinalizedIndex<FTag>>)> search_method_factory,
     const SearchOptions &opts) {
     auto &RS = RunSettings::get_instance();
 
@@ -64,14 +64,14 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
     index->load(index_path, opts.m_index_format);
 
     if (opts.m_use_length_groups) {
-        vec<uptr<ISearchMethod<S, D, QS>>> search_methods(num_len_groups);
+        vec<uptr<ISearchMethod<S, D, SQ>>> search_methods(num_len_groups);
         auto grouping_index = uptr<FinalizedLengthGroupingIndex<FTag>>(
             static_cast<FinalizedLengthGroupingIndex<FTag> *>(index.release()));
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {
             search_methods[l_ind] =
                 search_method_factory(uptr<IFinalizedIndex<FTag>>(grouping_index->release_index(l_ind)));
         }
-        return std::make_unique<LengthGroupingIndexSearch<S, D, QS>>(std::move(search_methods), opts.m_l_min,
+        return std::make_unique<LengthGroupingIndexSearch<S, D, SQ>>(std::move(search_methods), opts.m_l_min,
                                                                      opts.m_l_max);
     } else {
         return search_method_factory(std::move(index));
@@ -82,26 +82,27 @@ uptr<ISearchMethod<S, D, QS>> load_index_based_method(
  * @brief Load the search method based on the options
  * @tparam S SearchType to execute
  * @tparam D DistanceType to use
- * @tparam QS Whether the method takes sorted queries
+ * @tparam EW Whether to use whole series examination in the method, if applicable
+ * @tparam SQ Whether the method takes sorted queries
  * @param opts Options for searching
  * @return Pointer to the search method
  */
-template <SearchType S, DistanceType D, bool QS>
-uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
+template <SearchType S, DistanceType D, bool EW, bool SQ>
+uptr<ISearchMethod<S, D, SQ>> load_method(const SearchOptions &opts) {
     if (arr_contains(METHODS_W_SAX, opts.m_search_method_type)) initialize_sax_breakpoints(opts.m_sax_params);
 
     switch (opts.m_search_method_type) {
         case ISAX_ENVELOPE:
-            return load_index_based_method<EnvelopeTag, S, D, QS>(
+            return load_index_based_method<EnvelopeTag, S, D, SQ>(
                 []() { return std::make_unique<FinalizedISaxIndex<EnvelopeTag>>(); },
                 [](uptr<IFinalizedIndex<EnvelopeTag>> index) {
-                    return std::make_unique<iSaxIndexSearch<EnvelopeTag, S, D, QS>>(
+                    return std::make_unique<iSaxIndexSearch<EnvelopeTag, S, D, EW, SQ>>(
                         uptr<FinalizedISaxIndex<EnvelopeTag>>(
                             static_cast<FinalizedISaxIndex<EnvelopeTag> *>(index.release())));
                 },
                 opts);
         case ISAX_ENV_W_ENV:
-            return load_index_based_method<EnvelopeTag, S, D, QS>(
+            return load_index_based_method<EnvelopeTag, S, D, SQ>(
                 []() {
                     vec<uptr<IFinalizedIndex<EnvelopeTag>>> approx_indexes(1);
                     approx_indexes[0] = std::make_unique<FinalizedISaxIndex<EnvelopeTag>>();
@@ -113,18 +114,18 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
                 [](uptr<IFinalizedIndex<EnvelopeTag>> index) {
                     auto chain_index = uptr<FinalizedChainIndex<EnvelopeTag>>(
                         static_cast<FinalizedChainIndex<EnvelopeTag> *>(index.release()));
-                    vec<uptr<ISearchMethod<S, D, QS>>> approx_methods(1);
-                    approx_methods[0] =
-                        std::make_unique<iSaxIndexSearch<EnvelopeTag, S, D, QS>>(uptr<FinalizedISaxIndex<EnvelopeTag>>(
+                    vec<uptr<ISearchMethod<S, D, SQ>>> approx_methods(1);
+                    approx_methods[0] = std::make_unique<iSaxIndexSearch<EnvelopeTag, S, D, EW, SQ>>(
+                        uptr<FinalizedISaxIndex<EnvelopeTag>>(
                             static_cast<FinalizedISaxIndex<EnvelopeTag> *>(chain_index->release_approx_index(0))));
-                    auto exact_method = std::make_unique<FlatEnvelopeIndexSearch<Envelope, S, D, QS>>(
+                    auto exact_method = std::make_unique<FlatEnvelopeIndexSearch<Envelope, S, D, EW, SQ>>(
                         uptr<FinalizedFlatEnvelopeIndex<Envelope>>(
                             static_cast<FinalizedFlatEnvelopeIndex<Envelope> *>(chain_index->release_exact_index())));
-                    return std::make_unique<ChainSearch<S, D, QS>>(std::move(approx_methods), std::move(exact_method));
+                    return std::make_unique<ChainSearch<S, D, SQ>>(std::move(approx_methods), std::move(exact_method));
                 },
                 opts);
         case ISAX_ENV_W_SAX_ENV:
-            return load_index_based_method<EnvelopeTag, S, D, QS>(
+            return load_index_based_method<EnvelopeTag, S, D, SQ>(
                 []() {
                     vec<uptr<IFinalizedIndex<EnvelopeTag>>> approx_indexes(1);
                     approx_indexes[0] = std::make_unique<FinalizedISaxIndex<EnvelopeTag>>();
@@ -136,40 +137,40 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
                 [](uptr<IFinalizedIndex<EnvelopeTag>> index) {
                     auto chain_index = uptr<FinalizedChainIndex<EnvelopeTag>>(
                         static_cast<FinalizedChainIndex<EnvelopeTag> *>(index.release()));
-                    vec<uptr<ISearchMethod<S, D, QS>>> approx_methods(1);
-                    approx_methods[0] =
-                        std::make_unique<iSaxIndexSearch<EnvelopeTag, S, D, QS>>(uptr<FinalizedISaxIndex<EnvelopeTag>>(
+                    vec<uptr<ISearchMethod<S, D, SQ>>> approx_methods(1);
+                    approx_methods[0] = std::make_unique<iSaxIndexSearch<EnvelopeTag, S, D, EW, SQ>>(
+                        uptr<FinalizedISaxIndex<EnvelopeTag>>(
                             static_cast<FinalizedISaxIndex<EnvelopeTag> *>(chain_index->release_approx_index(0))));
-                    auto exact_method = std::make_unique<FlatEnvelopeIndexSearch<SaxEnvelope, S, D, QS>>(
+                    auto exact_method = std::make_unique<FlatEnvelopeIndexSearch<SaxEnvelope, S, D, EW, SQ>>(
                         uptr<FinalizedFlatEnvelopeIndex<SaxEnvelope>>(
                             static_cast<FinalizedFlatEnvelopeIndex<SaxEnvelope> *>(
                                 chain_index->release_exact_index())));
-                    return std::make_unique<ChainSearch<S, D, QS>>(std::move(approx_methods), std::move(exact_method));
+                    return std::make_unique<ChainSearch<S, D, SQ>>(std::move(approx_methods), std::move(exact_method));
                 },
                 opts);
         case ISAX:
-            return load_index_based_method<PaaTag, S, D, QS>(
+            return load_index_based_method<PaaTag, S, D, SQ>(
                 []() { return std::make_unique<FinalizedISaxIndex<PaaTag>>(); },
                 [](uptr<IFinalizedIndex<PaaTag>> index) {
-                    return std::make_unique<iSaxIndexSearch<PaaTag, S, D, QS>>(
+                    return std::make_unique<iSaxIndexSearch<PaaTag, S, D, EW, SQ>>(
                         uptr<FinalizedISaxIndex<PaaTag>>(static_cast<FinalizedISaxIndex<PaaTag> *>(index.release())));
                 },
                 opts);
         case ENVELOPE:
-            return load_index_based_method<EnvelopeTag, S, D, QS>(
+            return load_index_based_method<EnvelopeTag, S, D, SQ>(
                 []() { return std::make_unique<FinalizedFlatEnvelopeIndex<Envelope>>(); },
                 [opts](uptr<IFinalizedIndex<EnvelopeTag>> index) {
-                    return std::make_unique<FlatEnvelopeIndexSearch<Envelope, S, D, QS>>(
+                    return std::make_unique<FlatEnvelopeIndexSearch<Envelope, S, D, EW, SQ>>(
                         uptr<FinalizedFlatEnvelopeIndex<Envelope>>(
                             static_cast<FinalizedFlatEnvelopeIndex<Envelope> *>(index.release())),
                         opts.m_use_priority_queue);
                 },
                 opts);
         case SAX_ENVELOPE:
-            return load_index_based_method<EnvelopeTag, S, D, QS>(
+            return load_index_based_method<EnvelopeTag, S, D, SQ>(
                 []() { return std::make_unique<FinalizedFlatEnvelopeIndex<SaxEnvelope>>(); },
                 [opts](uptr<IFinalizedIndex<EnvelopeTag>> index) {
-                    return std::make_unique<FlatEnvelopeIndexSearch<SaxEnvelope, S, D, QS>>(
+                    return std::make_unique<FlatEnvelopeIndexSearch<SaxEnvelope, S, D, EW, SQ>>(
                         uptr<FinalizedFlatEnvelopeIndex<SaxEnvelope>>(
                             static_cast<FinalizedFlatEnvelopeIndex<SaxEnvelope> *>(index.release())),
                         opts.m_use_priority_queue);
@@ -178,15 +179,15 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
         case TREE_ENVELOPE:
         case BUCKETING_ENVELOPE:
         case VL_ENVELOPE:
-            return load_index_based_method<EnvelopeTag, S, D, QS>(
+            return load_index_based_method<EnvelopeTag, S, D, SQ>(
                 []() { return std::make_unique<FinalizedTreeEnvelopeIndex>(); },
                 [](uptr<IFinalizedIndex<EnvelopeTag>> index) {
-                    return std::make_unique<TreeEnvelopeIndexSearch<S, D, QS>>(
+                    return std::make_unique<TreeEnvelopeIndexSearch<S, D, EW, SQ>>(
                         uptr<FinalizedTreeEnvelopeIndex>(static_cast<FinalizedTreeEnvelopeIndex *>(index.release())));
                 },
                 opts);
         case SEQUENTIAL_SCAN:
-            return std::make_unique<SequentialScan<S, D, QS>>();
+            return std::make_unique<SequentialScan<S, D, SQ>>();
     }
     return nullptr;
 }
@@ -195,12 +196,13 @@ uptr<ISearchMethod<S, D, QS>> load_method(const SearchOptions &opts) {
  * @brief Execute similarity search
  * @tparam S SearchType to execute
  * @tparam D DistanceType to use
- * @tparam QS Whether to sort the query or not
+ * @tparam EW Whether to examine the whole series when a subsequence examination is performed
+ * @tparam SQ Whether to sort the query or not
  * @param opts Options for searching
  */
-template <SearchType S, DistanceType D, bool QS = false>
-int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<S, D, QS> &distance_measure) {
-    uptr<ISearchMethod<S, D, QS>> method = load_method<S, D, QS>(opts);
+template <SearchType S, DistanceType D, bool EW = false, bool SQ = false>
+int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<S, D, SQ> &distance_measure) {
+    uptr<ISearchMethod<S, D, SQ>> method = load_method<S, D, EW, SQ>(opts);
 
     if (!method) return 1;
 
@@ -251,7 +253,7 @@ int search(const SearchOptions &opts, ResultSet<S> &result_set, DistanceMeasure<
 
             logger.start_timer(QC::TOTAL_TIME_S);
             SearchResults results;
-            if constexpr (QS && D == ED) {
+            if constexpr (SQ && D == ED) {
                 vec<std::pair<Real, uint>> query_magnitudes(query_len);
                 for (MtsNumChannelsT cc = 0; cc < num_channels; ++cc) {
                     if (query[cc].empty()) continue;

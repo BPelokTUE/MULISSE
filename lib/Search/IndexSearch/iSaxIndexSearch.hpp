@@ -12,11 +12,12 @@
  * @tparam FTag The traits of the entries in the index
  * @tparam S The search type
  * @tparam D The distance type
- * @tparam QS Whether to sort the query or not
+ * @tparam EW Whether to examine the whole series when a subsequence examination is performed
+ * @tparam SQ Whether to sort the query or not
  */
-template <typename FTag, SearchType S, DistanceType D, bool QS = false>
+template <typename FTag, SearchType S, DistanceType D, bool EW = false, bool SQ = false>
     requires ValidEntryTraitsTag<FTag>
-class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
+class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, EW, SQ> {
     using iSaxType = typename SaxTraits<FTag>::iSaxType;
     using SymbolType = typename SaxTraits<FTag>::SymbolType;
 
@@ -28,7 +29,7 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
     iSaxIndexSearch(uptr<FinalizedISaxIndex<FTag>> index) : m_index(std::move(index)) {}
 
     SearchResults search(const vec<vec<Real>>& query, const SearchOptions& opts, ResultSet<S>& result_set,
-                         const DistanceMeasure<S, D, QS>& distance_measure, std::ifstream& dataset_ifs,
+                         const DistanceMeasure<S, D, SQ>& distance_measure, std::ifstream& dataset_ifs,
                          const vec<uint>* real_query_inds) override {
         uint series_len = RunSettings::get_instance().get_dataset_props().m_series_len;
         MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(query.size());
@@ -43,6 +44,8 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
         std::priority_queue<PQueueISaxEntry<FTag>> pq;
 
         auto [query_paa, query_len] = this->get_query_paa_and_len(query, ch_segmentation_strategy, real_query_inds);
+
+        auto skip_position = [this](const SubsequencePosition& pos) { return this->skip_position(pos); };
 
         // Go over first layer, calculate MINDIST and iSAX words, push to priority queue
         logger.start_timer(QC::FIRST_LAYER_TIME_S);
@@ -116,7 +119,9 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
                     if (this->skip_entry(query_len, series_len, subs_info)) continue;
 
                     size_t data_to_read;
-                    if constexpr (std::is_same_v<FTag, EnvelopeTag>) {
+                    if constexpr (EW) {
+                        data_to_read = series_len;
+                    } else if constexpr (std::is_same_v<FTag, EnvelopeTag>) {
                         uint num_start_pos = subs_info.m_length;
                         data_to_read =
                             std::min(query_len + num_start_pos - 1, series_len - subs_info.m_position.m_start);
@@ -124,20 +129,12 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, QS> {
                         data_to_read = subs_info.m_length;
                     }
 
-                    vec<vec<Real>> subsequence(num_channels);
                     logger.start_timer(QC::IO_TIME_S);
-                    for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-                        if (query[c].empty()) continue;
-
-                        subsequence[c].resize(data_to_read);
-                        dataset_ifs.seekg(subs_info.get_file_pos(series_len, num_channels, c));
-                        dataset_ifs.read(reinterpret_cast<char*>(subsequence[c].data()),
-                                         static_cast<std::streamsize>(data_to_read * sizeof(Real)));
-                    }
+                    auto data = this->read_data(subs_info, query, dataset_ifs, data_to_read, series_len);
                     logger.stop_timer(QC::IO_TIME_S);
 
                     logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-                    updated |= distance_measure.update_result_set(result_set, subs_info, query, subsequence, *this,
+                    updated |= distance_measure.update_result_set(result_set, subs_info, query, data, skip_position,
                                                                   real_query_inds);
                     logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
 

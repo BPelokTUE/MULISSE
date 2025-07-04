@@ -1,22 +1,24 @@
 #ifndef SEARCH_DISTANCEMEASURE_DISTANCEMEASURE_HPP
 #define SEARCH_DISTANCEMEASURE_DISTANCEMEASURE_HPP
 
+#include <functional>
+
 #include "Enums/DistanceType.hpp"
 #include "Enums/SearchType.hpp"
 #include "Search/Results/ResultSet.hpp"
 #include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 
-template <SearchType S, DistanceType D, bool QS>
+template <SearchType S, DistanceType D, bool SQ>
 class ISearchMethod;
 
 /**
  * @brief Interface for distance measures
  * @tparam S SearchType to execute
  * @tparam D DistanceType to use
- * @tparam QS Whether the query is sorted or not
+ * @tparam SQ Whether the query is sorted or not
  * */
-template <SearchType S, DistanceType D, bool QS = false>
+template <SearchType S, DistanceType D, bool SQ = false>
 class DistanceMeasure {
    public:
     /** @brief Get the type of the distance measure */
@@ -32,7 +34,7 @@ class DistanceMeasure {
      * @return true if the result set was updated, false otherwise
      */
     bool update_result_set(ResultSet<S> &result_set, SubsequenceInfo subs_info, const vec<vec<Real>> &query,
-                           const vec<vec<Real>> &mts, ISearchMethod<S, D, QS> &search_method,
+                           const vec<vec<Real>> &mts, std::function<bool(const SubsequencePosition &)> skip_position,
                            const vec<uint> *real_query_inds = nullptr) const;
 
     /**

@@ -128,9 +128,9 @@ int main(int argc, char **argv) {
     MtsNumChannelsT num_channels, used_channels = 0;
     vec<bool> channel_mask;
     bool zero_start = false, raw = false, approximate = false, early_abandon = false, sort_query = false,
-         no_use_pq = false, adapt_index = false, merge_in_leaves = false, prefer_first_in_em = false,
-         separate_segment_stats = false, no_log_num_seg_per_ch = false, log_num_seg_all = false,
-         estimate_parameters = false, use_inv_sax = false;
+         examine_whole = false, no_use_pq = false, adapt_index = false, merge_in_leaves = false,
+         prefer_first_in_em = false, separate_segment_stats = false, no_log_num_seg_per_ch = false,
+         log_num_seg_all = false, estimate_parameters = false, use_inv_sax = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -444,6 +444,8 @@ int main(int argc, char **argv) {
         "--sort_query", sort_query,
         "Sort data points of queries based on their absolute values. Only supported for Euclidean distance "
         "with early abandoning.");
+    search_subcommand->add_flag("--examine_whole", examine_whole,
+                                "Examine the whole series when a subsequence examination is performed");
     search_subcommand->add_flag("--no_pq,--no_priority_queue", no_use_pq,
                                 "Do not use a priority queue for flat envelope index search");
     search_subcommand->add_flag("--approx", approximate, "Approximate search");
@@ -716,6 +718,7 @@ int main(int argc, char **argv) {
                 .m_normalized = !raw,
                 .m_use_early_abandoning = early_abandon,
                 .m_sort_queries = sort_query,
+                .m_examine_whole = examine_whole,
                 .m_use_priority_queue = !no_use_pq,
                 .m_use_length_groups = use_length_groups,
                 .m_search_method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str),
@@ -736,30 +739,43 @@ int main(int argc, char **argv) {
                     },
             };
 
+            // Precomputed FFTs always require examining the whole series
+            examine_whole |= !ffts_path.empty();
+
             switch (distance_type) {
                 case ED:
                     if (search_type == KNN) {
                         ResultSet<KNN> knn_result_set(knn_k);
                         if (sort_query) {
                             DistanceMeasure<KNN, ED, true> distance_measure(!raw, early_abandon);
-                            return search<KNN, ED, true>(search_options, knn_result_set, distance_measure);
+                            if (examine_whole)
+                                return search<KNN, ED, true, true>(search_options, knn_result_set, distance_measure);
+                            return search<KNN, ED, false, true>(search_options, knn_result_set, distance_measure);
                         } else {
                             DistanceMeasure<KNN, ED> distance_measure(!raw, early_abandon);
+                            if (examine_whole)
+                                return search<KNN, ED, true>(search_options, knn_result_set, distance_measure);
                             return search<KNN, ED>(search_options, knn_result_set, distance_measure);
                         }
                     } else {  // search_type == R_RANGE
                         ResultSet<R_RANGE> result_set(r_range_r);
                         DistanceMeasure<R_RANGE, ED> distance_measure(!raw, early_abandon);
+                        if (examine_whole)
+                            return search<R_RANGE, ED, true>(search_options, result_set, distance_measure);
                         return search<R_RANGE, ED>(search_options, result_set, distance_measure);
                     }
                 case MASS:
                     if (STR_TO_SEARCH_TYPE.at(search_type_str) == KNN) {
                         ResultSet<KNN> knn_result_set(knn_k);
                         DistanceMeasure<KNN, MASS> distance_measure(!raw);
+                        if (examine_whole)
+                            return search<KNN, MASS, true>(search_options, knn_result_set, distance_measure);
                         return search<KNN, MASS>(search_options, knn_result_set, distance_measure);
                     } else {  // search_type == R_RANGE
                         ResultSet<R_RANGE> result_set(r_range_r);
                         DistanceMeasure<R_RANGE, MASS> distance_measure(!raw);
+                        if (examine_whole)
+                            return search<R_RANGE, MASS, true>(search_options, result_set, distance_measure);
                         return search<R_RANGE, MASS>(search_options, result_set, distance_measure);
                     }
                 default:

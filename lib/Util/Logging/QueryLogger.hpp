@@ -26,6 +26,7 @@ enum class SearchSettingsColumn {
     DISTANCE_MEASURE,     // Distance measure used
     EARLY_ABANDONING,     // Whether early abandoning is used (for ED)
     SORT_QUERY,           // Whether the queries are sorted (for ED)
+    EXAMINE_WHOLE,        // Whether to examine the whole time series when distance calculation is performed
     USE_PRIORITY_QUEUE,   // Whether a priority queue is used (for FlatEnvelopeIndexSearch)
 };
 

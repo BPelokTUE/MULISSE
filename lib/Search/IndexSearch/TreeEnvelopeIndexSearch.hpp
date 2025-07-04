@@ -16,13 +16,20 @@ struct PQueueEnvelopeNodeEntry {
     bool operator<(const PQueueEnvelopeNodeEntry &other) const { return m_min_dist_squared > other.m_min_dist_squared; }
 };
 
-template <SearchType S, DistanceType D, bool QS = false>
-class TreeEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, QS> {
+/**
+ * @brief Tree envelope index search method
+ * @tparam S SearchType to execute
+ * @tparam D DistanceType to use
+ * @tparam EW Whether to examine the whole series when a subsequence examination is performed
+ * @tparam SQ Whether the query is sorted or not
+ */
+template <SearchType S, DistanceType D, bool EW = false, bool SQ = false>
+class TreeEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, EW, SQ> {
    public:
     TreeEnvelopeIndexSearch(uptr<FinalizedTreeEnvelopeIndex> index) : m_index(std::move(index)) {}
 
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
-                         const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
+                         const DistanceMeasure<S, D, SQ> &distance_measure, std::ifstream &dataset_ifs,
                          const vec<uint> *real_query_inds) override {
         auto &logger = QueryLogger::get_instance();
 

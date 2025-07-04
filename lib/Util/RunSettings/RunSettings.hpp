@@ -48,12 +48,11 @@ class RunSettings {
     /**
      * @brief Load the FFTs of the given time series in the dataset
      *
-     * @param subs_info Position within the dataset and length of the subsequence to load the FFTs for
+     * @param subs_info Information about the subsequence to get the FFTs for
      * @param channel_ind Index of the channel in the time series
-     * @param num_components Number of FFT components to load
      * @return FFTs of the time series
      */
-    FftArray get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channel_ind, uint num_components);
+    FftArray get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channel_ind);
 
     /**
      * @brief Check if the FFTs of the time series are supported
@@ -67,9 +66,8 @@ class RunSettings {
      *
      * @param q_channel Channel of the query to calculate FFTs for
      * @param channel_ind Index of the channel in the query
-     * @param num_components Number of FFT components to load
      */
-    void calculate_query_ffts(const vec<MassT>& q_channel, MtsNumChannelsT channel_ind, uint num_components);
+    void calculate_query_ffts(const vec<MassT>& q_channel, MtsNumChannelsT channel_ind);
 
     /**
      * @brief Get the FFTs of the last query they were calculated for

@@ -8,10 +8,11 @@
  * @brief Abstract base class for envelope-index-based search methods
  * @tparam S SearchType to execute
  * @tparam D DistanceType to use
- * @tparam QS Whether the method takes sorted queries
+ * @tparam EW Whether to examine the whole series when a subsequence examination is performed
+ * @tparam SQ Whether the query is sorted or not
  * */
-template <SearchType S, DistanceType D, bool QS = false>
-class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, QS> {
+template <SearchType S, DistanceType D, bool EW = false, bool SQ = false>
+class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, EW, SQ> {
    protected:
     /**
      * @brief Get the minimum bounding distance squared between the given query and envelope
@@ -22,7 +23,7 @@ class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, QS> {
      * @return The minimum bounding distance squared
      */
     inline Real get_min_dist_squared(const vec<Envelope> &envelope, const vec<vec<Real>> &query_paa,
-                                     const DistanceMeasure<S, D, QS> &distance_measure,
+                                     const DistanceMeasure<S, D, SQ> &distance_measure,
                                      const IChannelSegmentationStrategy *ch_segmentation_strategy) const {
         Real min_dist_squared = 0;
         for (MtsNumChannelsT c = 0; c < query_paa.size(); ++c) {
@@ -50,7 +51,7 @@ class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, QS> {
      */
     inline void update_result_set(const SubsequenceInfo &subs_info, const uint pos_per_env, const vec<vec<Real>> &query,
                                   const uint query_len, ResultSet<S> &result_set,
-                                  const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
+                                  const DistanceMeasure<S, D, SQ> &distance_measure, std::ifstream &dataset_ifs,
                                   const vec<uint> *real_query_inds) {
         auto &logger = QueryLogger::get_instance();
 
@@ -58,23 +59,24 @@ class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, QS> {
         uint series_len = RS.get_dataset_props().m_series_len;
         MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
 
-        vec<vec<Real>> subsequence(num_channels);
-        uint num_start_pos = subs_info.m_length;
-        size_t data_to_read = std::min(query_len + num_start_pos - 1, series_len - subs_info.m_position.m_start);
+        size_t data_to_read;
+        if constexpr (EW) {
+            if (this->skip_series(subs_info.m_position.m_series)) return;
+            data_to_read = series_len;
+        } else {
+            uint num_start_pos = subs_info.m_length;
+            data_to_read = std::min(query_len + num_start_pos - 1, series_len - subs_info.m_position.m_start);
+        }
 
         logger.start_timer(QC::IO_TIME_S);
-        for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-            if (query[c].empty()) continue;
-
-            subsequence[c].resize(data_to_read);
-            dataset_ifs.seekg(subs_info.get_file_pos(series_len, num_channels, c));
-            dataset_ifs.read(reinterpret_cast<char *>(subsequence[c].data()),
-                             static_cast<std::streamsize>(data_to_read * sizeof(Real)));
-        }
+        auto data = this->read_data(subs_info, query, dataset_ifs, data_to_read, series_len);
         logger.stop_timer(QC::IO_TIME_S);
 
+        // TODO: this probably should not be created on every result set update call
+        auto skip_position = [this](const SubsequencePosition &pos) { return this->skip_position(pos); };
+
         logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-        distance_measure.update_result_set(result_set, subs_info, query, subsequence, *this, real_query_inds);
+        distance_measure.update_result_set(result_set, subs_info, query, data, skip_position, real_query_inds);
         logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
 
         logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED);

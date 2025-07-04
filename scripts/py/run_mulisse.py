@@ -76,6 +76,7 @@ CK_SEARCH_RS = "search_rs"
 CK_MAX_LEAVES_TO_VISIT = "max_leaves_to_visit"
 CK_EARLY_ABANDON = "early_abandon"
 CK_SORT_QUERY = "sort_query"
+CK_EXAMINE_WHOLE = "examine_whole"
 CK_PRECALCULATE_FFTS = "precalculate_ffts"
 CK_PRIORITY_QUEUE = "priority_queue"
 
@@ -140,6 +141,7 @@ RK_METHOD_TYPE = "method_type"
 RK_DISTANCE = "distance"
 RK_EARLY_ABANDON = "early_abandon"
 RK_SORT_QUERY = "sort_query"
+RK_EXAMINE_WHOLE = "examine_whole"
 RK_PRECALCULATE_FFTS = "precalculate_ffts"
 RK_PRIORITY_QUEUE = "priority_queue"
 
@@ -465,12 +467,14 @@ def parse_config_file(input_config) -> ParsedConfig:
                 RK_DISTANCE: DIST_ED,
                 **get_key_or_none(RK_EARLY_ABANDON, CK_EARLY_ABANDON),
                 **get_key_or_none(RK_SORT_QUERY, CK_SORT_QUERY),
+                **get_key_or_none(RK_EXAMINE_WHOLE, CK_EXAMINE_WHOLE),
             }
-            distance_measures_settings = {
-                DIST_ED: ed_settings,
-                DIST_EUCLIDEAN: ed_settings,
-                DIST_MASS: {RK_DISTANCE: DIST_MASS, **get_key_or_none(RK_PRECALCULATE_FFTS, CK_PRECALCULATE_FFTS)},
+            mass_settings = {
+                RK_DISTANCE: DIST_MASS,
+                **get_key_or_none(RK_PRECALCULATE_FFTS, CK_PRECALCULATE_FFTS),
+                **get_key_or_none(RK_EXAMINE_WHOLE, CK_EXAMINE_WHOLE),
             }
+            distance_measures_settings = {DIST_ED: ed_settings, DIST_EUCLIDEAN: ed_settings, DIST_MASS: mass_settings}
             for distance_measure, settings in distance_measures_settings.items():
                 if distance_measure in config[CK_DISTANCE_MEASURES]:
                     for base_setting in index_method_settings_base:
@@ -790,7 +794,7 @@ if __name__ == "__main__":
                 def get_method_args(setting):
                     args = [SUB_SEARCH]
                     for key, value in setting.items():
-                        if key in [RK_RAW, RK_APPROX, RK_EARLY_ABANDON, RK_SORT_QUERY]:
+                        if key in [RK_RAW, RK_APPROX, RK_EARLY_ABANDON, RK_SORT_QUERY, RK_EXAMINE_WHOLE]:
                             if value:
                                 args.append(f"--{key}")
                         elif key == RK_PRIORITY_QUEUE:

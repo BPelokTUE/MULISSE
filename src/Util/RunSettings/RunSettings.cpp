@@ -56,8 +56,7 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     instance->m_index_file = index_path;
     instance->m_ffts_file = ffts_path;
     instance->m_query_file = query_path;
-    instance->m_ffts_supported =
-        instance->m_ffts_file != "" && (method_type == ISAX_ENVELOPE || method_type == ENVELOPE);
+    instance->m_ffts_supported = !(instance->m_ffts_file.empty());
 
     switch (instance->m_command_type) {
         case CREATE_DS:
@@ -73,10 +72,6 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
             break;
         case INDEX:
             check_path_exists(instance->get_dataset_path(), "Dataset");
-            if (instance->ffts_supported() && instance->m_envelope_props.m_envs_per_ts > 1) {
-                throw std::runtime_error(
-                    "Precalculating FFTs are only supported for setups with one envelope per time series");
-            }
             break;
         case CALC_I_STATS:
             break;
@@ -142,26 +137,28 @@ void RunSettings::calculate_ffts() const {
     }
 }
 
-FftArray RunSettings::get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channel_ind, uint num_component) {
+FftArray RunSettings::get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channel_ind) {
     if (!ffts_supported()) throw std::runtime_error("FFTs are not supported");
 
     // (*2) for real and imaginary parts
     // (*2) for extra components at the end
     // Potentially (*2) depending on the size of FftPrecT compared to Real
     constexpr uint file_size_ratio = 4 * sizeof(FftPrecT) / sizeof(Real);
-    size_t data_file_pos = static_cast<size_t>(
-        subs_info.get_file_pos(m_dataset_props.m_series_len, m_dataset_props.m_num_channels, channel_ind));
+
+    uint series_len = m_dataset_props.m_series_len;
+    size_t data_file_pos =
+        static_cast<size_t>(subs_info.get_file_pos(series_len, m_dataset_props.m_num_channels, channel_ind));
     m_ffts_ifs.seekg(static_cast<std::streamsize>(file_size_ratio * data_file_pos));
 
-    FftArray ffts(2 * num_component);
-    std::streamsize data_to_read = static_cast<std::streamsize>(file_size_ratio * num_component * sizeof(Real));
+    FftArray ffts(2 * series_len);
+    std::streamsize data_to_read = static_cast<std::streamsize>(file_size_ratio * series_len * sizeof(Real));
 
     if constexpr (std::is_same_v<FftPrecT, MassT>) {
         m_ffts_ifs.read(reinterpret_cast<char *>(ffts.data()), data_to_read);
     } else {
-        vec<FftPrecT> fft_prec(4 * num_component);
+        vec<FftPrecT> fft_prec(4 * series_len);
         m_ffts_ifs.read(reinterpret_cast<char *>(fft_prec.data()), data_to_read);
-        for (uint i = 0; i < 2 * num_component; ++i) {
+        for (uint i = 0; i < 2 * series_len; ++i) {
             ffts[i][0] = static_cast<MassT>(fft_prec[2 * i]);
             ffts[i][1] = static_cast<MassT>(fft_prec[2 * i + 1]);
         }
@@ -172,12 +169,12 @@ FftArray RunSettings::get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channe
 
 bool RunSettings::ffts_supported() const { return m_ffts_supported; }
 
-void RunSettings::calculate_query_ffts(const vec<MassT> &q_channel, MtsNumChannelsT channel_ind, uint num_components) {
+void RunSettings::calculate_query_ffts(const vec<MassT> &q_channel, MtsNumChannelsT channel_ind) {
     if (!ffts_supported()) return;
 
     assert(channel_ind < m_dataset_props.m_num_channels);
 
-    uint fft_len = 2 * num_components, query_len = U(q_channel.size());
+    uint fft_len = 2 * m_dataset_props.m_series_len, query_len = U(q_channel.size());
     FftArray q_complex(fft_len);
     for (uint i = 0; i < query_len; ++i) q_complex[i][0] = q_channel[query_len - 1 - i];
 

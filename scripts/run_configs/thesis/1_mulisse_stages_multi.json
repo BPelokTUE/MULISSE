@@ -13,9 +13,9 @@
         "second_stage": ["sax_envelope"],
         "both_stages": ["isax_env_w_sax_env"]
     },
+    "sax_breakpoint_strategies": ["equiprobable"],
+    "sax_num_bits": [15],
     "isax_split_strategies": ["em"],
-    "isax_breakpoint_strategies": ["equiprobable"],
-    "isax_num_bits_limits": [15],
     "isax_leaf_cap_ratios": [0.05],
     "max_leaves_to_visit": {
         "both_stages": [5]

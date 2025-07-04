@@ -11,12 +11,12 @@
  * exact method at the end. If the exact answer is found anywhere in the chain, the search stops.
  * @tparam S The type of the search to execute
  * @tparam D The type of the distance to use
- * @tparam QS Whether the query data points are sorted
+ * @tparam SQ Whether the query data points are sorted
  */
-template <SearchType S, DistanceType D, bool QS = false>
-class ChainSearch : public ISearchMethod<S, D, QS> {
+template <SearchType S, DistanceType D, bool SQ = false>
+class ChainSearch : public ISearchMethod<S, D, SQ> {
    public:
-    ChainSearch(vec<uptr<ISearchMethod<S, D, QS>>> approx_methods, uptr<ISearchMethod<S, D, QS>> exact_method)
+    ChainSearch(vec<uptr<ISearchMethod<S, D, SQ>>> approx_methods, uptr<ISearchMethod<S, D, SQ>> exact_method)
         : m_approx_methods(std::move(approx_methods)), m_exact_method(std::move(exact_method)) {}
 
     inline void reset() override {
@@ -25,7 +25,7 @@ class ChainSearch : public ISearchMethod<S, D, QS> {
     }
 
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
-                         const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
+                         const DistanceMeasure<S, D, SQ> &distance_measure, std::ifstream &dataset_ifs,
                          const vec<uint> *real_query_inds) override {
         auto opts_approx = opts;
         opts_approx.m_exact = false;
@@ -38,8 +38,8 @@ class ChainSearch : public ISearchMethod<S, D, QS> {
     }
 
    private:
-    vec<uptr<ISearchMethod<S, D, QS>>> m_approx_methods;
-    uptr<ISearchMethod<S, D, QS>> m_exact_method;
+    vec<uptr<ISearchMethod<S, D, SQ>>> m_approx_methods;
+    uptr<ISearchMethod<S, D, SQ>> m_exact_method;
 };
 
 #endif  // SEARCH_INDEXSEARCH_CHAININDEXSEARCH_HPP

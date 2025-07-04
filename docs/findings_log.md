@@ -312,3 +312,10 @@ $$
 - Failed Experiments --> Negative Results, added after Algorithms
 - Use envelopes progressively, this is an experiment not an algorithm extension. Try to think of some extension for progressive queries.
 - Try to see if there is something that can be done with the distribution of the distances
+
+## 02-07-2025
+
+- Check phases on raw data
+- Move low resolution grid search between 3.1 and 3.2
+- For progressive queries, give intuition about why it might work, produce figure similar to one in the Correlation Detective paper
+- O(3m log m)

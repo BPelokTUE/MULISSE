@@ -9,8 +9,8 @@
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/Logging/QueryLogger.hpp"
 
-template <SearchType S, bool QS>
-class DistanceMeasure<S, ED, QS> {
+template <SearchType S, bool SQ>
+class DistanceMeasure<S, ED, SQ> {
    public:
     /**
      * @brief Constructor
@@ -26,7 +26,8 @@ class DistanceMeasure<S, ED, QS> {
     }
 
     inline bool update_result_set(ResultSet<S> &result_set, SubsequenceInfo subs_info, const vec<vec<Real>> &query,
-                                  const vec<vec<Real>> &mts, ISearchMethod<S, ED, QS> &search_method,
+                                  const vec<vec<Real>> &mts,
+                                  std::function<bool(const SubsequencePosition &)> skip_position,
                                   const vec<uint> *real_query_inds = nullptr) const {
         auto &logger = QueryLogger::get_instance();
 
@@ -34,7 +35,7 @@ class DistanceMeasure<S, ED, QS> {
         uint num_start_pos, mts_len, query_len, num_start_pos_examined = 0;
         vec<MtsNumChannelsT> present_channels;
 
-        if constexpr (QS) {
+        if constexpr (SQ) {
             if (real_query_inds == nullptr) {
                 throw std::runtime_error("No real query indices provided for sorted query");
             }
@@ -63,7 +64,7 @@ class DistanceMeasure<S, ED, QS> {
                 uint64_t points_examined = 0, points_in_entry = 0;
                 SubsequencePosition act_subs_pos = {subs_info.m_position.m_series,
                                                     subs_info.m_position.m_start + start_pos};
-                if (!search_method.skip_position(act_subs_pos)) {
+                if (!skip_position(act_subs_pos)) {
                     ++num_start_pos_examined;
                     Real dist_squared = 0;
 
@@ -72,7 +73,7 @@ class DistanceMeasure<S, ED, QS> {
 
                         for (uint query_ind = 0; query_ind < query_len; ++query_ind) {
                             uint actual_ind = query_ind;
-                            if constexpr (QS) actual_ind = real_query_inds->at(query_ind);
+                            if constexpr (SQ) actual_ind = real_query_inds->at(query_ind);
 
                             Real diff = (mts[c][start_pos + actual_ind] - mu) / sigma - query[c][query_ind];
                             dist_squared += diff * diff;
@@ -104,14 +105,14 @@ class DistanceMeasure<S, ED, QS> {
                 uint64_t points_examined = 0, point_in_entry = 0;
                 SubsequencePosition act_subs_pos = {subs_info.m_position.m_series,
                                                     subs_info.m_position.m_start + start_pos};
-                if (!search_method.skip_position(act_subs_pos)) {
+                if (!skip_position(act_subs_pos)) {
                     ++num_start_pos_examined;
                     Real dist_squared = 0;
 
                     for (MtsNumChannelsT c : present_channels) {
                         for (uint query_ind = 0; query_ind < query_len; ++query_ind) {
                             uint actual_ind = query_ind;
-                            if constexpr (QS) actual_ind = real_query_inds->at(query_ind);
+                            if constexpr (SQ) actual_ind = real_query_inds->at(query_ind);
 
                             Real diff = mts[c][start_pos + actual_ind] - query[c][query_ind];
                             dist_squared += diff * diff;

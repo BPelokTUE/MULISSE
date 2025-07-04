@@ -18,6 +18,8 @@ struct SearchOptions {
     bool m_use_early_abandoning = true;
     /** @brief Whether query data points are sorted by absolute value (for Euclidean distance) */
     bool m_sort_queries = false;
+    /** @brief Whether to examine the whole series when distance calculation is performed */
+    bool m_examine_whole = false;
     /** @brief Whether a priority queue is used for FlatEnvelopeIndexSearch */
     bool m_use_priority_queue = false;
     /** @brief Whether the index is grouped by length */

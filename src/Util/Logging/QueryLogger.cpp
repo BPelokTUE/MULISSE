@@ -68,6 +68,7 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
                            {SSC::DISTANCE_MEASURE, DISTANCE_TYPE_TO_STR.at(search_options.m_distance_type)},
                            {SSC::EARLY_ABANDONING, early_abandon_str},
                            {SSC::SORT_QUERY, sort_query_str},
+                           {SSC::EXAMINE_WHOLE, to_string(search_options.m_examine_whole)},
                            {SSC::USE_PRIORITY_QUEUE, use_priority_queue_str},
                        },
                        SEARCH_SETTINGS_COL_ENUMS);

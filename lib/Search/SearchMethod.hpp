@@ -7,7 +7,7 @@
 #include "Index/Entry/Paa.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 
-template <SearchType S, DistanceType D, bool QS>
+template <SearchType S, DistanceType D, bool SQ>
 class DistanceMeasure;
 
 template <SearchType S>
@@ -20,9 +20,9 @@ class SearchResults;
  * @brief Interface for search methods
  * @tparam S SearchType to execute
  * @tparam D DistanceType to use
- * @tparam QS Whether the query is sorted or not
+ * @tparam SQ Whether the query is sorted or not
  */
-template <SearchType S, DistanceType D, bool QS = false>
+template <SearchType S, DistanceType D, bool SQ = false>
 class ISearchMethod {
    public:
     virtual ~ISearchMethod() = default;
@@ -38,18 +38,11 @@ class ISearchMethod {
      * @return The start positions of the subsequences in the result set
      */
     virtual SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
-                                 const DistanceMeasure<S, D, QS> &distance_measure, std::ifstream &dataset_ifs,
+                                 const DistanceMeasure<S, D, SQ> &distance_measure, std::ifstream &dataset_ifs,
                                  const vec<uint> *real_query_inds = nullptr) = 0;
 
     /** @brief Reset the search method after a query. The default implementation does nothing. */
     virtual inline void reset() {}
-
-    /**
-     * @brief Check if the given starting position can be ignored/skipped during search
-     * @param subs_position Position of the subsequence in the dataset
-     * @return `true` if the position can be skipped, `false` otherwise
-     */
-    virtual inline bool skip_position(const SubsequencePosition &subs_position) { return false; }
 
    protected:
     /**
@@ -70,7 +63,7 @@ class ISearchMethod {
             if (query[c].empty()) continue;
             query_len = std::max(query_len, query[c].size());
 
-            if constexpr (QS) {
+            if constexpr (SQ) {
                 vec<Real> unsorted_query_channel(query_len);
                 for (uint i = 0; i < query_len; ++i) unsorted_query_channel[real_query_inds->at(i)] = query[c][i];
                 query_paa[c] =

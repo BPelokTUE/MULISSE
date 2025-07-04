@@ -21,7 +21,8 @@ class DistanceMeasure<S, MASS> {
     }
 
     inline bool update_result_set(ResultSet<S> &result_set, SubsequenceInfo subs_info, const vec<vec<Real>> &query,
-                                  const vec<vec<Real>> &mts, ISearchMethod<S, MASS> &search_method,
+                                  const vec<vec<Real>> &mts,
+                                  std::function<bool(const SubsequencePosition &)> skip_position,
                                   const vec<uint> *real_query_inds = nullptr) const {
         // TODO: Check if query normalization can be removed in Z-normalized formula
         // TODO: Check if position skipping can or should be applied
@@ -123,12 +124,12 @@ class DistanceMeasure<S, MASS> {
             auto &logger = QueryLogger::get_instance();
 
             logger.start_timer(QC::IO_TIME_S);
-            mts_fft = RS.get_ffts(subs_info, channel_ind, mts_len);
+            mts_fft = RS.get_ffts(subs_info, channel_ind);
             logger.stop_timer(QC::IO_TIME_S);
 
             auto *query_fft_ptr = RS.get_query_ffts(channel_ind);
             if (!query_fft_ptr) {
-                RS.calculate_query_ffts(q_channel, channel_ind, mts_len);
+                RS.calculate_query_ffts(q_channel, channel_ind);
                 query_fft_ptr = RS.get_query_ffts(channel_ind);
             }
             query_fft = *query_fft_ptr;
