@@ -1,8 +1,8 @@
 #include "Modules/Indexing/Indexing.hpp"
 
 #include "Index/Entry/SaxEnvelope.hpp"
-#include "Index/Estimator/FlatEnvelopeMinDistParamEstimator.hpp"
 #include "Modules/Indexing/ConstructIndex.hpp"
+#include "Modules/Indexing/EstimateFlatEnvelopeParams.hpp"
 #include "Modules/Indexing/GetChannelScores.hpp"
 #include "Modules/Indexing/GetEntryGenerator.hpp"
 #include "Modules/Indexing/GetEntryMerger.hpp"
@@ -30,7 +30,7 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
     // Initialized SAX breakpoints
 
     if (arr_contains(METHODS_W_ISAX, opts.m_index_method)) {
-        auto *index_params = dynamic_cast<iSaxIndexParams *>(opts.m_index_params.get());
+        auto *index_params = dynamic_cast<const iSaxIndexParams *>(opts.m_index_params.get());
         if (index_params && index_params->m_sax_params.m_num_bits > 0) {
             initialize_sax_breakpoints(index_params->m_sax_params);
         } else {
@@ -38,7 +38,7 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
             return 2;
         }
     } else if (arr_contains(METHODS_W_SAX, opts.m_index_method)) {
-        auto *index_params = dynamic_cast<SaxIndexParams *>(opts.m_index_params.get());
+        auto *index_params = dynamic_cast<const SaxIndexParams *>(opts.m_index_params.get());
         if (index_params && index_params->m_sax_params.m_num_bits > 0) {
             initialize_sax_breakpoints(index_params->m_sax_params);
         } else {
@@ -46,7 +46,7 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
             return 2;
         }
     } else if (arr_contains(METHODS_W_PAA, opts.m_index_method)) {
-        auto *index_params = dynamic_cast<PaaIndexParams *>(opts.m_index_params.get());
+        auto *index_params = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get());
         if (index_params && arr_contains(MERGERS_W_SAX, index_params->m_merger_params.m_entry_merger_type)) {
             auto merger_sax_params = index_params->m_merger_params.m_merger_sax_params;
             if (merger_sax_params && merger_sax_params->m_num_bits > 0) {
@@ -73,13 +73,11 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
         }
     }
 
-    if (opts.m_estimator_params && opts.m_estimator_params->m_estimate_parameters) {
-        // auto estimator = FlatEnvelopeParamTheoEstimator(opts);
-        auto estimator = FlatEnvelopeMinDistParamEstimator(opts);
-        auto flat_envelope_params = estimator.get_estimated_params();
-        RS.set_flat_envelope_params(flat_envelope_params);
-        logger.set_flat_envelope_params(flat_envelope_params);
-        envelope_params->set_flat_envelope_params(flat_envelope_params);
+    // Estimate flat envelope parameters if requested
+    if (auto estimated_params = estimate_flat_envelope_params(opts)) {
+        RS.set_flat_envelope_params(*estimated_params);
+        logger.set_flat_envelope_params(*estimated_params);
+        envelope_params->set_flat_envelope_params(*estimated_params);
     }
 
     // Set up segmentation strategies

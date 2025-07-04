@@ -13,6 +13,11 @@
  * */
 template <SearchType S, DistanceType D, bool EW = false, bool SQ = false>
 class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, EW, SQ> {
+   public:
+    EnvelopeIndexSearch() {
+        m_skip_position = [this](const SubsequencePosition &pos) { return this->skip_position(pos); };
+    }
+
    protected:
     /**
      * @brief Get the minimum bounding distance squared between the given query and envelope
@@ -71,15 +76,15 @@ class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, EW, SQ> 
         auto data = this->read_data(subs_info, query, dataset_ifs, data_to_read, series_len);
         logger.stop_timer(QC::IO_TIME_S);
 
-        // TODO: this probably should not be created on every result set update call
-        auto skip_position = [this](const SubsequencePosition &pos) { return this->skip_position(pos); };
-
         logger.start_timer(QC::TS_EXAMINATION_TIME_S);
-        distance_measure.update_result_set(result_set, subs_info, query, data, skip_position, real_query_inds);
+        distance_measure.update_result_set(result_set, subs_info, query, data, m_skip_position, real_query_inds);
         logger.stop_timer(QC::TS_EXAMINATION_TIME_S);
 
         logger.increment_count_col(QC::NUM_ENTRIES_EXAMINED);
     }
+
+   private:
+    std::function<bool(const SubsequencePosition &)> m_skip_position;
 };
 
 #endif  // SEARCH_INDEXSEARCH_ENVELOPEINDEXSEARCH_HPP

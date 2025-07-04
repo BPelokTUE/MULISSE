@@ -1,5 +1,5 @@
-#ifndef DISTANCE_TYPE_HPP
-#define DISTANCE_TYPE_HPP
+#ifndef ENUMS_DISTANCE_TYPE_HPP
+#define ENUMS_DISTANCE_TYPE_HPP
 
 #include "Util/HelperFuncs/Enums.hpp"
 #include "Util/Types/Containers.hpp"
@@ -9,4 +9,4 @@ enum DistanceType { ED, MASS };
 
 DEFINE_ENUM_CONSTS(DistanceType, DISTANCE_TYPE, false, (umap<str, DistanceType>{{"euclidean", ED}}));
 
-#endif  // DISTANCE_TYPE_HPP
+#endif  // ENUMS_DISTANCE_TYPE_HPP
