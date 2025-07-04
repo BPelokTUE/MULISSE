@@ -363,6 +363,11 @@ class ExperimentResults(BaseModel):
             extra_cols[ERD.INDEXES_COLS].append(str(ISC.POS_PER_ENV))
             act_cols[ERD.RUNS_COLS].remove(str(QC.MIN_DIST_AVG))
 
+        # Handle precomputed ffts column
+        if str(SSC.PRECOMPUTED_FFTS) in cols[ERD.METHODS_COLS]:
+            extra_cols[ERD.METHODS_COLS] += [str(SSC.FFTS_FILE)]
+            act_cols[ERD.METHODS_COLS].remove(str(SSC.PRECOMPUTED_FFTS))
+
         extra_cols = {erd: list(set(extra_cols[erd]) - set(act_cols[erd])) for erd in ERD}
         cols_to_load = {erd: act_cols[erd] + extra_cols[erd] for erd in ERD}
         csv_paths = {erd: os.path.join(logs_dir, CSV_FILES[erd]) for erd in ERD}
@@ -433,6 +438,10 @@ class ExperimentResults(BaseModel):
             results.runs_df[str(QC.MIN_DIST_AVG)] = (
                 results.runs_df[str(QC.MIN_DIST_TOTAL)] / results.runs_df[str(QC.NUM_MIN_DIST_CALCULATED)]
             )
+
+        # Add precomputed ffts column
+        if str(SSC.PRECOMPUTED_FFTS) in cols[ERD.METHODS_COLS]:
+            results.methods_df[str(SSC.PRECOMPUTED_FFTS)] = results.methods_df[str(SSC.FFTS_FILE)].str.len() > 0
 
         # Drop extra columns
         results.datasets_df = results.datasets_df.drop(columns=extra_cols[ERD.DATASETS_COLS])

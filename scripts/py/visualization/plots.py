@@ -126,6 +126,17 @@ ORDERED_DATASETS = [
 ]
 
 
+def place_legend(ax: plt.Axes, num_labels: int, max_cols: int, offset: float = 0.075, row_offset: float = 0.075):
+    def get_legend_y_coord(num_labels):
+        legend_num_cols = min(num_labels, max_cols)
+        legend_num_rows = (num_labels + legend_num_cols - 1) // legend_num_cols
+        return 1.0 + offset + row_offset * legend_num_rows
+
+    legend_num_cols = min(num_labels, max_cols)
+    legend_y_coord = get_legend_y_coord(num_labels)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, legend_y_coord), ncol=legend_num_cols)
+
+
 def plot_bars(
     reduction_result: ReductionResult,
     color_group_inds: int | list[int],
@@ -231,18 +242,7 @@ def plot_bars(
     for h_ind in seen_hatches:
         ax.bar(0, 0, color="white", edgecolor="black", hatch=hatches[h_ind], label=hatch_labels[h_ind])
 
-    def get_legend_num_cols(num_labels):
-        return min(num_labels, legend_max_cols)
-
-    def get_legend_y_coord(num_labels):
-        legend_num_cols = get_legend_num_cols(num_labels)
-        legend_num_rows = (num_labels + legend_num_cols - 1) // legend_num_cols
-        return 1.050 + 0.075 * legend_num_rows
-
-    num_labels = len(seen_labels) + len(seen_hatches)
-    legend_num_cols = get_legend_num_cols(num_labels)
-    legend_y_coord = get_legend_y_coord(num_labels)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, legend_y_coord), ncol=legend_num_cols)
+    place_legend(ax, len(seen_labels) + len(seen_hatches), legend_max_cols)
 
     ax.set_yscale(y_scale)
     ax.yaxis.grid(True)
@@ -266,14 +266,15 @@ def plot_bars(
 def plot_lines(
     reduction_result: ReductionResult,
     x_axis_attr_ind: int,
-    legend: list[str],
-    colors: list[str] = CATEGORY_COLORS,
+    legend: dict[tuple, str] = {},
+    colors: dict[tuple, str] = {},
     x_label: str = "",
     y_label: str = "",
     x_scale: str = "linear",
     y_scale: str = "linear",
     y_lim: tuple[float, float] | None = None,
     title: str = None,
+    legend_max_cols=4,
     only_max_points: bool = True,
     mark_minimum: bool = False,
     save_path: str | None = None,
@@ -297,7 +298,7 @@ def plot_lines(
     """
     values = {}
     max_points = 0
-    for i, (group, target_values) in enumerate(reduction_result.items()):
+    for group, target_values in reduction_result.items():
         x = group[x_axis_attr_ind]
         if x is None or x == "":
             continue
@@ -311,9 +312,12 @@ def plot_lines(
 
     fig, ax = plt.subplots()
     x_coords = set()
-    for color, (line, points) in zip(colors, values.items()):
+    for i, (line, points) in enumerate(values.items()):
         if only_max_points and len(points) != max_points:
             continue
+
+        color = colors.get(line, CATEGORY_COLORS[i % len(CATEGORY_COLORS)])
+        label = legend.get(line, " | ".join(map(str, line)))
 
         sorted_points = sorted(points, key=lambda p: p[0])
         if len(points) > 1 and mark_minimum:
@@ -330,7 +334,7 @@ def plot_lines(
 
         xs = [point[0] for point in sorted_points]
         ys = [point[1] for point in sorted_points]
-        ax.plot(xs, ys, color=color, label=legend[line])
+        ax.plot(xs, ys, color=color, label=label)
         ax.scatter(xs, ys, color=color)
         x_coords.update(xs)
 
@@ -345,7 +349,8 @@ def plot_lines(
     ax.set_xticklabels(sorted(list(x_coords)), rotation=90, ha="center")
     ax.set_title(title)
     ax.grid(True)
-    ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+
+    place_legend(ax, len(legend), legend_max_cols)
 
     if save_path is not None:
         fig.savefig(save_path, bbox_inches="tight")

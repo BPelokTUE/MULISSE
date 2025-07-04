@@ -74,7 +74,7 @@ for target_args in IMPORTANT_METRICS:
         separate_plots_dict={(DSC.DATASET_FILE,): []},
         bar_plot_color_attrs=SSC.METHOD_NAME,
         bar_plot_label_padding=False,
-        bar_plot_legend_max_cols=2,
+        legend_max_cols=2,
         bar_plot_label_map={
             "envelope-ed-early": "MT-Env no SAX",
             "sax_envelope-ed-early": "MT-Env",
@@ -99,7 +99,7 @@ for target_args in IMPORTANT_METRICS:
         },
         separate_plots_dict={(DSC.DATASET_FILE, DSC.NUM_CHANNELS): []},
         bar_plot_color_attrs=[SSC.METHOD_NAME, ISC.NUM_BITS_LIMIT],
-        bar_plot_legend_max_cols=3,
+        legend_max_cols=3,
         bar_plot_label_map={
             ("isax-ed-early", 1): "iSAX, Blim=1",
             ("isax-ed-early", 2): "iSAX, Blim=2",
@@ -201,6 +201,46 @@ for target_args in [TargetArgs.QUERY_TIME]:
     )
 
 # %%
+# 4c - PPE for different distance measures
+for target_args in [TargetArgs.QUERY_TIME]:
+    visualize_experiments(
+        # logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4c_ppe_dms_uni"],
+        logs_dirs=["LOGS"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.DISTANCE_MEASURE, SSC.EXAMINE_WHOLE, SSC.PRECOMPUTED_FFTS],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
+            ERD.INDEXES_COLS: [ISC.POS_PER_ENV],
+        },
+        merge_csv_datasets=True,
+        separate_plots_dict={
+            (DSC.SERIES_LENGTH, DSC.DATASET_FILE): [],
+            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
+        },
+        bar_plot_color_attrs=None,
+        line_plot_x_attr=ISC.POS_PER_ENV,
+        line_plot_included_cols={SSC.DISTANCE_MEASURE, SSC.EXAMINE_WHOLE, SSC.PRECOMPUTED_FFTS},
+        line_plot_legend_map={
+            ("ed", 0, False): "ED",
+            ("ed", 1, False): "ED Whole",
+            ("mass", 0, False): "MASS",
+            ("mass", 1, False): "MASS Whole",
+            ("mass", 0, True): "MASS Precomputed",
+        },
+        line_plot_colors_map={
+            ("ed", 0, False): PALETTE["Blues"][6],
+            ("ed", 1, False): PALETTE["Blues"][3],
+            ("mass", 0, False): PALETTE["Purples"][6],
+            ("mass", 1, False): PALETTE["Purples"][3],
+            ("mass", 0, True): PALETTE["Oranges"][4],
+        },
+        legend_max_cols=3,
+        x_scale="log",
+        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4c_ppe_dms_{target_args.name.lower()}"),
+        **target_args.value,
+    )
+
+# %%
 # 4d - Segment size (σ) univariate
 
 for target_args in [TargetArgs.QUERY_TIME]:
@@ -294,7 +334,7 @@ for target_args in [TargetArgs.INDEX_SIZE, TargetArgs.QUERY_TIME]:
                 ("adaptive", "adaptive_multi"): "Adaptive LG + Segmentation",
             },
             bar_plot_color_map={strat: color for strat, color in zip(strategies, CATEGORY_COLORS)},
-            bar_plot_legend_max_cols=2,
+            legend_max_cols=2,
             bar_plot_label_padding=False,
             title_base=f"{size.capitalize()} Ns",
             ignored_attrs={DSC.DATASET_FILE, ISC.NUM_SEGMENTS, DSC.SERIES_LENGTH},
@@ -338,7 +378,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
             groups_dict={ERD.DATASETS_COLS: dataset_cols},
             regex_dict={DSC.DATASET_FILE: rf"^{dataset}"},
             bar_plot_color_attrs=dataset_cols[-1],
-            bar_plot_legend_max_cols=2,
+            legend_max_cols=2,
             bar_plot_label_map=label_maps[dataset],
             save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"6_ch_performance_{target_args.name.lower()}_{dataset}"),
             **target_args.value,
@@ -362,7 +402,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
         },
         separate_plots_dict={(DSC.DATASET_FILE, ISC.NUM_SEGMENTS): []},
         bar_plot_color_attrs=[ISC.CH_SEGMENTATION_STRATEGY, ISC.SCORE_BASED_CHSS_SCORE_EXP],
-        bar_plot_legend_max_cols=2,
+        legend_max_cols=2,
         bar_plot_label_map={
             ("single", 0): "Simple",
             ("score_based", -1): "Prioritize Easy",
@@ -396,7 +436,7 @@ for target_args_dict in [
         },
         separate_plots_dict={(DSC.DATASET_FILE,): []},
         bar_plot_color_attrs=SSC.METHOD_NAME,
-        bar_plot_legend_max_cols=2,
+        legend_max_cols=2,
         bar_plot_label_map={
             "bucketing_envelope-ed-early": "Bucket merger",
             "envelope-ed-early": "No merger",

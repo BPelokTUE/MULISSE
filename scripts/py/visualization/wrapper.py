@@ -37,7 +37,7 @@ from scripts.py.visualization.plots import (
     plot_lines,
 )
 from scripts.py.visualization.reduction import ERD, ExperimentResults, MeanReducer, Reducer, execute_reduction
-from scripts.py.visualization.style import COLD_TO_HOT_COLORS
+from scripts.py.visualization.style import CATEGORY_COLORS, COLD_TO_HOT_COLORS
 
 SAVE_EXTENSION = "pdf"
 
@@ -101,6 +101,7 @@ def visualize_experiments(
     x_scale: str = "linear",
     y_scale: str = "linear",
     title_base: str = "",
+    legend_max_cols: int = 4,
     # Bar plots
     hatches=None,
     hatch_labels=None,
@@ -109,10 +110,11 @@ def visualize_experiments(
     bar_plot_color_attrs: Column | list[Column] | None = SSC.METHOD_NAME,
     bar_plot_color_map: dict[str, str] = METHOD_COLORS,
     bar_plot_label_map: dict[str, str] = METHOD_LABELS,
-    bar_plot_legend_max_cols: int = 4,
     # Line plots
     line_plot_x_attr: Column | None = None,
     line_plot_included_cols: set[Column] | None = None,
+    line_plot_legend_map: dict[tuple, str] = {},
+    line_plot_colors_map: dict[tuple, str] = {},
     # Heat maps
     heat_map_x_attr: Column | None = None,
     heat_map_y_attr: Column | None = None,
@@ -173,7 +175,9 @@ def visualize_experiments(
             if re.search(regex, regex_sep.join([str(key[ind]) for ind in inds]))
         }
 
-    ignored_attr_inds = [get_col_index(attr, groups) for attr in ignored_attrs]
+    act_ignored_attrs = ignored_attrs.copy()
+    act_ignored_attrs.update({attr for key in separate_plots_dict for attr in key})
+    ignored_attr_inds = {get_col_index(attr, groups) for attr in act_ignored_attrs}
 
     def create_plots(
         title_key: list,
@@ -220,7 +224,7 @@ def visualize_experiments(
             }
 
             groups_dict_filtered = {
-                erd: [col for col in cols if col not in ignored_attrs] for erd, cols in groups_dict.items()
+                erd: [col for col in cols if col not in act_ignored_attrs] for erd, cols in groups_dict.items()
             }
             groups_filtered = dict_to_tuples(groups_dict_filtered)
 
@@ -287,26 +291,37 @@ def visualize_experiments(
                     bar_width_inches=bar_width_inches,
                     color_map=bar_plot_color_map,
                     label_map=bar_plot_label_map,
-                    legend_max_cols=bar_plot_legend_max_cols,
+                    legend_max_cols=legend_max_cols,
                     save_path=get_plot_save_path("bar"),
                 )
 
             if line_plot_x_attr is not None:
+                config_label_map = get_config_labels(
+                    reduced_values_subset,
+                    groups_dict_filtered,
+                    discard_cols={line_plot_x_attr},
+                    include_cols=line_plot_included_cols,
+                )
+                for config in config_label_map:
+                    print(config)
+                legend = {key: line_plot_legend_map.get(key, val) for key, val in config_label_map.items()}
+                colors = {
+                    key: line_plot_colors_map.get(key, CATEGORY_COLORS[i % len(CATEGORY_COLORS)])
+                    for i, key in enumerate(config_label_map)
+                }
+
                 plot_lines(
                     reduced_values_subset,
                     get_col_index(line_plot_x_attr, groups_filtered),
-                    legend=get_config_labels(
-                        reduced_values_subset,
-                        groups_dict_filtered,
-                        discard_cols={line_plot_x_attr},
-                        include_cols=line_plot_included_cols,
-                    ),
+                    legend=legend,
+                    colors=colors,
                     x_label=str(line_plot_x_attr).replace("_", " ").capitalize(),
                     y_label=y_label,
                     x_scale=x_scale,
                     y_scale=y_scale,
                     y_lim=y_lim,
                     title=title,
+                    legend_max_cols=legend_max_cols,
                     mark_minimum=True,
                     save_path=get_plot_save_path("line"),
                 )

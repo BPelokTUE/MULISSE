@@ -57,7 +57,6 @@ class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, EW, SQ> 
 
         auto &RS = RunSettings::get_instance();
         uint series_len = RS.get_dataset_props().m_series_len;
-        MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
 
         size_t data_to_read;
         if constexpr (EW) {
