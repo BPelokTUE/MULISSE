@@ -124,7 +124,7 @@ class DistanceMeasure<S, MASS> {
             auto &logger = QueryLogger::get_instance();
 
             logger.start_timer(QC::IO_TIME_S);
-            mts_fft = RS.get_ffts(subs_info, channel_ind);
+            mts_fft = RS.get_ffts(subs_info.m_position.m_series, channel_ind);
             logger.stop_timer(QC::IO_TIME_S);
 
             auto *query_fft_ptr = RS.get_query_ffts(channel_ind);

@@ -5,6 +5,8 @@
 #include <cereal/access.hpp>
 #include <sstream>
 
+#include "Util/Types/Numbers.hpp"
+
 struct SubsequencePosition {
     /** @brief Index of the series within the file */
     uint m_series;
@@ -28,6 +30,17 @@ struct SubsequencePosition {
      */
     bool operator==(const SubsequencePosition &other) const {
         return m_series == other.m_series && m_start == other.m_start;
+    }
+
+    /**
+     * @brief Get the starting position of a subsequence in a file
+     * @param series_len Length of the time series in the file
+     * @param num_channels Number of channels in each time series
+     * @param channel The index of the channel to get the position for
+     * @return The starting position of the subsequence in the file
+     */
+    std::streampos get_file_pos(uint series_len, MtsNumChannelsT num_channels, MtsNumChannelsT channel = 0) const {
+        return ((m_series * num_channels + channel) * series_len + m_start) * sizeof(Real);
     }
 
     // Required for Cereal (de)serialization

@@ -48,11 +48,11 @@ class RunSettings {
     /**
      * @brief Load the FFTs of the given time series in the dataset
      *
-     * @param subs_info Information about the subsequence to get the FFTs for
+     * @param series_ind Index of the time series in the dataset
      * @param channel_ind Index of the channel in the time series
      * @return FFTs of the time series
      */
-    FftArray get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channel_ind);
+    FftArray get_ffts(uint series_ind, MtsNumChannelsT channel_ind);
 
     /**
      * @brief Check if the FFTs of the time series are supported

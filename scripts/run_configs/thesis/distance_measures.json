@@ -12,14 +12,16 @@
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
     "num_segments": [32],
-    "envelope_sizes": [48],
+    "envelope_sizes": [1000, 48],
     "distance_measures": {
         "ed": ["ed"],
-        "mass": ["mass"]
+        "mass": ["mass"],
+        "mass_ffts": ["mass"] 
     },
     "early_abandon": [true],
     "precalculate_ffts": {
-        "mass": [false]
+        "mass": [false],
+        "mass_ffts": [true]
     },
     "examine_whole": {
         "ed": [true, false],

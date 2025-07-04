@@ -137,7 +137,7 @@ void RunSettings::calculate_ffts() const {
     }
 }
 
-FftArray RunSettings::get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channel_ind) {
+FftArray RunSettings::get_ffts(uint series_ind, MtsNumChannelsT channel_ind) {
     if (!ffts_supported()) throw std::runtime_error("FFTs are not supported");
 
     // (*2) for real and imaginary parts
@@ -146,8 +146,10 @@ FftArray RunSettings::get_ffts(SubsequenceInfo subs_info, MtsNumChannelsT channe
     constexpr uint file_size_ratio = 4 * sizeof(FftPrecT) / sizeof(Real);
 
     uint series_len = m_dataset_props.m_series_len;
+
+    SubsequencePosition series_pos{.m_series = series_ind, .m_start = 0};
     size_t data_file_pos =
-        static_cast<size_t>(subs_info.get_file_pos(series_len, m_dataset_props.m_num_channels, channel_ind));
+        static_cast<size_t>(series_pos.get_file_pos(series_len, m_dataset_props.m_num_channels, channel_ind));
     m_ffts_ifs.seekg(static_cast<std::streamsize>(file_size_ratio * data_file_pos));
 
     FftArray ffts(2 * series_len);

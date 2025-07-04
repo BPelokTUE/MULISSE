@@ -121,11 +121,11 @@ void generate_queries(std::istream &data_is, std::ostream &query_os, const Query
 
     for (size_t q = 0; q < query_descriptors.size(); ++q) {
         const auto [subs_info, length, channels] = query_descriptors[q];
-        SubsequenceInfo series_start = {subs_info.m_position.m_series, 0, series_len};
+        SubsequencePosition series_pos = {.m_series = subs_info.m_position.m_series, .m_start = 0};
 
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             if (channels[c]) {
-                data_is.seekg(series_start.get_file_pos(series_len, num_channels, c));
+                data_is.seekg(series_pos.get_file_pos(series_len, num_channels, c));
                 Real sum = 0, sum_sq = 0, value;
                 for (uint j = 0; j < series_len; ++j) {
                     data_is.read(reinterpret_cast<char *>(&value), sizeof(value));
@@ -134,7 +134,7 @@ void generate_queries(std::istream &data_is, std::ostream &query_os, const Query
                 }
                 Real sigma = calculate_mu_and_sigma(sum, sum_sq, series_len).second;
 
-                data_is.seekg(subs_info.get_file_pos(series_len, num_channels, c));
+                data_is.seekg(subs_info.m_position.get_file_pos(series_len, num_channels, c));
                 for (uint j = 0; j < length; ++j) {
                     data_is.read(reinterpret_cast<char *>(&value), sizeof(value));
                     value += noise_normal_dist(rng) * sigma;

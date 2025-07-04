@@ -95,11 +95,10 @@ class IndexSearchMethod : public ISearchMethod<S, D, SQ> {
 
             data[c].resize(data_to_read);
             if constexpr (EW) {
-                auto series_start_info = subs_info;
-                series_start_info.m_position.m_start = 0;
-                dataset_ifs.seekg(series_start_info.get_file_pos(series_len, num_channels, c));
+                SubsequencePosition series_pos{.m_series = subs_info.m_position.m_series, .m_start = 0};
+                dataset_ifs.seekg(series_pos.get_file_pos(series_len, num_channels, c));
             } else {
-                dataset_ifs.seekg(subs_info.get_file_pos(series_len, num_channels, c));
+                dataset_ifs.seekg(subs_info.m_position.get_file_pos(series_len, num_channels, c));
             }
             dataset_ifs.read(reinterpret_cast<char *>(data[c].data()),
                              static_cast<std::streamsize>(data_to_read * sizeof(Real)));
