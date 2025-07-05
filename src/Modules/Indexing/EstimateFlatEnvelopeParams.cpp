@@ -10,7 +10,7 @@
 
 std::optional<FlatEnvelopeParams> estimate_flat_envelope_params(const IndexOptions &opts) {
     auto estimator_params = opts.m_estimator_params.get();
-    if (estimator_params && estimator_params->m_estimate_parameters) {
+    if (estimator_params) {
         uptr<IFlatEnvelopeParamEstimator> estimator;
         switch (estimator_params->m_param_estimator_type) {
             case THEORETICAL:

@@ -12,6 +12,7 @@
 #include "Modules/QueryGen.hpp"
 #include "Modules/RandomWalk.hpp"
 #include "Modules/Searching.hpp"
+#include "Modules/Validators.hpp"
 #include "Search/DistanceMeasure/DistanceMeasure.hpp"
 #include "Search/DistanceMeasure/EuclideanDistance.hpp"
 #include "Search/DistanceMeasure/Mass.hpp"
@@ -40,64 +41,10 @@ int main(int argc, char **argv) {
     app.require_subcommand(1);
 
     // Define custom validators
-    auto positive_int = CLI::Validator(
-        [](str &input) {
-            try {
-                uint value = U(std::stoul(input));
-                if (value > 0) {
-                    return "";
-                } else {
-                    return "Value must be greater than 0";
-                }
-            } catch (const std::exception &) {
-                return "Could not convert";
-            }
-        },
-        "POSITIVE_INTEGER", "Positive Integer");
-
-    auto non_negative_real = CLI::Validator(
-        [](str &input) {
-            try {
-                double value = std::stod(input);
-                if (value >= 0.0) {
-                    return "";
-                } else {
-                    return "Value must be non-negative";
-                }
-            } catch (const std::exception &) {
-                return "Could not convert";
-            }
-        },
-        "NON_NEGATIVE_REAL", "Non-Negative Real");
-    auto positive_real = CLI::Validator(
-        [](str &input) {
-            try {
-                double value = std::stod(input);
-                if (value > 0.0) {
-                    return "";
-                } else {
-                    return "Value must be greater than 0";
-                }
-            } catch (const std::exception &) {
-                return "Could not convert";
-            }
-        },
-        "POSITIVE_REAL", "Positive Real");
-
-    auto fraction = CLI::Validator(
-        [](str &input) {
-            try {
-                double value = std::stod(input);
-                if (value >= 0.0 && value <= 1.0) {
-                    return "";
-                } else {
-                    return "Value must be between 0 and 1";
-                }
-            } catch (const std::exception &) {
-                return "Could not convert";
-            }
-        },
-        "FRACTION", "Fraction");
+    auto positive_int = get_positive_int_validator();
+    auto non_negative_real = get_non_negative_real_validator();
+    auto positive_real = get_positive_real_validator();
+    auto fraction = get_zero_to_one_fraction_validator();
 
     // Add arguments
     str dataset_path, query_path, index_path, ffts_path,
@@ -112,7 +59,14 @@ int main(int argc, char **argv) {
         breakpoint_strategy_str = ISAX_BREAKPOINT_STRATEGY_TO_STR.at(EQUIPROBABLE),
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
         distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(PARALLEL),
-        entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY);
+        entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY),
+        param_estimator_type_str = FLAT_ENVELOPE_PARAM_ESTIMATOR_TYPE_TO_STR.at(MIN_DIST);
+    EstimatorSamplingParams estimator_sampling_params{
+        .m_seed = 0,
+        .m_ind_step = 10,
+        .m_num_queries = 100,
+        .m_sample_frac = R(0.05),
+    };
     vec<str> csv_paths;
     Real step_sd = R(1.0), noise = R(0.1), score_based_chss_score_exp = R(1.0), index_sample_frac = R(1.0),
          env_width_min_w_update = R(0.0), min_subs_sd = DEFAULT_MIN_SUBS_SD, max_width_change = R(0.0),
@@ -130,7 +84,7 @@ int main(int argc, char **argv) {
     bool zero_start = false, raw = false, approximate = false, early_abandon = false, sort_query = false,
          examine_whole = false, no_use_pq = false, adapt_index = false, merge_in_leaves = false,
          prefer_first_in_em = false, separate_segment_stats = false, no_log_num_seg_per_ch = false,
-         log_num_seg_all = false, estimate_parameters = false, use_inv_sax = false;
+         log_num_seg_all = false, use_inv_sax = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -351,8 +305,20 @@ int main(int argc, char **argv) {
                      "Maximum size of FlatEnvelopeIndex as a ratio of the dataset size, 0 by default, meaning no limit")
         ->capture_default_str()
         ->check(non_negative_real);
-    index_subcommand->add_flag("--estimate_parameters", estimate_parameters,
-                               "Estimate optimal parameters of flat envelope index given a size limit");
+    index_subcommand
+        ->add_option("--param_estimator_type,--pe_type", param_estimator_type_str,
+                     "Type of FlatEnvelopeParamEstimator to use")
+        ->capture_default_str()
+        ->check(CLI::IsMember(ACCEPTED_FLAT_ENVELOPE_PARAM_ESTIMATOR_TYPE_STRS));
+    index_subcommand->add_option("--param_estimator_step,--pe_step", estimator_sampling_params.m_ind_step)
+        ->check(positive_int);
+    index_subcommand
+        ->add_option("--param_estimator_num_queries,--pe_num_queries", estimator_sampling_params.m_num_queries)
+        ->check(positive_int);
+    index_subcommand
+        ->add_option("--param_estimator_sample_frac,--pe_sample_frac", estimator_sampling_params.m_sample_frac)
+        ->check(fraction);
+    index_subcommand->add_option("--param_estimator_seed,--pe_seed", estimator_sampling_params.m_seed);
     index_subcommand
         ->add_option("--index_sample_frac", index_sample_frac,
                      "Fraction of the dataset to index, intended for testing, "
@@ -472,6 +438,8 @@ int main(int argc, char **argv) {
     CLI11_PARSE(app, argc, argv);
     CommandType command_type = STR_TO_CMD_TYPE.at(app.get_subcommands().front()->get_name());
     SearchMethodType method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str);
+
+    bool estimate_parameters = index_size_limit > R(0.0);
     bool use_length_groups = l_per_group > 0 || estimate_parameters;
 
     // Extra parsing; TODO: handle this with CLI11 if possible
@@ -588,7 +556,7 @@ int main(int argc, char **argv) {
             return calculate_query_stats(!raw);
         }
         case INDEX: {
-            IIndexParams *index_params;
+            uptr<IIndexParams> index_params = nullptr;
 
             auto lg_segmentation_strategy_type =
                 STR_TO_LENGTH_GROUP_SEGMENTATION_STRATEGY.at(lg_segmentation_strategy_str);
@@ -656,34 +624,43 @@ int main(int argc, char **argv) {
                 case ISAX_ENVELOPE:
                 case ISAX_ENV_W_ENV:
                 case ISAX_ENV_W_SAX_ENV:
-                    index_params = new iSaxEnvelopeIndexParams(segmentation_params, merger_params, pos_per_env,
-                                                               sax_params, isax_trie_params);
+                    index_params = std::make_unique<iSaxEnvelopeIndexParams>(segmentation_params, merger_params,
+                                                                             pos_per_env, sax_params, isax_trie_params);
                     break;
                 case ISAX:
-                    index_params =
-                        new iSaxIndexParams(segmentation_params, merger_params, sax_params, isax_trie_params);
+                    index_params = std::make_unique<iSaxIndexParams>(segmentation_params, merger_params, sax_params,
+                                                                     isax_trie_params);
                     break;
                 case ENVELOPE:
-                    index_params = new EnvelopeIndexParams(segmentation_params, merger_params, pos_per_env);
+                    index_params =
+                        std::make_unique<EnvelopeIndexParams>(segmentation_params, merger_params, pos_per_env);
                     break;
                 case SAX_ENVELOPE:
-                    index_params =
-                        new SaxEnvelopeIndexParams(segmentation_params, merger_params, pos_per_env, sax_params);
+                    index_params = std::make_unique<SaxEnvelopeIndexParams>(segmentation_params, merger_params,
+                                                                            pos_per_env, sax_params);
                     break;
                 case TREE_ENVELOPE:
                 case BUCKETING_ENVELOPE:
                 case VL_ENVELOPE:
-                    index_params = new TreeEnvelopeIndexParams(segmentation_params, merger_params, pos_per_env,
-                                                               sax_params, env_grouping_params);
+                    index_params = std::make_unique<TreeEnvelopeIndexParams>(
+                        segmentation_params, merger_params, pos_per_env, sax_params, env_grouping_params);
                     break;
                 case SEQUENTIAL_SCAN:
                     std::cerr << "Sequential scan does not require indexation\n";
                     return 1;
             }
 
-            EstimatorParams *estimator_params = nullptr;
-            if (method_type == ENVELOPE && index_size_limit > 0)
-                estimator_params = new EstimatorParams({estimate_parameters, index_size_limit});
+            uptr<EstimatorParams> estimator_params = nullptr;
+            if (arr_contains(METHODS_W_ESTIMABLE_SIZE, method_type) && index_size_limit > 0) {
+                auto param_estimator_type = STR_TO_FLAT_ENVELOPE_PARAM_ESTIMATOR_TYPE.at(param_estimator_type_str);
+                uptr<EstimatorSamplingParams> estimator_sampling_params_ptr = nullptr;
+                if (arr_contains(SAMPLING_ESTIMATOR_TYPES, param_estimator_type)) {
+                    estimator_sampling_params_ptr =
+                        std::make_unique<EstimatorSamplingParams>(estimator_sampling_params);
+                }
+                estimator_params = std::make_unique<EstimatorParams>(index_size_limit, param_estimator_type,
+                                                                     std::move(estimator_sampling_params_ptr));
+            }
 
             IndexOptions index_options{
                 .m_normalized = !raw,
@@ -697,8 +674,8 @@ int main(int argc, char **argv) {
                 .m_l_max = l_max,
                 .m_series_len = series_len,
                 .m_l_per_group = l_per_group,
-                .m_estimator_params = uptr<EstimatorParams>(estimator_params),
-                .m_index_params = uptr<IIndexParams>(index_params),
+                .m_estimator_params = std::move(estimator_params),
+                .m_index_params = std::move(index_params),
             };
             return create_index(index_options, index_sample_frac);
         }

@@ -13,7 +13,7 @@
 #include "Modules/Indexing/InitializeBreakpoints.hpp"
 #include "Modules/Indexing/StrategyFactory/GetLGSegmentationStrategy.hpp"
 
-int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_per_ch, bool log_num_seg_all) {
+int create_index(const IndexOptions &opts, Real index_sample_frac, bool log_num_seg_per_ch, bool log_num_seg_all) {
     auto &RS = RunSettings::get_instance();
     str dataset_path = RS.get_dataset_path();
     str index_path = RS.get_index_path();
@@ -23,7 +23,7 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
         return 1;
     }
 
-    IndexLogger::initialize(opts, sample_frac);
+    IndexLogger::initialize(opts, index_sample_frac);
     auto &logger = IndexLogger::get_instance();
     logger.start_timer(ISC::INDEXING_TIME_S);
 
@@ -81,40 +81,20 @@ int create_index(const IndexOptions &opts, Real sample_frac, bool log_num_seg_pe
     }
 
     // Set up segmentation strategies
-
     logger.start_timer(ISC::SEGMENTATION_SETUP_TIME_S);
     vec<Real> channel_scores = get_channel_scores(opts);
     auto lg_segmentation_strategy = get_lg_segmentation_strategy(opts, &channel_scores);
     logger.set_num_segments_cols(lg_segmentation_strategy.get(), log_num_seg_per_ch, log_num_seg_all);
     logger.stop_timer(ISC::SEGMENTATION_SETUP_TIME_S);
 
-    // Set pos_per_env based on required index size, if applicable
-
-    if (opts.m_estimator_params && !opts.m_estimator_params->m_estimate_parameters) {
-        FlatEnvelopeSizeEstimator size_estimator(RS.get_length_props(), lg_segmentation_strategy.get());
-        uint pos_per_env = size_estimator.get_max_pos_per_env(index_size_limit);
-        size_t estimated_size = size_estimator.get_estimated_flat_envelope_size(pos_per_env);
-        size_t size_limit = static_cast<size_t>(index_size_limit * R(get_dataset_size(dataset_path)));
-
-        if (estimated_size > size_limit) {
-            std::cerr << "Size limit is insufficient for requested parameters. "
-                      << "Estimated size of the index is " << estimated_size << " bytes, "
-                      << "but the limit is " << size_limit << " bytes." << std::endl;
-            return 3;
-        }
-        RS.set_pos_per_env(pos_per_env);
-        logger.set_pos_per_env(pos_per_env);
-        envelope_params->m_pos_per_env = pos_per_env;
-    }
-
     // Create index
-
     IndexFactoryParams factory_params{.m_opts = opts};
 
 #define CONSTRUCT_INDEX(Type, index_factory)                                                                          \
     construct_index<Type>(                                                                                            \
         [](IndexFactoryParams &factory_params_in) -> sptr<IIndex<Type>> { return index_factory(factory_params_in); }, \
-        std::move(generator), std::move(merger), factory_params, std::move(lg_segmentation_strategy), sample_frac);
+        std::move(generator), std::move(merger), factory_params, std::move(lg_segmentation_strategy),                 \
+        index_sample_frac);
 
 #define CONSTRUCT_ENVELOPE_INDEX(index_factory)                                    \
     auto generator = get_envelope_generator(opts, lg_segmentation_strategy.get()); \

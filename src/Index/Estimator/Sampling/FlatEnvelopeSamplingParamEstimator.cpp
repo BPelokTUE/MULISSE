@@ -23,6 +23,12 @@
 #include "Util/HelperFuncs/Parallelism.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
+FlatEnvelopeSamplingParamEstimator::FlatEnvelopeSamplingParamEstimator(const IndexOptions &index_opts) {
+    if (!index_opts.m_estimator_params || !index_opts.m_estimator_params->m_sampling_params) {
+        throw std::runtime_error("FlatEnvelopeSamplingParamEstimator requires sampling parameters.");
+    }
+}
+
 FlatEnvelopeParams FlatEnvelopeSamplingParamEstimator::get_estimated_params() { return m_estimated_params; }
 
 void FlatEnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &index_opts) {
@@ -38,8 +44,8 @@ void FlatEnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &ind
     auto &sampling_params = *(index_opts.m_estimator_params->m_sampling_params);
 
     // 1. Generate configurations
-    vec<FlatEnvelopeParams> configurations =
-        DummyConfigGenerator().generate_configurations(index_opts.m_estimator_params->m_index_size_limit);
+    vec<FlatEnvelopeParams> configurations = DummyConfigGenerator().generate_configurations(
+        index_opts.m_index_method, index_opts.m_estimator_params->m_index_size_limit);
 
     // 2. Sample data
     auto [num_channels, series_len, num_series, dataset_file] = RS.get_dataset_props();
@@ -106,7 +112,7 @@ void FlatEnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &ind
         };
         auto generator = std::make_unique<EnvelopeEntryGenerator>(
             config_opts.m_normalized, config.m_pos_per_env, length_props, lg_segmentation_strategy.get(),
-            sampling_params.m_last_ind_step, sampling_params.m_first_ind_step);
+            sampling_params.m_ind_step, sampling_params.m_ind_step);
         auto merger = std::make_unique<DummyEntryMerger<Envelope>>();
 
         // 4.1. Create a FlatEnvelopeIndex, skipping positions and lengths in the envelopes

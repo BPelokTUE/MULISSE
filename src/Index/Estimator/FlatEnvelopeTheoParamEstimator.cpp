@@ -32,8 +32,8 @@ FlatEnvelopeParamTheoEstimator::FlatEnvelopeParamTheoEstimator(const IndexOption
 
     auto &RS = RunSettings::get_instance();
 
-    vec<FlatEnvelopeParams> configurations =
-        DummyConfigGenerator().generate_configurations(opts.m_estimator_params->m_index_size_limit);
+    vec<FlatEnvelopeParams> configurations = DummyConfigGenerator().generate_configurations(
+        opts.m_index_method, opts.m_estimator_params->m_index_size_limit);
 
     std::default_random_engine rng(seed);
     LengthProperties length_props = RS.get_length_props();

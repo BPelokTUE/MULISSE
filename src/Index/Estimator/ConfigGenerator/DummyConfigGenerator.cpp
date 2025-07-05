@@ -3,12 +3,13 @@
 #include <cmath>
 
 #include "Index/EnvelopeIndex/Flat/FlatEnvelopeParams.hpp"
-#include "Index/Estimator/FlatEnvelopeSizeEstimator.hpp"
+#include "Index/Estimator/IndexSizeEstimator.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Path.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
-vec<FlatEnvelopeParams> DummyConfigGenerator::generate_configurations(Real index_size_limit) {
+vec<FlatEnvelopeParams> DummyConfigGenerator::generate_configurations(SearchMethodType index_type,
+                                                                      Real index_size_limit) {
     auto &RS = RunSettings::get_instance();
     size_t size_limit_bytes = static_cast<size_t>(index_size_limit * R(get_dataset_size(RS.get_dataset_path())));
 
@@ -31,7 +32,7 @@ vec<FlatEnvelopeParams> DummyConfigGenerator::generate_configurations(Real index
                 .m_num_l_groups = num_l_groups,
             };
 
-            FlatEnvelopeSizeEstimator size_estimator(length_props, nullptr, num_segments);
+            IndexSizeEstimator size_estimator(index_type, length_props, nullptr, num_segments);
             uint pos_per_env = size_estimator.get_max_pos_per_env(index_size_limit);
             size_t estimated_size = size_estimator.get_estimated_flat_envelope_size(pos_per_env);
             if (size_limit_bytes >= estimated_size) {

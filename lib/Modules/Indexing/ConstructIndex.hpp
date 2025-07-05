@@ -1,7 +1,7 @@
 #ifndef MODULES_INDEXING_CONSTRUCTINDEX
 #define MODULES_INDEXING_CONSTRUCTINDEX
 
-#include "Index/Estimator/FlatEnvelopeSizeEstimator.hpp"
+#include "Index/Estimator/IndexSizeEstimator.hpp"
 #include "Index/Index.hpp"
 #include "Index/LengthGroupingIndex/LengthGroupingIndex.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
@@ -41,8 +41,8 @@ void construct_index(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_
     finalized_index->save(RS.get_index_path(), opts.m_index_format);
 
     logger.increment_count_col(ISC::SIZE_ON_DISK_B, finalized_index->get_size_on_disk(RS.get_index_path()));
-    if (opts.m_index_method == ENVELOPE) {
-        FlatEnvelopeSizeEstimator size_estimator(RS.get_length_props(), lg_segmentation_strategy.get());
+    if (arr_contains(METHODS_W_ESTIMABLE_SIZE, opts.m_index_method)) {
+        IndexSizeEstimator size_estimator(opts.m_index_method, RS.get_length_props(), lg_segmentation_strategy.get());
         logger.increment_count_col(ISC::ESTIMATED_SIZE_ON_DISK_B, size_estimator.get_estimated_flat_envelope_size(
                                                                       RS.get_envelope_props().m_pos_per_env));
     }

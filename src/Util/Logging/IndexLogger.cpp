@@ -30,12 +30,17 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
     str lg_ss_str = "", ch_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "",
         merge_in_leaves_str = "", method_type_str = "", entry_merger_type_str = "", env_stats_chss_weights_file = "",
         multi_chss_num_seg_file = "", chss_scores_type_str = "", env_width_chss_min_w_update_str = "",
-        max_width_change_str = "", use_inv_sax_str = "";
-    Real score_based_chss_score_exp = 0.0;
+        max_width_change_str = "", use_inv_sax_str = "", param_estimator_type_str;
+    Real score_based_chss_score_exp = R(0.0), index_size_limit = R(0.0);
+    const EstimatorSamplingParams *pe_sampling_params;
 
-    Real index_size_limit = index_options.m_index_method == ENVELOPE && index_options.m_estimator_params
-                                ? index_options.m_estimator_params->m_index_size_limit
-                                : 0.0;
+    if (arr_contains(METHODS_W_ESTIMABLE_SIZE, index_options.m_index_method) && index_options.m_estimator_params) {
+        auto estimator_params = index_options.m_estimator_params.get();
+        index_size_limit = estimator_params->m_index_size_limit;
+        pe_sampling_params = estimator_params->m_sampling_params.get();
+        param_estimator_type_str =
+            FLAT_ENVELOPE_PARAM_ESTIMATOR_TYPE_TO_STR.at(estimator_params->m_param_estimator_type);
+    }
 
     if (index_options.m_index_params && arr_contains(METHODS_W_PAA, index_options.m_index_method)) {
         auto method_type = index_options.m_index_params->get_type();
@@ -120,6 +125,11 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         {ISC::SCORE_BASED_CHSS_SCORES_TYPE, chss_scores_type_str},
         {ISC::POS_PER_ENV, format_num_param(pos_per_env)},
         {ISC::INDEX_SIZE_LIMIT, format_num_param(index_size_limit)},
+        {ISC::PARAM_ESTIMATOR_TYPE, param_estimator_type_str},
+        {ISC::PARAM_ESTIMATOR_SEED, pe_sampling_params ? to_string(pe_sampling_params->m_seed) : ""},
+        {ISC::PARAM_ESTIMATOR_STEP, pe_sampling_params ? to_string(pe_sampling_params->m_ind_step) : ""},
+        {ISC::PARAM_ESTIMATOR_NUM_QUERIES, pe_sampling_params ? to_string(pe_sampling_params->m_num_queries) : ""},
+        {ISC::PARAM_ESTIMATOR_SAMPLE_FRAC, pe_sampling_params ? to_string(pe_sampling_params->m_sample_frac) : ""},
         {ISC::ENTRY_MERGER_TYPE, entry_merger_type_str},
         {ISC::MERGER_NUM_BITS, format_num_param(merger_num_bits)},
         {ISC::FIRST_LAYER_NUM_BITS, format_num_param(first_layer_num_bits)},

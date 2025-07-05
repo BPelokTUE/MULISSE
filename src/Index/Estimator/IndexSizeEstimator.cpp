@@ -1,23 +1,36 @@
-#include "Index/Estimator/FlatEnvelopeSizeEstimator.hpp"
+#include "Index/Estimator/IndexSizeEstimator.hpp"
 
 #include "Enums/ChannelSegmentationStrategyType.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
 #include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
+#include "Util/HelperFuncs/Containers.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Path.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
 using CHSS = ChannelSegmentationStrategyType;
 
-FlatEnvelopeSizeEstimator::FlatEnvelopeSizeEstimator(LengthProperties length_props,
-                                                     const ILengthGroupSegmentationStrategy *lg_segmentation_strategy,
-                                                     SaxSegIndT num_segments)
+IndexSizeEstimator::IndexSizeEstimator(SearchMethodType method_type, LengthProperties length_props,
+                                       const ILengthGroupSegmentationStrategy *lg_segmentation_strategy,
+                                       SaxSegIndT num_segments)
     : m_lg_segmentation_strategy(lg_segmentation_strategy),
       m_length_props(length_props),
-      m_segment_len(num_segments > 0 ? length_props.m_l_max / num_segments : 0) {}
+      m_segment_len(num_segments > 0 ? length_props.m_l_max / num_segments : 0) {
+    switch (method_type) {
+        case ENVELOPE:
+            m_size_per_bound = sizeof(Real);
+            break;
+        case SAX_ENVELOPE:
+            m_size_per_bound = sizeof(SaxSymbolT);
+            break;
+        default:
+            throw std::invalid_argument(
+                "IndexSizeEstimator can only be used with methods that have an estimable size.");
+    }
+}
 
-size_t FlatEnvelopeSizeEstimator::get_estimated_flat_envelope_size(uint pos_per_env, bool add_entry_vec_size) {
+size_t IndexSizeEstimator::get_estimated_flat_envelope_size(uint pos_per_env, bool add_entry_vec_size) {
     auto [num_channels, series_len, num_series, ds_file] = RunSettings::get_instance().get_dataset_props();
 
     size_t estimated_size = 0;
@@ -44,14 +57,14 @@ size_t FlatEnvelopeSizeEstimator::get_estimated_flat_envelope_size(uint pos_per_
         // - The lower and upper bound vectors = 2 * num_segments_total * sizeof(Real)
         // => 20 + 16 * num_channels + 2 * num_segments_total * sizeof(Real)
         estimated_size += num_envelopes * (sizeof(SubsequenceInfo) + sizeof(size_t) +
-                                           2 * (num_segments_total * sizeof(Real) + num_channels * sizeof(size_t)));
+                                           2 * (num_segments_total * m_size_per_bound + num_channels * sizeof(size_t)));
 
         if (add_entry_vec_size) estimated_size += get_overhead_size();
     }
     return estimated_size;
 }
 
-uint FlatEnvelopeSizeEstimator::get_max_pos_per_env(Real index_size_limit) {
+uint IndexSizeEstimator::get_max_pos_per_env(Real index_size_limit) {
     auto &RS = RunSettings::get_instance();
 
     uint series_len = RS.get_dataset_props().m_series_len;
@@ -69,4 +82,4 @@ uint FlatEnvelopeSizeEstimator::get_max_pos_per_env(Real index_size_limit) {
                     std::max(min_pos_per_env, static_cast<uint>((numerator + denominator - 1) / denominator)));
 }
 
-size_t FlatEnvelopeSizeEstimator::get_overhead_size() { return 107; }
+size_t IndexSizeEstimator::get_overhead_size() { return 107; }

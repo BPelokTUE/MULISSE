@@ -22,6 +22,13 @@ class FlatEnvelopeSamplingParamEstimator : public IFlatEnvelopeParamEstimator {
    public:
     virtual ~FlatEnvelopeSamplingParamEstimator() = default;
 
+    /**
+     * @brief Constructor for FlatEnvelopeSamplingParamEstimator, checks if the index options contain the required
+     * parameters
+     * @param index_opts The initial index options to use for the FlatEnvelopeIndex
+     */
+    FlatEnvelopeSamplingParamEstimator(const IndexOptions &index_opts);
+
     FlatEnvelopeParams get_estimated_params() override;
 
    protected:

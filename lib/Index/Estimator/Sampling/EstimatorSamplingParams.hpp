@@ -5,8 +5,7 @@
 
 struct EstimatorSamplingParams {
     uint m_seed;
-    uint m_last_ind_step;
-    uint m_first_ind_step;
+    uint m_ind_step;
     uint m_num_queries;
     Real m_sample_frac;
 };

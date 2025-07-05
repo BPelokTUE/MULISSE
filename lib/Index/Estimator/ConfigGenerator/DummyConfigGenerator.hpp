@@ -5,7 +5,7 @@
 
 class DummyConfigGenerator : public IConfigGenerator {
    public:
-    vec<FlatEnvelopeParams> generate_configurations(Real index_size_limit) override;
+    vec<FlatEnvelopeParams> generate_configurations(SearchMethodType index_type, Real index_size_limit) override;
 };
 
 #endif  // INDEX_ESTIMATOR_CONFIGGENERATOR_DUMMYCONFIGGENERATOR_HPP

@@ -9,10 +9,8 @@
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/RunSettings/LengthProperties.hpp"
 
-FlatEnvelopeMinDistParamEstimator::FlatEnvelopeMinDistParamEstimator(const IndexOptions &index_opts) {
-    if (!index_opts.m_estimator_params || !index_opts.m_estimator_params->m_sampling_params) {
-        throw std::runtime_error("FlatEnvelopeMinDistParamEstimator requires sampling parameters.");
-    }
+FlatEnvelopeMinDistParamEstimator::FlatEnvelopeMinDistParamEstimator(const IndexOptions &index_opts)
+    : FlatEnvelopeSamplingParamEstimator(index_opts) {
     m_query_accs.resize(index_opts.m_estimator_params->m_sampling_params->m_num_queries,
                         vec<vec<Real>>(index_opts.m_num_channels));
     estimate_params(index_opts);

@@ -13,22 +13,27 @@ struct FlatEnvelopeParams;
 
 /** @brief Enum of the columns of the index settings log file */
 enum class IndexSettingsColumn {
-    ID,                          // Index of the setting within the log file
-    DATASET_FILE,                // Name of the indexed dataset file
-    INDEX_FILE,                  // Name of the index file
-    FFTS_FILE,                   // Name of the FFTs file, empty if not used
-    L_MIN,                       // Minimum allowed query length
-    L_MAX,                       // Maximum allowed query length
-    L_PER_GROUP,                 // Size of length groups
-    POS_PER_ENV,                 // Number of positions per envelope for envelope-based methods
-    INDEX_SIZE_LIMIT,            // Maximum size of the index in bytes, only supported for FlatEnvelopeIndex
-    ENTRY_MERGER_TYPE,           // Type of entry merger used
-    MERGER_NUM_BITS,             // Number of bits used for SAX-based entry merger, if applicable
-    NORMALIZED,                  // Whether the query and subsequences are normalized
-    INDEX_TYPE,                  // Type of index used
-    LG_SEGMENTATION_STRATEGY,    // Strategy for varying the channel segmentation strategy for different length groups
-    CH_SEGMENTATION_STRATEGY,    // Strategy for varying the segmentation strategy for different channels
-    SEGMENTATION_STRATEGY,       // Strategy for segmenting the time series channels
+    ID,                           // Index of the setting within the log file
+    DATASET_FILE,                 // Name of the indexed dataset file
+    INDEX_FILE,                   // Name of the index file
+    FFTS_FILE,                    // Name of the FFTs file, empty if not used
+    L_MIN,                        // Minimum allowed query length
+    L_MAX,                        // Maximum allowed query length
+    L_PER_GROUP,                  // Size of length groups
+    POS_PER_ENV,                  // Number of positions per envelope for envelope-based methods
+    INDEX_SIZE_LIMIT,             // Maximum size of the index in bytes, only supported for FlatEnvelopeIndex
+    PARAM_ESTIMATOR_TYPE,         // Type of IFlatEnvelopeParamEstimator used, if applicable
+    PARAM_ESTIMATOR_SEED,         // Seed for the parameter estimator, if applicable
+    PARAM_ESTIMATOR_STEP,         // Step size for the parameter estimator, if applicable
+    PARAM_ESTIMATOR_NUM_QUERIES,  // Number of queries used for the parameter estimator, if applicable
+    PARAM_ESTIMATOR_SAMPLE_FRAC,  // Fraction of the dataset used for the parameter estimator, if applicable
+    ENTRY_MERGER_TYPE,            // Type of entry merger used
+    MERGER_NUM_BITS,              // Number of bits used for SAX-based entry merger, if applicable
+    NORMALIZED,                   // Whether the query and subsequences are normalized
+    INDEX_TYPE,                   // Type of index used
+    LG_SEGMENTATION_STRATEGY,     // Strategy for varying the channel segmentation strategy for different length groups
+    CH_SEGMENTATION_STRATEGY,     // Strategy for varying the segmentation strategy for different channels
+    SEGMENTATION_STRATEGY,        // Strategy for segmenting the time series channels
     NUM_SEGMENTS,                // The number of segments used per channel on average in the highest order length group
     NUM_SEGMENTS_PER_CHANNEL,    // List of numbers of segments per channel in the highest order length group
     NUM_SEGMENTS_ALL,            // List of numbers of segments per length group, per channel

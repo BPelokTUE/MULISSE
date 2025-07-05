@@ -9,4 +9,6 @@ enum FlatEnvelopeParamEstimatorType { THEORETICAL, MIN_DIST, QUERY_TIME };
 DEFINE_ENUM_CONSTS(FlatEnvelopeParamEstimatorType, FLAT_ENVELOPE_PARAM_ESTIMATOR_TYPE, false,
                    (umap<str, FlatEnvelopeParamEstimatorType>{{"theo", THEORETICAL}, {"time", QUERY_TIME}}));
 
+constexpr std::array SAMPLING_ESTIMATOR_TYPES{MIN_DIST, QUERY_TIME};
+
 #endif  // ENUMS_FLATENVELOPEPARAMESTIMATORTYPE_HPP
