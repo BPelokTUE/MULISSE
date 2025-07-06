@@ -18,14 +18,11 @@ class LengthGroupingIndexSearch : public ISearchMethod<S, D, SQ> {
     /**
      * @brief Construct a new LengthGroupingIndexSearch object
      * @param search_methods The search methods to use for each length group
-     * @param l_min Minimum query length
-     * @param l_max Maximum query length
+     * @param length_props The length properties to use
      */
-    LengthGroupingIndexSearch(vec<uptr<ISearchMethod<S, D, SQ>>> search_methods, uint l_min, uint l_max)
-        : m_search_methods(std::move(search_methods)), m_l_min(l_min), m_l_max(l_max) {
-        assert(l_min > 0);
-        assert(l_max > 0);
-        assert(l_min <= l_max);
+    LengthGroupingIndexSearch(vec<uptr<ISearchMethod<S, D, SQ>>> search_methods, LengthProperties length_props)
+        : m_search_methods(std::move(search_methods)), m_length_props(length_props) {
+        assert(U(m_search_methods.size()) == m_length_props.m_num_l_groups);
     }
 
     inline void reset() override {
@@ -42,14 +39,14 @@ class LengthGroupingIndexSearch : public ISearchMethod<S, D, SQ> {
                 break;
             }
         }
-        uint length_group = RunSettings::get_instance().get_length_props().get_length_group(query_len);
+        uint length_group = m_length_props.get_length_group(query_len);
         return m_search_methods[length_group]->search(query, opts, result_set, distance_measure, dataset_ifs,
                                                       real_query_inds);
     }
 
    private:
     vec<uptr<ISearchMethod<S, D, SQ>>> m_search_methods;
-    uint m_l_min, m_l_max;
+    LengthProperties m_length_props;
 };
 
 #endif  // SEARCH_LENGTHGROUPINGINDEXSEARCH_HPP

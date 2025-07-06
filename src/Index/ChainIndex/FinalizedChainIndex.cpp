@@ -42,4 +42,12 @@ IFinalizedIndex<FTag> *FinalizedChainIndex<FTag>::release_exact_index() {
     return m_exact_index.release();
 }
 
+template <typename FTag>
+str FinalizedChainIndex<FTag>::get_index_file_path(const str &path_base, bool exact, ArchiveType ar_type,
+                                                   uint approx_ind) const {
+    auto [base, extension] = get_file_base_and_extension(path_base);
+    extension = extension.empty() ? get_archive_extension(ar_type) : extension;
+    return base + (exact ? "_exact" : "_approx_" + std::to_string(approx_ind)) + extension;
+}
+
 DECLARE_ENTRY_TAG_SPECS(FinalizedChainIndex)

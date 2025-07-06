@@ -38,11 +38,7 @@ class FinalizedChainIndex : public IFinalizedIndex<FTag> {
      * @param approx_ind The index of the approximate index, if applicable
      * @return The file path for the index
      */
-    str get_index_file_path(const str &path_base, bool exact, ArchiveType ar_type, uint approx_ind = 0) const {
-        auto [base, extension] = get_file_base_and_extension(path_base);
-        extension = extension.empty() ? get_archive_extension(ar_type) : extension;
-        return base + (exact ? "_exact" : "_approx_" + std::to_string(approx_ind)) + extension;
-    }
+    str get_index_file_path(const str &path_base, bool exact, ArchiveType ar_type, uint approx_ind = 0) const;
 };
 
 #endif  // INDEX_CHAININDEX_FINALIZEDCHAININDEX_HPP

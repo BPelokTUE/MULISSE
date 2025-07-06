@@ -381,17 +381,6 @@ int main(int argc, char **argv) {
     search_subcommand->add_option("-t,--method_type", search_method_type_str, "Search method type")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_SEARCH_METHOD_TYPE_STRS));
-    search_subcommand
-        ->add_option("-g,--l_per_group", l_per_group,
-                     "Lengths per group, 0 by default, indicating no length-based grouping")
-        ->capture_default_str()
-        ->check(positive_int);
-    search_subcommand->add_option("-l,--l_min", l_min, "Minimum length of subsequences")
-        ->capture_default_str()
-        ->check(positive_int);
-    search_subcommand->add_option("-L,--l_max", l_max, "Maximum length of subsequences")
-        ->capture_default_str()
-        ->check(positive_int);
     search_subcommand->add_option("-f,--format", index_format_str, "Index format")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ARCHIVE_TYPE_STRS));
@@ -439,7 +428,7 @@ int main(int argc, char **argv) {
     CommandType command_type = STR_TO_CMD_TYPE.at(app.get_subcommands().front()->get_name());
     SearchMethodType method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str);
 
-    bool estimate_parameters = index_size_limit > R(0.0);
+    bool estimate_parameters = arr_contains(METHODS_W_ESTIMABLE_SIZE, method_type) && index_size_limit > R(0.0);
     bool use_length_groups = l_per_group > 0 || estimate_parameters;
 
     // Extra parsing; TODO: handle this with CLI11 if possible
@@ -503,9 +492,7 @@ int main(int argc, char **argv) {
                 }
             }
         }
-        if (((method_type == ENVELOPE && !estimate_parameters) || method_type == SAX_ENVELOPE ||
-             method_type == ISAX_ENVELOPE) &&
-            pos_per_env == 0) {
+        if (!estimate_parameters && arr_contains(METHODS_W_ENVELOPE, method_type) && pos_per_env == 0) {
             std::cerr << "--pos_per_env is required\n";
             return 1;
         }
@@ -517,12 +504,6 @@ int main(int argc, char **argv) {
             }
             if (!early_abandon) {
                 std::cerr << "Sorting queries is only supported with early abandoning\n";
-                return 1;
-            }
-        }
-        if (use_length_groups) {
-            if (l_min == 0 || l_max == 0 || l_min > l_max) {
-                std::cerr << "When using length-based grouping, --l_min and --l_max must be provided\n";
                 return 1;
             }
         }
@@ -697,14 +678,10 @@ int main(int argc, char **argv) {
                 .m_sort_queries = sort_query,
                 .m_examine_whole = examine_whole,
                 .m_use_priority_queue = !no_use_pq,
-                .m_use_length_groups = use_length_groups,
                 .m_search_method_type = STR_TO_SEARCH_METHOD_TYPE.at(search_method_type_str),
                 .m_index_format = STR_TO_ARCHIVE_TYPE.at(index_format_str),
                 .m_search_type = search_type,
                 .m_distance_type = distance_type,
-                .m_l_min = l_min,
-                .m_l_max = l_max,
-                .m_l_per_group = l_per_group,
                 .m_knn_k = knn_k,
                 .m_r_range_r = r_range_r,
                 .m_max_leaves_to_visit = max_leaves_to_visit,
@@ -761,6 +738,5 @@ int main(int argc, char **argv) {
             }
         }
     }
-
     return 0;
 }

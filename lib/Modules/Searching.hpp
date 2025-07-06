@@ -1,6 +1,10 @@
 #ifndef MODULES_SEARCHING_HPP
 #define MODULES_SEARCHING_HPP
 
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
 #include "Enums/DistanceType.hpp"
 #include "Enums/SearchType.hpp"
 #include "Index/ChainIndex/ChainIndex.hpp"
@@ -27,6 +31,19 @@
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"
 
+LengthProperties determine_length_properties(const SearchOptions &opts) {
+    auto &RS = RunSettings::get_instance();
+    // Check if the index is a directory (indicating length-based grouping)
+    str index_path = RS.get_index_path();
+    if (fs::is_directory(index_path)) {
+        LengthProperties length_props;
+        length_props.load(fs::path(index_path) / LengthProperties::DEFAULT_FILE_NAME);
+        return length_props;
+    } else {
+        return {.m_use_length_groups = false};
+    }
+}
+
 /**
  * @brief Helper function for loading index-based search methods
  * @tparam FTag The traits of the entries in the index
@@ -48,22 +65,25 @@ uptr<ISearchMethod<S, D, SQ>> load_index_based_method(
 
     uptr<IFinalizedIndex<FTag>> index;
     str index_path = RS.get_index_path();
-    uint num_len_groups = RS.get_length_props().m_num_l_groups;
 
-    if (opts.m_use_length_groups) {
+    // Temporary solution until metafiles are introduced
+    LengthProperties length_props = determine_length_properties(opts);
+    //
+    uint num_len_groups = length_props.m_num_l_groups, use_length_groups = length_props.m_use_length_groups;
+
+    if (use_length_groups) {
         vec<uptr<IFinalizedIndex<FTag>>> group_indexes(num_len_groups);
         for (uint l_ind = 0; l_ind < num_len_groups; l_ind++) {
             group_indexes[l_ind] = finalized_index_factory();
         }
-        index =
-            std::make_unique<FinalizedLengthGroupingIndex<FTag>>(std::move(group_indexes), opts.m_l_min, opts.m_l_max);
+        index = std::make_unique<FinalizedLengthGroupingIndex<FTag>>(std::move(group_indexes), length_props);
     } else {
         index = finalized_index_factory();
     }
 
     index->load(index_path, opts.m_index_format);
 
-    if (opts.m_use_length_groups) {
+    if (use_length_groups) {
         vec<uptr<ISearchMethod<S, D, SQ>>> search_methods(num_len_groups);
         auto grouping_index = uptr<FinalizedLengthGroupingIndex<FTag>>(
             static_cast<FinalizedLengthGroupingIndex<FTag> *>(index.release()));
@@ -71,8 +91,7 @@ uptr<ISearchMethod<S, D, SQ>> load_index_based_method(
             search_methods[l_ind] =
                 search_method_factory(uptr<IFinalizedIndex<FTag>>(grouping_index->release_index(l_ind)));
         }
-        return std::make_unique<LengthGroupingIndexSearch<S, D, SQ>>(std::move(search_methods), opts.m_l_min,
-                                                                     opts.m_l_max);
+        return std::make_unique<LengthGroupingIndexSearch<S, D, SQ>>(std::move(search_methods), length_props);
     } else {
         return search_method_factory(std::move(index));
     }

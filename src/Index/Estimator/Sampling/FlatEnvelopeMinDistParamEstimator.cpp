@@ -73,17 +73,17 @@ bool FlatEnvelopeMinDistParamEstimator::is_config_better(
             uint seg_start = 0;
             for (SaxSegIndT seg_ind = 0; seg_ind < query_ch_paa.size(); ++seg_ind) {
                 uint seg_len = segmentation_strategy->get_segment_len(seg_ind), seg_end = seg_start + seg_len;
-                query_ch_paa[seg_ind] = (query_acc[c][seg_end + 1] - query_acc[c][seg_start + 1]) / R(seg_len);
+                query_ch_paa[seg_ind] = (query_acc[c][seg_end - 1] - query_acc[c][seg_start]) / R(seg_len);
                 seg_start = seg_end;
             }
 
             for (auto &entry : entries[lg_ind]) {
                 for (SaxSegIndT seg_ind = 0; seg_ind < query_ch_paa.size(); ++seg_ind) {
                     Real segment_len_r = R(segmentation_strategy->get_segment_len(seg_ind));
-                    min_dist_sum_query += distance_measure.min_dist_squared(query_ch_paa[seg_ind],
-                                                                            entry.m_mts_summary[c].m_lower[seg_ind],
-                                                                            entry.m_mts_summary[c].m_upper[seg_ind]) *
-                                          segment_len_r;
+                    Real lower = entry.m_mts_summary[c].m_lower[seg_ind],
+                         upper = entry.m_mts_summary[c].m_upper[seg_ind];
+                    min_dist_sum_query +=
+                        distance_measure.min_dist_squared(query_ch_paa[seg_ind], lower, upper) * segment_len_r;
                 }
             }
             m_min_dist_totals[config_ind] += min_dist_sum_query / R(entries[lg_ind].size());

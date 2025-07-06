@@ -6,6 +6,8 @@
 #include "Index/LengthGroupingIndex/LengthGroupingIndex.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
 #include "Modules/Indexing/IndexFactory/IndexFactoryParams.hpp"
+#include "Util/Logging/IndexLogger.hpp"
+#include "Util/RunSettings/RunSettings.hpp"
 
 template <typename T>
     requires DerivedFromEntryData<T>
@@ -16,6 +18,15 @@ void construct_index(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_
     auto &RS = RunSettings::get_instance();
     auto &logger = IndexLogger::get_instance();
     auto &opts = factory_params.m_opts;
+
+    // Temporary solution until metafile are introduced
+    LengthProperties length_props{
+        .m_use_length_groups = opts.m_use_length_groups,
+        .m_l_min = opts.m_l_min,
+        .m_l_max = opts.m_l_max,
+    };
+    length_props.set_lengths_per_group(opts.m_l_per_group);
+    //
 
     sptr<IIndex<T>> index;
     if (opts.m_use_length_groups) {
@@ -29,7 +40,7 @@ void construct_index(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_
             };
             group_indexes[lg_ind] = index_factory(lg_factory_params);
         }
-        index = std::make_shared<LengthGroupingIndex<T>>(std::move(group_indexes), opts.m_l_min, opts.m_l_max);
+        index = std::make_shared<LengthGroupingIndex<T>>(std::move(group_indexes), length_props);
     } else {
         factory_params.m_ch_segmentation_strategy = lg_segmentation_strategy->get_ch_segmentation_strategy(0);
         index = index_factory(factory_params);

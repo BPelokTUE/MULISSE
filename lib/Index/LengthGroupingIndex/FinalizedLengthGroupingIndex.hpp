@@ -3,6 +3,7 @@
 
 #include "Index/FinalizedIndex.hpp"
 #include "Index/Traits/EntryTags.hpp"
+#include "Util/RunSettings/LengthProperties.hpp"
 #include "Util/Types/Pointers.hpp"
 
 /**
@@ -11,57 +12,38 @@
  * @tparam FTag The traits of the entries in the index
  */
 template <typename FTag>
-    requires ValidEntryTraitsTag<FTag>
 class FinalizedLengthGroupingIndex : public IFinalizedIndex<FTag> {
    public:
     /**
      * @brief Construct a new FinalizedLengthGroupingIndex object
      * @param indexes The indexes to use for each length group
-     * @param l_min Minimum query length
-     * @param l_max Maximum query length
+     * @param length_props The length properties to use for the length groups
      */
-    FinalizedLengthGroupingIndex(vec<uptr<IFinalizedIndex<FTag>>> indexes, uint l_min, uint l_max)
-        : m_indexes(std::move(indexes)), m_l_min(l_min), m_l_max(l_max) {
-        assert(l_min > 0);
-        assert(l_max > 0);
-        assert(l_min <= l_max);
-    }
+    FinalizedLengthGroupingIndex(vec<uptr<IFinalizedIndex<FTag>>> indexes, LengthProperties length_props);
 
-    void save(const str &out_file, ArchiveType ar_type) override {
-        str base = get_file_base_and_extension(out_file).first;
+    void save(const str &out_file, ArchiveType ar_type) override;
 
-        if (!fs::exists(base)) fs::create_directories(base);
+    void load(const str &in_file, ArchiveType ar_type) override;
 
-        for (uint l_ind = 0; l_ind < m_indexes.size(); ++l_ind)
-            m_indexes[l_ind]->save(fs::path(base) / get_index_file_name(l_ind), ar_type);
-    }
+    size_t get_size_on_disk(const str &index_file, const ArchiveType ar_type) const override;
 
-    void load(const str &in_file, ArchiveType ar_type) override {
-        str base = get_file_base_and_extension(in_file).first;
-
-        for (uint l_ind = 0; l_ind < m_indexes.size(); ++l_ind)
-            m_indexes[l_ind]->load(fs::path(base) / get_index_file_name(l_ind), ar_type);
-    }
-
-    size_t get_size_on_disk(const str &index_file, const ArchiveType ar_type) const override {
-        str base = get_file_base_and_extension(index_file).first;
-
-        size_t size = 0;
-        for (uint l_ind = 0; l_ind < m_indexes.size(); ++l_ind)
-            size += m_indexes[l_ind]->get_size_on_disk(fs::path(base) / get_index_file_name(l_ind), ar_type);
-        return size;
-    }
-
-    IFinalizedIndex<FTag> *release_index(uint length_group) {
-        assert(length_group < m_indexes.size());
-        return m_indexes[length_group].release();
-    }
+    /**
+     * @brief Release the index of a specific length group
+     * @param length_group The index of the length group
+     * @return Pointer to the released index
+     */
+    IFinalizedIndex<FTag> *release_index(uint length_group);
 
    private:
     vec<uptr<IFinalizedIndex<FTag>>> m_indexes;
-    uint m_l_min, m_l_max;
+    LengthProperties m_length_props;
 
-    str get_index_file_name(uint length_group) const { return "LG_" + std::to_string(length_group); }
+    /**
+     * @brief Get the file name for a specific length group index.
+     * @param length_group The index of the length group
+     * @return The file name for the index of the specified length group
+     */
+    str get_index_file_name(uint length_group) const;
 };
 
 #endif  // INDEX_LENGTHGROUPINGINDEX_FINALIZEDLENGTHGROUPINGINDEX_HPP

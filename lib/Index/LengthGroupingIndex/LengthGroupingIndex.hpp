@@ -3,16 +3,8 @@
 
 #include <filesystem>
 
-#include "Enums/DistanceType.hpp"
-#include "Enums/SearchType.hpp"
-#include "Index/Entry/EntryData.hpp"
 #include "Index/Index.hpp"
-#include "Index/LengthGroupingIndex/FinalizedLengthGroupingIndex.hpp"
-#include "Index/Traits/EntryTags.hpp"
-#include "Index/Traits/IndexTraits.hpp"
-#include "Util/HelperFuncs/Parallelism.hpp"
-#include "Util/Logging/IndexLogger.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
+#include "Util/RunSettings/LengthProperties.hpp"
 
 namespace fs = std::filesystem;
 
@@ -21,7 +13,6 @@ namespace fs = std::filesystem;
  * @tparam T The type of the entries in the index
  */
 template <typename T>
-    requires DerivedFromEntryData<T>
 class LengthGroupingIndex : public IIndex<T> {
    public:
     using FTag = typename IndexTraits<T>::FinalizedTag;
@@ -29,54 +20,25 @@ class LengthGroupingIndex : public IIndex<T> {
     /**
      * @brief Construct a new LengthGroupingIndex object
      * @param indexes The indexes to use for each length group
-     * @param l_min Minimum query length
-     * @param l_max Maximum query length
+     * @param length_props The length properties to use for length groups
      */
-    LengthGroupingIndex(vec<sptr<IIndex<T>>> indexes, uint l_min, uint l_max)
-        : m_indexes(indexes), m_l_min(l_min), m_l_max(l_max) {
-        assert(l_min > 0);
-        assert(l_max > 0);
-        assert(l_min <= l_max);
-    }
+    LengthGroupingIndex(vec<sptr<IIndex<T>>> indexes, LengthProperties length_props);
 
-    void insert_entry_groups(vec<vec<IndexEntry<T>>> &entry_groups, EntryInserterType inserter_type) override {
-        OMP_PRAGMA(omp parallel for)
-        for (uint l_ind = 0; l_ind < U(entry_groups.size()); ++l_ind) {
-            auto &entry_group = entry_groups[l_ind];
-            m_indexes[l_ind]->insert_entries(entry_group, inserter_type);
-        }
-    }
+    void insert_entry_groups(vec<vec<IndexEntry<T>>> &entry_groups, EntryInserterType inserter_type) override;
 
-    void insert_entries(vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) override {
-        for (auto &entry : entries) {
-            m_indexes[get_entry_length_group(entry)]->insert(entry);
-        }
-    }
+    void insert_entries(vec<IndexEntry<T>> &entries, EntryInserterType inserter_type) override;
 
-    void insert(IndexEntry<T> &entry) override { m_indexes[get_entry_length_group(entry)]->insert(entry); }
+    void insert(IndexEntry<T> &entry) override;
 
-    uptr<IFinalizedIndex<FTag>> finalize() override {
-        vec<uptr<IFinalizedIndex<FTag>>> finalized_indexes(m_indexes.size());
-        for (uint l_ind = 0; l_ind < m_indexes.size(); ++l_ind) {
-            finalized_indexes[l_ind] = m_indexes[l_ind]->finalize();
-        }
-        return uptr<IFinalizedIndex<FTag>>(
-            new FinalizedLengthGroupingIndex<FTag>(std::move(finalized_indexes), m_l_min, m_l_max));
-    }
+    uptr<IFinalizedIndex<FTag>> finalize() override;
 
-    void adapt_to_dataset_groups(const vec<vec<IndexEntry<T>>> &dataset_entry_groups) override {
-        for (uint l_ind = 0; l_ind < dataset_entry_groups.size(); ++l_ind) {
-            m_indexes[l_ind]->adapt_to_dataset(dataset_entry_groups[l_ind]);
-        }
-    }
+    void adapt_to_dataset_groups(const vec<vec<IndexEntry<T>>> &dataset_entry_groups) override;
 
    private:
     vec<sptr<IIndex<T>>> m_indexes;
-    uint m_l_min, m_l_max;
+    LengthProperties m_length_props;
 
-    inline uint get_entry_length_group(const IndexEntry<T> &entry) const {
-        return RunSettings::get_instance().get_length_props().get_length_group(entry.m_subs_info.m_length);
-    }
+    uint get_entry_length_group(const IndexEntry<T> &entry) const;
 };
 
 #endif  // INDEX_LENGTHGROUPINGINDEX_HPP

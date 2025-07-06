@@ -22,10 +22,6 @@ struct SearchOptions {
     bool m_examine_whole = false;
     /** @brief Whether a priority queue is used for FlatEnvelopeIndexSearch */
     bool m_use_priority_queue = false;
-    /** @brief Whether the index is grouped by length */
-    bool m_group_by_length = false;
-    /** @brief Whether to use length groups */
-    bool m_use_length_groups = false;
     /** @brief Type of search method to use */
     SearchMethodType m_search_method_type;
     /** @brief Archive type of the index */
@@ -34,12 +30,6 @@ struct SearchOptions {
     SearchType m_search_type;
     /** @brief Type of distance to use */
     DistanceType m_distance_type;
-    /** @brief Minimum accepted query length (used for length-based grouping) */
-    uint m_l_min;
-    /** @brief Maximum accepted query length (used for length-based grouping) */
-    uint m_l_max;
-    /** @brief Lengths per group, default is 0, indicating no length-based grouping */
-    uint m_l_per_group = 0;
     /** @brief k for kNN search */
     uint m_knn_k = 0;
     /** @brief r for r-range search */

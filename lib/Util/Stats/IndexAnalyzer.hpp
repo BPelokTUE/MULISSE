@@ -46,7 +46,8 @@ class IndexAnalyzer {
         if (num_l_groups > 0) {
             vec<uptr<IFinalizedIndex<FTag>>> group_indexes(num_l_groups);
             for (uint l_ind = 0; l_ind < num_l_groups; l_ind++) group_indexes[l_ind] = create_index();
-            auto index = std::make_unique<FinalizedLengthGroupingIndex<FTag>>(std::move(group_indexes), 1, 1);
+            auto index =
+                std::make_unique<FinalizedLengthGroupingIndex<FTag>>(std::move(group_indexes), LengthProperties{});
             IndexAnalyzer<FinalizedLengthGroupingIndex<FTag>, FTag>::load_index(index, index_format);
 
             for (uint l_ind = 0; l_ind < num_l_groups; l_ind++) {

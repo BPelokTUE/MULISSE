@@ -68,6 +68,11 @@ CK_SAX_NUM_BITS = "sax_num_bits"
 CK_ENVELOPE_SIZE_RATIOS = "envelope_size_ratios"
 CK_ENVELOPE_SIZES = "envelope_sizes"
 CK_INDEX_SIZE_LIMITS = "index_size_limits"
+CK_PARAM_ESTIMATOR_TYPES = "param_estimator_types"
+CK_PARAM_ESTIMATOR_STEPS = "param_estimator_steps"
+CK_PARAM_ESTIMATOR_NUM_QUERIES = "param_estimator_num_queries"
+CK_PARAM_ESTIMATOR_SAMPLE_FRACS = "param_estimator_sample_fracs"
+CK_PARAM_ESTIMATOR_SEEDS = "param_estimator_seeds"
 CK_MERGER_TYPES = "merger_types"
 CK_MERGER_NUM_BIT_NUMBERS = "merger_num_bit_numbers"
 CK_LENGTH_GROUP_SIZE_RATIOS = "length_group_size_ratios"
@@ -127,6 +132,11 @@ RK_SAX_NUM_BITS = "sax_num_bits"
 RK_ENVLEOPE_SIZE_RATIO = "envelope_size_ratio"
 RK_ENVELOPE_SIZE = "envelope_size"
 RK_INDEX_SIZE_LIMIT = "size_limit"
+RK_PARAM_ESTIMATOR_TYPE = "param_estimator_type"
+RK_PARAM_ESTIMATOR_STEP = "param_estimator_step"
+RK_PARAM_ESTIMATOR_NUM_QUERIES = "param_estimator_num_queries"
+RK_PARAM_ESTIMATOR_SAMPLE_FRAC = "param_estimator_sample_frac"
+RK_PARAM_ESTIMATOR_SEED = "param_estimator_seed"
 RK_MERGER_TYPE = "merger_type"
 RK_MERGER_NUM_BITS = "merger_num_bits"
 RK_LENS_PER_GROUP = "lens_per_group"
@@ -355,7 +365,7 @@ def parse_config_file(input_config) -> ParsedConfig:
             if not isinstance(calculate_index_stats, list):
                 calculate_index_stats = [calculate_index_stats]
             common_settings = {
-                RK_NUM_SEGMENTS: config.get(CK_NUM_SEGMENTS, []),
+                **get_key_or_none(RK_NUM_SEGMENTS, CK_NUM_SEGMENTS),
                 **get_key_or_none(RK_RAW, CK_SEARCH_RAW),
                 **get_key_or_none(RK_LG_SEGMENTATION_STRATEGY, CK_LG_SEGMENTATION_STRATEGIES),
                 **get_key_or_none(RK_CH_SEGMENTATION_STRATEGY, CK_CH_SEGMENTATION_STRATEGIES),
@@ -385,17 +395,25 @@ def parse_config_file(input_config) -> ParsedConfig:
             }
             isax_settings = {
                 **sax_settings,
-                RK_LEAF_CAPACITY: config.get(CK_ISAX_LEAF_CAP_RATIOS, []),
+                **get_key_or_none(RK_LEAF_CAPACITY, CK_ISAX_LEAF_CAP_RATIOS),
                 **get_key_or_none(RK_SPLIT_STRATEGY, CK_ISAX_SPLIT_STRATEGIES),
                 **get_key_or_none(RK_FIRST_LAYER_BITS, CK_ISAX_START_BIT_NUMBERS),
                 **get_key_or_none(RK_ISAX_MERGE_IN_LEAVES, CK_ISAX_MERGE_IN_LEAVES),
                 **get_key_or_none(RK_ISAX_PREFER_FIRST_IN_EM, CK_ISAX_PREFER_FIRST_IN_EM),
             }
+            param_estimator_settings = {
+                **get_key_or_none(RK_INDEX_SIZE_LIMIT, CK_INDEX_SIZE_LIMITS),
+                **get_key_or_none(RK_PARAM_ESTIMATOR_TYPE, CK_PARAM_ESTIMATOR_TYPES),
+                **get_key_or_none(RK_PARAM_ESTIMATOR_STEP, CK_PARAM_ESTIMATOR_STEPS),
+                **get_key_or_none(RK_PARAM_ESTIMATOR_NUM_QUERIES, CK_PARAM_ESTIMATOR_NUM_QUERIES),
+                **get_key_or_none(RK_PARAM_ESTIMATOR_SAMPLE_FRAC, CK_PARAM_ESTIMATOR_SAMPLE_FRACS),
+                **get_key_or_none(RK_PARAM_ESTIMATOR_SEED, CK_PARAM_ESTIMATOR_SEEDS),
+            }
             envelope_settings = {
                 **common_settings,
                 **get_key_or_none(RK_ENVLEOPE_SIZE_RATIO, CK_ENVELOPE_SIZE_RATIOS),
                 **get_key_or_none(RK_ENVELOPE_SIZE, CK_ENVELOPE_SIZES),
-                **get_key_or_none(RK_INDEX_SIZE_LIMIT, CK_INDEX_SIZE_LIMITS),
+                **param_estimator_settings,
             }
             tree_envelope_settings = {
                 **envelope_settings,
