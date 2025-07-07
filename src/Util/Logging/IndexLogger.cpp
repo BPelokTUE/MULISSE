@@ -193,7 +193,7 @@ void IndexLogger::set_num_segments_cols(const ILengthGroupSegmentationStrategy *
 }
 
 void IndexLogger::write_entry() {
-    for (const auto &col : INDEX_COUNT_COLUMNS) instance.m_columns[col] = to_string(instance.m_count_cols[col]);
-    for (const auto &col : INDEX_TIME_COLUMNS) instance.m_columns[col] = to_string(instance.m_time_cols_duration[col]);
-    instance.write_row(m_index_settings_path, instance.m_columns, INDEX_SETTINGS_COL_ENUMS);
+    for (const auto &col : INDEX_COUNT_COLUMNS) m_columns[col] = to_string(m_count_cols[col]);
+    for (const auto &col : INDEX_TIME_COLUMNS) m_columns[col] = to_string(m_time_cols_duration[col]);
+    write_row(m_index_settings_path, m_columns, INDEX_SETTINGS_COL_ENUMS);
 }

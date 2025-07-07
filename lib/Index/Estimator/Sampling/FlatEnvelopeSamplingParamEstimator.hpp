@@ -40,10 +40,8 @@ class FlatEnvelopeSamplingParamEstimator : public IFlatEnvelopeParamEstimator {
 
     virtual void update_queries(std::stringstream &query_stream, uint num_queries) = 0;
 
-    virtual void initialize_config_evaluation(const vec<FlatEnvelopeParams> &configurations) = 0;
-
-    virtual bool is_config_better(uint config_ind, const vec<vec<IndexEntry<Envelope>>> entries,
-                                  const IndexOptions &index_opts, const LengthProperties &length_props,
+    virtual Real get_config_score(const vec<vec<IndexEntry<Envelope>>> entries, const IndexOptions &index_opts,
+                                  const LengthProperties &length_props,
                                   const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) = 0;
 
    private:

@@ -78,6 +78,7 @@ void QueryLogger::initialize(const SearchOptions &search_options) {
     str run_log_path = fs::path(RS.get_logs_path()) / instance.RUN_LOG_FILE;
     instance.file_setup(run_log_path, QUERY_COL_STRS);
     instance.m_query_log_ofs.open(run_log_path, std::ios::app);
+    instance.m_run_id = instance.determine_index(run_log_path);
 }
 
 void QueryLogger::reset_entry() {
@@ -122,7 +123,7 @@ void QueryLogger::write_entry() {
     auto &RS = RunSettings::get_instance();
     str run_log_path = fs::path(RS.get_logs_path()) / instance.RUN_LOG_FILE;
     umap<QC, str> columns({
-        {QC::ID, to_string(instance.determine_index(run_log_path))},
+        {QC::ID, to_string(m_run_id++)},
         {QC::SETTINGS_ID, m_search_settings_id_str},
         {QC::EXACT_RESULTS, m_settable_cols[QC::EXACT_RESULTS]},
     });

@@ -10,6 +10,7 @@ from scripts.py.common.columns import DatasetSettingsColumn as DSC
 from scripts.py.common.columns import DatasetStatsColumn as DSTC
 from scripts.py.common.columns import IndexSettingsColumn as ISC
 from scripts.py.common.columns import IndexStatsColumn as ISTC
+from scripts.py.common.columns import ParamEstimatesColumn as PEC
 from scripts.py.common.columns import QueryColumn as QC
 from scripts.py.common.columns import QuerySetSettingsColumn as QSC
 from scripts.py.common.columns import QueryStatsColumn as QSTC
@@ -25,6 +26,7 @@ class ExperimentResultDataframe(Enum):
     INDEXES_COLS = auto()
     METHODS_COLS = auto()
     RUNS_COLS = auto()
+    PARAM_ESTIMATES_COLS = auto()
     INDEX_STATS_COLS = auto()
     QUERY_STATS_COLS = auto()
 
@@ -47,6 +49,7 @@ REQUIRED_COLS = {
         str(SSC.ID),
     ],
     ERD.RUNS_COLS: [str(QC.SETTINGS_ID)],
+    ERD.PARAM_ESTIMATES_COLS: [str(PEC.INDEX_FILE)],
     ERD.INDEX_STATS_COLS: [str(ISTC.INDEX_FILE)],
     ERD.QUERY_STATS_COLS: [str(QSTC.DATASET_FILE)],
 }
@@ -58,6 +61,7 @@ CSV_FILES = {
     ERD.INDEXES_COLS: ISC.get_csv_name(),
     ERD.METHODS_COLS: SSC.get_csv_name(),
     ERD.RUNS_COLS: QC.get_csv_name(),
+    ERD.PARAM_ESTIMATES_COLS: PEC.get_csv_name(),
     ERD.INDEX_STATS_COLS: ISTC.get_csv_name(),
     ERD.QUERY_STATS_COLS: QSTC.get_csv_name(),
 }
@@ -81,10 +85,12 @@ class ExperimentResults(BaseModel):
     indexes_df: pd.DataFrame
     methods_df: pd.DataFrame
     runs_df: pd.DataFrame
+    param_estimates_df: pd.DataFrame
     index_stats_df: pd.DataFrame
     query_stats_df: pd.DataFrame
     add_runs: bool = True
     add_methods: bool = True
+    add_param_estimates: bool = False
     add_dataset_stats: bool = False
     add_query_stats: bool = False
     add_index_stats: bool = False
@@ -251,32 +257,66 @@ class ExperimentResults(BaseModel):
         merged_df = merged_df[[str(ratio_col), qsc_id]]
         self.query_sets_df = self.query_sets_df.merge(merged_df, left_on=str(QSC.ID), right_on=qsc_id)
 
-    def add_num_length_groups_column(self):
-        self.indexes_df[str(ISC.NUM_LEN_GROUPS)] = np.ceil(
-            (self.indexes_df[str(ISC.L_MAX)] - self.indexes_df[str(ISC.L_MIN)] + 1)
-            / self.indexes_df[str(ISC.L_PER_GROUP)]
-        )
+    def add_num_length_groups_column(self, param_estimates: bool = False):
+        if not param_estimates:
+            self.indexes_df[str(ISC.NUM_LEN_GROUPS)] = (
+                self.indexes_df[str(ISC.L_MAX)]
+                - self.indexes_df[str(ISC.L_MIN)]
+                + self.indexes_df[str(ISC.L_PER_GROUP)]
+            ) // self.indexes_df[str(ISC.L_PER_GROUP)]
+        else:
+            merged_df = self.get_merged_df()
+            pec_id = get_merged_col_name(ERD.PARAM_ESTIMATES_COLS, str(PEC.ID))
+            isc_l_min = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MIN))
+            isc_l_max = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MAX))
+            pec_l_per_group = get_merged_col_name(ERD.PARAM_ESTIMATES_COLS, str(PEC.L_PER_GROUP))
+
+            merged_df[str(PEC.NUM_LEN_GROUPS)] = (
+                merged_df[isc_l_max] - merged_df[isc_l_min] + merged_df[pec_l_per_group]
+            ) // merged_df[pec_l_per_group]
+            merged_df = merged_df[[str(PEC.NUM_LEN_GROUPS), pec_id]]
+
+            self.param_estimates_df = self.param_estimates_df.merge(
+                merged_df, left_on=str(PEC.ID), right_on=pec_id, how="left"
+            )
 
     @classmethod
-    def add_extra_cols_for_num_envelopes(cls, extra_cols: dict[ERD, list[str]]):
-        extra_cols[ERD.INDEXES_COLS] += [str(ISC.POS_PER_ENV), str(ISC.L_MIN)]
-        extra_cols[ERD.DATASETS_COLS] += [str(DSC.SERIES_LENGTH)]
+    def add_extra_cols_for_num_envelopes(cls, extra_cols: dict[ERD, list[str]], param_estimates: bool = False):
+        extra_cols[ERD.INDEXES_COLS].append(str(ISC.L_MIN))
+        extra_cols[ERD.DATASETS_COLS].append(str(DSC.SERIES_LENGTH))
+        if not param_estimates:
+            extra_cols[ERD.INDEXES_COLS].append(str(ISC.POS_PER_ENV))
+        else:
+            extra_cols[ERD.PARAM_ESTIMATES_COLS] += [str(PEC.POS_PER_ENV), str(PEC.ID)]
 
-    def add_num_envelopes_column(self):
+    def add_num_envelopes_column(self, param_estimates: bool = False):
         merged_df = self.get_merged_df()
         isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
         merged_df = merged_df.drop_duplicates(subset=[isc_index_file])
-        isc_pos_per_env = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.POS_PER_ENV))
         isc_l_min = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.L_MIN))
         dsc_series_length = get_merged_col_name(ERD.DATASETS_COLS, str(DSC.SERIES_LENGTH))
 
-        merged_df[str(ISC.NUM_ENVELOPES)] = np.ceil(
-            (merged_df[dsc_series_length] - merged_df[isc_l_min] + 1) / merged_df[isc_pos_per_env]
-        )
-        merged_df = merged_df[[str(ISC.NUM_ENVELOPES), isc_index_file]]
-        self.indexes_df = self.indexes_df.merge(
-            merged_df, left_on=str(ISC.INDEX_FILE), right_on=isc_index_file, how="left"
-        )
+        if not param_estimates:
+            isc_pos_per_env = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.POS_PER_ENV))
+            merged_df[str(ISC.NUM_ENVELOPES)] = np.ceil(
+                (merged_df[dsc_series_length] - merged_df[isc_l_min] + 1) / merged_df[isc_pos_per_env]
+            )
+            merged_df = merged_df[[str(ISC.NUM_ENVELOPES), isc_index_file]]
+
+            self.indexes_df = self.indexes_df.merge(
+                merged_df, left_on=str(ISC.INDEX_FILE), right_on=isc_index_file, how="left"
+            )
+        else:
+            pec_pos_per_env = get_merged_col_name(ERD.PARAM_ESTIMATES_COLS, str(PEC.POS_PER_ENV))
+            pec_id = get_merged_col_name(ERD.PARAM_ESTIMATES_COLS, str(PEC.ID))
+            merged_df[str(PEC.NUM_ENVELOPES)] = np.ceil(
+                (merged_df[dsc_series_length] - merged_df[isc_l_min] + 1) / merged_df[pec_pos_per_env]
+            )
+            merged_df = merged_df[[str(PEC.NUM_ENVELOPES), pec_id]]
+
+            self.param_estimates_df = self.param_estimates_df.merge(
+                merged_df, left_on=str(PEC.ID), right_on=pec_id, how="left"
+            )
 
     @classmethod
     def load_csv_if_exists(cls, path: str, cols: list[str]) -> pd.DataFrame:
@@ -295,6 +335,7 @@ class ExperimentResults(BaseModel):
         cols: dict[ERD, list[Column]],
         add_runs: bool = True,
         add_methods: bool = True,
+        add_param_estimates: bool = False,
         add_dataset_stats: bool = False,
         add_query_stats: bool = False,
         add_index_stats: bool = False,
@@ -348,14 +389,27 @@ class ExperimentResults(BaseModel):
                 act_cols[ERD.QUERY_SETS_COLS].remove(str(ratio_col))
 
         # Handle # length groups column
-        if str(ISC.NUM_LEN_GROUPS) in cols[ERD.INDEXES_COLS]:
-            extra_cols[ERD.INDEXES_COLS] += [str(ISC.L_MIN), str(ISC.L_MAX), str(ISC.L_PER_GROUP)]
-            act_cols[ERD.INDEXES_COLS].remove(str(ISC.NUM_LEN_GROUPS))
+        isc_num_lg_requested = str(ISC.NUM_LEN_GROUPS) in cols[ERD.INDEXES_COLS]
+        pec_num_lg_requested = str(PEC.NUM_LEN_GROUPS) in cols[ERD.PARAM_ESTIMATES_COLS]
+        if isc_num_lg_requested or pec_num_lg_requested:
+            extra_cols[ERD.INDEXES_COLS] += [str(ISC.L_MIN), str(ISC.L_MAX)]
+            if isc_num_lg_requested:
+                extra_cols[ERD.INDEXES_COLS].append(str(ISC.L_PER_GROUP))
+                act_cols[ERD.INDEXES_COLS].remove(str(ISC.NUM_LEN_GROUPS))
+            if pec_num_lg_requested:
+                extra_cols[ERD.PARAM_ESTIMATES_COLS] += [str(PEC.L_PER_GROUP), str(PEC.ID)]
+                act_cols[ERD.PARAM_ESTIMATES_COLS].remove(str(PEC.NUM_LEN_GROUPS))
 
         # Handle # envelopes column
-        if str(ISC.NUM_ENVELOPES) in cols[ERD.INDEXES_COLS]:
-            cls.add_extra_cols_for_num_envelopes(extra_cols)
-            act_cols[ERD.INDEXES_COLS].remove(str(ISC.NUM_ENVELOPES))
+        isc_num_env_requested = str(ISC.NUM_ENVELOPES) in cols[ERD.INDEXES_COLS]
+        pec_num_env_requested = str(PEC.NUM_ENVELOPES) in cols[ERD.PARAM_ESTIMATES_COLS]
+        if isc_num_env_requested or pec_num_env_requested:
+            if isc_num_env_requested:
+                cls.add_extra_cols_for_num_envelopes(extra_cols)
+                act_cols[ERD.INDEXES_COLS].remove(str(ISC.NUM_ENVELOPES))
+            if pec_num_env_requested:
+                cls.add_extra_cols_for_num_envelopes(extra_cols, param_estimates=True)
+                act_cols[ERD.PARAM_ESTIMATES_COLS].remove(str(PEC.NUM_ENVELOPES))
 
         # Handle average min-dist column
         if str(QC.MIN_DIST_AVG) in cols[ERD.RUNS_COLS]:
@@ -381,10 +435,12 @@ class ExperimentResults(BaseModel):
             indexes_df=dfs[ERD.INDEXES_COLS],
             methods_df=dfs[ERD.METHODS_COLS],
             runs_df=dfs[ERD.RUNS_COLS],
+            param_estimates_df=dfs[ERD.PARAM_ESTIMATES_COLS],
             index_stats_df=dfs[ERD.INDEX_STATS_COLS],
             query_stats_df=dfs[ERD.QUERY_STATS_COLS],
             add_runs=add_runs,
             add_methods=add_methods,
+            add_param_estimates=add_param_estimates,
             add_dataset_stats=add_dataset_stats,
             add_query_stats=add_query_stats,
             add_index_stats=add_index_stats,
@@ -426,12 +482,16 @@ class ExperimentResults(BaseModel):
                 results.add_length_ratio_column(ratio_col, length_col)
 
         # Add # length groups column
-        if str(ISC.NUM_LEN_GROUPS) in cols[ERD.INDEXES_COLS]:
+        if isc_num_lg_requested:
             results.add_num_length_groups_column()
+        if pec_num_lg_requested:
+            results.add_num_length_groups_column(param_estimates=True)
 
         # Add # envelopes column
-        if str(ISC.NUM_ENVELOPES) in cols[ERD.INDEXES_COLS]:
+        if isc_num_env_requested:
             results.add_num_envelopes_column()
+        if pec_num_env_requested:
+            results.add_num_envelopes_column(param_estimates=True)
 
         # Add average min-dist column
         if str(QC.MIN_DIST_AVG) in cols[ERD.RUNS_COLS]:
@@ -503,6 +563,18 @@ class ExperimentResults(BaseModel):
                     rename_df_columns(self.index_stats_df, ERD.INDEX_STATS_COLS),
                     left_on=isc_index_file,
                     right_on=istc_index_file,
+                    how="left",
+                )
+
+            if self.add_param_estimates and os.path.exists(
+                os.path.join(self.logs_dir, CSV_FILES[ERD.PARAM_ESTIMATES_COLS])
+            ):
+                pec_index_file = get_merged_col_name(ERD.PARAM_ESTIMATES_COLS, str(PEC.INDEX_FILE))
+
+                merged_df = merged_df.merge(
+                    rename_df_columns(self.param_estimates_df, ERD.PARAM_ESTIMATES_COLS),
+                    left_on=isc_index_file,
+                    right_on=pec_index_file,
                     how="left",
                 )
 

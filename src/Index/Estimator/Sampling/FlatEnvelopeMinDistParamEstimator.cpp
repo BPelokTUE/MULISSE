@@ -47,18 +47,14 @@ void FlatEnvelopeMinDistParamEstimator::update_queries(std::stringstream &query_
     }
 }
 
-void FlatEnvelopeMinDistParamEstimator::initialize_config_evaluation(const vec<FlatEnvelopeParams> &configurations) {
-    m_max_min_dist_total = R(0.0);
-    m_min_dist_totals.resize(configurations.size(), R(0.0));
-}
-
-bool FlatEnvelopeMinDistParamEstimator::is_config_better(
-    uint config_ind, const vec<vec<IndexEntry<Envelope>>> entries, const IndexOptions &index_opts,
-    const LengthProperties &length_props, const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
+Real FlatEnvelopeMinDistParamEstimator::get_config_score(
+    const vec<vec<IndexEntry<Envelope>>> entries, const IndexOptions &index_opts, const LengthProperties &length_props,
+    const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
     DistanceMeasure<KNN, ED> distance_measure(index_opts.m_normalized);
 
     MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(m_query_accs[0].size());
 
+    Real min_dist = R(0.0);
     for (auto &query_acc : m_query_accs) {
         uint query_len = U(query_acc[0].size());  // TODO: fix this in case not all channels are used
 
@@ -86,12 +82,8 @@ bool FlatEnvelopeMinDistParamEstimator::is_config_better(
                         distance_measure.min_dist_squared(query_ch_paa[seg_ind], lower, upper) * segment_len_r;
                 }
             }
-            m_min_dist_totals[config_ind] += min_dist_sum_query / R(entries[lg_ind].size());
+            min_dist += min_dist_sum_query / R(entries[lg_ind].size());
         }
     }
-    if (m_min_dist_totals[config_ind] > m_max_min_dist_total) {
-        m_max_min_dist_total = m_min_dist_totals[config_ind];
-        return true;
-    }
-    return false;
+    return min_dist;
 }

@@ -7,6 +7,7 @@ if True:
 
 from scripts.py.common.columns import DatasetSettingsColumn as DSC
 from scripts.py.common.columns import IndexSettingsColumn as ISC
+from scripts.py.common.columns import ParamEstimatesColumn as PEC
 from scripts.py.common.columns import QueryColumn as QC
 from scripts.py.common.columns import QuerySetSettingsColumn as QSC
 from scripts.py.common.columns import SearchSettingsColumn as SSC
@@ -448,6 +449,29 @@ for target_args_dict in [
 # %%
 # 8 - Size limiting
 
+for target_args in [TargetArgs.ESTIMATE_SCORE]:
+    visualize_experiments(
+        logs_dirs=["LOGS"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
+            ERD.INDEXES_COLS: [ISC.INDEX_SIZE_LIMIT],
+            ERD.PARAM_ESTIMATES_COLS: [PEC.NUM_LEN_GROUPS, PEC.NUM_SEGMENTS],
+        },
+        separate_plots_dict={
+            (SSC.METHOD_NAME,): [],
+            (ISC.INDEX_SIZE_LIMIT,): [(1.0,)],
+            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
+        },
+        bar_plot_color_attrs=None,
+        merge_csv_datasets=True,
+        heat_map_x_attr=PEC.NUM_LEN_GROUPS,
+        heat_map_y_attr=PEC.NUM_SEGMENTS,
+        heat_map_included_cols={DSC.DATASET_FILE},
+        **target_args.value,
+    )
+
 for target_args in [TargetArgs.QUERY_TIME]:
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/envelope_variants/LOGS_size_limiting"],
@@ -455,15 +479,11 @@ for target_args in [TargetArgs.QUERY_TIME]:
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
-            ERD.INDEXES_COLS: [
-                ISC.INDEX_SIZE_LIMIT,
-                ISC.NUM_LEN_GROUPS,
-                ISC.NUM_SEGMENTS,
-            ],
+            ERD.INDEXES_COLS: [ISC.INDEX_SIZE_LIMIT, ISC.NUM_LEN_GROUPS, ISC.NUM_SEGMENTS],
         },
         separate_plots_dict={
             (SSC.METHOD_NAME,): [],
-            (ISC.INDEX_SIZE_LIMIT,): [],
+            (ISC.INDEX_SIZE_LIMIT,): [(1.0,)],
             (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
         },
         bar_plot_color_attrs=None,

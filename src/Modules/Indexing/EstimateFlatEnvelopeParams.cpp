@@ -9,6 +9,7 @@
 #include "Index/IndexOptions.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
 #include "Modules/Indexing/StrategyFactory/GetLGSegmentationStrategy.hpp"
+#include "Util/Logging/ParamEstimatesLogger.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
 std::optional<FlatEnvelopeParams> estimate_flat_envelope_params(IndexOptions &opts) {
@@ -34,6 +35,8 @@ std::optional<FlatEnvelopeParams> estimate_flat_envelope_params(IndexOptions &op
     // Otherwise, estimate the parameters using the FlatEnvelopeParamEstimator.
     auto estimator_params = opts.m_estimator_params.get();
     if (estimator_params) {
+        ParamEstimatesLogger::initialize();
+
         uptr<IFlatEnvelopeParamEstimator> estimator;
         switch (estimator_params->m_param_estimator_type) {
             case THEORETICAL:

@@ -159,6 +159,7 @@ class QueryLogger : public Logger {
     // ---------------------------------------------------- //
 
    private:
+    uint m_run_id;
     std::ifstream m_query_log_ofs;
     str m_search_settings_id_str;
 

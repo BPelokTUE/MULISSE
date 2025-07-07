@@ -191,6 +191,7 @@ class RunSettings {
     friend class QuerySetLogger;
     friend class QueryStatsLogger;
     friend class IndexLogger;
+    friend class ParamEstimatesLogger;
     friend class IndexStatsLogger;
     friend class QueryLogger;
 };

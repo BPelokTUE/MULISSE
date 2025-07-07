@@ -1,7 +1,12 @@
 from enum import Enum, auto
 
 
-class DatasetSettingsColumn(Enum):
+class StrEnum(Enum):
+    def __str__(self):
+        return self.name.lower()
+
+
+class DatasetSettingsColumn(StrEnum):
     ID = auto()
     DATASET_FILE = auto()
     SERIES_LENGTH = auto()
@@ -13,15 +18,12 @@ class DatasetSettingsColumn(Enum):
     L_MIN = auto()
     L_MAX = auto()
 
-    def __str__(self):
-        return self.name.lower()
-
     @classmethod
     def get_csv_name(cls) -> str:
         return "dataset_settings.csv"
 
 
-class DatasetStatsColumn(Enum):
+class DatasetStatsColumn(StrEnum):
     DATASET_FILE = auto()
     TS_IND = auto()
     CHANNEL = auto()
@@ -34,15 +36,12 @@ class DatasetStatsColumn(Enum):
     AUTOCORR_MEANS = auto()
     AUTOCORR_STDS = auto()
 
-    def __str__(self):
-        return self.name.lower()
-
     @classmethod
     def get_csv_name(cls) -> str:
         return "dataset_stats.csv"
 
 
-class IndexSettingsColumn(Enum):
+class IndexSettingsColumn(StrEnum):
     ID = auto()
     DATASET_FILE = auto()
     INDEX_FILE = auto()
@@ -90,15 +89,27 @@ class IndexSettingsColumn(Enum):
     ESTIMATED_SIZE_ON_DISK_B = auto()
     SAMPLE_FRAC = auto()
 
-    def __str__(self):
-        return self.name.lower()
-
     @classmethod
     def get_csv_name(cls) -> str:
         return "index_settings.csv"
 
 
-class SearchSettingsColumn(Enum):
+class ParamEstimatesColumn(StrEnum):
+    ID = auto()
+    INDEX_FILE = auto()
+    L_PER_GROUP = auto()
+    NUM_LEN_GROUPS = auto()
+    POS_PER_ENV = auto()
+    NUM_ENVELOPES = auto()
+    NUM_SEGMENTS = auto()
+    SCORE = auto()
+
+    @classmethod
+    def get_csv_name(cls) -> str:
+        return "param_estimates.csv"
+
+
+class SearchSettingsColumn(StrEnum):
     ID = auto()
     INDEX_FILE = auto()
     DATASET_FILE = auto()
@@ -117,18 +128,14 @@ class SearchSettingsColumn(Enum):
     SORT_QUERY = auto()
     EXAMINE_WHOLE = auto()
     USE_PRIORITY_QUEUE = auto()
-
     METHOD_NAME = auto()
-
-    def __str__(self):
-        return self.name.lower()
 
     @classmethod
     def get_csv_name(cls) -> str:
         return "search_settings.csv"
 
 
-class QuerySetSettingsColumn(Enum):
+class QuerySetSettingsColumn(StrEnum):
     ID = auto()
     DATASET_FILE = auto()
     QUERY_FILE = auto()
@@ -143,15 +150,12 @@ class QuerySetSettingsColumn(Enum):
     NOISE = auto()
     SEED = auto()
 
-    def __str__(self):
-        return self.name.lower()
-
     @classmethod
     def get_csv_name(cls) -> str:
         return "query_set_settings.csv"
 
 
-class QueryColumn(Enum):
+class QueryColumn(StrEnum):
     ID = auto()
     SETTINGS_ID = auto()
     QUERY_ID = auto()
@@ -179,18 +183,14 @@ class QueryColumn(Enum):
     IO_TIME_S = auto()
     TS_EXAMINATION_TIME_S = auto()
     AMORTIZED_PREP_TIME_S = auto()
-
     PRUNING_RATIO = auto()
-
-    def __str__(self):
-        return self.name.lower()
 
     @classmethod
     def get_csv_name(cls) -> str:
         return "runs.csv"
 
 
-class StatsColumnPrefix(Enum):
+class StatsColumnPrefix(StrEnum):
     MIN = auto()
     MAX = auto()
     MEAN = auto()
@@ -200,7 +200,7 @@ class StatsColumnPrefix(Enum):
         return self.name.lower()
 
 
-class IndexStatsColumn(Enum):
+class IndexStatsColumn(StrEnum):
     INDEX_FILE = auto()
     LEAF_SIZE_STATS = auto()
     LEAF_FILL_STATS = auto()
@@ -216,15 +216,12 @@ class IndexStatsColumn(Enum):
     NUM_INF_LOWER = auto()
     NUM_INF_UPPER = auto()
 
-    def __str__(self):
-        return self.name.lower()
-
     @classmethod
     def get_csv_name(cls) -> str:
         return "index_stats.csv"
 
 
-class QueryStatsColumn(Enum):
+class QueryStatsColumn(StrEnum):
     ID = auto()
     DATASET_FILE = auto()
     QUERY_FILE = auto()
@@ -235,9 +232,6 @@ class QueryStatsColumn(Enum):
     DIST_STATS = auto()
     RC_USING_MAX = auto()
     RC_USING_MEAN = auto()
-
-    def __str__(self):
-        return self.name.lower()
 
     @classmethod
     def get_csv_name(cls) -> str:
@@ -263,4 +257,5 @@ Column = (
     | SearchSettingsColumn
     | QueryColumn
     | StatsColumn
+    | ParamEstimatesColumn
 )

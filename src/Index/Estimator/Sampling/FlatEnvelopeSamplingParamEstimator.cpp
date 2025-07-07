@@ -21,6 +21,7 @@
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/HelperFuncs/Parallelism.hpp"
+#include "Util/Logging/ParamEstimatesLogger.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
 FlatEnvelopeSamplingParamEstimator::FlatEnvelopeSamplingParamEstimator(const IndexOptions &index_opts) {
@@ -41,6 +42,7 @@ void FlatEnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &ind
     // 5. Select the configuration with the lowest average lower-bound distance
 
     auto &RS = RunSettings::get_instance();
+    auto &logger = ParamEstimatesLogger::get_instance();
     auto &sampling_params = *(index_opts.m_estimator_params->m_sampling_params);
 
     // 1. Generate configurations
@@ -80,11 +82,8 @@ void FlatEnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &ind
     const EnvelopeIndexParams *params_ptr = dynamic_cast<const EnvelopeIndexParams *>(index_opts.m_index_params.get());
     if (!params_ptr) throw std::runtime_error("FlatEnvelopeMinDistParamEstimator requires EnvelopeIndexParams.");
 
-    // Initialize the evaluation of configurations
-    uint selected_config_ind = 0;
-    initialize_config_evaluation(configurations);
-
     // 4. For each configuration
+    Real max_config_score = -INF;
     for (uint config_ind = 0; config_ind < configurations.size(); ++config_ind) {
         auto &config = configurations[config_ind];
 
@@ -120,10 +119,13 @@ void FlatEnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &ind
             summarize_dataset<Envelope>(num_l_groups, num_series, mts_inds, std::move(generator), std::move(merger));
 
         // 4.2. Update selected configuration if current is better
-        if (is_config_better(config_ind, std::move(entries), index_opts, length_props,
-                             lg_segmentation_strategy.get())) {
-            selected_config_ind = config_ind;
+        Real config_score =
+            get_config_score(std::move(entries), index_opts, length_props, lg_segmentation_strategy.get());
+        if (config_score > max_config_score) {
+            m_estimated_params = config;
+            max_config_score = config_score;
         }
+
+        logger.write_entry(config, config_score);
     }
-    m_estimated_params = configurations[selected_config_ind];
 }

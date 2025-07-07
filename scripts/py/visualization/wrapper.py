@@ -10,6 +10,7 @@ if True:
 from scripts.py.common.columns import Column
 from scripts.py.common.columns import DatasetSettingsColumn as DSC
 from scripts.py.common.columns import IndexSettingsColumn as ISC
+from scripts.py.common.columns import ParamEstimatesColumn as PEC
 from scripts.py.common.columns import QueryColumn as QC
 from scripts.py.common.columns import SearchSettingsColumn as SSC
 from scripts.py.visualization.helpers import (
@@ -80,6 +81,7 @@ class TargetArgs(Enum):
     INDEX_INFO = {"targets_dict": {ERD.INDEXES_COLS: [ISC.SIZE_ON_DISK_B], ERD.RUNS_COLS: [QC.AMORTIZED_PREP_TIME_S]}}
     PRUNING_RATIO = {"targets_dict": {ERD.RUNS_COLS: [QC.PRUNING_RATIO]}}
     ABANDONING_RATE = {"targets_dict": {ERD.RUNS_COLS: [QC.ABANDONING_RATE]}}
+    ESTIMATE_SCORE = {"targets_dict": {ERD.PARAM_ESTIMATES_COLS: [PEC.SCORE]}}
 
 
 def visualize_experiments(
@@ -141,6 +143,7 @@ def visualize_experiments(
             num_query_intervals=num_query_intervals,
             add_runs=add_runs,
             add_methods=add_methods,
+            add_param_estimates=should_add(ERD.PARAM_ESTIMATES_COLS),
             add_dataset_stats=should_add(ERD.DATASET_STATS_COLS),
             add_query_stats=should_add(ERD.QUERY_STATS_COLS),
             add_index_stats=should_add(ERD.INDEX_STATS_COLS),

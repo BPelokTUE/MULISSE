@@ -9,6 +9,7 @@
 #include "Search/DistanceMeasure/EuclideanDistance.hpp"
 #include "Util/Constants/Math.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
+#include "Util/Logging/ParamEstimatesLogger.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
 using std::pow;
@@ -31,6 +32,7 @@ FlatEnvelopeParamTheoEstimator::FlatEnvelopeParamTheoEstimator(const IndexOption
     std::normal_distribution<Real> query_noise_dist(R(0.0), R(0.1));  // TMP
 
     auto &RS = RunSettings::get_instance();
+    auto &logger = ParamEstimatesLogger::get_instance();
 
     vec<FlatEnvelopeParams> configurations = DummyConfigGenerator().generate_configurations(
         opts.m_index_method, opts.m_estimator_params->m_index_size_limit);
@@ -113,6 +115,8 @@ FlatEnvelopeParamTheoEstimator::FlatEnvelopeParamTheoEstimator(const IndexOption
             max_min_distance_sum = min_distance_sums[i];
             selected_config_index = i;
         }
+
+        logger.write_entry(config, min_distance_sums[i]);
     }
     m_estimated_params = configurations[selected_config_index];
 }
