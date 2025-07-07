@@ -1012,9 +1012,6 @@ if __name__ == "__main__":
                                     if len(breakpoints_file) > 0:
                                         args += ["--breakpoints", breakpoints_file]
 
-                                    if lens_per_group > 0:
-                                        args += ["-g", str(lens_per_group), "-l", str(l_min), "-L", str(l_max)]
-
                                     helper_logs_dirs.append(f"{logs_dir}_{m_ind}")
                                     args += ["--data", data_dir, "--logs", helper_logs_dirs[-1]]
                                     os.makedirs(helper_logs_dirs[-1], exist_ok=True)

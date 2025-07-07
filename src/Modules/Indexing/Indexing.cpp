@@ -13,7 +13,7 @@
 #include "Modules/Indexing/InitializeBreakpoints.hpp"
 #include "Modules/Indexing/StrategyFactory/GetLGSegmentationStrategy.hpp"
 
-int create_index(const IndexOptions &opts, Real index_sample_frac, bool log_num_seg_per_ch, bool log_num_seg_all) {
+int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_per_ch, bool log_num_seg_all) {
     auto &RS = RunSettings::get_instance();
     str dataset_path = RS.get_dataset_path();
     str index_path = RS.get_index_path();
@@ -77,7 +77,7 @@ int create_index(const IndexOptions &opts, Real index_sample_frac, bool log_num_
     if (auto estimated_params = estimate_flat_envelope_params(opts)) {
         RS.set_flat_envelope_params(*estimated_params);
         logger.set_flat_envelope_params(*estimated_params);
-        envelope_params->set_flat_envelope_params(*estimated_params);
+        opts.set_flat_envelope_params(*estimated_params);
     }
 
     // Set up segmentation strategies

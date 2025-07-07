@@ -446,3 +446,30 @@ for target_args_dict in [
     )
 
 # %%
+# 8 - Size limiting
+
+for target_args in [TargetArgs.QUERY_TIME]:
+    visualize_experiments(
+        logs_dirs=["EXPERIMENT_LOGS/envelope_variants/LOGS_size_limiting"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
+            ERD.INDEXES_COLS: [
+                ISC.INDEX_SIZE_LIMIT,
+                ISC.NUM_LEN_GROUPS,
+                ISC.NUM_SEGMENTS,
+            ],
+        },
+        separate_plots_dict={
+            (SSC.METHOD_NAME,): [],
+            (ISC.INDEX_SIZE_LIMIT,): [],
+            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
+        },
+        bar_plot_color_attrs=None,
+        merge_csv_datasets=True,
+        heat_map_x_attr=ISC.NUM_LEN_GROUPS,
+        heat_map_y_attr=ISC.NUM_SEGMENTS,
+        heat_map_included_cols={DSC.DATASET_FILE},
+        **target_args.value,
+    )
