@@ -36,7 +36,7 @@ void FlatEnvelopeMinDistParamEstimator::update_queries(std::stringstream &query_
                     query_sq_sum += value * value;
                 }
             }
-            if (m_query_accs[q][c].empty()) continue;
+            if (m_query_accs[q][c].size() == 1) continue;
 
             auto [mu, sigma] = calculate_mu_and_sigma(query_sum, query_sq_sum, U(m_query_accs[q][c].size()));
             for (uint i = 1; i < m_query_accs[q][c].size(); ++i) {
@@ -48,9 +48,9 @@ void FlatEnvelopeMinDistParamEstimator::update_queries(std::stringstream &query_
 }
 
 Real FlatEnvelopeMinDistParamEstimator::get_config_score(
-    const vec<vec<IndexEntry<Envelope>>> entries, const IndexOptions &index_opts, const LengthProperties &length_props,
+    vec<vec<IndexEntry<Envelope>>> &&entries, const IndexOptions &config_opts, const LengthProperties &length_props,
     const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
-    DistanceMeasure<KNN, ED> distance_measure(index_opts.m_normalized);
+    DistanceMeasure<KNN, ED> distance_measure(config_opts.m_normalized);
 
     MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(m_query_accs[0].size());
 

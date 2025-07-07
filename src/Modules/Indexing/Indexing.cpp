@@ -87,14 +87,10 @@ int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_pe
     logger.set_num_segments_cols(lg_segmentation_strategy.get(), log_num_seg_per_ch, log_num_seg_all);
     logger.stop_timer(ISC::SEGMENTATION_SETUP_TIME_S);
 
-    // Create index
-    IndexFactoryParams factory_params{.m_opts = opts};
-
 #define CONSTRUCT_INDEX(Type, index_factory)                                                                          \
     construct_index<Type>(                                                                                            \
         [](IndexFactoryParams &factory_params_in) -> sptr<IIndex<Type>> { return index_factory(factory_params_in); }, \
-        std::move(generator), std::move(merger), factory_params, std::move(lg_segmentation_strategy),                 \
-        index_sample_frac);
+        std::move(generator), std::move(merger), opts, std::move(lg_segmentation_strategy), index_sample_frac);
 
 #define CONSTRUCT_ENVELOPE_INDEX(index_factory)                                    \
     auto generator = get_envelope_generator(opts, lg_segmentation_strategy.get()); \

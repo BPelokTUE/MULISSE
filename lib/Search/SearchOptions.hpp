@@ -21,7 +21,7 @@ struct SearchOptions {
     /** @brief Whether to examine the whole series when distance calculation is performed */
     bool m_examine_whole = false;
     /** @brief Whether a priority queue is used for FlatEnvelopeIndexSearch */
-    bool m_use_priority_queue = false;
+    bool m_use_priority_queue = true;
     /** @brief Type of search method to use */
     SearchMethodType m_search_method_type;
     /** @brief Archive type of the index */

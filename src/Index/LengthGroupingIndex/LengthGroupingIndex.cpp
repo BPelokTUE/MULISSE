@@ -42,8 +42,7 @@ uptr<IFinalizedIndex<typename IndexTraits<T>::FinalizedTag>> LengthGroupingIndex
     for (uint l_ind = 0; l_ind < m_indexes.size(); ++l_ind) {
         finalized_indexes[l_ind] = m_indexes[l_ind]->finalize();
     }
-    return uptr<IFinalizedIndex<FTag>>(
-        new FinalizedLengthGroupingIndex<FTag>(std::move(finalized_indexes), m_length_props));
+    return std::make_unique<FinalizedLengthGroupingIndex<FTag>>(std::move(finalized_indexes), m_length_props);
 }
 
 template <typename T>

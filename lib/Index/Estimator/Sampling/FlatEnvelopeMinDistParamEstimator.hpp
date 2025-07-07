@@ -7,15 +7,15 @@
 class FlatEnvelopeMinDistParamEstimator : public FlatEnvelopeSamplingParamEstimator {
    public:
     /**
-     * @brief Constructor for FlatEnvelopeParamTheoEstimator
-     * @param opts The initial index options to use for the FlatEnvelopeIndex
+     * @brief Constructor for FlatEnvelopeParamMinDistEstimator
+     * @param index_opts The initial index options to use for the FlatEnvelopeIndex
      */
-    FlatEnvelopeMinDistParamEstimator(const IndexOptions &opts);
+    FlatEnvelopeMinDistParamEstimator(const IndexOptions &index_opts);
 
    protected:
     void update_queries(std::stringstream &query_stream, uint num_queries) override;
 
-    Real get_config_score(const vec<vec<IndexEntry<Envelope>>> entries, const IndexOptions &index_opts,
+    Real get_config_score(vec<vec<IndexEntry<Envelope>>> &&entries, const IndexOptions &index_opts,
                           const LengthProperties &length_props,
                           const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) override;
 

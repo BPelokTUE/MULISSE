@@ -6,6 +6,7 @@
 #include "Index/Estimator/FlatEnvelopeTheoParamEstimator.hpp"
 #include "Index/Estimator/IndexSizeEstimator.hpp"
 #include "Index/Estimator/Sampling/FlatEnvelopeMinDistParamEstimator.hpp"
+#include "Index/Estimator/Sampling/FlatEnvelopeQueryTimeParamEstimator.hpp"
 #include "Index/IndexOptions.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
 #include "Modules/Indexing/StrategyFactory/GetLGSegmentationStrategy.hpp"
@@ -46,7 +47,8 @@ std::optional<FlatEnvelopeParams> estimate_flat_envelope_params(IndexOptions &op
                 estimator = std::make_unique<FlatEnvelopeMinDistParamEstimator>(opts);
                 break;
             case QUERY_TIME:
-                throw std::runtime_error("Not yet implemented");
+                estimator = std::make_unique<FlatEnvelopeQueryTimeParamEstimator>(opts);
+                break;
         }
         return estimator->get_estimated_params();
     }

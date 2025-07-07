@@ -1,6 +1,8 @@
 #ifndef SEARCH_INDEXSEARCH_FLATENVELOPEINDEXSEARCH_HPP
 #define SEARCH_INDEXSEARCH_FLATENVELOPEINDEXSEARCH_HPP
 
+#include <queue>
+
 #include "Search/IndexSearch/EnvelopeIndexSearch.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/SubsequenceInfo.hpp"

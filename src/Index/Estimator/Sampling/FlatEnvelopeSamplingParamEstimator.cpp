@@ -51,13 +51,13 @@ void FlatEnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &ind
 
     // 2. Sample data
     auto [num_channels, series_len, num_series, dataset_file] = RS.get_dataset_props();
-    vec<uint> mts_inds(num_series);
-    std::iota(mts_inds.begin(), mts_inds.end(), 0);
+    m_mts_inds.resize(num_series);
+    std::iota(m_mts_inds.begin(), m_mts_inds.end(), 0);
 
     assert(sampling_params.m_sample_frac >= 0.0 && sampling_params.m_sample_frac <= 1.0);
     if (sampling_params.m_sample_frac < 1.0) {
         num_series = U(R(num_series) * sampling_params.m_sample_frac);
-        std::shuffle(mts_inds.begin(), mts_inds.end(), std::mt19937{std::random_device{}()});
+        std::shuffle(m_mts_inds.begin(), m_mts_inds.end(), std::mt19937{std::random_device{}()});
     }
 
     // 3. Create queries from data
@@ -74,7 +74,7 @@ void FlatEnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &ind
             .m_used_channels = index_opts.m_num_channels,
             .m_seed = sampling_params.m_seed,
         };
-        generate_queries(data_stream, query_stream, query_opts, mts_inds);
+        generate_queries(data_stream, query_stream, query_opts, m_mts_inds);
         update_queries(query_stream, sampling_params.m_num_queries);
     }
 
@@ -116,11 +116,11 @@ void FlatEnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &ind
 
         // 4.1. Create a FlatEnvelopeIndex, skipping positions and lengths in the envelopes
         auto entries =
-            summarize_dataset<Envelope>(num_l_groups, num_series, mts_inds, std::move(generator), std::move(merger));
+            summarize_dataset<Envelope>(num_l_groups, num_series, m_mts_inds, std::move(generator), std::move(merger));
 
         // 4.2. Update selected configuration if current is better
         Real config_score =
-            get_config_score(std::move(entries), index_opts, length_props, lg_segmentation_strategy.get());
+            get_config_score(std::move(entries), config_opts, length_props, lg_segmentation_strategy.get());
         if (config_score > max_config_score) {
             m_estimated_params = config;
             max_config_score = config_score;

@@ -3,6 +3,7 @@
 
 #include "Search/IndexSearch/IndexSearchMethod.hpp"
 #include "Util/Logging/QueryLogger.hpp"
+#include "Util/RunSettings/RunSettings.hpp"
 
 /**
  * @brief Abstract base class for envelope-index-based search methods
