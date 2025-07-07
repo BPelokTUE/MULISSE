@@ -5,7 +5,7 @@
 
 #include "Enums/CommandType.hpp"
 #include "Enums/SearchMethodType.hpp"
-#include "Index/EnvelopeIndex/Flat/FlatEnvelopeParams.hpp"
+#include "Index/EnvelopeIndex/EnvelopeParams.hpp"
 #include "Util/RunSettings/BreakpointProperties.hpp"
 #include "Util/RunSettings/DatasetProperties.hpp"
 #include "Util/RunSettings/EnvelopeProperties.hpp"
@@ -13,7 +13,7 @@
 #include "Util/Types/FftArray.hpp"
 #include "Util/Types/SubsequenceInfo.hpp"
 
-struct FlatEnvelopeParams;
+struct EnvelopeParams;
 
 class RunSettings {
    public:
@@ -125,7 +125,7 @@ class RunSettings {
      * @brief Set the flat envelope parameters (positions per envelope, lengths per group) for the run
      * @param flat_envelope_params The flat envelope parameters
      */
-    void set_flat_envelope_params(const FlatEnvelopeParams& flat_envelope_params);
+    void set_flat_envelope_params(const EnvelopeParams& flat_envelope_params);
 
     /**
      * @brief Get the length properties for the run. NOTE: this function is virtual for testing purposes.

@@ -1,4 +1,4 @@
-#include "Index/Estimator/Sampling/FlatEnvelopeMinDistParamEstimator.hpp"
+#include "Index/Estimator/Sampling/EnvelopeMinDistParamEstimator.hpp"
 
 #include "Index/Entry/Envelope.hpp"
 #include "Index/Entry/IndexEntry.hpp"
@@ -9,14 +9,14 @@
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/RunSettings/LengthProperties.hpp"
 
-FlatEnvelopeMinDistParamEstimator::FlatEnvelopeMinDistParamEstimator(const IndexOptions &index_opts)
-    : FlatEnvelopeSamplingParamEstimator(index_opts) {
+EnvelopeMinDistParamEstimator::EnvelopeMinDistParamEstimator(const IndexOptions &index_opts)
+    : EnvelopeSamplingParamEstimator(index_opts) {
     m_query_accs.resize(index_opts.m_estimator_params->m_sampling_params->m_num_queries,
                         vec<vec<Real>>(index_opts.m_num_channels));
     estimate_params(index_opts);
 }
 
-void FlatEnvelopeMinDistParamEstimator::update_queries(std::stringstream &query_stream, uint num_queries) {
+void EnvelopeMinDistParamEstimator::update_queries(std::stringstream &query_stream, uint num_queries) {
     query_stream.seekg(0);
     MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(m_query_accs[0].size());
 
@@ -47,9 +47,10 @@ void FlatEnvelopeMinDistParamEstimator::update_queries(std::stringstream &query_
     }
 }
 
-Real FlatEnvelopeMinDistParamEstimator::get_config_score(
-    vec<vec<IndexEntry<Envelope>>> &&entries, const IndexOptions &config_opts, const LengthProperties &length_props,
-    const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
+Real EnvelopeMinDistParamEstimator::get_config_score(vec<vec<IndexEntry<Envelope>>> &&entries,
+                                                     const IndexOptions &config_opts,
+                                                     const LengthProperties &length_props,
+                                                     const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
     DistanceMeasure<KNN, ED> distance_measure(config_opts.m_normalized);
 
     MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(m_query_accs[0].size());

@@ -9,7 +9,7 @@
 #include "Enums/SearchMethodType.hpp"
 #include "Enums/SegmentationStrategyType.hpp"
 #include "Enums/iSaxSplitStrategyType.hpp"
-#include "Index/EnvelopeIndex/Flat/FlatEnvelopeParams.hpp"
+#include "Index/EnvelopeIndex/EnvelopeParams.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/ScoreBasedChSSParams.hpp"
 #include "Util/Types/Numbers.hpp"
 
@@ -105,7 +105,7 @@ struct EnvelopeIndexParams : virtual PaaIndexParams {
      * @brief Set the relevant flat envelope parameters (num_segments, pos_per_env)
      * @param flat_envelope_params The flat envelope parameters
      */
-    void set_flat_envelope_params(const FlatEnvelopeParams &flat_envelope_params) {
+    void set_flat_envelope_params(const EnvelopeParams &flat_envelope_params) {
         m_pos_per_env = flat_envelope_params.m_pos_per_env;
         m_segmentation_params.m_num_segments = flat_envelope_params.m_num_segments;
     }

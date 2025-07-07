@@ -40,13 +40,13 @@ struct IndexOptions {
 
     /**
      * @brief Set the parameters of the FlatEnvelopeIndex : l_per_group, pos_per_env and num_segments
-     * @param FlatEnvelopeParams The parameters to set
+     * @param EnvelopeParams The parameters to set
      */
-    void set_flat_envelope_params(const FlatEnvelopeParams &params) {
+    void set_flat_envelope_params(const EnvelopeParams &params) {
         if (auto env_index_params = dynamic_cast<EnvelopeIndexParams *>(m_index_params.get())) {
             env_index_params->set_flat_envelope_params(params);
         } else {
-            throw std::runtime_error("Index parameters cannot be set using FlatEnvelopeParams");
+            throw std::runtime_error("Index parameters cannot be set using EnvelopeParams");
         }
         m_l_per_group = params.m_l_per_group;
     }

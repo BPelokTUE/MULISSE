@@ -1,4 +1,4 @@
-#include "Index/Estimator/Sampling/FlatEnvelopeQueryTimeParamEstimator.hpp"
+#include "Index/Estimator/Sampling/EnvelopeQueryTimeParamEstimator.hpp"
 
 #include "Enums/SearchMethodType.hpp"
 #include "Index/Entry/SaxEnvelope.hpp"
@@ -20,15 +20,15 @@
 
 using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-FlatEnvelopeQueryTimeParamEstimator::FlatEnvelopeQueryTimeParamEstimator(const IndexOptions &index_opts)
-    : FlatEnvelopeSamplingParamEstimator(index_opts) {
+EnvelopeQueryTimeParamEstimator::EnvelopeQueryTimeParamEstimator(const IndexOptions &index_opts)
+    : EnvelopeSamplingParamEstimator(index_opts) {
     //
     m_queries.resize(index_opts.m_estimator_params->m_sampling_params->m_num_queries,
                      vec<vec<Real>>(index_opts.m_num_channels));
     estimate_params(index_opts);
 }
 
-void FlatEnvelopeQueryTimeParamEstimator::update_queries(std::stringstream &query_stream, uint num_queries) {
+void EnvelopeQueryTimeParamEstimator::update_queries(std::stringstream &query_stream, uint num_queries) {
     query_stream.seekg(0);
     MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(m_queries[0].size());
 
@@ -57,7 +57,7 @@ void FlatEnvelopeQueryTimeParamEstimator::update_queries(std::stringstream &quer
     }
 }
 
-Real FlatEnvelopeQueryTimeParamEstimator::get_config_score(
+Real EnvelopeQueryTimeParamEstimator::get_config_score(
     vec<vec<IndexEntry<Envelope>>> &&entries, const IndexOptions &config_opts, const LengthProperties &length_props,
     const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
     // 1. Create index factory using the type of index method in the the index options
@@ -82,7 +82,7 @@ Real FlatEnvelopeQueryTimeParamEstimator::get_config_score(
             };
             break;
         default:
-            throw std::runtime_error("FlatEnvelopeQueryTimeParamEstimator cannot be used with index method " +
+            throw std::runtime_error("EnvelopeQueryTimeParamEstimator cannot be used with index method " +
                                      SEARCH_METHOD_TYPE_TO_STR.at(config_opts.m_index_method));
     }
 

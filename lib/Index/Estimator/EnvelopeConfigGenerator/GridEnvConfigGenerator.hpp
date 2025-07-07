@@ -1,0 +1,11 @@
+#ifndef INDEX_ESTIMATOR_CONFIGGENERATOR_DUMMYCONFIGGENERATOR_HPP
+#define INDEX_ESTIMATOR_CONFIGGENERATOR_DUMMYCONFIGGENERATOR_HPP
+
+#include "Index/Estimator/EnvelopeConfigGenerator/EnvelopeConfigGenerator.hpp"
+
+class GridEnvConfigGenerator : public IEnvelopeConfigGenerator {
+   public:
+    vec<EnvelopeParams> generate_configurations(SearchMethodType index_type, Real index_size_limit) override;
+};
+
+#endif  // INDEX_ESTIMATOR_CONFIGGENERATOR_DUMMYCONFIGGENERATOR_HPP

@@ -1,4 +1,4 @@
-#include "Index/Estimator/Sampling/FlatEnvelopeSamplingParamEstimator.hpp"
+#include "Index/Estimator/Sampling/EnvelopeSamplingParamEstimator.hpp"
 
 #include <cassert>
 #include <random>
@@ -9,7 +9,7 @@
 #include "Index/Entry/IndexEntry.hpp"
 #include "Index/EntryGenerator/EnvelopeEntryGenerator.hpp"
 #include "Index/EntryMerger/DummyEntryMerger.hpp"
-#include "Index/Estimator/ConfigGenerator/DummyConfigGenerator.hpp"
+#include "Index/Estimator/EnvelopeConfigGenerator/GridEnvConfigGenerator.hpp"
 #include "Index/IndexOptions.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
@@ -24,15 +24,15 @@
 #include "Util/Logging/ParamEstimatesLogger.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
-FlatEnvelopeSamplingParamEstimator::FlatEnvelopeSamplingParamEstimator(const IndexOptions &index_opts) {
+EnvelopeSamplingParamEstimator::EnvelopeSamplingParamEstimator(const IndexOptions &index_opts) {
     if (!index_opts.m_estimator_params || !index_opts.m_estimator_params->m_sampling_params) {
-        throw std::runtime_error("FlatEnvelopeSamplingParamEstimator requires sampling parameters.");
+        throw std::runtime_error("EnvelopeSamplingParamEstimator requires sampling parameters.");
     }
 }
 
-FlatEnvelopeParams FlatEnvelopeSamplingParamEstimator::get_estimated_params() { return m_estimated_params; }
+EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params() { return m_estimated_params; }
 
-void FlatEnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &index_opts) {
+void EnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &index_opts) {
     // 1. Generate configurations
     // 2. Sample data
     // 3. Create queries from data
@@ -46,7 +46,7 @@ void FlatEnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &ind
     auto &sampling_params = *(index_opts.m_estimator_params->m_sampling_params);
 
     // 1. Generate configurations
-    vec<FlatEnvelopeParams> configurations = DummyConfigGenerator().generate_configurations(
+    vec<EnvelopeParams> configurations = GridEnvConfigGenerator().generate_configurations(
         index_opts.m_index_method, index_opts.m_estimator_params->m_index_size_limit);
 
     // 2. Sample data
@@ -80,7 +80,7 @@ void FlatEnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &ind
 
     // Get envelope params
     const EnvelopeIndexParams *params_ptr = dynamic_cast<const EnvelopeIndexParams *>(index_opts.m_index_params.get());
-    if (!params_ptr) throw std::runtime_error("FlatEnvelopeMinDistParamEstimator requires EnvelopeIndexParams.");
+    if (!params_ptr) throw std::runtime_error("EnvelopeMinDistParamEstimator requires EnvelopeIndexParams.");
 
     // 4. For each configuration
     Real max_config_score = -INF;
@@ -94,6 +94,7 @@ void FlatEnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &ind
             .m_normalized = index_opts.m_normalized,
             .m_use_length_groups = true,
             .m_num_channels = index_opts.m_num_channels,
+            .m_index_method = index_opts.m_index_method,
             .m_l_min = l_min,
             .m_l_max = l_max,
             .m_series_len = series_len,

@@ -1,16 +1,16 @@
-#ifndef INDEX_ESTIMATOR_SAMPLING_FLATENVELOPEMINDISTPARAMESTIMATOR_HPP
-#define INDEX_ESTIMATOR_SAMPLING_FLATENVELOPEMINDISTPARAMESTIMATOR_HPP
+#ifndef INDEX_ESTIMATOR_SAMPLING_ENVELOPEMINDISTPARAMESTIMATOR_HPP
+#define INDEX_ESTIMATOR_SAMPLING_ENVELOPEMINDISTPARAMESTIMATOR_HPP
 
+#include "Index/Estimator/Sampling/EnvelopeSamplingParamEstimator.hpp"
 #include "Index/Estimator/Sampling/EstimatorSamplingParams.hpp"
-#include "Index/Estimator/Sampling/FlatEnvelopeSamplingParamEstimator.hpp"
 
-class FlatEnvelopeMinDistParamEstimator : public FlatEnvelopeSamplingParamEstimator {
+class EnvelopeMinDistParamEstimator : public EnvelopeSamplingParamEstimator {
    public:
     /**
-     * @brief Constructor for FlatEnvelopeParamMinDistEstimator
+     * @brief Constructor for EnvelopeParamMinDistEstimator
      * @param index_opts The initial index options to use for the FlatEnvelopeIndex
      */
-    FlatEnvelopeMinDistParamEstimator(const IndexOptions &index_opts);
+    EnvelopeMinDistParamEstimator(const IndexOptions &index_opts);
 
    protected:
     void update_queries(std::stringstream &query_stream, uint num_queries) override;
@@ -20,8 +20,8 @@ class FlatEnvelopeMinDistParamEstimator : public FlatEnvelopeSamplingParamEstima
                           const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) override;
 
    private:
-    FlatEnvelopeParams m_estimated_params;
+    EnvelopeParams m_estimated_params;
     vec<vec<vec<Real>>> m_query_accs;
 };
 
-#endif  // INDEX_ESTIMATOR_SAMPLING_FLATENVELOPEMINDISTPARAMESTIMATOR_HPP
+#endif  // INDEX_ESTIMATOR_SAMPLING_ENVELOPEMINDISTPARAMESTIMATOR_HPP

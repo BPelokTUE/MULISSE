@@ -1,10 +1,10 @@
-#ifndef INDEX_ESTIMATOR_SAMPLING_FLATENVELOPESAMPLINGPARAMESTIMATOR_HPP
-#define INDEX_ESTIMATOR_SAMPLING_FLATENVELOPESAMPLINGPARAMESTIMATOR_HPP
+#ifndef INDEX_ESTIMATOR_SAMPLING_ENVELOPESAMPLINGPARAMESTIMATOR_HPP
+#define INDEX_ESTIMATOR_SAMPLING_ENVELOPESAMPLINGPARAMESTIMATOR_HPP
 
 #include <sstream>
 
-#include "Index/EnvelopeIndex/Flat/FlatEnvelopeParams.hpp"
-#include "Index/Estimator/FlatEnvelopeParamEstimator.hpp"
+#include "Index/EnvelopeIndex/EnvelopeParams.hpp"
+#include "Index/Estimator/EnvelopeParamEstimator.hpp"
 #include "Util/Types/Containers.hpp"
 
 class Envelope;
@@ -18,18 +18,18 @@ class LengthProperties;
 
 class ILengthGroupSegmentationStrategy;
 
-class FlatEnvelopeSamplingParamEstimator : public IFlatEnvelopeParamEstimator {
+class EnvelopeSamplingParamEstimator : public IEnvelopeParamEstimator {
    public:
-    virtual ~FlatEnvelopeSamplingParamEstimator() = default;
+    virtual ~EnvelopeSamplingParamEstimator() = default;
 
     /**
-     * @brief Constructor for FlatEnvelopeSamplingParamEstimator, checks if the index options contain the required
+     * @brief Constructor for EnvelopeSamplingParamEstimator, checks if the index options contain the required
      * parameters
      * @param index_opts The initial index options to use for the FlatEnvelopeIndex
      */
-    FlatEnvelopeSamplingParamEstimator(const IndexOptions &index_opts);
+    EnvelopeSamplingParamEstimator(const IndexOptions &index_opts);
 
-    FlatEnvelopeParams get_estimated_params() override;
+    EnvelopeParams get_estimated_params() override;
 
    protected:
     /**
@@ -47,7 +47,7 @@ class FlatEnvelopeSamplingParamEstimator : public IFlatEnvelopeParamEstimator {
     vec<uint> m_mts_inds;
 
    private:
-    FlatEnvelopeParams m_estimated_params;
+    EnvelopeParams m_estimated_params;
 };
 
-#endif  // INDEX_ESTIMATOR_SAMPLING_FLATENVELOPESAMPLINGPARAMESTIMATOR_HPP
+#endif  // INDEX_ESTIMATOR_SAMPLING_ENVELOPESAMPLINGPARAMESTIMATOR_HPP

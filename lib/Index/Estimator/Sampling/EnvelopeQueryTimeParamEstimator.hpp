@@ -1,16 +1,16 @@
-#ifndef INDEX_ESTIMATOR_SAMPLING_FLATENVELOPEQUERYTIMEPARAMESTIMATOR_HPP
-#define INDEX_ESTIMATOR_SAMPLING_FLATENVELOPEQUERYTIMEPARAMESTIMATOR_HPP
+#ifndef INDEX_ESTIMATOR_SAMPLING_ENVELOPEQUERYTIMEPARAMESTIMATOR_HPP
+#define INDEX_ESTIMATOR_SAMPLING_ENVELOPEQUERYTIMEPARAMESTIMATOR_HPP
 
+#include "Index/Estimator/Sampling/EnvelopeSamplingParamEstimator.hpp"
 #include "Index/Estimator/Sampling/EstimatorSamplingParams.hpp"
-#include "Index/Estimator/Sampling/FlatEnvelopeSamplingParamEstimator.hpp"
 
-class FlatEnvelopeQueryTimeParamEstimator : public FlatEnvelopeSamplingParamEstimator {
+class EnvelopeQueryTimeParamEstimator : public EnvelopeSamplingParamEstimator {
    public:
     /**
-     * @brief Constructor for FlatEnvelopeParamQueryTimeEstimator
+     * @brief Constructor for EnvelopeParamQueryTimeEstimator
      * @param index_opts The initial index options to use for the FlatEnvelopeIndex
      */
-    FlatEnvelopeQueryTimeParamEstimator(const IndexOptions &index_opts);
+    EnvelopeQueryTimeParamEstimator(const IndexOptions &index_opts);
 
    protected:
     void update_queries(std::stringstream &query_stream, uint num_queries) override;
@@ -20,8 +20,8 @@ class FlatEnvelopeQueryTimeParamEstimator : public FlatEnvelopeSamplingParamEsti
                           const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) override;
 
    private:
-    FlatEnvelopeParams m_estimated_params;
+    EnvelopeParams m_estimated_params;
     vec<vec<vec<Real>>> m_queries;
 };
 
-#endif  // INDEX_ESTIMATOR_SAMPLING_FLATENVELOPEQUERYTIMEPARAMESTIMATOR_HPP
+#endif  // INDEX_ESTIMATOR_SAMPLING_ENVELOPEQUERYTIMEPARAMESTIMATOR_HPP

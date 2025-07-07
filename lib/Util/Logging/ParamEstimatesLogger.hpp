@@ -5,7 +5,7 @@
 #include "Util/Logging/Logger.hpp"
 #include "Util/Types/Numbers.hpp"
 
-struct FlatEnvelopeParams;
+struct EnvelopeParams;
 
 enum class ParamEstimatesColumn {
     ID,            // Index of the estimate within the log file
@@ -29,7 +29,7 @@ class ParamEstimatesLogger : public Logger {
     /** @brief Initialize the logger, creating the file if it does not exist */
     static void initialize();
 
-    void write_entry(const FlatEnvelopeParams &params, Real score);
+    void write_entry(const EnvelopeParams &params, Real score);
 
    private:
     uint m_estimate_id;

@@ -9,7 +9,7 @@
 #include "Util/Logging/Logger.hpp"
 
 class ILengthGroupSegmentationStrategy;
-struct FlatEnvelopeParams;
+struct EnvelopeParams;
 
 /** @brief Enum of the columns of the index settings log file */
 enum class IndexSettingsColumn {
@@ -22,7 +22,7 @@ enum class IndexSettingsColumn {
     L_PER_GROUP,                  // Size of length groups
     POS_PER_ENV,                  // Number of positions per envelope for envelope-based methods
     INDEX_SIZE_LIMIT,             // Maximum size of the index in bytes, only supported for FlatEnvelopeIndex
-    PARAM_ESTIMATOR_TYPE,         // Type of IFlatEnvelopeParamEstimator used, if applicable
+    PARAM_ESTIMATOR_TYPE,         // Type of IEnvelopeParamEstimator used, if applicable
     PARAM_ESTIMATOR_SEED,         // Seed for the parameter estimator, if applicable
     PARAM_ESTIMATOR_STEP,         // Step size for the parameter estimator, if applicable
     PARAM_ESTIMATOR_NUM_QUERIES,  // Number of queries used for the parameter estimator, if applicable
@@ -109,7 +109,7 @@ class IndexLogger : public Logger {
      * @brief Set the num_segments, pos_per_env and l_per_group columns in the log
      * @param flat_envelope_params The parameters for the FlatEnvelopeIndex
      */
-    void set_flat_envelope_params(const FlatEnvelopeParams &flat_envelope_params);
+    void set_flat_envelope_params(const EnvelopeParams &flat_envelope_params);
 
     /**
      * @brief Set columns related to the number of segments, using the length group segmentation strategy

@@ -1,10 +1,9 @@
-#include "Index/Estimator/FlatEnvelopeTheoParamEstimator.hpp"
-
 #include <cmath>
 
 #include "Index/Entry/Envelope.hpp"
-#include "Index/EnvelopeIndex/Flat/FlatEnvelopeParams.hpp"
-#include "Index/Estimator/ConfigGenerator/DummyConfigGenerator.hpp"
+#include "Index/EnvelopeIndex/EnvelopeParams.hpp"
+#include "Index/Estimator/EnvelopeConfigGenerator/GridEnvConfigGenerator.hpp"
+#include "Index/Estimator/EnvelopeTheoParamEstimator.hpp"
 #include "Index/IndexOptions.hpp"
 #include "Search/DistanceMeasure/EuclideanDistance.hpp"
 #include "Util/Constants/Math.hpp"
@@ -14,7 +13,7 @@
 
 using std::pow;
 
-FlatEnvelopeParamTheoEstimator::FlatEnvelopeParamTheoEstimator(const IndexOptions &opts) {
+EnvelopeParamTheoEstimator::EnvelopeParamTheoEstimator(const IndexOptions &opts) {
     // Generate X_c configurations
     // Sample X_p l-p pairs
     // For each configuration
@@ -34,7 +33,7 @@ FlatEnvelopeParamTheoEstimator::FlatEnvelopeParamTheoEstimator(const IndexOption
     auto &RS = RunSettings::get_instance();
     auto &logger = ParamEstimatesLogger::get_instance();
 
-    vec<FlatEnvelopeParams> configurations = DummyConfigGenerator().generate_configurations(
+    vec<EnvelopeParams> configurations = GridEnvConfigGenerator().generate_configurations(
         opts.m_index_method, opts.m_estimator_params->m_index_size_limit);
 
     std::default_random_engine rng(seed);
@@ -121,9 +120,9 @@ FlatEnvelopeParamTheoEstimator::FlatEnvelopeParamTheoEstimator(const IndexOption
     m_estimated_params = configurations[selected_config_index];
 }
 
-FlatEnvelopeParams FlatEnvelopeParamTheoEstimator::get_estimated_params() { return m_estimated_params; }
+EnvelopeParams EnvelopeParamTheoEstimator::get_estimated_params() { return m_estimated_params; }
 
-Real FlatEnvelopeParamTheoEstimator::get_paa_stdev(const PaaDistributionInputs &inputs) {
+Real EnvelopeParamTheoEstimator::get_paa_stdev(const PaaDistributionInputs &inputs) {
     Real k = R(inputs.seg_ind) + 1, l = R(inputs.length), p = R(inputs.start_pos) + 1, s = R(inputs.segment_len);
     Real paa_var =
         R(l * pow(4 * pow(l, 2) + 12 * l * p - 6 * l + 12 * pow(p, 2) - 12 * p - 3 * pow(l + 2 * p - 1, 2) + 2, 2) *

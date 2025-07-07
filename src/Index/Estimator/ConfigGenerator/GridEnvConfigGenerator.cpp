@@ -1,15 +1,14 @@
-#include "Index/Estimator/ConfigGenerator/DummyConfigGenerator.hpp"
-
 #include <cmath>
 
-#include "Index/EnvelopeIndex/Flat/FlatEnvelopeParams.hpp"
+#include "Index/EnvelopeIndex/EnvelopeParams.hpp"
+#include "Index/Estimator/EnvelopeConfigGenerator/GridEnvConfigGenerator.hpp"
 #include "Index/Estimator/IndexSizeEstimator.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Path.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
-vec<FlatEnvelopeParams> DummyConfigGenerator::generate_configurations(SearchMethodType index_type,
-                                                                      Real index_size_limit) {
+vec<EnvelopeParams> GridEnvConfigGenerator::generate_configurations(SearchMethodType index_type,
+                                                                    Real index_size_limit) {
     auto &RS = RunSettings::get_instance();
     size_t size_limit_bytes = static_cast<size_t>(index_size_limit * R(get_dataset_size(RS.get_dataset_path())));
 
@@ -19,7 +18,7 @@ vec<FlatEnvelopeParams> DummyConfigGenerator::generate_configurations(SearchMeth
     uint l_min = RS.get_length_props().m_l_min, l_max = RS.get_length_props().m_l_max;
     uint l_range = l_max - l_min + 1;
 
-    vec<FlatEnvelopeParams> configurations;
+    vec<EnvelopeParams> configurations;
     for (SaxSegIndT num_segments : num_segments_vals)
         for (Real lg_size_ratio : lg_size_ratio_vals) {
             uint l_per_group = U(std::ceil(R(l_range) * lg_size_ratio));
@@ -36,7 +35,7 @@ vec<FlatEnvelopeParams> DummyConfigGenerator::generate_configurations(SearchMeth
             uint pos_per_env = size_estimator.get_max_pos_per_env(index_size_limit);
             size_t estimated_size = size_estimator.get_estimated_flat_envelope_size(pos_per_env);
             if (size_limit_bytes >= estimated_size) {
-                configurations.push_back(FlatEnvelopeParams{
+                configurations.push_back(EnvelopeParams{
                     .m_num_segments = num_segments,
                     .m_pos_per_env = pos_per_env,
                     .m_l_per_group = l_per_group,

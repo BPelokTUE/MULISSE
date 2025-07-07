@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
         distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(PARALLEL),
         entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY),
-        param_estimator_type_str = FLAT_ENVELOPE_PARAM_ESTIMATOR_TYPE_TO_STR.at(MIN_DIST);
+        param_estimator_type_str = ENVELOPE_PARAM_ESTIMATOR_TYPE_TO_STR.at(MIN_DIST);
     EstimatorSamplingParams estimator_sampling_params{
         .m_seed = 0,
         .m_ind_step = 10,
@@ -307,9 +307,13 @@ int main(int argc, char **argv) {
         ->check(non_negative_real);
     index_subcommand
         ->add_option("--param_estimator_type,--pe_type", param_estimator_type_str,
-                     "Type of FlatEnvelopeParamEstimator to use")
+                     "Type of EnvelopeParamEstimator to use")
         ->capture_default_str()
-        ->check(CLI::IsMember(ACCEPTED_FLAT_ENVELOPE_PARAM_ESTIMATOR_TYPE_STRS));
+        ->check(CLI::IsMember(ACCEPTED_ENVELOPE_PARAM_ESTIMATOR_TYPE_STRS));
+    // index_subcommand
+    //     ->add_option("--param_estimator_configs,--pe_configs", estimator_config_gen_type,
+    //                  "Type of configuration generator to use for the parameter estimator")
+    //     ->check(CIL::IsMember());
     index_subcommand->add_option("--param_estimator_step,--pe_step", estimator_sampling_params.m_ind_step)
         ->check(positive_int);
     index_subcommand
@@ -633,7 +637,7 @@ int main(int argc, char **argv) {
 
             uptr<EstimatorParams> estimator_params = nullptr;
             if (arr_contains(METHODS_W_ESTIMABLE_SIZE, method_type) && index_size_limit > 0) {
-                auto param_estimator_type = STR_TO_FLAT_ENVELOPE_PARAM_ESTIMATOR_TYPE.at(param_estimator_type_str);
+                auto param_estimator_type = STR_TO_ENVELOPE_PARAM_ESTIMATOR_TYPE.at(param_estimator_type_str);
                 uptr<EstimatorSamplingParams> estimator_sampling_params_ptr = nullptr;
                 if (arr_contains(SAMPLING_ESTIMATOR_TYPES, param_estimator_type)) {
                     estimator_sampling_params_ptr =

@@ -1,6 +1,6 @@
 #include "Util/Logging/ParamEstimatesLogger.hpp"
 
-#include "Index/EnvelopeIndex/Flat/FlatEnvelopeParams.hpp"
+#include "Index/EnvelopeIndex/EnvelopeParams.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
 namespace fs = std::filesystem;
@@ -24,7 +24,7 @@ void ParamEstimatesLogger::initialize() {
 #endif  // DISABLE_LOGGING
 }
 
-void ParamEstimatesLogger::write_entry(const FlatEnvelopeParams &params, Real score) {
+void ParamEstimatesLogger::write_entry(const EnvelopeParams &params, Real score) {
 #ifndef DISABLE_LOGGING
     write_row(m_param_estimate_file_path,
               {

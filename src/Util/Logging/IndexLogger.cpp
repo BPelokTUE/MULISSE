@@ -1,6 +1,6 @@
 #include "Util/Logging/IndexLogger.hpp"
 
-#include "Index/EnvelopeIndex/Flat/FlatEnvelopeParams.hpp"
+#include "Index/EnvelopeIndex/EnvelopeParams.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
 #include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
@@ -38,8 +38,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         auto estimator_params = index_options.m_estimator_params.get();
         index_size_limit = estimator_params->m_index_size_limit;
         pe_sampling_params = estimator_params->m_sampling_params.get();
-        param_estimator_type_str =
-            FLAT_ENVELOPE_PARAM_ESTIMATOR_TYPE_TO_STR.at(estimator_params->m_param_estimator_type);
+        param_estimator_type_str = ENVELOPE_PARAM_ESTIMATOR_TYPE_TO_STR.at(estimator_params->m_param_estimator_type);
     }
 
     if (index_options.m_index_params && arr_contains(METHODS_W_PAA, index_options.m_index_method)) {
@@ -154,7 +153,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
 
 void IndexLogger::set_pos_per_env(uint pos_per_env) { m_columns[ISC::POS_PER_ENV] = format_num_param(pos_per_env); }
 
-void IndexLogger::set_flat_envelope_params(const FlatEnvelopeParams &flat_envelope_params) {
+void IndexLogger::set_flat_envelope_params(const EnvelopeParams &flat_envelope_params) {
     m_columns[ISC::POS_PER_ENV] = to_string(flat_envelope_params.m_pos_per_env);
     m_columns[ISC::L_PER_GROUP] = to_string(flat_envelope_params.m_l_per_group);
     m_columns[ISC::NUM_SEGMENTS] = to_string(flat_envelope_params.m_num_segments);

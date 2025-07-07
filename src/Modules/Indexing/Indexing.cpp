@@ -2,7 +2,7 @@
 
 #include "Index/Entry/SaxEnvelope.hpp"
 #include "Modules/Indexing/ConstructIndex.hpp"
-#include "Modules/Indexing/EstimateFlatEnvelopeParams.hpp"
+#include "Modules/Indexing/EstimateEnvelopeParams.hpp"
 #include "Modules/Indexing/GetChannelScores.hpp"
 #include "Modules/Indexing/GetEntryGenerator.hpp"
 #include "Modules/Indexing/GetEntryMerger.hpp"
@@ -74,7 +74,7 @@ int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_pe
     }
 
     // Estimate flat envelope parameters if requested
-    if (auto estimated_params = estimate_flat_envelope_params(opts)) {
+    if (auto estimated_params = estimate_envelope_params(opts)) {
         RS.set_flat_envelope_params(*estimated_params);
         logger.set_flat_envelope_params(*estimated_params);
         opts.set_flat_envelope_params(*estimated_params);

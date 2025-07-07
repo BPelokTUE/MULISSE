@@ -4,7 +4,7 @@
 #include <fstream>
 #include <memory>
 
-#include "Index/EnvelopeIndex/Flat/FlatEnvelopeParams.hpp"
+#include "Index/EnvelopeIndex/EnvelopeParams.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Path.hpp"
 
@@ -243,7 +243,7 @@ void RunSettings::set_pos_per_env(uint pos_per_env) {
 
 void RunSettings::set_lengths_per_group(uint l_per_group) { m_length_props.set_lengths_per_group(l_per_group); }
 
-void RunSettings::set_flat_envelope_params(const FlatEnvelopeParams &flat_envelope_params) {
+void RunSettings::set_flat_envelope_params(const EnvelopeParams &flat_envelope_params) {
     set_pos_per_env(flat_envelope_params.m_pos_per_env);
     set_lengths_per_group(flat_envelope_params.m_l_per_group);
 }
