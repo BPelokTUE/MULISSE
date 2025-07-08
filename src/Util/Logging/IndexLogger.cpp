@@ -24,13 +24,14 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         fs::path(RunSettings::get_instance().get_logs_path()) / instance.INDEX_SETTINGS_FILE;
     instance.file_setup(instance.m_index_settings_path, INDEX_SETTINGS_COL_STRS);
 
-    uint num_segments = 0, pos_per_env = 0, sampling_chss_sample_size = 0, sampling_chss_segment_len = 0;
+    uint num_segments = 0, pos_per_env = 0, sampling_chss_sample_size = 0, sampling_chss_segment_len = 0,
+         pe_num_configs = 0;
     SaxNumBitsT first_layer_num_bits = 0, num_bits_limit = 0, merger_num_bits = 0;
     size_t leaf_capacity = 0;
     str lg_ss_str = "", ch_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "",
         merge_in_leaves_str = "", method_type_str = "", entry_merger_type_str = "", env_stats_chss_weights_file = "",
         multi_chss_num_seg_file = "", chss_scores_type_str = "", env_width_chss_min_w_update_str = "",
-        max_width_change_str = "", use_inv_sax_str = "", param_estimator_type_str;
+        max_width_change_str = "", use_inv_sax_str = "", pe_type_str = "", pe_config_gen_type_str = "";
     Real score_based_chss_score_exp = R(0.0), index_size_limit = R(0.0);
     const EstimatorSamplingParams *pe_sampling_params;
 
@@ -38,7 +39,12 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         auto estimator_params = index_options.m_estimator_params.get();
         index_size_limit = estimator_params->m_index_size_limit;
         pe_sampling_params = estimator_params->m_sampling_params.get();
-        param_estimator_type_str = ENVELOPE_PARAM_ESTIMATOR_TYPE_TO_STR.at(estimator_params->m_param_estimator_type);
+        pe_type_str = ENV_PARAM_ESTIMATOR_TYPE_TO_STR.at(estimator_params->m_param_estimator_type);
+        pe_config_gen_type_str = ENV_CONFIG_GENERATOR_TYPE_TO_STR.at(estimator_params->m_config_generator_type);
+        if (auto *pe_random_config_parms =
+                dynamic_cast<RandomEnvConfigGeneratorParams *>(estimator_params->m_config_generator_params.get())) {
+            pe_num_configs = pe_random_config_parms->m_num_configs;
+        }
     }
 
     if (index_options.m_index_params && arr_contains(METHODS_W_PAA, index_options.m_index_method)) {
@@ -124,8 +130,10 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         {ISC::SCORE_BASED_CHSS_SCORES_TYPE, chss_scores_type_str},
         {ISC::POS_PER_ENV, format_num_param(pos_per_env)},
         {ISC::INDEX_SIZE_LIMIT, format_num_param(index_size_limit)},
-        {ISC::PARAM_ESTIMATOR_TYPE, param_estimator_type_str},
+        {ISC::PARAM_ESTIMATOR_TYPE, pe_type_str},
         {ISC::PARAM_ESTIMATOR_SEED, pe_sampling_params ? to_string(pe_sampling_params->m_seed) : ""},
+        {ISC::PARAM_ESTIMATOR_CONFIG_GEN_TYPE, pe_config_gen_type_str},
+        {ISC::PARAM_ESTIMATOR_NUM_CONFIGS, format_num_param(pe_num_configs)},
         {ISC::PARAM_ESTIMATOR_STEP, pe_sampling_params ? to_string(pe_sampling_params->m_ind_step) : ""},
         {ISC::PARAM_ESTIMATOR_NUM_QUERIES, pe_sampling_params ? to_string(pe_sampling_params->m_num_queries) : ""},
         {ISC::PARAM_ESTIMATOR_SAMPLE_FRAC, pe_sampling_params ? to_string(pe_sampling_params->m_sample_frac) : ""},

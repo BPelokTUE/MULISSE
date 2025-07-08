@@ -4,6 +4,7 @@ void LengthProperties::set_lengths_per_group(uint l_per_group) {
     m_l_per_group = l_per_group;
     if (m_l_per_group > 0) {
         m_num_l_groups = static_cast<uint>((m_l_max - m_l_min + m_l_per_group) / m_l_per_group);
+        m_use_length_groups = true;
     }
 }
 

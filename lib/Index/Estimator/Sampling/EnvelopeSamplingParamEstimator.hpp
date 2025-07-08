@@ -12,8 +12,6 @@ class Envelope;
 template <typename T>
 class IndexEntry;
 
-struct IndexOptions;
-
 class LengthProperties;
 
 class ILengthGroupSegmentationStrategy;
@@ -22,22 +20,10 @@ class EnvelopeSamplingParamEstimator : public IEnvelopeParamEstimator {
    public:
     virtual ~EnvelopeSamplingParamEstimator() = default;
 
-    /**
-     * @brief Constructor for EnvelopeSamplingParamEstimator, checks if the index options contain the required
-     * parameters
-     * @param index_opts The initial index options to use for the FlatEnvelopeIndex
-     */
-    EnvelopeSamplingParamEstimator(const IndexOptions &index_opts);
-
-    EnvelopeParams get_estimated_params() override;
+    EnvelopeParams get_estimated_params(const IndexOptions &index_opts,
+                                        const IEnvelopeConfigGenerator *env_config_generator) override;
 
    protected:
-    /**
-     * @brief Estimate the parameters for a FlatEnvelopeIndex based on the provided options
-     * @param opts The options to use for estimating the parameters
-     */
-    void estimate_params(const IndexOptions &opts);
-
     virtual void update_queries(std::stringstream &query_stream, uint num_queries) = 0;
 
     virtual Real get_config_score(vec<vec<IndexEntry<Envelope>>> &&entries, const IndexOptions &index_opts,

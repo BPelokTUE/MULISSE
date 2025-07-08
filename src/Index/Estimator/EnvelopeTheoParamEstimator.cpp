@@ -1,9 +1,10 @@
+#include "Index/Estimator/EnvelopeTheoParamEstimator.hpp"
+
 #include <cmath>
 
 #include "Index/Entry/Envelope.hpp"
 #include "Index/EnvelopeIndex/EnvelopeParams.hpp"
 #include "Index/Estimator/EnvelopeConfigGenerator/GridEnvConfigGenerator.hpp"
-#include "Index/Estimator/EnvelopeTheoParamEstimator.hpp"
 #include "Index/IndexOptions.hpp"
 #include "Search/DistanceMeasure/EuclideanDistance.hpp"
 #include "Util/Constants/Math.hpp"
@@ -13,7 +14,8 @@
 
 using std::pow;
 
-EnvelopeParamTheoEstimator::EnvelopeParamTheoEstimator(const IndexOptions &opts) {
+EnvelopeParams EnvelopeParamTheoEstimator::get_estimated_params(const IndexOptions &index_opts,
+                                                                const IEnvelopeConfigGenerator *env_config_generator) {
     // Generate X_c configurations
     // Sample X_p l-p pairs
     // For each configuration
@@ -34,7 +36,7 @@ EnvelopeParamTheoEstimator::EnvelopeParamTheoEstimator(const IndexOptions &opts)
     auto &logger = ParamEstimatesLogger::get_instance();
 
     vec<EnvelopeParams> configurations = GridEnvConfigGenerator().generate_configurations(
-        opts.m_index_method, opts.m_estimator_params->m_index_size_limit);
+        index_opts.m_index_method, index_opts.m_estimator_params->m_index_size_limit);
 
     std::default_random_engine rng(seed);
     LengthProperties length_props = RS.get_length_props();
@@ -117,10 +119,8 @@ EnvelopeParamTheoEstimator::EnvelopeParamTheoEstimator(const IndexOptions &opts)
 
         logger.write_entry(config, min_distance_sums[i]);
     }
-    m_estimated_params = configurations[selected_config_index];
+    return configurations[selected_config_index];
 }
-
-EnvelopeParams EnvelopeParamTheoEstimator::get_estimated_params() { return m_estimated_params; }
 
 Real EnvelopeParamTheoEstimator::get_paa_stdev(const PaaDistributionInputs &inputs) {
     Real k = R(inputs.seg_ind) + 1, l = R(inputs.length), p = R(inputs.start_pos) + 1, s = R(inputs.segment_len);

@@ -1,47 +1,26 @@
+#include "Index/Estimator/EnvelopeConfigGenerator/GridEnvConfigGenerator.hpp"
+
 #include <cmath>
 
 #include "Index/EnvelopeIndex/EnvelopeParams.hpp"
-#include "Index/Estimator/EnvelopeConfigGenerator/GridEnvConfigGenerator.hpp"
 #include "Index/Estimator/IndexSizeEstimator.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
-#include "Util/HelperFuncs/Path.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
 
 vec<EnvelopeParams> GridEnvConfigGenerator::generate_configurations(SearchMethodType index_type,
                                                                     Real index_size_limit) {
-    auto &RS = RunSettings::get_instance();
-    size_t size_limit_bytes = static_cast<size_t>(index_size_limit * R(get_dataset_size(RS.get_dataset_path())));
+    size_t size_limit_bytes = get_bytes_limit(index_size_limit);
 
     vec<SaxSegIndT> num_segments_vals = {32, 16, 8, 4};
-    vec<Real> lg_size_ratio_vals = {R(0.05), R(0.2), R(0.5), R(1.0)};
-
-    uint l_min = RS.get_length_props().m_l_min, l_max = RS.get_length_props().m_l_max;
-    uint l_range = l_max - l_min + 1;
+    vec<Real> l_per_group_ratios = {R(0.05), R(0.2), R(0.5), R(1.0)};
 
     vec<EnvelopeParams> configurations;
-    for (SaxSegIndT num_segments : num_segments_vals)
-        for (Real lg_size_ratio : lg_size_ratio_vals) {
-            uint l_per_group = U(std::ceil(R(l_range) * lg_size_ratio));
-            uint num_l_groups = (l_range + l_per_group - 1) / l_per_group;
-            LengthProperties length_props{
-                .m_use_length_groups = true,
-                .m_l_min = l_min,
-                .m_l_max = l_max,
-                .m_l_per_group = l_per_group,
-                .m_num_l_groups = num_l_groups,
-            };
+    for (Real l_per_group_ratio : l_per_group_ratios) {
+        for (SaxSegIndT num_segments : num_segments_vals) {
+            auto [estimated_size, env_params] =
+                get_envelope_params_and_size(num_segments, l_per_group_ratio, index_type, index_size_limit);
 
-            IndexSizeEstimator size_estimator(index_type, length_props, nullptr, num_segments);
-            uint pos_per_env = size_estimator.get_max_pos_per_env(index_size_limit);
-            size_t estimated_size = size_estimator.get_estimated_flat_envelope_size(pos_per_env);
-            if (size_limit_bytes >= estimated_size) {
-                configurations.push_back(EnvelopeParams{
-                    .m_num_segments = num_segments,
-                    .m_pos_per_env = pos_per_env,
-                    .m_l_per_group = l_per_group,
-                });
-            }
+            if (estimated_size > 0 && estimated_size <= size_limit_bytes) configurations.push_back(env_params);
         }
-
+    }
     return configurations;
 }

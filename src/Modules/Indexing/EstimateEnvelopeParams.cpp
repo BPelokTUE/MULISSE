@@ -2,6 +2,9 @@
 
 #include "Enums/EnvelopeParamEstimatorType.hpp"
 #include "Index/EnvelopeIndex/EnvelopeParams.hpp"
+#include "Index/Estimator/EnvelopeConfigGenerator/EnvelopeConfigGenerator.hpp"
+#include "Index/Estimator/EnvelopeConfigGenerator/GridEnvConfigGenerator.hpp"
+#include "Index/Estimator/EnvelopeConfigGenerator/RandomEnvConfigGenerator.hpp"
 #include "Index/Estimator/EnvelopeParamEstimator.hpp"
 #include "Index/Estimator/EnvelopeTheoParamEstimator.hpp"
 #include "Index/Estimator/IndexSizeEstimator.hpp"
@@ -38,19 +41,34 @@ std::optional<EnvelopeParams> estimate_envelope_params(IndexOptions &opts) {
     if (estimator_params) {
         ParamEstimatesLogger::initialize();
 
+        uptr<IEnvelopeConfigGenerator> env_config_generator;
+        switch (estimator_params->m_config_generator_type) {
+            case RANDOM:
+                if (auto random_params = dynamic_cast<RandomEnvConfigGeneratorParams *>(
+                        estimator_params->m_config_generator_params.get())) {
+                    env_config_generator = std::make_unique<RandomEnvConfigGenerator>(*random_params);
+                } else {
+                    throw std::runtime_error("RandomEnvConfigGenerator requires RandomEnvConfigGeneratorParams");
+                }
+                break;
+            case GRID:
+                env_config_generator = std::make_unique<GridEnvConfigGenerator>();
+                break;
+        }
+
         uptr<IEnvelopeParamEstimator> estimator;
         switch (estimator_params->m_param_estimator_type) {
             case THEORETICAL:
-                estimator = std::make_unique<EnvelopeParamTheoEstimator>(opts);
+                estimator = std::make_unique<EnvelopeParamTheoEstimator>();
                 break;
             case MIN_DIST:
-                estimator = std::make_unique<EnvelopeMinDistParamEstimator>(opts);
+                estimator = std::make_unique<EnvelopeMinDistParamEstimator>();
                 break;
             case QUERY_TIME:
-                estimator = std::make_unique<EnvelopeQueryTimeParamEstimator>(opts);
+                estimator = std::make_unique<EnvelopeQueryTimeParamEstimator>();
                 break;
         }
-        return estimator->get_estimated_params();
+        return estimator->get_estimated_params(opts, env_config_generator.get());
     }
     return std::nullopt;
 }

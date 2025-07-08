@@ -20,12 +20,11 @@
 
 using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-EnvelopeQueryTimeParamEstimator::EnvelopeQueryTimeParamEstimator(const IndexOptions &index_opts)
-    : EnvelopeSamplingParamEstimator(index_opts) {
-    //
+EnvelopeParams EnvelopeQueryTimeParamEstimator::get_estimated_params(
+    const IndexOptions &index_opts, const IEnvelopeConfigGenerator *env_config_generator) {
     m_queries.resize(index_opts.m_estimator_params->m_sampling_params->m_num_queries,
                      vec<vec<Real>>(index_opts.m_num_channels));
-    estimate_params(index_opts);
+    return EnvelopeSamplingParamEstimator::get_estimated_params(index_opts, env_config_generator);
 }
 
 void EnvelopeQueryTimeParamEstimator::update_queries(std::stringstream &query_stream, uint num_queries) {

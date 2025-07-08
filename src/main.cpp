@@ -60,13 +60,9 @@ int main(int argc, char **argv) {
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
         distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(PARALLEL),
         entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY),
-        param_estimator_type_str = ENVELOPE_PARAM_ESTIMATOR_TYPE_TO_STR.at(MIN_DIST);
-    EstimatorSamplingParams estimator_sampling_params{
-        .m_seed = 0,
-        .m_ind_step = 10,
-        .m_num_queries = 100,
-        .m_sample_frac = R(0.05),
-    };
+        param_estimator_type_str = ENV_PARAM_ESTIMATOR_TYPE_TO_STR.at(MIN_DIST),
+        env_config_gen_type_str = ENV_CONFIG_GENERATOR_TYPE_TO_STR.at(RANDOM);
+    EstimatorSamplingParams estimator_sampling_params{.m_ind_step = 10, .m_num_queries = 100, .m_sample_frac = R(0.05)};
     vec<str> csv_paths;
     Real step_sd = R(1.0), noise = R(0.1), score_based_chss_score_exp = R(1.0), index_sample_frac = R(1.0),
          env_width_min_w_update = R(0.0), min_subs_sd = DEFAULT_MIN_SUBS_SD, max_width_change = R(0.0),
@@ -76,7 +72,7 @@ int main(int argc, char **argv) {
     SaxSegIndT num_segments = 0;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
          num_l_groups = 0, knn_k = 1, seed = 0, num_lags = 5, score_based_chss_segment_len = 1,
-         score_based_chss_sample_size = 0;
+         score_based_chss_sample_size = 0, estimator_num_configs;
     size_t leaf_capacity = 0, max_leaves_to_visit = 0;
     vec<uint> exact_lengths = {};
     MtsNumChannelsT num_channels, used_channels = 0;
@@ -309,20 +305,25 @@ int main(int argc, char **argv) {
         ->add_option("--param_estimator_type,--pe_type", param_estimator_type_str,
                      "Type of EnvelopeParamEstimator to use")
         ->capture_default_str()
-        ->check(CLI::IsMember(ACCEPTED_ENVELOPE_PARAM_ESTIMATOR_TYPE_STRS));
-    // index_subcommand
-    //     ->add_option("--param_estimator_configs,--pe_configs", estimator_config_gen_type,
-    //                  "Type of configuration generator to use for the parameter estimator")
-    //     ->check(CIL::IsMember());
-    index_subcommand->add_option("--param_estimator_step,--pe_step", estimator_sampling_params.m_ind_step)
+        ->check(CLI::IsMember(ACCEPTED_ENV_PARAM_ESTIMATOR_TYPE_STRS));
+    index_subcommand
+        ->add_option("--param_estimator_config_gen_type,--pe_config_gen_type", env_config_gen_type_str,
+                     "Type of configuration generator to use for the parameter estimator")
+        ->check(CLI::IsMember(ACCEPTED_ENV_CONFIG_GENERATOR_TYPE_STRS));
+    index_subcommand
+        ->add_option("--param_estimator_step,--pe_step", estimator_sampling_params.m_ind_step,
+                     "Step size for the envelope generation in EnvelopeSamplingParamEstimator")
         ->check(positive_int);
     index_subcommand
-        ->add_option("--param_estimator_num_queries,--pe_num_queries", estimator_sampling_params.m_num_queries)
+        ->add_option("--param_estimator_num_queries,--pe_num_queries", estimator_sampling_params.m_num_queries,
+                     "Number of queries to use for the envelope generation in EnvelopeSamplingParamEstimator")
         ->check(positive_int);
     index_subcommand
-        ->add_option("--param_estimator_sample_frac,--pe_sample_frac", estimator_sampling_params.m_sample_frac)
+        ->add_option("--param_estimator_sample_frac,--pe_sample_frac", estimator_sampling_params.m_sample_frac,
+                     "Fraction of the dataset to sample for the envelope generation in EnvelopeSamplingParamEstimator")
         ->check(fraction);
-    index_subcommand->add_option("--param_estimator_seed,--pe_seed", estimator_sampling_params.m_seed);
+    index_subcommand->add_option("--param_estimator_seed,--pe_seed", seed, "Seed for envelope parameter estimation");
+    index_subcommand->add_option("--estimator_num_configs", estimator_num_configs, "");
     index_subcommand
         ->add_option("--index_sample_frac", index_sample_frac,
                      "Fraction of the dataset to index, intended for testing, "
@@ -637,14 +638,24 @@ int main(int argc, char **argv) {
 
             uptr<EstimatorParams> estimator_params = nullptr;
             if (arr_contains(METHODS_W_ESTIMABLE_SIZE, method_type) && index_size_limit > 0) {
-                auto param_estimator_type = STR_TO_ENVELOPE_PARAM_ESTIMATOR_TYPE.at(param_estimator_type_str);
+                auto param_estimator_type = STR_TO_ENV_PARAM_ESTIMATOR_TYPE.at(param_estimator_type_str);
                 uptr<EstimatorSamplingParams> estimator_sampling_params_ptr = nullptr;
                 if (arr_contains(SAMPLING_ESTIMATOR_TYPES, param_estimator_type)) {
+                    estimator_sampling_params.m_seed = seed;
                     estimator_sampling_params_ptr =
                         std::make_unique<EstimatorSamplingParams>(estimator_sampling_params);
                 }
-                estimator_params = std::make_unique<EstimatorParams>(index_size_limit, param_estimator_type,
-                                                                     std::move(estimator_sampling_params_ptr));
+
+                auto env_config_gen_type = STR_TO_ENV_CONFIG_GENERATOR_TYPE.at(env_config_gen_type_str);
+                uptr<EnvConfigGeneratorParams> envelope_config_gen_params_ptr = nullptr;
+                if (env_config_gen_type == RANDOM) {
+                    envelope_config_gen_params_ptr =
+                        std::make_unique<RandomEnvConfigGeneratorParams>(estimator_num_configs, seed);
+                }
+
+                estimator_params = std::make_unique<EstimatorParams>(
+                    index_size_limit, param_estimator_type, env_config_gen_type,
+                    std::move(estimator_sampling_params_ptr), std::move(envelope_config_gen_params_ptr));
             }
 
             IndexOptions index_options{

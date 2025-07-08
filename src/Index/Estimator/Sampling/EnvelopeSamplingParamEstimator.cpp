@@ -24,15 +24,8 @@
 #include "Util/Logging/ParamEstimatesLogger.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
-EnvelopeSamplingParamEstimator::EnvelopeSamplingParamEstimator(const IndexOptions &index_opts) {
-    if (!index_opts.m_estimator_params || !index_opts.m_estimator_params->m_sampling_params) {
-        throw std::runtime_error("EnvelopeSamplingParamEstimator requires sampling parameters.");
-    }
-}
-
-EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params() { return m_estimated_params; }
-
-void EnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &index_opts) {
+EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params(
+    const IndexOptions &index_opts, const IEnvelopeConfigGenerator *env_config_generator) {
     // 1. Generate configurations
     // 2. Sample data
     // 3. Create queries from data
@@ -40,6 +33,10 @@ void EnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &index_o
     //     4.1. Create a FlatEnvelopeIndex, skipping positions and lengths in the envelopes
     //     4.2. Measure the average lower-bound distance for the queries
     // 5. Select the configuration with the lowest average lower-bound distance
+
+    if (!index_opts.m_estimator_params || !index_opts.m_estimator_params->m_sampling_params) {
+        throw std::runtime_error("EnvelopeSamplingParamEstimator requires sampling parameters.");
+    }
 
     auto &RS = RunSettings::get_instance();
     auto &logger = ParamEstimatesLogger::get_instance();
@@ -129,4 +126,5 @@ void EnvelopeSamplingParamEstimator::estimate_params(const IndexOptions &index_o
 
         logger.write_entry(config, config_score);
     }
+    return m_estimated_params;
 }

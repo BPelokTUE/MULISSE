@@ -1,0 +1,32 @@
+#include "Index/Estimator/EnvelopeConfigGenerator/RandomEnvConfigGenerator.hpp"
+
+#include <random>
+
+#include "Index/EnvelopeIndex/EnvelopeParams.hpp"
+
+RandomEnvConfigGenerator::RandomEnvConfigGenerator(RandomEnvConfigGeneratorParams params) : m_params(params) {}
+
+vec<EnvelopeParams> RandomEnvConfigGenerator::generate_configurations(SearchMethodType index_type,
+                                                                      Real index_size_limit) {
+    size_t size_limit_bytes = get_bytes_limit(index_size_limit);
+    vec<EnvelopeParams> configurations(m_params.m_num_configs);
+
+    std::uniform_int_distribution<SaxSegIndT> num_segments_dist(m_params.m_num_segments_min,
+                                                                m_params.m_num_segments_max);
+    std::uniform_real_distribution<Real> l_per_group_ratio_dist(m_params.m_l_per_group_ratio_min,
+                                                                m_params.m_l_per_group_ratio_max);
+    std::mt19937 rng(m_params.m_seed);
+
+    uint configs_generated = 0;
+    while (configs_generated < m_params.m_num_configs) {
+        SaxSegIndT num_segments = num_segments_dist(rng);
+        uint l_per_group_ratio = l_per_group_ratio_dist(rng);
+        auto [estimated_size, env_params] =
+            get_envelope_params_and_size(num_segments, l_per_group_ratio, index_type, index_size_limit);
+
+        if (estimated_size > 0 && estimated_size <= size_limit_bytes) {
+            configurations[configs_generated++] = env_params;
+        }
+    }
+    return configurations;
+}

@@ -9,11 +9,11 @@
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/RunSettings/LengthProperties.hpp"
 
-EnvelopeMinDistParamEstimator::EnvelopeMinDistParamEstimator(const IndexOptions &index_opts)
-    : EnvelopeSamplingParamEstimator(index_opts) {
+EnvelopeParams EnvelopeMinDistParamEstimator::get_estimated_params(
+    const IndexOptions &index_opts, const IEnvelopeConfigGenerator *env_config_generator) {
     m_query_accs.resize(index_opts.m_estimator_params->m_sampling_params->m_num_queries,
                         vec<vec<Real>>(index_opts.m_num_channels));
-    estimate_params(index_opts);
+    return EnvelopeSamplingParamEstimator::get_estimated_params(index_opts, env_config_generator);
 }
 
 void EnvelopeMinDistParamEstimator::update_queries(std::stringstream &query_stream, uint num_queries) {

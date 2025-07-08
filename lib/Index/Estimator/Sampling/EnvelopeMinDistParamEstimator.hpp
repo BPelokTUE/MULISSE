@@ -5,14 +5,10 @@
 #include "Index/Estimator/Sampling/EstimatorSamplingParams.hpp"
 
 class EnvelopeMinDistParamEstimator : public EnvelopeSamplingParamEstimator {
-   public:
-    /**
-     * @brief Constructor for EnvelopeParamMinDistEstimator
-     * @param index_opts The initial index options to use for the FlatEnvelopeIndex
-     */
-    EnvelopeMinDistParamEstimator(const IndexOptions &index_opts);
-
    protected:
+    EnvelopeParams get_estimated_params(const IndexOptions &index_opts,
+                                        const IEnvelopeConfigGenerator *env_config_generator) override;
+
     void update_queries(std::stringstream &query_stream, uint num_queries) override;
 
     Real get_config_score(vec<vec<IndexEntry<Envelope>>> &&entries, const IndexOptions &index_opts,
