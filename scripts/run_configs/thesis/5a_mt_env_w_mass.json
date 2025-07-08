@@ -1,0 +1,38 @@
+{
+    "csv_data_dirs": [],
+    "dataset_sizes": [1000],
+    "series_lengths": [1024, 2048, 3072],
+    "syn_num_channels": [1],
+    "syn_step_stdevs": [1.0],
+    "query_set_sizes": [100],
+    "l_range_ratios": [[0.125, 1.0], [0.5, 1.0], [0.125, 0.75]],
+    "used_channel_ratios": [1.0],
+    "query_noise_stdevs": [0.1],
+    "search_methods": ["sax_envelope"],
+    "sax_breakpoint_strategies": ["equiprobable"],
+    "sax_num_bits": [15],
+    "num_segments": [32],
+    "length_group_size_ratios": [0.025],
+    "envelope_size_ratios": [0.025, 0.05, 0.1, 0.25, 0.5, 1.0],
+    "distance_measures": {
+        "ed": ["ed"],
+        "mass": ["mass"],
+        "mass_ffts": ["mass"] 
+    },
+    "early_abandon": [true],
+    "precalculate_ffts": {
+        "mass": [false],
+        "mass_ffts": [true]
+    },
+    "examine_whole": {
+        "ed": [true, false],
+        "mass": [true, false]
+    },
+    "index_inserters": ["parallel"],
+    "search_types": ["knn"],
+    "search_ks": [1],
+    "search_raw": [false],
+    "dataset_seeds": [42],
+    "query_set_seeds": [42],
+    "separate_csv_datasets": false
+}

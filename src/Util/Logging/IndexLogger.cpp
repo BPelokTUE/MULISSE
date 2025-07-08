@@ -33,7 +33,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         multi_chss_num_seg_file = "", chss_scores_type_str = "", env_width_chss_min_w_update_str = "",
         max_width_change_str = "", use_inv_sax_str = "", pe_type_str = "", pe_config_gen_type_str = "";
     Real score_based_chss_score_exp = R(0.0), index_size_limit = R(0.0);
-    const EstimatorSamplingParams *pe_sampling_params;
+    const EstimatorSamplingParams *pe_sampling_params = nullptr;
 
     if (arr_contains(METHODS_W_ESTIMABLE_SIZE, index_options.m_index_method) && index_options.m_estimator_params) {
         auto estimator_params = index_options.m_estimator_params.get();

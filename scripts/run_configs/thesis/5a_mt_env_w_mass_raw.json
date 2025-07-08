@@ -1,10 +1,10 @@
 {
     "csv_data_dirs": [],
-    "dataset_sizes": [200],
+    "dataset_sizes": [1000],
     "series_lengths": [1024, 2048, 3072],
     "syn_num_channels": [1],
     "syn_step_stdevs": [1.0],
-    "query_set_sizes": [25],
+    "query_set_sizes": [100],
     "l_range_ratios": [[0.125, 1.0], [0.5, 1.0], [0.125, 0.75]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
@@ -30,7 +30,7 @@
     "index_inserters": ["parallel"],
     "search_types": ["knn"],
     "search_ks": [1],
-    "search_raw": [false, true],
+    "search_raw": [true],
     "dataset_seeds": [42],
     "query_set_seeds": [42],
     "separate_csv_datasets": false

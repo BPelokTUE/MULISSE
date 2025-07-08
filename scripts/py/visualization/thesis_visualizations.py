@@ -25,6 +25,7 @@ IMPORTANT_METRICS = [
 
 FIGURE_DIR = os.path.join("..", "MasterThesis", "figures")
 PARAMETRIZATION_FIGS_DIR = os.path.join(FIGURE_DIR, "parametrization")
+EXTENSIONS_FIGS_DIR = os.path.join(FIGURE_DIR, "extensions")
 EXPERIMENT_FIGS_DIR = os.path.join(FIGURE_DIR, "experiments")
 
 SAVE_FIGURES = True
@@ -48,8 +49,14 @@ plt.rcParams.update(
 # %%
 # 1 - ULISSE stage comparison
 
-for suffix in ["uni", "multi"]:
-    separate_plots_key = (DSC.DATASET_FILE,) if suffix == "uni" else (DSC.DATASET_FILE, DSC.NUM_CHANNELS)
+titles = {
+    "uni": "Univariate",
+    "multi": "Multivariate",
+    "uni_raw": "Univariate Raw",
+}
+
+for suffix, title in titles.items():
+    separate_plots_key = (DSC.DATASET_FILE,) if suffix != "multi" else (DSC.DATASET_FILE, DSC.NUM_CHANNELS)
 
     for target_args in IMPORTANT_METRICS:
         visualize_experiments(
@@ -60,7 +67,7 @@ for suffix in ["uni", "multi"]:
                 # ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
             },
             separate_plots_dict={separate_plots_key: []},
-            title_base="Univariate" if suffix == "uni" else "Multivariate",
+            title_base=title,
             bar_plot_label_padding=False,
             legend_max_cols=2,
             merge_csv_datasets=True,
@@ -360,7 +367,7 @@ for target_args in [TargetArgs.INDEX_SIZE, TargetArgs.QUERY_TIME]:
             bar_plot_label_padding=False,
             title_base=f"{size.capitalize()} Ns",
             ignored_attrs={DSC.DATASET_FILE, ISC.NUM_SEGMENTS, DSC.SERIES_LENGTH},
-            save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"5_presence_{size}_{target_args.name.lower()}"),
+            save_dir=os.path.join(EXTENSIONS_FIGS_DIR, f"5_presence_{size}_{target_args.name.lower()}"),
             **target_args.value,
         )
 
@@ -402,7 +409,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
             bar_plot_color_attrs=dataset_cols[-1],
             legend_max_cols=2,
             bar_plot_label_map=label_maps[dataset],
-            save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"6_ch_performance_{target_args.name.lower()}_{dataset}"),
+            save_dir=os.path.join(EXTENSIONS_FIGS_DIR, f"6_ch_performance_{target_args.name.lower()}_{dataset}"),
             **target_args.value,
         )
 
@@ -410,7 +417,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
 # 6 - Channel clustering
 visualize_clusters(
     logs_dir="EXPERIMENT_LOGS/thesis/LOGS_6_ch_clustering",
-    save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, "6_ch_clustering"),
+    save_dir=os.path.join(EXTENSIONS_FIGS_DIR, "6_ch_clustering"),
 )
 
 # %%
@@ -430,7 +437,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
             ("score_based", -1): "Prioritize Easy",
             ("score_based", 1): "Prioritize Hard",
         },
-        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"6_ch_prioritization_{target_args.name.lower()}"),
+        save_dir=os.path.join(EXTENSIONS_FIGS_DIR, f"6_ch_prioritization_{target_args.name.lower()}"),
         **target_args.value,
     )
 

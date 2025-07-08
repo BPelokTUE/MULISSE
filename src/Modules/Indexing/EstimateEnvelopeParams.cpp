@@ -17,6 +17,8 @@
 #include "Util/RunSettings/RunSettings.hpp"
 
 std::optional<EnvelopeParams> estimate_envelope_params(IndexOptions &opts) {
+    if (!opts.m_estimator_params) return std::nullopt;
+
     // If l_per_group and num_segments are set, use the maximum pos_per_env value given the index size limit.
     if (auto paa_index_params = dynamic_cast<PaaIndexParams *>(opts.m_index_params.get())) {
         SaxSegIndT num_segments = paa_index_params->m_segmentation_params.m_num_segments;
