@@ -36,8 +36,6 @@ void LengthGroupingIndex<T>::insert(IndexEntry<T> &entry) {
 
 template <typename T>
 uptr<IFinalizedIndex<typename IndexTraits<T>::FinalizedTag>> LengthGroupingIndex<T>::finalize() {
-    using FTag = typename IndexTraits<T>::FinalizedTag;
-
     vec<uptr<IFinalizedIndex<FTag>>> finalized_indexes(m_indexes.size());
     for (uint l_ind = 0; l_ind < m_indexes.size(); ++l_ind) {
         finalized_indexes[l_ind] = m_indexes[l_ind]->finalize();

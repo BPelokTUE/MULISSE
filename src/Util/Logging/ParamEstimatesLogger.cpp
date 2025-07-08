@@ -13,8 +13,6 @@ void ParamEstimatesLogger::initialize() {
     if (initialized) return;
     initialized = true;
 
-    ParamEstimatesLogger &instance = get_instance();
-
     auto &RS = RunSettings::get_instance();
     instance.m_param_estimate_file_path = fs::path(RS.get_logs_path()) / PARAM_ESTIMATE_FILE;
     instance.file_setup(instance.m_param_estimate_file_path, PARAM_ESTIMATES_COL_STRS);

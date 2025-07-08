@@ -59,8 +59,6 @@ int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_pe
     }
 
     // Estimate approximately optimal parameters if requested
-    Real index_size_limit = opts.m_estimator_params ? opts.m_estimator_params->m_index_size_limit : R(0.0);
-
     auto envelope_params = dynamic_cast<EnvelopeIndexParams *>(opts.m_index_params.get());
     if (opts.m_estimator_params) {
         if (!envelope_params) {

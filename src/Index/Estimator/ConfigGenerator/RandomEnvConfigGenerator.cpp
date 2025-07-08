@@ -20,7 +20,7 @@ vec<EnvelopeParams> RandomEnvConfigGenerator::generate_configurations(SearchMeth
     uint configs_generated = 0;
     while (configs_generated < m_params.m_num_configs) {
         SaxSegIndT num_segments = num_segments_dist(rng);
-        uint l_per_group_ratio = l_per_group_ratio_dist(rng);
+        Real l_per_group_ratio = l_per_group_ratio_dist(rng);
         auto [estimated_size, env_params] =
             get_envelope_params_and_size(num_segments, l_per_group_ratio, index_type, index_size_limit);
 

@@ -16,7 +16,6 @@ class EnvelopeMinDistParamEstimator : public EnvelopeSamplingParamEstimator {
                           const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) override;
 
    private:
-    EnvelopeParams m_estimated_params;
     vec<vec<vec<Real>>> m_query_accs;
 };
 
