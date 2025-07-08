@@ -24,6 +24,10 @@ INDEX_FILE_COL = "index_file"
 FFTS_FILE_COL = "ffts_file"
 DATASET_FILE_COL = "dataset_file"
 QUERY_FILE_COL = "query_file"
+QUERY_TYPE_COL = "query_type"
+KNN_K_COL = "knn_k"
+R_RANGE_R_COL = "r_range_r"
+NORMALIZED_COL = "normalized"
 EARLY_ABANDONING_COL = "early_abandoning"
 
 
@@ -89,19 +93,28 @@ if __name__ == "__main__":
     search_settings_df = pd.read_csv(SEARCH_SETTING_CSV)
     runs_df = pd.read_csv(RUNS_CSV)
 
-    search_settings_by_query_file: dict[str, list] = {}
+    search_settings_by_setup: dict[tuple, list] = {}
     for _, row in search_settings_df.iterrows():
-        query_file = row[QUERY_FILE_COL]
-        if query_file not in search_settings_by_query_file:
-            search_settings_by_query_file[query_file] = []
-        search_settings_by_query_file[query_file].append(row[ID_COL])
+        query_type = row[QUERY_TYPE_COL]
+        setup = (
+            row[QUERY_FILE_COL],
+            query_type,
+            row[KNN_K_COL if query_type == "knn" else R_RANGE_R_COL],
+            row[NORMALIZED_COL],
+        )
 
-    for query_file, search_settings_ids in search_settings_by_query_file.items():
-        print(f"Checking query file {query_file}")
-        query_file_runs_df = runs_df[runs_df[SETTINGS_ID_COL].isin(search_settings_ids)]
-        for query_id in query_file_runs_df[QUERY_ID_COL].unique():
+        if setup not in search_settings_by_setup:
+            search_settings_by_setup[setup] = []
+        search_settings_by_setup[setup].append(row[ID_COL])
+
+    for setup, search_settings_ids in search_settings_by_setup.items():
+        print(
+            f"Checking query file {setup[0]}, type {setup[1]} with {'K' if setup[1] == 'knn' else 'R'}={setup[2]}, {'normalized' if setup[3] else 'raw'}"
+        )
+        setup_runs_df = runs_df[runs_df[SETTINGS_ID_COL].isin(search_settings_ids)]
+        for query_id in setup_runs_df[QUERY_ID_COL].unique():
             results_by_method = {}
-            for _, row in query_file_runs_df[query_file_runs_df[QUERY_ID_COL] == query_id].iterrows():
+            for _, row in setup_runs_df[setup_runs_df[QUERY_ID_COL] == query_id].iterrows():
                 method_name = get_method_name(search_settings_df, row[SETTINGS_ID_COL])
                 results_by_method[method_name] = {
                     "ts_indices": get_items(row[RESULT_SET_TS_INDICES_COL]),
@@ -109,7 +122,7 @@ if __name__ == "__main__":
                     "distances": get_items(row[RESULT_SET_DISTANCES]),
                 }
 
-            # Find discrepancies/se
+            # Find discrepancies
             differences = []
             keys = list(results_by_method.keys())
             ref_key = keys[0]

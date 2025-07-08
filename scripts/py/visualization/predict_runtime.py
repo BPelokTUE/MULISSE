@@ -13,6 +13,7 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scripts.py.common.columns import DatasetSettingsColumn as DSC
 from scripts.py.common.columns import DatasetStatsColumn as DSTC
 from scripts.py.common.columns import IndexSettingsColumn as ISC
@@ -316,7 +317,12 @@ def visualize_clusters(logs_dir: str, save_dir: str | None = None):
                         )
 
         targets = artifacts["targets"]
-        fig.colorbar(plot, label=str(targets[0][1]))
+        if len(axis_indices) > 1:
+            divider = make_axes_locatable(axs[-1])
+            cax = divider.append_axes("right", size="5%", pad=0.05)
+            fig.colorbar(plot, cax=cax, label=str(targets[0][1]))
+        else:
+            fig.colorbar(plot, label=str(targets[0][1]))
 
         if verbose:
             channel_stats = {}

@@ -126,15 +126,10 @@ ORDERED_DATASETS = [
 ]
 
 
-def place_legend(ax: plt.Axes, num_labels: int, max_cols: int, offset: float = 0.075, row_offset: float = 0.075):
-    def get_legend_y_coord(num_labels):
-        legend_num_cols = min(num_labels, max_cols)
-        legend_num_rows = (num_labels + legend_num_cols - 1) // legend_num_cols
-        return 1.0 + offset + row_offset * legend_num_rows
-
+def place_legend(ax: plt.Axes, num_labels: int, max_cols: int, offset: float = 0.1):
     legend_num_cols = min(num_labels, max_cols)
-    legend_y_coord = get_legend_y_coord(num_labels)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, legend_y_coord), ncol=legend_num_cols)
+    legend_y_coord = 1.0 + offset
+    ax.legend(loc="lower center", bbox_to_anchor=(0.5, legend_y_coord), ncol=legend_num_cols)
 
 
 def plot_bars(
@@ -147,6 +142,7 @@ def plot_bars(
     y_lim: tuple[float, float] = None,
     y_scale: str = "linear",
     bar_width_inches: float = 0.4,
+    bar_gap_inches: float = 0.4,
     legend_max_cols: int = 4,
     title: str = None,
     hatches: list[str] = None,
@@ -165,6 +161,7 @@ def plot_bars(
     :param y_range: The range to use for the y-axis. If `None`, the range is automatically determined.
     :param y_scale: The scale to use for the y-axis.
     :param bar_width_inches: The width of the bars in inches.
+    :param bar_gap_inches: The gap between bar groups in inches.
     :param title: The title of the plot.
     :param hatches: The hatches to use for the bars. If `None`, no hatches are used.
     :param hatch_labels: The labels for the hatches. If `None`, no hatch labels are used.
@@ -193,9 +190,15 @@ def plot_bars(
 
     fig, ax = plt.subplots()
     ax.set_xlim(0.0, 1.0)
-    bar_width = 1.0 / (num_bars + len(bar_groups))
 
-    x_start = bar_width / 2
+    num_gaps = len(bar_groups)
+    bar_inches = bar_width_inches * num_bars
+    gap_inches = bar_gap_inches * num_gaps
+    total_inches = bar_inches + gap_inches
+    bar_gap = gap_inches / total_inches / num_gaps
+    bar_width = bar_inches / total_inches / num_bars
+
+    x_start = bar_gap / 2
     x_ticks = []
     x_tick_labels = []
     seen_labels = set()
@@ -237,7 +240,7 @@ def plot_bars(
 
         x_ticks.append(x_start + len(bars) * bar_width / 2)
         x_tick_labels.append(x_labels.get(bar_group_key, ""))
-        x_start += (len(bars) + 1) * bar_width
+        x_start += len(bars) * bar_width + bar_gap
 
     for h_ind in seen_hatches:
         ax.bar(0, 0, color="white", edgecolor="black", hatch=hatches[h_ind], label=hatch_labels[h_ind])
@@ -273,6 +276,7 @@ def plot_lines(
     x_scale: str = "linear",
     y_scale: str = "linear",
     y_lim: tuple[float, float] | None = None,
+    line_thickness: float = 1.5,
     title: str = None,
     legend_max_cols=4,
     only_max_points: bool = True,
@@ -291,6 +295,7 @@ def plot_lines(
     :param x_scale: The scale to use for the x-axis.
     :param y_scale: The scale to use for the y-axis.
     :param y_lim: The range to use for the y-axis. If `None`, the range is automatically determined.
+    :param line_thickness: The thickness of the lines.
     :param title: The title of the plot.
     :param only_max_points: If `True`, only plot lines with the maximum number of points.
     :param mark_minimum: If `True`, mark the minimum points on each line.
@@ -334,8 +339,8 @@ def plot_lines(
 
         xs = [point[0] for point in sorted_points]
         ys = [point[1] for point in sorted_points]
-        ax.plot(xs, ys, color=color, label=label)
-        ax.scatter(xs, ys, color=color)
+        ax.plot(xs, ys, color=color, label=label, linewidth=line_thickness)
+        ax.scatter(xs, ys, color=color, s=line_thickness * 15)
         x_coords.update(xs)
 
     x_coords = sorted(list(x_coords))
@@ -477,7 +482,8 @@ def plot_heat_map(
         axes[i].axis("off")
 
     fig.suptitle(title)
-    plt.tight_layout(rect=[0, 0, 1, 0.96])  # Make room for the suptitle
+    # plt.tight_layout(rect=[0, 0, 1, 0.96])  # Make room for the suptitle
+    plt.tight_layout()  # Make room for the suptitle
 
     if save_path is not None:
         fig.savefig(save_path, bbox_inches="tight")
@@ -548,6 +554,8 @@ def get_config_label(
         match col:
             case SSC.METHOD_NAME:
                 label_parts.append(METHOD_LABELS.get(val, val))
+            case SSC.NORMALIZED | ISC.NORMALIZED:
+                label_parts.append("Norm" if val == 1 else "Raw")
             case DSC.L_MIN | ISC.L_MIN | QSC.L_MIN:
                 length_values["l_min"] = val
             case DSC.L_MAX | ISC.L_MAX | QSC.L_MAX:

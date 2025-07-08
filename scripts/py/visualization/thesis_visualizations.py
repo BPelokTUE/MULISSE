@@ -5,6 +5,7 @@ if True:
     while not os.getcwd().endswith("MULISSE"):
         os.chdir("..")
 
+from matplotlib import pyplot as plt
 from scripts.py.common.columns import DatasetSettingsColumn as DSC
 from scripts.py.common.columns import IndexSettingsColumn as ISC
 from scripts.py.common.columns import ParamEstimatesColumn as PEC
@@ -32,32 +33,42 @@ if SAVE_FIGURES:
     os.makedirs(PARAMETRIZATION_FIGS_DIR, exist_ok=True)
     os.makedirs(EXPERIMENT_FIGS_DIR, exist_ok=True)
 
+# Set default font sizes
+plt.rcParams.update(
+    {
+        "font.size": 18,
+        "axes.titlesize": 18,
+        "axes.labelsize": 16,
+        "xtick.labelsize": 14,
+        "ytick.labelsize": 14,
+        "legend.fontsize": 14,
+    }
+)
+
 # %%
 # 1 - ULISSE stage comparison
 
 for suffix in ["uni", "multi"]:
-    ignored_attrs = {DSC.DATASET_FILE}
-    if suffix == "uni":
-        ignored_attrs.add(DSC.NUM_CHANNELS)
+    separate_plots_key = (DSC.DATASET_FILE,) if suffix == "uni" else (DSC.DATASET_FILE, DSC.NUM_CHANNELS)
 
     for target_args in IMPORTANT_METRICS:
         visualize_experiments(
             logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_1_mulisse_stages_{suffix}"],
             groups_dict={
                 ERD.METHODS_COLS: [SSC.METHOD_NAME],
-                ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS],
-                ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
+                ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS, DSC.SERIES_LENGTH],
+                # ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
             },
-            separate_plots_dict={(DSC.DATASET_FILE,): []},
+            separate_plots_dict={separate_plots_key: []},
             title_base="Univariate" if suffix == "uni" else "Multivariate",
             bar_plot_label_padding=False,
+            legend_max_cols=2,
             merge_csv_datasets=True,
             bar_plot_label_map={
                 "isax_envelope-ed-early": "First phase",
                 "isax_env_w_sax_env-ed-early": "Both phases",
                 "sax_envelope-ed-early": "Second phase",
             },
-            ignored_attrs=ignored_attrs,
             save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"1_stages_{target_args.name.lower()}_{suffix}"),
             **target_args.value,
         )
@@ -77,10 +88,10 @@ for target_args in IMPORTANT_METRICS:
         bar_plot_label_padding=False,
         legend_max_cols=2,
         bar_plot_label_map={
-            "envelope-ed-early": "MT-Env no SAX",
             "sax_envelope-ed-early": "MT-Env",
-            "isax_env_w_env-ed-early": "Two-phase MULISSE no SAX",
-            "isax_env_w_sax_env-ed-early": "Two-phase MULISSE",
+            "envelope-ed-early": "MT-Env no SAX",
+            "isax_env_w_env-ed-early": "Both phases no SAX",
+            "isax_env_w_sax_env-ed-early": "Both phases",
         },
         ignored_attrs={DSC.DATASET_FILE},
         save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"2_sax_vs_no_sax_{target_args.name.lower()}"),
@@ -100,7 +111,7 @@ for target_args in IMPORTANT_METRICS:
         },
         separate_plots_dict={(DSC.DATASET_FILE, DSC.NUM_CHANNELS): []},
         bar_plot_color_attrs=[SSC.METHOD_NAME, ISC.NUM_BITS_LIMIT],
-        legend_max_cols=3,
+        legend_max_cols=2,
         bar_plot_label_map={
             ("isax-ed-early", 1): "iSAX, Blim=1",
             ("isax-ed-early", 2): "iSAX, Blim=2",
@@ -116,7 +127,7 @@ for target_args in IMPORTANT_METRICS:
         ignored_attrs={DSC.DATASET_FILE, ISC.NUM_ENVELOPES},
         bar_plot_label_padding=0,
         regex_dict={ISC.NUM_ENVELOPES: r"^(0|1)(\.0){0,1}$"},
-        y_scale="log" if target_args.name != "pruning_ratio" else "linear",
+        y_scale="log" if target_args.name != "PRUNING_RATIO" else "linear",
         save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"3_mt-env_vs_isax_{target_args.name.lower()}"),
         **target_args.value,
     )
@@ -203,12 +214,13 @@ for target_args in [TargetArgs.QUERY_TIME]:
 
 # %%
 # 4c - PPE for different distance measures
+re_sep = "::"
+
 for target_args in [TargetArgs.QUERY_TIME]:
     visualize_experiments(
-        # logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4c_ppe_dms_uni"],
-        logs_dirs=["LOGS"],
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4c_ppe_dms_uni"],
         groups_dict={
-            ERD.METHODS_COLS: [SSC.DISTANCE_MEASURE, SSC.EXAMINE_WHOLE, SSC.PRECOMPUTED_FFTS],
+            ERD.METHODS_COLS: [SSC.DISTANCE_MEASURE, SSC.EXAMINE_WHOLE, SSC.PRECOMPUTED_FFTS, SSC.NORMALIZED],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
             ERD.INDEXES_COLS: [ISC.POS_PER_ENV],
@@ -216,7 +228,15 @@ for target_args in [TargetArgs.QUERY_TIME]:
         merge_csv_datasets=True,
         separate_plots_dict={
             (DSC.SERIES_LENGTH, DSC.DATASET_FILE): [],
-            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
+            (SSC.NORMALIZED,): [(False,)],
+            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
+        },
+        regex_dict={
+            # (
+            #     SSC.DISTANCE_MEASURE,
+            #     SSC.EXAMINE_WHOLE,
+            #     SSC.PRECOMPUTED_FFTS,
+            # ): rf"^(?!{re_sep.join(['mass', '0', 'False'])})"
         },
         bar_plot_color_attrs=None,
         line_plot_x_attr=ISC.POS_PER_ENV,
@@ -230,13 +250,14 @@ for target_args in [TargetArgs.QUERY_TIME]:
         },
         line_plot_colors_map={
             ("ed", 0, False): PALETTE["Blues"][6],
-            ("ed", 1, False): PALETTE["Blues"][3],
+            ("ed", 1, False): PALETTE["Blues"][2],
             ("mass", 0, False): PALETTE["Purples"][6],
             ("mass", 1, False): PALETTE["Purples"][3],
             ("mass", 0, True): PALETTE["Oranges"][4],
         },
         legend_max_cols=3,
         x_scale="log",
+        y_scale="log",
         save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4c_ppe_dms_{target_args.name.lower()}"),
         **target_args.value,
     )
