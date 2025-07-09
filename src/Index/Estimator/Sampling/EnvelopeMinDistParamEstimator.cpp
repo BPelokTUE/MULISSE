@@ -80,7 +80,7 @@ Real EnvelopeMinDistParamEstimator::get_config_score(vec<vec<IndexEntry<Envelope
                     Real lower = entry.m_mts_summary[c].m_lower[seg_ind],
                          upper = entry.m_mts_summary[c].m_upper[seg_ind];
                     min_dist_sum_query +=
-                        distance_measure.min_dist_squared(query_ch_paa[seg_ind], lower, upper) * segment_len_r;
+                        distance_measure.min_dist_squared(query_ch_paa[seg_ind], lower, upper, c) * segment_len_r;
                 }
             }
             min_dist += min_dist_sum_query / R(entries[lg_ind].size());

@@ -42,9 +42,10 @@ class DistanceMeasure {
      * @param paa PAA value
      * @param lower Lower bound of the segment
      * @param upper Upper bound of the segment
+     * @param ch_ind Channel index, required for undoing the channel scaling in the raw search case
      * @return Distance squared
      */
-    Real min_dist_squared(const Real paa, Real lower, Real upper) const;
+    Real min_dist_squared(const Real paa, Real lower, Real upper, MtsNumChannelsT ch_ind) const;
 };
 
 #endif  // SEARCH_DISTANCEMEASURE_DISTANCEMEASURE_HPP

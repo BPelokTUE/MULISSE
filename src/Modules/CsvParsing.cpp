@@ -12,7 +12,7 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
                             Real min_subs_sd, uint seed) {
     for (str csv_path : csv_paths) {
         if (!std::filesystem::exists(csv_path)) {
-            std::cerr << "Error: Dataset " << csv_path << " does not exist\n";
+            std::cerr << "Error: CSV file " << csv_path << " does not exist\n";
             return 1;
         }
     }
@@ -109,11 +109,18 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
     std::shuffle(mts_indexes.begin(), mts_indexes.end(), generator);
     if (mts_indexes.size() > num_series) mts_indexes.resize(num_series);
 
+    vec<Real> sums(num_channels, R(0.0)), sum_sqs(num_channels, R(0.0));
     for (uint mts_ind : mts_indexes) {
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-            dataset_ofs.write(reinterpret_cast<const char *>(all_mts[mts_ind][c].data()), sizeof(Real) * series_len);
+            auto &ts = all_mts[mts_ind][c];
+            dataset_ofs.write(reinterpret_cast<const char *>(ts.data()), sizeof(Real) * series_len);
+            for (uint i = 0; i < series_len; ++i) {
+                sums[c] += ts[i];
+                sum_sqs[c] += ts[i] * ts[i];
+            }
         }
     }
+    RS.calc_and_save_channel_stats(sums, sum_sqs, series_len, U(mts_indexes.size()));
 
     DatasetLogger::write_entry(
         std::make_unique<CsvDatasetLogAttributes>(csv_paths, mts_indexes.size(), l_min, l_max, min_subs_sd, seed));

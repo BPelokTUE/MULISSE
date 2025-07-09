@@ -23,7 +23,7 @@ void check_path_exists(str path, str name) {
 
 void RunSettings::initialize(CommandType command_type, DatasetProperties dataset_props, LengthProperties length_props,
                              uint pos_per_env, const str &index_path, const str &ffts_path, const str &query_path,
-                             SearchMethodType method_type, const str &logs_dir, const str &data_dir) {
+                             SearchMethodType method_type, bool raw, const str &logs_dir, const str &data_dir) {
     if (initialized) return;
     initialized = true;
 
@@ -42,6 +42,9 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
         instance->m_dataset_props.m_num_series =
             U(dataset_size / (dataset_props.m_series_len * dataset_props.m_num_channels * sizeof(Real)));
     }
+    instance->m_dataset_stats = ChannelStats(dataset_props.m_num_channels);
+    instance->m_channel_stats_file = dataset_props.m_file.replace(dataset_props.m_file.find_last_of('.'),
+                                                                  dataset_props.m_file.size(), "_ch_stats.json");
 
     instance->m_length_props = length_props;
     if (!length_props.m_use_length_groups) {
@@ -58,9 +61,11 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
     instance->m_query_file = query_path;
     instance->m_ffts_supported = !(instance->m_ffts_file.empty());
 
+    bool load_channel_stats = raw;
     switch (instance->m_command_type) {
         case CREATE_DS:
         case PARSE_CSV:
+            load_channel_stats = false;
             break;
         case CALC_D_STATS:
         case CREATE_QS:
@@ -89,6 +94,9 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
             }
             break;
     }
+
+    // Load channel statistics for raw data
+    if (load_channel_stats) instance->load_channel_stats();
 }
 
 #ifdef ENABLE_TEST_CODE
@@ -225,6 +233,21 @@ void RunSettings::set_breakpoint_props(BreakpointProperties breakpoint_props) {
     }
 }
 
+void RunSettings::load_channel_stats() { m_dataset_stats.load(get_channel_stats_path()); }
+
+void RunSettings::calc_and_save_channel_stats(const vec<Real> &sums, const vec<Real> &sum_sqs, uint series_len,
+                                              uint num_series) {
+    m_dataset_stats = ChannelStats(sums, sum_sqs, series_len, num_series);
+    m_dataset_stats.save(get_channel_stats_path());
+}
+
+std::pair<Real, Real> RunSettings::get_channel_mean_and_std(MtsNumChannelsT channel_ind) const {
+    assert(channel_ind < m_dataset_stats.m_means.size());
+    return {m_dataset_stats.m_means[channel_ind], m_dataset_stats.m_stds[channel_ind]};
+}
+
+vec<Real> RunSettings::get_channel_stds() const { return m_dataset_stats.m_stds; }
+
 // Properties
 
 const DatasetProperties &RunSettings::get_dataset_props() const { return m_dataset_props; }
@@ -251,6 +274,8 @@ void RunSettings::set_flat_envelope_params(const EnvelopeParams &flat_envelope_p
 // Paths
 
 str RunSettings::get_dataset_path() const { return fs::path(m_data_dir) / m_dataset_props.m_file; }
+
+str RunSettings::get_channel_stats_path() const { return fs::path(m_data_dir) / m_channel_stats_file; }
 
 str RunSettings::get_query_path() const { return fs::path(m_data_dir) / m_query_file; }
 

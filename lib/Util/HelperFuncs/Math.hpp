@@ -14,8 +14,8 @@
  * @param sum_sq Sum of the squares of the values
  * @param count Number of values
  */
-template <typename T>
-inline std::pair<T, T> calculate_mu_and_sigma(T sum, T sum_sq, uint count) {
+template <typename T, typename S>
+inline std::pair<T, T> calculate_mu_and_sigma(T sum, T sum_sq, S count) {
     T count_t = static_cast<T>(count);
     T mu = sum / count_t;
     T sigma = std::sqrt(std::max(sum_sq / count_t - mu * mu, static_cast<T>(EPS)));

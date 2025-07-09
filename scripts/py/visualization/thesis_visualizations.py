@@ -51,32 +51,34 @@ plt.rcParams.update(
 
 titles = {
     "uni": "Univariate",
-    "multi": "Multivariate",
-    "uni_raw": "Univariate Raw",
+    # "multi": "Multivariate",
 }
 
 for suffix, title in titles.items():
-    separate_plots_key = (DSC.DATASET_FILE,) if suffix != "multi" else (DSC.DATASET_FILE, DSC.NUM_CHANNELS)
-
     for target_args in IMPORTANT_METRICS:
         visualize_experiments(
             logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_1_mulisse_stages_{suffix}"],
             groups_dict={
-                ERD.METHODS_COLS: [SSC.METHOD_NAME],
+                ERD.METHODS_COLS: [SSC.METHOD_NAME, SSC.NORMALIZED],
                 ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS, DSC.SERIES_LENGTH],
                 # ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
             },
-            separate_plots_dict={separate_plots_key: []},
+            separate_plots_dict={
+                (DSC.DATASET_FILE,): [],
+                (SSC.NORMALIZED,): [],
+                **({(DSC.NUM_CHANNELS,): []} if suffix == "multi" else {}),
+            },
+            ignored_attrs={DSC.NUM_CHANNELS},
             title_base=title,
             bar_plot_label_padding=False,
             legend_max_cols=2,
-            merge_csv_datasets=True,
+            merge_csv_datasets=False,
             bar_plot_label_map={
                 "isax_envelope-ed-early": "First phase",
                 "isax_env_w_sax_env-ed-early": "Both phases",
                 "sax_envelope-ed-early": "Second phase",
             },
-            save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"1_stages_{target_args.name.lower()}_{suffix}"),
+            # save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"1_stages_{target_args.name.lower()}_{suffix}"),
             **target_args.value,
         )
 
@@ -86,19 +88,19 @@ for target_args in IMPORTANT_METRICS:
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_2_sax_vs_no_sax"],
         groups_dict={
-            ERD.METHODS_COLS: [SSC.METHOD_NAME],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+            ERD.METHODS_COLS: [SSC.METHOD_NAME, SSC.NORMALIZED],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
         },
-        separate_plots_dict={(DSC.DATASET_FILE,): []},
+        separate_plots_dict={(DSC.DATASET_FILE, DSC.NUM_CHANNELS, SSC.NORMALIZED): []},
         bar_plot_color_attrs=SSC.METHOD_NAME,
         bar_plot_label_padding=False,
         legend_max_cols=2,
         bar_plot_label_map={
             "sax_envelope-ed-early": "MT-Env",
             "envelope-ed-early": "MT-Env no SAX",
-            "isax_env_w_env-ed-early": "Both phases no SAX",
             "isax_env_w_sax_env-ed-early": "Both phases",
+            "isax_env_w_env-ed-early": "Both phases no SAX",
         },
         ignored_attrs={DSC.DATASET_FILE},
         save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"2_sax_vs_no_sax_{target_args.name.lower()}"),
@@ -220,56 +222,6 @@ for target_args in [TargetArgs.QUERY_TIME]:
     )
 
 # %%
-# 4c - PPE for different distance measures
-re_sep = "::"
-
-for target_args in [TargetArgs.QUERY_TIME]:
-    visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4c_ppe_dms_uni"],
-        groups_dict={
-            ERD.METHODS_COLS: [SSC.DISTANCE_MEASURE, SSC.EXAMINE_WHOLE, SSC.PRECOMPUTED_FFTS, SSC.NORMALIZED],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
-            ERD.INDEXES_COLS: [ISC.POS_PER_ENV],
-        },
-        merge_csv_datasets=True,
-        separate_plots_dict={
-            (DSC.SERIES_LENGTH, DSC.DATASET_FILE): [],
-            (SSC.NORMALIZED,): [(False,)],
-            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
-        },
-        regex_dict={
-            # (
-            #     SSC.DISTANCE_MEASURE,
-            #     SSC.EXAMINE_WHOLE,
-            #     SSC.PRECOMPUTED_FFTS,
-            # ): rf"^(?!{re_sep.join(['mass', '0', 'False'])})"
-        },
-        bar_plot_color_attrs=None,
-        line_plot_x_attr=ISC.POS_PER_ENV,
-        line_plot_included_cols={SSC.DISTANCE_MEASURE, SSC.EXAMINE_WHOLE, SSC.PRECOMPUTED_FFTS},
-        line_plot_legend_map={
-            ("ed", 0, False): "ED",
-            ("ed", 1, False): "ED Whole",
-            ("mass", 0, False): "MASS",
-            ("mass", 1, False): "MASS Whole",
-            ("mass", 0, True): "MASS Precomputed",
-        },
-        line_plot_colors_map={
-            ("ed", 0, False): PALETTE["Blues"][6],
-            ("ed", 1, False): PALETTE["Blues"][2],
-            ("mass", 0, False): PALETTE["Purples"][6],
-            ("mass", 1, False): PALETTE["Purples"][3],
-            ("mass", 0, True): PALETTE["Oranges"][4],
-        },
-        legend_max_cols=3,
-        x_scale="log",
-        y_scale="log",
-        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4c_ppe_dms_{target_args.name.lower()}"),
-        **target_args.value,
-    )
-
-# %%
 # 4d - Segment size (σ) univariate
 
 for target_args in [TargetArgs.QUERY_TIME]:
@@ -317,7 +269,58 @@ for target_args in [TargetArgs.QUERY_TIME]:
     )
 
 # %%
-# 5 - Presence
+# 5a - PPE for different distance measures
+re_sep = "::"
+
+for target_args in [TargetArgs.QUERY_TIME]:
+    visualize_experiments(
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_5a_mt_env_w_mass_raw"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.DISTANCE_MEASURE, SSC.EXAMINE_WHOLE, SSC.PRECOMPUTED_FFTS, SSC.NORMALIZED],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
+            ERD.INDEXES_COLS: [ISC.POS_PER_ENV],
+        },
+        merge_csv_datasets=True,
+        separate_plots_dict={
+            (DSC.SERIES_LENGTH, DSC.DATASET_FILE): [],
+            (SSC.NORMALIZED,): [],
+            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
+        },
+        regex_dict={
+            # (
+            #     SSC.DISTANCE_MEASURE,
+            #     SSC.EXAMINE_WHOLE,
+            #     SSC.PRECOMPUTED_FFTS,
+            # ): rf"^(?!{re_sep.join(['mass', '0', 'False'])})"
+        },
+        bar_plot_color_attrs=None,
+        line_plot_x_attr=ISC.POS_PER_ENV,
+        line_plot_included_cols={SSC.DISTANCE_MEASURE, SSC.EXAMINE_WHOLE, SSC.PRECOMPUTED_FFTS},
+        line_plot_legend_map={
+            ("ed", 0, False): "ED",
+            ("ed", 1, False): "ED Whole",
+            ("mass", 0, False): "MASS",
+            ("mass", 1, False): "MASS Whole",
+            ("mass", 0, True): "MASS Precomputed",
+        },
+        line_plot_colors_map={
+            ("ed", 0, False): PALETTE["Blues"][6],
+            ("ed", 1, False): PALETTE["Blues"][2],
+            ("mass", 0, False): PALETTE["Purples"][6],
+            ("mass", 1, False): PALETTE["Purples"][3],
+            ("mass", 0, True): PALETTE["Oranges"][4],
+        },
+        legend_max_cols=3,
+        x_scale="log",
+        y_scale="log",
+        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"5a_mt_env_w_mass_{target_args.name.lower()}"),
+        **target_args.value,
+    )
+
+
+# %%
+# 5b - Presence
 
 sizes = {
     "small": [8, 6, 4, 4],

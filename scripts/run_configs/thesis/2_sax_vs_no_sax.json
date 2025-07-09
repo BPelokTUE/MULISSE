@@ -31,7 +31,7 @@
     "index_inserters": ["parallel"],
     "search_types": ["knn"],
     "search_ks": [1],
-    "search_raw": [false],
+    "search_raw": [false, true],
     "dataset_seeds": [42],
     "query_set_seeds": [42],
     "separate_csv_datasets": true

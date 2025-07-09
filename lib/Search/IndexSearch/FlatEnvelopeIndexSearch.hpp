@@ -32,8 +32,8 @@ class FlatEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, EW, SQ> {
     SearchResults search(const vec<vec<Real>> &query, const SearchOptions &opts, ResultSet<S> &result_set,
                          const DistanceMeasure<S, D, SQ> &distance_measure, std::ifstream &dataset_ifs,
                          const vec<uint> *real_query_inds) override {
-        auto [query_paa, query_len] =
-            this->get_query_paa_and_len(query, m_index->get_ch_segmentation_strategy(), real_query_inds);
+        auto [query_paa, query_len] = this->get_query_paa_and_len(query, m_index->get_ch_segmentation_strategy(),
+                                                                  real_query_inds, opts.m_normalized);
 
         if (m_use_priority_queue) {
             return search_with_priority_queue(query, query_paa, query_len, result_set, distance_measure, dataset_ifs,

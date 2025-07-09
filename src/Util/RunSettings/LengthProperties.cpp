@@ -1,5 +1,10 @@
 #include "Util/RunSettings/LengthProperties.hpp"
 
+#include <cereal/archives/json.hpp>
+#include <fstream>
+
+#include "Util/Types/Containers.hpp"
+
 void LengthProperties::set_lengths_per_group(uint l_per_group) {
     m_l_per_group = l_per_group;
     if (m_l_per_group > 0) {

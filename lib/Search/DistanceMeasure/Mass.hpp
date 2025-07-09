@@ -13,10 +13,11 @@ class DistanceMeasure<S, MASS> {
      * @brief Constructor
      * @param normalized Whether the time series are normalized
      */
-    DistanceMeasure(bool normalized) : c_normalized(normalized) {}
+    DistanceMeasure(bool normalized)
+        : c_normalized(normalized), c_channel_stds(RunSettings::get_instance().get_channel_stds()) {}
 
-    inline Real min_dist_squared(const Real paa, Real lower, Real upper) const {
-        Real diff = upper < paa ? paa - upper : (lower > paa ? lower - paa : 0);
+    inline Real min_dist_squared(const Real paa, Real lower, Real upper, MtsNumChannelsT ch_ind) const {
+        Real diff = (upper < paa ? paa - upper : (lower > paa ? lower - paa : 0)) * c_channel_stds[ch_ind];
         return diff * diff;
     }
 
@@ -106,8 +107,6 @@ class DistanceMeasure<S, MASS> {
         return updated;
     }
 
-    const bool c_normalized;
-
    private:
     inline vec<MassT> calculate_dot_products(const vec<MassT> &q_channel, const vec<MassT> &mts_channel,
                                              SubsequenceInfo subs_info, MtsNumChannelsT channel_ind) const {
@@ -161,6 +160,9 @@ class DistanceMeasure<S, MASS> {
 
         return dot_products_real;
     }
+
+    const bool c_normalized;
+    const vec<Real> c_channel_stds;
 };
 
 #endif  // SEARCH_DISTANCEMEASURE_MASS_HPP

@@ -3,7 +3,7 @@
 
 #include <algorithm>
 
-#include "Serialization/Macros.hpp"
+#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 
 struct LengthProperties {

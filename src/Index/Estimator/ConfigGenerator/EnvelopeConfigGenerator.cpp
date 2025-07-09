@@ -2,6 +2,7 @@
 
 #include "Index/Estimator/IndexSizeEstimator.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
+#include "Util/HelperFuncs/Path.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
 std::pair<size_t, EnvelopeParams> IEnvelopeConfigGenerator::get_envelope_params_and_size(SaxSegIndT num_segments,

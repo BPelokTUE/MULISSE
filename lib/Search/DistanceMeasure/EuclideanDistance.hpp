@@ -18,10 +18,12 @@ class DistanceMeasure<S, ED, SQ> {
      * @param use_early_abandoning Whether to use early abandoning
      */
     DistanceMeasure(bool normalized, bool use_early_abandoning = true)
-        : c_normalized(normalized), c_use_early_abandoning(use_early_abandoning) {}
+        : c_normalized(normalized),
+          c_use_early_abandoning(use_early_abandoning),
+          c_channel_stds(RunSettings::get_instance().get_channel_stds()) {}
 
-    inline Real min_dist_squared(const Real paa, Real lower, Real upper) const {
-        Real diff = upper < paa ? paa - upper : (lower > paa ? lower - paa : 0);
+    inline Real min_dist_squared(const Real paa, Real lower, Real upper, MtsNumChannelsT ch_ind) const {
+        Real diff = (upper < paa ? paa - upper : (lower > paa ? lower - paa : 0)) * c_channel_stds[ch_ind];
         return diff * diff;
     }
 
@@ -75,7 +77,7 @@ class DistanceMeasure<S, ED, SQ> {
                             uint actual_ind = query_ind;
                             if constexpr (SQ) actual_ind = real_query_inds->at(query_ind);
 
-                            Real diff = (mts[c][start_pos + actual_ind] - mu) / sigma - query[c][query_ind];
+                            Real diff = ((mts[c][start_pos + actual_ind] - mu) / sigma - query[c][query_ind]);
                             dist_squared += diff * diff;
                             if (c_use_early_abandoning && dist_squared >= result_set.get_distance_lb()) {
                                 points_examined += query_ind + 1;
@@ -138,8 +140,10 @@ class DistanceMeasure<S, ED, SQ> {
         return updated;
     }
 
+   private:
     const bool c_normalized;
     const bool c_use_early_abandoning;
+    const vec<Real> c_channel_stds;
 };
 
 #endif  // SEARCH_DISTANCEMEASURE_EUCLIDEANDISTANCE_HPP

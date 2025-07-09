@@ -108,7 +108,7 @@ EnvelopeParams EnvelopeParamTheoEstimator::get_estimated_params(const IndexOptio
                 for (SaxSegIndT seg_ind = 0; seg_ind < query_paa.size(); ++seg_ind) {
                     min_distance_sums[i] += distance_measure.min_dist_squared(
                         query_paa[seg_ind], envelopes[i][lg_ind][env_ind].m_lower[seg_ind],
-                        envelopes[i][lg_ind][env_ind].m_upper[seg_ind]);
+                        envelopes[i][lg_ind][env_ind].m_upper[seg_ind], 0);
                 }
             }
         }

@@ -43,7 +43,8 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, EW, SQ> {
 
         std::priority_queue<PQueueISaxEntry<FTag>> pq;
 
-        auto [query_paa, query_len] = this->get_query_paa_and_len(query, ch_segmentation_strategy, real_query_inds);
+        auto [query_paa, query_len] =
+            this->get_query_paa_and_len(query, ch_segmentation_strategy, real_query_inds, opts.m_normalized);
 
         auto skip_position = [this](const SubsequencePosition& pos) { return this->skip_position(pos); };
 
@@ -60,7 +61,7 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, EW, SQ> {
                         m_index->get_interval_limits(first_layer_num_bits, first_layer_symbols[i][c][s]);
                     Real segment_len_r = R(segmentation_strategy->get_segment_len(s));
                     min_dist_squared +=
-                        distance_measure.min_dist_squared(query_paa[c][s], lower, upper) * segment_len_r;
+                        distance_measure.min_dist_squared(query_paa[c][s], lower, upper, c) * segment_len_r;
                 }
                 isax_words[c] = iSaxType(first_layer_symbols[i][c], first_layer_num_bits);
             }
@@ -93,20 +94,20 @@ class iSaxIndexSearch : public IndexSearchMethod<FTag, S, D, EW, SQ> {
                     SaxNumBitsT num_bits = isax_words[c].get_num_bits()[s];
                     Real segment_len_r = R(ch_segmentation_strategy->get_segmentation_strategy(c)->get_segment_len(s));
                     auto limits = m_index->get_interval_limits(num_bits, isax_words[c].symbol_no_shift(s));
-                    Real prev_dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second);
+                    Real prev_dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second, c);
                     ++num_bits;
 
                     auto [left_isax_words, right_isax_words] = m_index->get_children_isax_words(node, isax_words, c, s);
 
                     // Left child
                     limits = m_index->get_interval_limits(num_bits, left_isax_words[c].symbol_no_shift(s));
-                    Real dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second);
+                    Real dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second, c);
                     pq.push({min_dist_squared + segment_len_r * (dist - prev_dist), left_isax_words, left});
                     ++min_dist_seg_updates;
 
                     // Right child
                     limits = m_index->get_interval_limits(num_bits, right_isax_words[c].symbol_no_shift(s));
-                    dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second);
+                    dist = distance_measure.min_dist_squared(query_paa[c][s], limits.first, limits.second, c);
                     pq.push({min_dist_squared + segment_len_r * (dist - prev_dist), right_isax_words, right});
                     ++min_dist_seg_updates;
                 }

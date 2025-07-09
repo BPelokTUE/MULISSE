@@ -35,7 +35,8 @@ class TreeEnvelopeIndexSearch : public EnvelopeIndexSearch<S, D, EW, SQ> {
 
         uint series_len = RunSettings::get_instance().get_dataset_props().m_series_len;
         auto ch_segmentation_strategy = m_index->get_ch_segmentation_strategy();
-        auto [query_paa, query_len] = this->get_query_paa_and_len(query, ch_segmentation_strategy, real_query_inds);
+        auto [query_paa, query_len] =
+            this->get_query_paa_and_len(query, ch_segmentation_strategy, real_query_inds, opts.m_normalized);
 
         std::priority_queue<PQueueEnvelopeNodeEntry> pq;
 

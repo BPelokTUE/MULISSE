@@ -36,9 +36,9 @@ class EnvelopeIndexSearch : public IndexSearchMethod<EnvelopeTag, S, D, EW, SQ> 
             auto segmentation_strategy = ch_segmentation_strategy->get_segmentation_strategy(c);
             for (SaxSegIndT s = 0; s < query_paa[c].size(); ++s) {
                 Real segment_len_r = R(segmentation_strategy->get_segment_len(s));
-                min_dist_squared +=
-                    distance_measure.min_dist_squared(query_paa[c][s], envelope[c].m_lower[s], envelope[c].m_upper[s]) *
-                    segment_len_r;
+                min_dist_squared += distance_measure.min_dist_squared(query_paa[c][s], envelope[c].m_lower[s],
+                                                                      envelope[c].m_upper[s], c) *
+                                    segment_len_r;
             }
         }
         return min_dist_squared;

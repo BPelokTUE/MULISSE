@@ -518,7 +518,7 @@ int main(int argc, char **argv) {
     try {
         RunSettings::initialize(command_type, {num_channels, series_len, num_series, dataset_path},
                                 {use_length_groups, l_min, l_max, l_per_group, num_l_groups}, pos_per_env, index_path,
-                                ffts_path, query_path, method_type, logs_path, data_path);
+                                ffts_path, query_path, method_type, raw, logs_path, data_path);
     } catch (const std::exception &e) {
         std::cerr << "Error configuring run: " << e.what() << '\n';
         return 1;

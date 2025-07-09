@@ -10,6 +10,7 @@
 #include "Util/RunSettings/DatasetProperties.hpp"
 #include "Util/RunSettings/EnvelopeProperties.hpp"
 #include "Util/RunSettings/LengthProperties.hpp"
+#include "Util/Stats/ChannelStats.hpp"
 #include "Util/Types/FftArray.hpp"
 #include "Util/Types/SubsequenceInfo.hpp"
 
@@ -24,9 +25,23 @@ class RunSettings {
 
     RunSettings();
 
+    /**
+     * @brief Initialize the run settings with the provided parameters
+     * @param command_type The command type to execute
+     * @param dataset_props Properties of the dataset
+     * @param length_props Properties of the allowed query lengths
+     * @param pos_per_env Number of positions per envelope
+     * @param index_path Path to the index file or directory
+     * @param ffts_path Path to the FFTs file
+     * @param query_path Path to the query file
+     * @param method_type The search method type to use
+     * @param raw Whether to use raw subsequences (no Z-normalization)
+     * @param logs_dir Directory to write logs to
+     * @param data_dir Directory for data files
+     * */
     static void initialize(CommandType command_type, DatasetProperties dataset_props, LengthProperties length_props,
                            uint pos_per_env, const str& index_path, const str& ffts_path, const str& query_path,
-                           SearchMethodType method_type, const str& logs_dir, const str& data_dir);
+                           SearchMethodType method_type, bool raw, const str& logs_dir, const str& data_dir);
 
     static inline RunSettings& get_instance() {
         assert(initialized);
@@ -106,6 +121,33 @@ class RunSettings {
      */
     void set_breakpoint_props(BreakpointProperties breakpoint_props);
 
+    // Channel stats
+
+    /** @brief Load channel statistics */
+    void load_channel_stats();
+
+    /**
+     * @brief Calculate and save the channel statistics
+     * @param sums The sums of the channels in the dataset
+     * @param sum_sqs The sums of squares of the channels in the dataset
+     * @param series_len The length of the time series in the dataset
+     * @param num_series The number of time series in the dataset
+     */
+    void calc_and_save_channel_stats(const vec<Real>& sums, const vec<Real>& sum_sqs, uint series_len, uint num_series);
+
+    /**
+     * @brief Get the channel statistics for a given channel
+     * @param channel_ind Index of the channel in the dataset
+     * @return The dataset statistics
+     */
+    virtual std::pair<Real, Real> get_channel_mean_and_std(MtsNumChannelsT channel_ind) const;
+
+    /**
+     * @brief Get the standard deviations of the channels in the dataset
+     * @return The vector of standard deviations for each channel
+     */
+    vec<Real> get_channel_stds() const;
+
     // Properties
 
     const DatasetProperties& get_dataset_props() const;
@@ -139,6 +181,8 @@ class RunSettings {
 
     str get_dataset_path() const;
 
+    str get_channel_stats_path() const;
+
     str get_query_path() const;
 
     str get_index_path() const;
@@ -166,6 +210,10 @@ class RunSettings {
     uptr<ISaxBreakpointStrategy> m_breakpoint_strategy;
     BreakpointProperties m_breakpoint_props;
     bool m_breakpoints_props_set = false;
+
+    // Channel stats
+    ChannelStats m_dataset_stats;
+    str m_channel_stats_file;
 
     // Index
     str m_index_file;

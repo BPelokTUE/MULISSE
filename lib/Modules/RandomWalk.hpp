@@ -12,7 +12,7 @@
  * @param step_sigma The standard deviation of the normal distribution used to generate the steps
  * @param zero_start If true, the random walk starts at zero; otherwise, it starts with a random value
  * @param seed The seed for the random number generator
- * @return 0 on success, 1 if the dataset file already exists, 2 if the file could not be created.
+ * @return 0 on success, 1 if the file could not be created.
  */
 int create_random_walks(Real step_sigma, bool zero_start, uint seed);
 

@@ -6,6 +6,7 @@
 #include "Index/Entry/Envelope.hpp"
 #include "Index/Entry/Paa.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
+#include "Util/RunSettings/RunSettings.hpp"
 
 template <SearchType S, DistanceType D, bool SQ>
 class DistanceMeasure;
@@ -50,11 +51,14 @@ class ISearchMethod {
      * @param query The multivariate query
      * @param ch_segmentation_strategy The segmentation strategy to use
      * @param real_query_inds Real indices of the query points (to support sorted queries for early abandoning)
+     * @param normalized Whether the subsequences are Z-normalized
      * @return A pair containing the Paa values and the length of the query
      */
     inline std::pair<vec<vec<Real>>, uint> get_query_paa_and_len(
         const vec<vec<Real>> &query, const IChannelSegmentationStrategy *ch_segmentation_strategy,
-        const vec<uint> *real_query_inds = nullptr) const {
+        const vec<uint> *real_query_inds = nullptr, bool normalized = true) const {
+        auto &RS = RunSettings::get_instance();
+
         vec<vec<Real>> query_paa(query.size());
         size_t query_len = 0;
 
@@ -70,6 +74,10 @@ class ISearchMethod {
                     paa(unsorted_query_channel, ch_segmentation_strategy->get_const_segmentation_strategy(c));
             } else {
                 query_paa[c] = paa(query[c], ch_segmentation_strategy->get_const_segmentation_strategy(c));
+            }
+            if (!normalized) {
+                auto [mu, sigma] = RS.get_channel_mean_and_std(c);
+                for (Real &value : query_paa[c]) value = (value - mu) / sigma;
             }
         }
         return {query_paa, query_len};

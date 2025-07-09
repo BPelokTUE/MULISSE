@@ -319,3 +319,19 @@ $$
 - Move low resolution grid search between 3.1 and 3.2
 - For progressive queries, give intuition about why it might work, produce figure similar to one in the Correlation Detective paper
 - O(3m log m)
+
+## 09-07-2025
+
+- [x] Fix Overleaf
+- [x] Double check phase results for Raw (probably simply debug)
+    - The problem is that SAX breakpoints are not adapted to the dataset. Equiprobable SAX breakpoints should use the means and standard deviations of their respective channels 
+    - [x] To facilitate this, calculate the means and standard deviations per channel during dataset creation, load them in the raw search case if SAX breakpoints are use in `RunSettings`, and scale the SAX inputs appropriately during insertion into the index and search.
+- [ ] Mention that PAA inputs are scaled according to their channel stats before SAX is applied to them
+- [ ] Mention why univariate results are also shown (probably just switch the order, or show univariate results only in Experimental Evaluation)
+- [ ] Move SAX vs no-SAX to Algorithms
+    - [ ] Test for raw subsequences as well
+- [ ] Move iSAX vs MT-Env into Negative Results
+- [ ] Swap merge Negative Results and future work, move after Experimental Evaluation
+- [ ] Implement remaining features for Equi-Depth Segmentation and Envelope Tree
+- [ ] Test Envelope Tree, Equi-Depth Segmentation and Size Limiting
+- [ ] Show theoretical cutoff point for MASS vs ED, move into Algorithms, connect with Size Limiting when $\gamma$ is limited

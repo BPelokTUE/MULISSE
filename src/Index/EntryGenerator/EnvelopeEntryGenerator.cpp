@@ -7,6 +7,7 @@
 #include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Math.hpp"
+#include "Util/RunSettings/RunSettings.hpp"
 
 using CHSS = ChannelSegmentationStrategyType;
 
@@ -84,11 +85,20 @@ vec<vec<Envelope>> EnvelopeEntryGenerator::get_raw_envelopes(const vec<Real> &ts
         }
     }
 
-    for (uint lg_ind = 0; lg_ind < num_l_groups - 1; ++lg_ind)
-        for (uint seg_ind = 0; seg_ind < envelope_groups[lg_ind].size(); ++seg_ind)
-            envelope_groups[lg_ind][seg_ind] = envelope_groups[num_l_groups - 1][seg_ind];
-
     flip_env_infinities(envelope_groups);
+
+    // TODO: Solve this more elegantly
+    // Normalize the envelope segments with the dataset statistics. Note: this is not subsequence Z-normalization, it is
+    // needed for EquiprobableBreakpointStrategy
+    auto [ch_mean, ch_std] = RunSettings::get_instance().get_channel_mean_and_std(ch_ind);
+    for (auto &envelope_group : envelope_groups) {
+        for (auto &envelope : envelope_group) {
+            for (SaxSegIndT s = 0; s < envelope.m_lower.size(); ++s) {
+                envelope.m_lower[s] = (envelope.m_lower[s] - ch_mean) / ch_std;
+                envelope.m_upper[s] = (envelope.m_upper[s] - ch_mean) / ch_std;
+            }
+        }
+    }
     return envelope_groups;
 }
 
