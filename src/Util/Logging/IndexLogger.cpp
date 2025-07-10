@@ -31,7 +31,8 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
     str lg_ss_str = "", ch_ss_str = "", ss_str = "", brs_str = "", sps_str = "", min_num_bits_on_tie_str = "",
         merge_in_leaves_str = "", method_type_str = "", entry_merger_type_str = "", env_stats_chss_weights_file = "",
         multi_chss_num_seg_file = "", chss_scores_type_str = "", env_width_chss_min_w_update_str = "",
-        max_width_change_str = "", use_inv_sax_str = "", pe_type_str = "", pe_config_gen_type_str = "";
+        max_width_change_str = "", use_inv_sax_str = "", group_per_series_str = "", pe_type_str = "",
+        pe_config_gen_type_str = "";
     Real score_based_chss_score_exp = R(0.0), index_size_limit = R(0.0);
     const EstimatorSamplingParams *pe_sampling_params = nullptr;
 
@@ -98,6 +99,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
                 auto grouping_params =
                     dynamic_cast<TreeEnvelopeIndexParams *>(index_options.m_index_params.get())->m_env_grouping_params;
                 use_inv_sax_str = to_string(grouping_params.m_use_inv_sax_sorting);
+                group_per_series_str = to_string(grouping_params.m_group_per_series);
                 if (method_type == TREE_ENVELOPE || method_type == BUCKETING_ENVELOPE)
                     leaf_capacity = grouping_params.m_bucket_size;
                 else if (method_type == VL_ENVELOPE)
@@ -143,6 +145,7 @@ void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac
         {ISC::LEAF_CAPACITY, format_num_param(leaf_capacity)},
         {ISC::MAX_WIDTH_CHANGE, max_width_change_str},
         {ISC::USE_INV_SAX, use_inv_sax_str},
+        {ISC::GROUP_PER_SERIES, group_per_series_str},
         {ISC::LG_SEGMENTATION_STRATEGY, lg_ss_str},
         {ISC::CH_SEGMENTATION_STRATEGY, ch_ss_str},
         {ISC::SEGMENTATION_STRATEGY, ss_str},

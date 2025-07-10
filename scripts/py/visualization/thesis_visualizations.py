@@ -375,71 +375,16 @@ for target_args in [TargetArgs.INDEX_SIZE, TargetArgs.QUERY_TIME]:
         )
 
 # %%
-# 6a - Low resolution grid search for Envelope Tree
-
-for suffix in ["uni"]:
-    for target_args in [TargetArgs.QUERY_TIME]:
-        visualize_experiments(
-            logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_6a_tree_low_res_{suffix}"],
-            groups_dict={
-                ERD.METHODS_COLS: [SSC.METHOD_NAME],
-                ERD.DATASETS_COLS: [
-                    DSC.DATASET_FILE,
-                    DSC.SERIES_LENGTH,
-                ],
-                ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
-                ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS, ISC.NUM_ENVELOPES, ISC.NUM_LEN_GROUPS],
-            },
-            merge_csv_datasets=True,
-            separate_plots_dict={
-                (DSC.SERIES_LENGTH,): [],
-                (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
-            },
-            title_base="Univariate" if suffix == "uni" else "Multivariate",
-            bar_plot_color_attrs=None,
-            heat_map_x_attr=ISC.NUM_ENVELOPES,
-            heat_map_y_attr=ISC.NUM_LEN_GROUPS,
-            heat_map_included_cols={ISC.NUM_SEGMENTS},
-            # save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4a_low_res_{target_args.name.lower()}_{suffix}"),
-            **target_args.value,
-        )
-
-# %%
-# 6b - Positions per envelope (γ) univariate for Envelope Tree
-
-for target_args in [TargetArgs.QUERY_TIME]:
-    visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_6b_tree_ppe_uni"],
-        groups_dict={
-            ERD.METHODS_COLS: [SSC.METHOD_NAME],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
-            ERD.INDEXES_COLS: [ISC.POS_PER_ENV],
-        },
-        merge_csv_datasets=True,
-        separate_plots_dict={
-            (DSC.SERIES_LENGTH,): [],
-            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
-        },
-        bar_plot_color_attrs=None,
-        line_plot_x_attr=ISC.POS_PER_ENV,
-        line_plot_included_cols={DSC.DATASET_FILE},
-        x_scale="log",
-        # save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4c_ppe_{target_args.name.lower()}"),
-        **target_args.value,
-    )
-
-# %%
 # 6c - Segment size (s) univariate for Envelope Tree
 
 for target_args in [TargetArgs.QUERY_TIME]:
     visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_6c_tree_num_segments_uni"],
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_6a_tree_vs_flat"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
-            ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS],
+            ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS, ISC.GROUP_PER_SERIES, ISC.SEGMENTATION_STRATEGY],
         },
         merge_csv_datasets=True,
         separate_plots_dict={
@@ -448,7 +393,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
         },
         bar_plot_color_attrs=None,
         line_plot_x_attr=ISC.NUM_SEGMENTS,
-        line_plot_included_cols={DSC.DATASET_FILE},
+        line_plot_included_cols={DSC.DATASET_FILE, SSC.METHOD_NAME, ISC.GROUP_PER_SERIES, ISC.SEGMENTATION_STRATEGY},
         # save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4d_Ns_{target_args.name.lower()}"),
         **target_args.value,
     )

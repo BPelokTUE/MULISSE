@@ -22,6 +22,7 @@ vec<uptr<EnvelopeNode>> SeparatingEnvelopeGrouper::group_envelope_entries(
             auto series_grouped_entries = m_extra_grouper->group_envelope_entries(series_begin, series_end);
             grouped_entries.insert(grouped_entries.end(), std::make_move_iterator(series_grouped_entries.begin()),
                                    std::make_move_iterator(series_grouped_entries.end()));
+            series_begin = series_end;
         }
         ++series;
     }
