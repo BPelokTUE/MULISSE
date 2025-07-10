@@ -3,6 +3,7 @@
 #include "Enums/SearchMethodType.hpp"
 #include "Index/Entry/SaxEnvelope.hpp"
 #include "Index/EnvelopeIndex/Flat/FinalizedFlatEnvelopeIndex.hpp"
+#include "Index/Estimator/EnvelopeConfigGenerator/EnvelopeConfigGenerator.hpp"
 #include "Index/Index.hpp"
 #include "Index/IndexOptions.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
@@ -21,10 +22,10 @@
 using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
 EnvelopeParams EnvelopeQueryTimeParamEstimator::get_estimated_params(
-    const IndexOptions &index_opts, const IEnvelopeConfigGenerator *env_config_generator) {
+    const IndexOptions &index_opts, uptr<IEnvelopeConfigGenerator> env_config_generator) {
     m_queries.resize(index_opts.m_estimator_params->m_sampling_params->m_num_queries,
                      vec<vec<Real>>(index_opts.m_num_channels));
-    return EnvelopeSamplingParamEstimator::get_estimated_params(index_opts, env_config_generator);
+    return EnvelopeSamplingParamEstimator::get_estimated_params(index_opts, std::move(env_config_generator));
 }
 
 void EnvelopeQueryTimeParamEstimator::update_queries(std::stringstream &query_stream, uint num_queries) {

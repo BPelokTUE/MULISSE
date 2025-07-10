@@ -4,6 +4,7 @@
 
 #include "Index/Entry/Envelope.hpp"
 #include "Index/EnvelopeIndex/EnvelopeParams.hpp"
+#include "Index/Estimator/EnvelopeConfigGenerator/EnvelopeConfigGenerator.hpp"
 #include "Index/Estimator/EnvelopeConfigGenerator/GridEnvConfigGenerator.hpp"
 #include "Index/IndexOptions.hpp"
 #include "Search/DistanceMeasure/EuclideanDistance.hpp"
@@ -15,7 +16,7 @@
 using std::pow;
 
 EnvelopeParams EnvelopeParamTheoEstimator::get_estimated_params(const IndexOptions &index_opts,
-                                                                const IEnvelopeConfigGenerator *env_config_generator) {
+                                                                uptr<IEnvelopeConfigGenerator> env_config_generator) {
     // Generate X_c configurations
     // Sample X_p l-p pairs
     // For each configuration
@@ -35,8 +36,8 @@ EnvelopeParams EnvelopeParamTheoEstimator::get_estimated_params(const IndexOptio
     auto &RS = RunSettings::get_instance();
     auto &logger = ParamEstimatesLogger::get_instance();
 
-    vec<EnvelopeParams> configurations = GridEnvConfigGenerator().generate_configurations(
-        index_opts.m_index_method, index_opts.m_estimator_params->m_index_size_limit);
+    vec<EnvelopeParams> configurations = env_config_generator->generate_configurations(
+        nullptr, index_opts.m_index_method, index_opts.m_estimator_params->m_index_size_limit);
 
     std::default_random_engine rng(seed);
     LengthProperties length_props = RS.get_length_props();

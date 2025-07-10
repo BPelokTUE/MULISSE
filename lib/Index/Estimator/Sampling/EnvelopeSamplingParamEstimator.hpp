@@ -21,7 +21,7 @@ class EnvelopeSamplingParamEstimator : public IEnvelopeParamEstimator {
     virtual ~EnvelopeSamplingParamEstimator() = default;
 
     EnvelopeParams get_estimated_params(const IndexOptions &index_opts,
-                                        const IEnvelopeConfigGenerator *env_config_generator) override;
+                                        uptr<IEnvelopeConfigGenerator> env_config_generator) override;
 
    protected:
     virtual void update_queries(std::stringstream &query_stream, uint num_queries) = 0;

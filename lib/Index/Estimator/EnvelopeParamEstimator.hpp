@@ -1,6 +1,8 @@
 #ifndef INDEX_ESTIMATOR_ENVELOPEPARAMESTIMATOR_HPP
 #define INDEX_ESTIMATOR_ENVELOPEPARAMESTIMATOR_HPP
 
+#include "Util/Types/Pointers.hpp"
+
 struct EnvelopeParams;
 
 struct IndexOptions;
@@ -18,7 +20,7 @@ class IEnvelopeParamEstimator {
      * @return Estimated index parameters
      */
     virtual EnvelopeParams get_estimated_params(const IndexOptions &index_opts,
-                                                const IEnvelopeConfigGenerator *env_config_generator) = 0;
+                                                uptr<IEnvelopeConfigGenerator> env_config_generator) = 0;
 };
 
 #endif  // INDEX_ESTIMATOR_ENVELOPEPARAMESTIMATOR_HPP

@@ -70,7 +70,7 @@ std::optional<EnvelopeParams> estimate_envelope_params(IndexOptions &opts) {
                 estimator = std::make_unique<EnvelopeQueryTimeParamEstimator>();
                 break;
         }
-        return estimator->get_estimated_params(opts, env_config_generator.get());
+        return estimator->get_estimated_params(opts, std::move(env_config_generator));
     }
     return std::nullopt;
 }

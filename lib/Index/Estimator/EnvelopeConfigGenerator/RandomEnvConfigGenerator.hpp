@@ -8,7 +8,8 @@ class RandomEnvConfigGenerator : public IEnvelopeConfigGenerator {
    public:
     RandomEnvConfigGenerator(RandomEnvConfigGeneratorParams params);
 
-    vec<EnvelopeParams> generate_configurations(SearchMethodType index_type, Real index_size_limit) override;
+    vec<EnvelopeParams> generate_configurations(const EnvelopeIndexParams *env_index_params,
+                                                SearchMethodType index_type, Real index_size_limit) override;
 
    private:
     RandomEnvConfigGeneratorParams m_params;

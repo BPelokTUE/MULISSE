@@ -17,7 +17,7 @@ struct PaaDistributionInputs {
 class EnvelopeParamTheoEstimator : public IEnvelopeParamEstimator {
    public:
     EnvelopeParams get_estimated_params(const IndexOptions &index_opts,
-                                        const IEnvelopeConfigGenerator *env_config_generator) override;
+                                        uptr<IEnvelopeConfigGenerator> env_config_generator) override;
 
    private:
     Real get_paa_stdev(const PaaDistributionInputs &inputs);

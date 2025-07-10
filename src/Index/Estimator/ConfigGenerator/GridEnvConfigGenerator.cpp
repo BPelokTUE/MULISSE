@@ -4,9 +4,11 @@
 
 #include "Index/EnvelopeIndex/EnvelopeParams.hpp"
 #include "Index/Estimator/IndexSizeEstimator.hpp"
+#include "Index/IndexParams.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 
-vec<EnvelopeParams> GridEnvConfigGenerator::generate_configurations(SearchMethodType index_type,
+vec<EnvelopeParams> GridEnvConfigGenerator::generate_configurations(const EnvelopeIndexParams *env_index_params,
+                                                                    SearchMethodType index_type,
                                                                     Real index_size_limit) {
     size_t size_limit_bytes = get_bytes_limit(index_size_limit);
 
@@ -16,8 +18,8 @@ vec<EnvelopeParams> GridEnvConfigGenerator::generate_configurations(SearchMethod
     vec<EnvelopeParams> configurations;
     for (Real l_per_group_ratio : l_per_group_ratios) {
         for (SaxSegIndT num_segments : num_segments_vals) {
-            auto [estimated_size, env_params] =
-                get_envelope_params_and_size(num_segments, l_per_group_ratio, index_type, index_size_limit);
+            auto [estimated_size, env_params] = get_envelope_params_and_size(
+                env_index_params, num_segments, l_per_group_ratio, index_type, index_size_limit);
 
             if (estimated_size > 0 && estimated_size <= size_limit_bytes) configurations.push_back(env_params);
         }

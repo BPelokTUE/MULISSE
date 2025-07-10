@@ -7,7 +7,7 @@
 class EnvelopeQueryTimeParamEstimator : public EnvelopeSamplingParamEstimator {
    protected:
     EnvelopeParams get_estimated_params(const IndexOptions &index_opts,
-                                        const IEnvelopeConfigGenerator *env_config_generator) override;
+                                        uptr<IEnvelopeConfigGenerator> env_config_generator) override;
 
     void update_queries(std::stringstream &query_stream, uint num_queries) override;
 

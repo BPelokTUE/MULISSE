@@ -25,7 +25,7 @@
 #include "Util/RunSettings/RunSettings.hpp"
 
 EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params(
-    const IndexOptions &index_opts, const IEnvelopeConfigGenerator *env_config_generator) {
+    const IndexOptions &index_opts, uptr<IEnvelopeConfigGenerator> env_config_generator) {
     // 1. Generate configurations
     // 2. Sample data
     // 3. Create queries from data
@@ -38,13 +38,18 @@ EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params(
         throw std::runtime_error("EnvelopeSamplingParamEstimator requires sampling parameters.");
     }
 
+    auto *env_index_params = dynamic_cast<EnvelopeIndexParams *>(index_opts.m_index_params.get());
+    if (!env_index_params) {
+        throw std::runtime_error("EnvelopeSamplingParamEstimator requires EnvelopeIndexParams.");
+    }
+
     auto &RS = RunSettings::get_instance();
     auto &logger = ParamEstimatesLogger::get_instance();
     auto &sampling_params = *(index_opts.m_estimator_params->m_sampling_params);
 
     // 1. Generate configurations
-    vec<EnvelopeParams> configurations = GridEnvConfigGenerator().generate_configurations(
-        index_opts.m_index_method, index_opts.m_estimator_params->m_index_size_limit);
+    vec<EnvelopeParams> configurations = env_config_generator->generate_configurations(
+        env_index_params, index_opts.m_index_method, index_opts.m_estimator_params->m_index_size_limit);
 
     // 2. Sample data
     auto [num_channels, series_len, num_series, dataset_file] = RS.get_dataset_props();

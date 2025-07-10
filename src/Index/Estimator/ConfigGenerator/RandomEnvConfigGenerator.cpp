@@ -6,7 +6,8 @@
 
 RandomEnvConfigGenerator::RandomEnvConfigGenerator(RandomEnvConfigGeneratorParams params) : m_params(params) {}
 
-vec<EnvelopeParams> RandomEnvConfigGenerator::generate_configurations(SearchMethodType index_type,
+vec<EnvelopeParams> RandomEnvConfigGenerator::generate_configurations(const EnvelopeIndexParams *env_index_params,
+                                                                      SearchMethodType index_type,
                                                                       Real index_size_limit) {
     size_t size_limit_bytes = get_bytes_limit(index_size_limit);
     vec<EnvelopeParams> configurations(m_params.m_num_configs);
@@ -21,8 +22,8 @@ vec<EnvelopeParams> RandomEnvConfigGenerator::generate_configurations(SearchMeth
     while (configs_generated < m_params.m_num_configs) {
         SaxSegIndT num_segments = num_segments_dist(rng);
         Real l_per_group_ratio = l_per_group_ratio_dist(rng);
-        auto [estimated_size, env_params] =
-            get_envelope_params_and_size(num_segments, l_per_group_ratio, index_type, index_size_limit);
+        auto [estimated_size, env_params] = get_envelope_params_and_size(
+            env_index_params, num_segments, l_per_group_ratio, index_type, index_size_limit);
 
         if (estimated_size > 0 && estimated_size <= size_limit_bytes) {
             configurations[configs_generated++] = env_params;

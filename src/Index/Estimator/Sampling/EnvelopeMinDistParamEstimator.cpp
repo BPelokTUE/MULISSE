@@ -2,6 +2,7 @@
 
 #include "Index/Entry/Envelope.hpp"
 #include "Index/Entry/IndexEntry.hpp"
+#include "Index/Estimator/EnvelopeConfigGenerator/EnvelopeConfigGenerator.hpp"
 #include "Index/IndexOptions.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
 #include "Search/DistanceMeasure/EuclideanDistance.hpp"
@@ -10,10 +11,10 @@
 #include "Util/RunSettings/LengthProperties.hpp"
 
 EnvelopeParams EnvelopeMinDistParamEstimator::get_estimated_params(
-    const IndexOptions &index_opts, const IEnvelopeConfigGenerator *env_config_generator) {
+    const IndexOptions &index_opts, uptr<IEnvelopeConfigGenerator> env_config_generator) {
     m_query_accs.resize(index_opts.m_estimator_params->m_sampling_params->m_num_queries,
                         vec<vec<Real>>(index_opts.m_num_channels));
-    return EnvelopeSamplingParamEstimator::get_estimated_params(index_opts, env_config_generator);
+    return EnvelopeSamplingParamEstimator::get_estimated_params(index_opts, std::move(env_config_generator));
 }
 
 void EnvelopeMinDistParamEstimator::update_queries(std::stringstream &query_stream, uint num_queries) {
