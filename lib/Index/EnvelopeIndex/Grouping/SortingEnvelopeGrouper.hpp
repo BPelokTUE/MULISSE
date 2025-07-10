@@ -12,7 +12,8 @@ class SortingEnvelopeGrouper : public IEnvelopeGrouper {
      */
     SortingEnvelopeGrouper(uptr<IEnvelopeGrouper> extra_grouper);
 
-    vec<uptr<EnvelopeNode>> group_envelope_entries(vec<IndexEntry<Envelope>> &envelope_entries) override;
+    vec<uptr<EnvelopeNode>> group_envelope_entries(vec<IndexEntry<Envelope>>::iterator entries_begin,
+                                                   vec<IndexEntry<Envelope>>::iterator entries_end) override;
 
    private:
     uptr<IEnvelopeGrouper> m_extra_grouper;

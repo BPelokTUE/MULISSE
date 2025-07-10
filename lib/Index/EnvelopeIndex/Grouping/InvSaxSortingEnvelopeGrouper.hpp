@@ -3,7 +3,7 @@
 
 #include "Index/EnvelopeIndex/Grouping/EnvelopeGrouper.hpp"
 
-/** @brief Envelope grouper that uses invSAX-based sorting, intended as a first step in the grouping process */
+/** @brief IEnvelopeGrouper that uses invSAX-based sorting, intended as a first step in the grouping process */
 class InvSaxSortingEnvelopeGrouper : public IEnvelopeGrouper {
    public:
     /**
@@ -13,7 +13,8 @@ class InvSaxSortingEnvelopeGrouper : public IEnvelopeGrouper {
      */
     InvSaxSortingEnvelopeGrouper(uptr<IEnvelopeGrouper> extra_grouper, SaxNumBitsT num_bits);
 
-    vec<uptr<EnvelopeNode>> group_envelope_entries(vec<IndexEntry<Envelope>> &envelope_entries) override;
+    vec<uptr<EnvelopeNode>> group_envelope_entries(vec<IndexEntry<Envelope>>::iterator entries_begin,
+                                                   vec<IndexEntry<Envelope>>::iterator entries_end) override;
 
    private:
     uptr<IEnvelopeGrouper> m_extra_grouper;

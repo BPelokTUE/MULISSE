@@ -9,22 +9,21 @@ RecursiveBucketingEnvelopeGrouper::RecursiveBucketingEnvelopeGrouper(size_t buck
     : BucketingEnvelopeGrouper(bucket_size) {}
 
 vec<uptr<EnvelopeNode>> RecursiveBucketingEnvelopeGrouper::group_envelope_entries(
-    vec<IndexEntry<Envelope>> &envelope_entries) {
-    size_t bucket_size = std::min(static_cast<size_t>(m_bucket_size), envelope_entries.size());
-    size_t num_buckets = (envelope_entries.size() + bucket_size - 1) / bucket_size;
+    vec<IndexEntry<Envelope>>::iterator entries_begin, vec<IndexEntry<Envelope>>::iterator entries_end) {
+    size_t num_entries = static_cast<size_t>(entries_end - entries_begin);
+    size_t bucket_size = std::min(static_cast<size_t>(m_bucket_size), num_entries);
+    size_t num_buckets = (num_entries + bucket_size - 1) / bucket_size;
     vec<vec<uptr<EnvelopeNode>>> buckets(num_buckets), act_layer_nodes;
 
     OMP_PRAGMA(omp parallel for)
     for (size_t b_ind = 0; b_ind < num_buckets; ++b_ind) {
-        size_t act_bucket_size = get_bucket_size(b_ind, num_buckets, envelope_entries.size());
+        size_t act_bucket_size = get_bucket_size(b_ind, num_buckets, num_entries);
         buckets[b_ind].resize(act_bucket_size);
         for (size_t i = 0; i < act_bucket_size; ++i) {
-            size_t entry_ind = bucket_size * b_ind + i;
-            buckets[b_ind][i] = std::make_unique<EnvelopeLeaf>(envelope_entries[entry_ind]);
+            int entry_ind = static_cast<int>(bucket_size * b_ind + i);
+            buckets[b_ind][i] = std::make_unique<EnvelopeLeaf>(*(entries_begin + entry_ind));
         }
     }
-
-    envelope_entries.resize(0);
 
     // Create hierarchy
     do {

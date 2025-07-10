@@ -9,22 +9,22 @@ VarianceLimitingEnvelopeGrouper::VarianceLimitingEnvelopeGrouper(Real max_width_
     : m_max_width_change(max_width_change) {}
 
 vec<uptr<EnvelopeNode>> VarianceLimitingEnvelopeGrouper::group_envelope_entries(
-    vec<IndexEntry<Envelope>> &envelope_entries) {
+    vec<IndexEntry<Envelope>>::iterator entries_begin, vec<IndexEntry<Envelope>>::iterator entries_end) {
     // Iterate over all entries, keep track of the maximum lower and minimum upper for each segment, if the update to
     // the average width is less than or equal to m_max_width_change, the current entry is merged into the current node,
     // otherwise a new node is created.
-    if (envelope_entries.empty()) return {};
+    if (entries_begin == entries_end) return {};
 
     vec<uptr<EnvelopeNode>> nodes;
-    MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(envelope_entries[0].m_mts_summary.size());
-    SaxSegIndT num_segments = static_cast<SaxSegIndT>(envelope_entries[0].m_mts_summary[0].size());
+    MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(entries_begin->m_mts_summary.size());
+    SaxSegIndT num_segments = static_cast<SaxSegIndT>(entries_begin->m_mts_summary[0].size());
 
-    vec<Envelope> minimal_envelopes(envelope_entries[0].m_mts_summary),
-        node_envelopes(envelope_entries[0].m_mts_summary);
-    vec<SubsequenceInfo> node_subs_infos(1, envelope_entries[0].m_subs_info);
+    vec<Envelope> minimal_envelopes(entries_begin->m_mts_summary), node_envelopes(entries_begin->m_mts_summary);
+    vec<SubsequenceInfo> node_subs_infos(1, entries_begin->m_subs_info);
 
-    for (size_t i = 1; i < envelope_entries.size(); ++i) {
-        auto &entry = envelope_entries[i];
+    int num_entries = static_cast<int>(entries_end - entries_begin);
+    for (int i = 1; i < num_entries; ++i) {
+        auto &entry = *(entries_begin + i);
         Real new_width = 0.0, old_width = 0.0;
         for (MtsNumChannelsT c = 0; c < entry.m_mts_summary.size(); ++c) {
             for (SaxSegIndT s = 0; s < entry.m_mts_summary[c].size(); ++s) {

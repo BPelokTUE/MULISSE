@@ -12,7 +12,8 @@ class RecursiveBucketingEnvelopeGrouper : public BucketingEnvelopeGrouper {
      */
     RecursiveBucketingEnvelopeGrouper(size_t bucket_size);
 
-    vec<uptr<EnvelopeNode>> group_envelope_entries(vec<IndexEntry<Envelope>> &envelope_entries) override;
+    vec<uptr<EnvelopeNode>> group_envelope_entries(vec<IndexEntry<Envelope>>::iterator entries_begin,
+                                                   vec<IndexEntry<Envelope>>::iterator entries_end) override;
 };
 
 #endif  // INDEX_ENVELOPEINDEX_GROUPING_RECURSIVEBUCKETINGENVELOPEGROUPER_HPP

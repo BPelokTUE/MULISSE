@@ -3,6 +3,7 @@
 #include "Index/EnvelopeIndex/Grouping/EnvelopeGrouper.hpp"
 #include "Index/EnvelopeIndex/Grouping/InvSaxSortingEnvelopeGrouper.hpp"
 #include "Index/EnvelopeIndex/Grouping/RecursiveBucketingEnvelopeGrouper.hpp"
+#include "Index/EnvelopeIndex/Grouping/SeparatingEnvelopeGrouper.hpp"
 #include "Index/EnvelopeIndex/Grouping/SortingEnvelopeGrouper.hpp"
 #include "Index/EnvelopeIndex/Grouping/VarianceLimitingEnvelopeGrouper.hpp"
 #include "Index/EnvelopeIndex/Tree/TreeEnvelopeIndex.hpp"
@@ -38,6 +39,11 @@ sptr<IIndex<Envelope>> get_envelope_tree_index(IndexFactoryParams &factory_param
     } else {
         grouper = std::make_unique<SortingEnvelopeGrouper>(std::move(grouper));
     }
+
+    if (index_params->m_env_grouping_params.m_group_per_series) {
+        grouper = std::make_unique<SeparatingEnvelopeGrouper>(std::move(grouper));
+    }
+
     return std::make_shared<TreeEnvelopeIndex>(factory_params.m_ch_segmentation_strategy, index_params->m_pos_per_env,
                                                std::move(grouper));
 }

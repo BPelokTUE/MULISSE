@@ -13,7 +13,8 @@ class VarianceLimitingEnvelopeGrouper : public IEnvelopeGrouper {
      */
     VarianceLimitingEnvelopeGrouper(Real max_width_change);
 
-    vec<uptr<EnvelopeNode>> group_envelope_entries(vec<IndexEntry<Envelope>> &envelope_entries) override;
+    vec<uptr<EnvelopeNode>> group_envelope_entries(vec<IndexEntry<Envelope>>::iterator entries_begin,
+                                                   vec<IndexEntry<Envelope>>::iterator entries_end) override;
 
    private:
     Real m_max_width_change;

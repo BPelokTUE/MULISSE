@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     bool zero_start = false, raw = false, approximate = false, early_abandon = false, sort_query = false,
          examine_whole = false, no_use_pq = false, adapt_index = false, merge_in_leaves = false,
          prefer_first_in_em = false, separate_segment_stats = false, no_log_num_seg_per_ch = false,
-         log_num_seg_all = false, use_inv_sax = false;
+         log_num_seg_all = false, use_inv_sax = false, group_per_series = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -268,7 +268,7 @@ int main(int argc, char **argv) {
         ->check(positive_int);
     index_subcommand
         ->add_option("--bucket_size,--leaf_capacity", leaf_capacity,
-                     "Leaf capacity or bucket size in case of tree envelope indexes")
+                     "Leaf capacity or bucket size in case of TreeEnvelopeIndex")
         ->capture_default_str()
         ->check(positive_int);
     index_subcommand
@@ -276,7 +276,10 @@ int main(int argc, char **argv) {
                      "Maximum mean width change to allow in VarianceLimitingEnvelopeGrouper")
         ->capture_default_str()
         ->check(non_negative_real);
-    index_subcommand->add_flag("--use_inv_sax", use_inv_sax, "Use invSAX sorting before grouping envelopes");
+    index_subcommand->add_flag("--use_inv_sax", use_inv_sax,
+                               "Use invSAX sorting before grouping envelopes in TreeEnvelopeIndex");
+    index_subcommand->add_flag("--group_per_series", group_per_series,
+                               "Group envelope entries only per series, not per dataset in TreeEnvelopeIndex");
     index_subcommand->add_flag("--raw", raw, "Do not normalize");
     index_subcommand->add_option("-b,--num_bits", breakpoint_num_bits, "Number of bits for the SAX breakpoints")
         ->check(positive_int)
@@ -601,6 +604,7 @@ int main(int argc, char **argv) {
             };
             EnvelopeGroupingParams env_grouping_params{
                 .m_use_inv_sax_sorting = use_inv_sax,
+                .m_group_per_series = group_per_series,
                 .m_max_width_change = max_width_change,
                 .m_bucket_size = leaf_capacity,
                 .m_type = method_type,

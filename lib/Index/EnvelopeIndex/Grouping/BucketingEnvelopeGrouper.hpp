@@ -11,7 +11,8 @@ class BucketingEnvelopeGrouper : public IEnvelopeGrouper {
      */
     BucketingEnvelopeGrouper(size_t bucket_size);
 
-    vec<uptr<EnvelopeNode>> group_envelope_entries(vec<IndexEntry<Envelope>> &envelope_entries) override;
+    vec<uptr<EnvelopeNode>> group_envelope_entries(vec<IndexEntry<Envelope>>::iterator entries_begin,
+                                                   vec<IndexEntry<Envelope>>::iterator entries_end) override;
 
    protected:
     size_t m_bucket_size;
