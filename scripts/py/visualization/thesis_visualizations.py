@@ -51,7 +51,7 @@ plt.rcParams.update(
 
 titles = {
     "uni": "Univariate",
-    # "multi": "Multivariate",
+    "multi": "Multivariate",
 }
 
 for suffix, title in titles.items():
@@ -72,13 +72,13 @@ for suffix, title in titles.items():
             title_base=title,
             bar_plot_label_padding=False,
             legend_max_cols=2,
-            merge_csv_datasets=False,
+            merge_csv_datasets=True,
             bar_plot_label_map={
                 "isax_envelope-ed-early": "First phase",
                 "isax_env_w_sax_env-ed-early": "Both phases",
                 "sax_envelope-ed-early": "Second phase",
             },
-            # save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"1_stages_{target_args.name.lower()}_{suffix}"),
+            save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"1_stages_{target_args.name.lower()}_{suffix}"),
             **target_args.value,
         )
 
@@ -92,7 +92,7 @@ for target_args in IMPORTANT_METRICS:
             ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN, QSC.L_MAX],
         },
-        separate_plots_dict={(DSC.DATASET_FILE, DSC.NUM_CHANNELS, SSC.NORMALIZED): []},
+        separate_plots_dict={(DSC.DATASET_FILE, DSC.NUM_CHANNELS): [], (SSC.NORMALIZED,): []},
         bar_plot_color_attrs=SSC.METHOD_NAME,
         bar_plot_label_padding=False,
         legend_max_cols=2,
@@ -222,11 +222,11 @@ for target_args in [TargetArgs.QUERY_TIME]:
     )
 
 # %%
-# 4d - Segment size (σ) univariate
+# 4d - Segment size (s) univariate
 
 for target_args in [TargetArgs.QUERY_TIME]:
     visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4d_num_segments_uni"],
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_4d_num_segments_max_ppe_uni"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
@@ -241,7 +241,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
         bar_plot_color_attrs=None,
         line_plot_x_attr=ISC.NUM_SEGMENTS,
         line_plot_included_cols={DSC.DATASET_FILE},
-        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4d_Ns_{target_args.name.lower()}"),
+        # save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4d_Ns_{target_args.name.lower()}"),
         **target_args.value,
     )
 
@@ -375,7 +375,87 @@ for target_args in [TargetArgs.INDEX_SIZE, TargetArgs.QUERY_TIME]:
         )
 
 # %%
-# 6 - Channel performance
+# 6a - Low resolution grid search for Envelope Tree
+
+for suffix in ["uni"]:
+    for target_args in [TargetArgs.QUERY_TIME]:
+        visualize_experiments(
+            logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_6a_tree_low_res_{suffix}"],
+            groups_dict={
+                ERD.METHODS_COLS: [SSC.METHOD_NAME],
+                ERD.DATASETS_COLS: [
+                    DSC.DATASET_FILE,
+                    DSC.SERIES_LENGTH,
+                ],
+                ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
+                ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS, ISC.NUM_ENVELOPES, ISC.NUM_LEN_GROUPS],
+            },
+            merge_csv_datasets=True,
+            separate_plots_dict={
+                (DSC.SERIES_LENGTH,): [],
+                (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
+            },
+            title_base="Univariate" if suffix == "uni" else "Multivariate",
+            bar_plot_color_attrs=None,
+            heat_map_x_attr=ISC.NUM_ENVELOPES,
+            heat_map_y_attr=ISC.NUM_LEN_GROUPS,
+            heat_map_included_cols={ISC.NUM_SEGMENTS},
+            # save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4a_low_res_{target_args.name.lower()}_{suffix}"),
+            **target_args.value,
+        )
+
+# %%
+# 6b - Positions per envelope (γ) univariate for Envelope Tree
+
+for target_args in [TargetArgs.QUERY_TIME]:
+    visualize_experiments(
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_6b_tree_ppe_uni"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
+            ERD.INDEXES_COLS: [ISC.POS_PER_ENV],
+        },
+        merge_csv_datasets=True,
+        separate_plots_dict={
+            (DSC.SERIES_LENGTH,): [],
+            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
+        },
+        bar_plot_color_attrs=None,
+        line_plot_x_attr=ISC.POS_PER_ENV,
+        line_plot_included_cols={DSC.DATASET_FILE},
+        x_scale="log",
+        # save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4c_ppe_{target_args.name.lower()}"),
+        **target_args.value,
+    )
+
+# %%
+# 6c - Segment size (s) univariate for Envelope Tree
+
+for target_args in [TargetArgs.QUERY_TIME]:
+    visualize_experiments(
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_6c_tree_num_segments_uni"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
+            ERD.INDEXES_COLS: [ISC.NUM_SEGMENTS],
+        },
+        merge_csv_datasets=True,
+        separate_plots_dict={
+            (DSC.SERIES_LENGTH,): [],
+            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
+        },
+        bar_plot_color_attrs=None,
+        line_plot_x_attr=ISC.NUM_SEGMENTS,
+        line_plot_included_cols={DSC.DATASET_FILE},
+        # save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4d_Ns_{target_args.name.lower()}"),
+        **target_args.value,
+    )
+
+
+# %%
+# 7a - Channel performance
 
 # Use the dataset as the legend for the CSV datasets
 # Use the SD as the legend for the synthetic datasets
@@ -417,14 +497,14 @@ for target_args in [TargetArgs.QUERY_TIME]:
         )
 
 # %%
-# 6 - Channel clustering
+# 7b - Channel clustering
 visualize_clusters(
     logs_dir="EXPERIMENT_LOGS/thesis/LOGS_6_ch_clustering",
     save_dir=os.path.join(EXTENSIONS_FIGS_DIR, "6_ch_clustering"),
 )
 
 # %%
-# 6 - Channel prioritization
+# 7c - Channel prioritization
 for target_args in [TargetArgs.QUERY_TIME]:
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_6_ch_prioritization"],
@@ -445,7 +525,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
     )
 
 # %%
-# 7 - Envelope merging
+# 8 - Envelope merging
 
 for target_args_dict in [
     TargetArgs.QUERY_TIME.value,
@@ -478,7 +558,7 @@ for target_args_dict in [
     )
 
 # %%
-# 8 - Size limiting
+# 9 - Size limiting
 
 for target_args in [TargetArgs.ESTIMATE_SCORE]:
     visualize_experiments(

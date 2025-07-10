@@ -60,7 +60,8 @@ CK_SAX_BREAKPOINTS_FILE = "sax_breakpoints_file"
 CK_ISAX_MERGE_IN_LEAVES = "isax_merge_in_leaves"
 CK_ISAX_PREFER_FIRST_IN_EM = "isax_prefer_first_in_em"
 CK_ISAX_SPLIT_STRATEGIES = "isax_split_strategies"
-CK_ISAX_LEAF_CAP_RATIOS = "isax_leaf_cap_ratios"
+CK_LEAF_CAP_RATIOS = "leaf_cap_ratios"
+CK_LEAF_CAPACITIES = "leaf_capacities"
 CK_BUCKET_SIZES = "bucket_sizes"
 CK_MAX_WIDTH_CHANGES = "max_width_changes"
 CK_USE_INV_SAX = "use_inv_sax"
@@ -126,6 +127,7 @@ RK_SAX_BREAKPOINTS_FILE = "sax_breakpoints_file"
 RK_ISAX_MERGE_IN_LEAVES = "isax_merge_in_leaves"
 RK_ISAX_PREFER_FIRST_IN_EM = "isax_prefer_first_in_em"
 RK_SPLIT_STRATEGY = "split_strategy"
+RK_LEAF_CAP_RATIO = "leaf_cap_ratio"
 RK_LEAF_CAPACITY = "leaf_capacity"
 RK_BUCKET_SIZE = "bucket_size"
 RK_MAX_WIDTH_CHANGE = "max_width_change"
@@ -399,7 +401,8 @@ def parse_config_file(input_config) -> ParsedConfig:
             }
             isax_settings = {
                 **sax_settings,
-                **get_key_or_none(RK_LEAF_CAPACITY, CK_ISAX_LEAF_CAP_RATIOS),
+                **get_key_or_none(RK_LEAF_CAP_RATIO, CK_LEAF_CAP_RATIOS),
+                **get_key_or_none(RK_LEAF_CAPACITY, CK_LEAF_CAPACITIES),
                 **get_key_or_none(RK_SPLIT_STRATEGY, CK_ISAX_SPLIT_STRATEGIES),
                 **get_key_or_none(RK_FIRST_LAYER_BITS, CK_ISAX_START_BIT_NUMBERS),
                 **get_key_or_none(RK_ISAX_MERGE_IN_LEAVES, CK_ISAX_MERGE_IN_LEAVES),
@@ -946,14 +949,18 @@ if __name__ == "__main__":
                             pos_per_env = index_setting_copy.pop(RK_ENVELOPE_SIZE)
                             args += ["-p", str(pos_per_env)]
 
+                        leaf_capacity = None
                         if RK_LEAF_CAPACITY in index_setting_copy:
+                            leaf_capacity = index_setting_copy.pop(RK_LEAF_CAPACITY)
+                        elif RK_LEAF_CAP_RATIO in index_setting_copy:
                             num_entries = num_series
                             if index_method == METHOD_ISAX:
                                 num_entries = l_range * ((series_len - l_max + 1) + (l_range - 1) / 2) * num_series
                             elif index_method in ENVELOPE_METHODS:
                                 num_entries = ((series_len - l_min + pos_per_env) // pos_per_env) * num_series
-                            leaf_capacity = int(index_setting_copy.pop(RK_LEAF_CAPACITY) * num_entries)
+                            leaf_capacity = int(index_setting_copy.pop(RK_LEAF_CAP_RATIO) * num_entries)
                             leaf_capacity = max(1, leaf_capacity)
+                        if leaf_capacity is not None:
                             args += ["--leaf_capacity", str(leaf_capacity)]
 
                         breakpoint_strategy = index_setting_copy.get(RK_BREAKPOINT_STRATEGY, "")
