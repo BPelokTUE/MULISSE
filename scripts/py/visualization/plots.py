@@ -378,7 +378,8 @@ def plot_heat_map(
     only_max_points_x: bool = True,
     only_max_points_y: bool = True,
     max_maps_per_row: int = 3,
-    map_inches: float = 5.0,
+    cell_width_inches: float = 5.0,
+    cell_height_inches: float = 5.0,
     save_path: str | None = None,
 ):
     """
@@ -395,7 +396,8 @@ def plot_heat_map(
     :param only_max_points_x: If `True`, only heat maps with maximum number of points on the x-axis are plotted.
     :param only_max_points_y: If `True`, only heat maps with maximum number of points on the y-axis are plotted.
     :param max_maps_per_row: The maximum number of heat maps to plot per row.
-    :param map_inches: The width and height of the heat maps in inches.
+    :param cell_width_inches: The width of each heat map in inches.
+    :param cell_height_inches: The height of each heat map in inches.
     :param save_path: The path to save the plot to. If `None`, the plot is not saved.
     """
 
@@ -456,7 +458,9 @@ def plot_heat_map(
 
     num_rows = (num_heat_maps + max_maps_per_row - 1) // max_maps_per_row
     num_cols = min(num_heat_maps, max_maps_per_row)
-    fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, figsize=(map_inches * num_cols, map_inches * num_rows))
+    fig, axes = plt.subplots(
+        nrows=num_rows, ncols=num_cols, figsize=(cell_width_inches * num_cols, cell_height_inches * num_rows)
+    )
 
     if num_heat_maps == 1:
         axes = np.array([axes])
@@ -664,6 +668,9 @@ def get_config_label(
             case ISC.NUM_SEGMENTS:
                 if val is not None and val > 0:
                     label_parts.append(f"Ns={int(val)}")
+            case ISC.PARAM_ESTIMATOR_TYPE:
+                if isinstance(val, str) and len(val) > 0:
+                    label_parts.append(f"EST={abbreviate(val)}")
 
     if "l_min" in length_values:
         l_min = length_values["l_min"]

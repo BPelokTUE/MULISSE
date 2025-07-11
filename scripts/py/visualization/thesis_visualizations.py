@@ -507,45 +507,49 @@ for target_args_dict in [
 
 for target_args in [TargetArgs.ESTIMATE_SCORE]:
     visualize_experiments(
-        logs_dirs=["LOGS"],
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_9a_size_limiting_baselines"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
-            ERD.INDEXES_COLS: [ISC.INDEX_SIZE_LIMIT],
+            ERD.INDEXES_COLS: [ISC.PARAM_ESTIMATOR_TYPE, ISC.INDEX_SIZE_LIMIT, ISC.SEGMENTATION_STRATEGY],
             ERD.PARAM_ESTIMATES_COLS: [PEC.NUM_LEN_GROUPS, PEC.NUM_SEGMENTS],
         },
         separate_plots_dict={
             (SSC.METHOD_NAME,): [],
-            (ISC.INDEX_SIZE_LIMIT,): [(1.0,)],
+            (ISC.INDEX_SIZE_LIMIT,): [],
             (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
+            (ISC.PARAM_ESTIMATOR_TYPE,): [("min_dist",), ("query_time",)],
         },
         bar_plot_color_attrs=None,
         merge_csv_datasets=True,
         heat_map_x_attr=PEC.NUM_LEN_GROUPS,
         heat_map_y_attr=PEC.NUM_SEGMENTS,
-        heat_map_included_cols={DSC.DATASET_FILE},
+        heat_map_included_cols={DSC.DATASET_FILE, ISC.SEGMENTATION_STRATEGY},
+        cell_width_inches=7.5,
         **target_args.value,
     )
 
 for target_args in [TargetArgs.QUERY_TIME]:
     visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/envelope_variants/LOGS_size_limiting"],
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_9a_size_limiting_baselines"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
-            ERD.INDEXES_COLS: [ISC.INDEX_SIZE_LIMIT, ISC.NUM_LEN_GROUPS, ISC.NUM_SEGMENTS],
+            ERD.INDEXES_COLS: [ISC.INDEX_SIZE_LIMIT, ISC.NUM_LEN_GROUPS, ISC.NUM_SEGMENTS, ISC.PARAM_ESTIMATOR_TYPE],
         },
         separate_plots_dict={
             (SSC.METHOD_NAME,): [],
-            (ISC.INDEX_SIZE_LIMIT,): [(1.0,)],
+            (ISC.INDEX_SIZE_LIMIT,): [],
             (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
+            (ISC.PARAM_ESTIMATOR_TYPE,): [("no_est",)],
         },
         bar_plot_color_attrs=None,
         merge_csv_datasets=True,
         heat_map_x_attr=ISC.NUM_LEN_GROUPS,
         heat_map_y_attr=ISC.NUM_SEGMENTS,
-        heat_map_included_cols={DSC.DATASET_FILE},
+        heat_map_included_cols={DSC.DATASET_FILE, ISC.SEGMENTATION_STRATEGY},
+        cell_width_inches=7.5,
         **target_args.value,
     )

@@ -58,7 +58,7 @@ Real EnvelopeMinDistParamEstimator::get_config_score(vec<vec<IndexEntry<Envelope
 
     Real min_dist = R(0.0);
     for (auto &query_acc : m_query_accs) {
-        uint query_len = U(query_acc[0].size());  // TODO: fix this in case not all channels are used
+        uint query_len = U(query_acc[0].size() - 2);  // TODO: fix this in case not all channels are used
 
         uint lg_ind = length_props.get_length_group(query_len);
         auto ch_segmentation_strategy = lg_segmentation_strategy->get_const_ch_segmentation_strategy(lg_ind);
@@ -71,7 +71,7 @@ Real EnvelopeMinDistParamEstimator::get_config_score(vec<vec<IndexEntry<Envelope
             uint seg_start = 0;
             for (SaxSegIndT seg_ind = 0; seg_ind < query_ch_paa.size(); ++seg_ind) {
                 uint seg_len = segmentation_strategy->get_segment_len(seg_ind), seg_end = seg_start + seg_len;
-                query_ch_paa[seg_ind] = (query_acc[c][seg_end - 1] - query_acc[c][seg_start]) / R(seg_len);
+                query_ch_paa[seg_ind] = (query_acc[c][seg_end] - query_acc[c][seg_start]) / R(seg_len);
                 seg_start = seg_end;
             }
 

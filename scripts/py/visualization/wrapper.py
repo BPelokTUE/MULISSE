@@ -123,6 +123,8 @@ def visualize_experiments(
     heat_map_x_attr: Column | None = None,
     heat_map_y_attr: Column | None = None,
     heat_map_included_cols: set[Column] | None = None,
+    cell_height_inches: float = 5.0,
+    cell_width_inches: float = 5.0,
     # Output
     save_dir: str | None = None,
 ):
@@ -348,6 +350,8 @@ def visualize_experiments(
                     x_label=str(heat_map_x_attr).replace("_", " ").capitalize(),
                     y_label=str(heat_map_y_attr).replace("_", " ").capitalize(),
                     color_map=COLD_TO_HOT_COLORS,
+                    cell_height_inches=cell_height_inches,
+                    cell_width_inches=cell_width_inches,
                     save_path=get_plot_save_path("hm"),
                 )
 

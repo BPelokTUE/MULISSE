@@ -71,6 +71,7 @@ enum class IndexSettingsColumn {
     SUMMARIZATION_TIME_S,          // Time taken to summarize the subsequences in the dataset in seconds
     INSERTION_TIME_S,              // Time taken to insert the subsequence summaries into the index in seconds
     FFT_CALC_TIME_S,               // Time taken to calculate the FFTs in seconds
+    ENV_PARAM_ESTIMATION_TIME_S,   // Time taken to estimate the envelope parameters in seconds
     SIZE_ON_DISK_B,                // Size of the index on disk in bytes
     ESTIMATED_SIZE_ON_DISK_B,      // Estimated size of the index on disk in bytes, only supported for FlatEnvelopeIndex
     SAMPLE_FRAC,                   // Fraction of the dataset used for indexing, intended for testing
@@ -78,8 +79,9 @@ enum class IndexSettingsColumn {
 
 using ISC = IndexSettingsColumn;
 
-constexpr std::array INDEX_TIME_COLUMNS = {ISC::INDEXING_TIME_S, ISC::SEGMENTATION_SETUP_TIME_S,
-                                           ISC::SUMMARIZATION_TIME_S, ISC::INSERTION_TIME_S, ISC::FFT_CALC_TIME_S};
+constexpr std::array INDEX_TIME_COLUMNS = {ISC::INDEXING_TIME_S,      ISC::SEGMENTATION_SETUP_TIME_S,
+                                           ISC::SUMMARIZATION_TIME_S, ISC::INSERTION_TIME_S,
+                                           ISC::FFT_CALC_TIME_S,      ISC::ENV_PARAM_ESTIMATION_TIME_S};
 
 constexpr std::array INDEX_COUNT_COLUMNS = {ISC::NUM_LEAVES, ISC::NUM_NODES, ISC::NUM_ENTRIES, ISC::SIZE_ON_DISK_B,
                                             ISC::ESTIMATED_SIZE_ON_DISK_B};

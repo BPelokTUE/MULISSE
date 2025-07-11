@@ -81,6 +81,7 @@ class IndexSettingsColumn(StrEnum):
     USE_INV_SAX = auto()
     GROUP_PER_SERIES = auto()
     ADAPT_TO_DATASET = auto()
+    PARAM_ESTIMATOR_TYPE = auto()
     NUM_LEAVES = auto()
     NUM_NODES = auto()
     NUM_ENTRIES = auto()

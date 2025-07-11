@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
         index_format_str = ARCHIVE_TYPE_TO_STR.at(BINARY), search_type_str = SEARCH_TYPE_TO_STR.at(KNN),
         distance_measure_str = DISTANCE_TYPE_TO_STR.at(ED), inserter_type_str = ENTRY_INSERTER_TYPE_TO_STR.at(PARALLEL),
         entry_merger_type_str = ENTRY_MERGER_TYPE_TO_STR.at(DUMMY),
-        param_estimator_type_str = ENV_PARAM_ESTIMATOR_TYPE_TO_STR.at(MIN_DIST),
+        param_estimator_type_str = ENV_PARAM_ESTIMATOR_TYPE_TO_STR.at(NO_EST),
         env_config_gen_type_str = ENV_CONFIG_GENERATOR_TYPE_TO_STR.at(RANDOM);
     EstimatorSamplingParams estimator_sampling_params{.m_ind_step = 10, .m_num_queries = 100, .m_sample_frac = R(0.05)};
     vec<str> csv_paths;
@@ -652,7 +652,7 @@ int main(int argc, char **argv) {
 
                 auto env_config_gen_type = STR_TO_ENV_CONFIG_GENERATOR_TYPE.at(env_config_gen_type_str);
                 uptr<EnvConfigGeneratorParams> envelope_config_gen_params_ptr = nullptr;
-                if (env_config_gen_type == RANDOM) {
+                if (param_estimator_type != NO_EST && env_config_gen_type == RANDOM) {
                     envelope_config_gen_params_ptr =
                         std::make_unique<RandomEnvConfigGeneratorParams>(estimator_num_configs, seed);
                 }

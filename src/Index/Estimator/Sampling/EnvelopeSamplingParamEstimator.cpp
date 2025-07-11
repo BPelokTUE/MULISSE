@@ -120,6 +120,7 @@ EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params(
         // 4.1. Create a FlatEnvelopeIndex, skipping positions and lengths in the envelopes
         auto entries =
             summarize_dataset<Envelope>(num_l_groups, num_series, m_mts_inds, std::move(generator), std::move(merger));
+        if (entries.empty()) continue;
 
         // 4.2. Update selected configuration if current is better
         Real config_score =

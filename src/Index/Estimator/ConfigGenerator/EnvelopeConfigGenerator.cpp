@@ -21,6 +21,8 @@ std::pair<size_t, EnvelopeParams> IEnvelopeConfigGenerator::get_envelope_params_
     auto &dataset_props = RS.get_dataset_props();
     uptr<ILengthGroupSegmentationStrategy> lg_segmentation_strategy = nullptr;
     if (env_index_params) {
+        auto index_params = std::make_unique<EnvelopeIndexParams>(*env_index_params);
+        index_params->m_segmentation_params.m_num_segments = num_segments;
         IndexOptions act_index_opts{
             .m_use_length_groups = true,
             .m_num_channels = dataset_props.m_num_channels,
@@ -29,7 +31,7 @@ std::pair<size_t, EnvelopeParams> IEnvelopeConfigGenerator::get_envelope_params_
             .m_l_max = l_max,
             .m_series_len = dataset_props.m_series_len,
             .m_l_per_group = l_per_group,
-            .m_index_params = std::make_unique<EnvelopeIndexParams>(*env_index_params),
+            .m_index_params = std::move(index_params),
         };
         lg_segmentation_strategy = get_lg_segmentation_strategy(act_index_opts);
     }
