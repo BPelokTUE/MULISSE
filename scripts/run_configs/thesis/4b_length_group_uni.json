@@ -9,6 +9,7 @@
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": ["sax_envelope"],
+    "segmentation_strategies": ["uniform", "adaptive"],
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
     "length_group_size_ratios": [0.0025, 0.005, 0.01, 0.025, 0.05, 0.1],

@@ -8,11 +8,20 @@
     "l_range_ratios": [[0.125, 1.0], [0.5, 1.0], [0.125, 0.75]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
-    "search_methods": ["sax_envelope"],
+    "search_methods": {
+        "norm": ["sax_envelope"],
+        "raw": ["envelope"]
+    },
+    "segmentation_strategies": ["uniform", "adaptive"],
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
-    "length_group_size_ratios": [0.025],
-    "envelope_sizes": [4, 16, 40, 48, 64, 96, 128, 256],
+    "length_group_size_ratios": {
+        "norm": [0.025]
+    },
+    "envelope_sizes": {
+        "norm": [4, 16, 40, 48, 64, 96, 128, 256],
+        "raw": []
+    },
     "num_segments": [32],
     "distance_measures": ["ed"],
     "early_abandon": [true],
@@ -21,7 +30,10 @@
     "search_types": ["knn"],
     "search_ks": [1],
     "search_approx": [false],
-    "search_raw": [false],
+    "search_raw": {
+        "norm": [false],
+        "raw": [true]
+    },
     "dataset_seeds": [0],
     "query_set_seeds": [0],
     "separate_csv_datasets": false,

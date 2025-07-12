@@ -240,13 +240,13 @@ def visualize_experiments(
                 max([label.count("\n") + 1 for label in labels_dict.values()]) if bar_plot_label_padding else 0
             )
 
-            if save_dir is not None:
-                os.makedirs(save_dir, exist_ok=True)
-
             def get_plot_save_path(type: str) -> str | None:
                 if save_dir is not None:
                     return os.path.join(save_dir, f"{'-'.join([str(k) for k in title_key])}_{type}.{SAVE_EXTENSION}")
                 return None
+
+            if save_dir is not None:
+                os.makedirs(os.path.dirname(get_plot_save_path("")), exist_ok=True)
 
             if bar_plot_color_attrs is not None:
                 use_tuple_keys = isinstance(bar_plot_color_attrs, list)
