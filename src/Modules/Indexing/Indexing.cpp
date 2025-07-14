@@ -1,5 +1,7 @@
 #include "Modules/Indexing/Indexing.hpp"
 
+#include <cmath>
+
 #include "Index/Entry/SaxEnvelope.hpp"
 #include "Modules/Indexing/ConstructIndex.hpp"
 #include "Modules/Indexing/EstimateEnvelopeParams.hpp"
@@ -58,24 +60,33 @@ int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_pe
         }
     }
 
-    // Estimate approximately optimal parameters if requested
-    auto envelope_params = dynamic_cast<EnvelopeIndexParams *>(opts.m_index_params.get());
+    auto env_index_params = dynamic_cast<EnvelopeIndexParams *>(opts.m_index_params.get());
     if (opts.m_estimator_params) {
-        if (!envelope_params) {
+        // Estimate approximately optimal parameters if requested
+        if (!env_index_params) {
             std::cerr << "FlatEnvelopeIndex requires EnvelopeIndexParams.\n";
             return 2;
         }
-        if (envelope_params->m_segmentation_params.m_lg_strategy_type == ADAPTIVE_MULTI) {
+        if (env_index_params->m_segmentation_params.m_lg_strategy_type == ADAPTIVE_MULTI) {
             std::cerr << "Index size estimation is not supported for AdaptiveMultiSegmentationStrategy.\n";
             return 2;
         }
-    }
-
-    // Estimate flat envelope parameters if requested
-    if (auto estimated_params = estimate_envelope_params(opts)) {
+    } else if (auto estimated_params = estimate_envelope_params(opts)) {
+        // Estimate flat envelope parameters if requested
         RS.set_flat_envelope_params(*estimated_params);
         logger.set_flat_envelope_params(*estimated_params);
         opts.set_flat_envelope_params(*estimated_params);
+    } else if (env_index_params && env_index_params->m_segmentation_params.m_optimal_num_segments) {
+        // Calculate optimal number of segments if requested
+        uint series_len = RS.get_dataset_props().m_series_len;
+        Real multiplier = opts.m_normalized
+                              ? (env_index_params->m_segmentation_params.m_strategy_type == UNIFORM ? 16.0 : 12.0)
+                              : 8.0;
+        SaxSegIndT num_segments =
+            static_cast<SaxSegIndT>(std::ceil(std::sqrt(R(series_len) / R(2 * opts.m_l_min)) * multiplier));
+
+        logger.set_num_segments(num_segments);
+        opts.set_num_segments(num_segments);
     }
 
     // Set up segmentation strategies

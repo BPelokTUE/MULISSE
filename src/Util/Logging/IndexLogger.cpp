@@ -170,6 +170,8 @@ void IndexLogger::set_flat_envelope_params(const EnvelopeParams &flat_envelope_p
     m_columns[ISC::NUM_SEGMENTS] = to_string(flat_envelope_params.m_num_segments);
 }
 
+void IndexLogger::set_num_segments(SaxSegIndT num_segments) { m_columns[ISC::NUM_SEGMENTS] = to_string(num_segments); }
+
 void IndexLogger::set_num_segments_cols(const ILengthGroupSegmentationStrategy *lg_segmentation_strategy,
                                         bool log_num_seg_per_ch, bool log_num_seg_all) {
     auto &RS = RunSettings::get_instance();

@@ -111,6 +111,12 @@ class IndexLogger : public Logger {
     void set_pos_per_env(uint pos_per_env);
 
     /**
+     * @brief Set the num_segments column in the log
+     * @param num_segments The number of segments to set
+     */
+    void set_num_segments(SaxSegIndT num_segments);
+
+    /**
      * @brief Set the num_segments, pos_per_env and l_per_group columns in the log
      * @param flat_envelope_params The parameters for the FlatEnvelopeIndex
      */

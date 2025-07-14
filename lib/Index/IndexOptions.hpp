@@ -50,6 +50,14 @@ struct IndexOptions {
         }
         m_l_per_group = params.m_l_per_group;
     }
+
+    void set_num_segments(SaxSegIndT num_segments) {
+        if (auto paa_index_params = dynamic_cast<PaaIndexParams *>(m_index_params.get())) {
+            paa_index_params->m_segmentation_params.m_num_segments = num_segments;
+        } else {
+            throw std::runtime_error("Index does not use num_segments");
+        }
+    }
 };
 
 #endif  // INDEX_INDEXOPTIONS_HPP

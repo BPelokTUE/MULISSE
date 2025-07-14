@@ -25,6 +25,8 @@ struct IIndexParams {
 };
 
 struct SegmentationParams {
+    /** @brief Use the optimal number of segments for FlatEnvelopeIndex */
+    bool m_optimal_num_segments;
     /** @brief Number of segments to use */
     SaxSegIndT m_num_segments;
     /** @brief Type of strategy to use for length group segmentation */

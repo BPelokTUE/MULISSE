@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     bool zero_start = false, raw = false, approximate = false, early_abandon = false, sort_query = false,
          examine_whole = false, no_use_pq = false, adapt_index = false, merge_in_leaves = false,
          prefer_first_in_em = false, separate_segment_stats = false, no_log_num_seg_per_ch = false,
-         log_num_seg_all = false, use_inv_sax = false, group_per_series = false;
+         log_num_seg_all = false, use_inv_sax = false, group_per_series = false, optimal_num_segments = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -258,6 +258,8 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-s,--num_segments", num_segments, "Number of segments")
         ->capture_default_str()
         ->check(positive_int);
+    index_subcommand->add_flag("--optimal_num_segments", optimal_num_segments,
+                               "Use the optimal number of segments for FlatEnvelopeIndex");
     index_subcommand->add_option("-p,--pos_per_env", pos_per_env, "Positions per envelope")
         ->capture_default_str()
         ->check(positive_int);
@@ -453,8 +455,8 @@ int main(int argc, char **argv) {
         return 1;
     }
     if (command_type == INDEX) {
-        if (num_segments == 0 && !estimate_parameters) {
-            std::cerr << "--num_segments is required\n";
+        if (num_segments == 0 && !optimal_num_segments && !estimate_parameters) {
+            std::cerr << "--num_segments or --optimal_num_segments or --index_size_limit is required\n";
             return 1;
         }
         if (method_type == ISAX || method_type == ISAX_ENVELOPE) {
@@ -500,9 +502,12 @@ int main(int argc, char **argv) {
                 }
             }
         }
-        if (!estimate_parameters && arr_contains(METHODS_W_ENVELOPE, method_type) && pos_per_env == 0) {
-            std::cerr << "--pos_per_env is required\n";
-            return 1;
+        if (!estimate_parameters && arr_contains(METHODS_W_ENVELOPE, method_type)) {
+            if (pos_per_env == 0) {
+                std::cerr << "--pos_per_env is required\n";
+                return 1;
+            }
+            pos_per_env = std::min(pos_per_env, series_len - l_min + 1);
         }
     } else if (command_type == SEARCH) {
         if (sort_query) {
@@ -579,6 +584,7 @@ int main(int argc, char **argv) {
                     STR_TO_ENVELOPE_SCORES_TYPE.at(env_score_func_type_str));
             }
             SegmentationParams segmentation_params{
+                .m_optimal_num_segments = optimal_num_segments,
                 .m_num_segments = num_segments,
                 .m_lg_strategy_type = lg_segmentation_strategy_type,
                 .m_ch_strategy_type = ch_segmentation_strategy_type,
