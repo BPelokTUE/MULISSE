@@ -5,14 +5,17 @@
     "syn_num_channels": [4],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [100],
-    "l_range_ratios": [[0.125, 1.0], [0.5, 1.0], [0.125, 0.75]],
+    "l_range_ratios": [[0.125, 1.0], [0.25, 1.0], [0.5, 1.0]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {
         "norm": ["sax_envelope"],
         "raw": ["envelope"]
     },
-    "segmentation_strategies": ["uniform", "adaptive"],
+    "segmentation_strategies": {
+        "norm": ["uniform", "adaptive"],
+        "raw": ["uniform"]
+    },
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
     "length_group_size_ratios": {

@@ -6,7 +6,10 @@ from scripts.py.visualization.reduction import ERD
 
 
 def sort_dict(d: dict, key_func: callable) -> dict:
-    return {k: v for k, v in sorted(d.items(), key=key_func)}
+    try:
+        return {k: v for k, v in sorted(d.items(), key=key_func)}
+    except TypeError:
+        return {k: v for k, v in sorted(d.items(), key=lambda item: str(item))}
 
 
 def dict_to_tuples(d: dict[ERD, list[Column]]) -> list[tuple[ERD, Column]]:

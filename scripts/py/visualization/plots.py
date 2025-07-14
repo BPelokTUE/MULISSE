@@ -143,7 +143,10 @@ def plot_bars(
     y_scale: str = "linear",
     bar_width_inches: float = 0.4,
     bar_gap_inches: float = 0.4,
+    fig_height_inches: float = 6.0,
     legend_max_cols: int = 4,
+    legend_offset: float = 0.1,
+    no_legend: bool = False,
     title: str = None,
     hatches: list[str] = None,
     hatch_labels: list[str] = None,
@@ -162,6 +165,10 @@ def plot_bars(
     :param y_scale: The scale to use for the y-axis.
     :param bar_width_inches: The width of the bars in inches.
     :param bar_gap_inches: The gap between bar groups in inches.
+    :param fig_height_inches: The height of the figure in inches.
+    :param legend_max_cols: The maximum number of columns in the legend.
+    :param legend_offset: The offset of the legend from the top of the plot.
+    :param no_legend: If `True`, do not show the legend.
     :param title: The title of the plot.
     :param hatches: The hatches to use for the bars. If `None`, no hatches are used.
     :param hatch_labels: The labels for the hatches. If `None`, no hatch labels are used.
@@ -245,7 +252,8 @@ def plot_bars(
     for h_ind in seen_hatches:
         ax.bar(0, 0, color="white", edgecolor="black", hatch=hatches[h_ind], label=hatch_labels[h_ind])
 
-    place_legend(ax, len(seen_labels) + len(seen_hatches), legend_max_cols)
+    if not no_legend:
+        place_legend(ax, len(seen_labels) + len(seen_hatches), legend_max_cols, legend_offset)
 
     ax.set_yscale(y_scale)
     ax.yaxis.grid(True)
@@ -255,7 +263,7 @@ def plot_bars(
     ax.set_xticklabels(x_tick_labels)
     ax.set_title(title)
 
-    fig.set_size_inches((num_bars + len(bar_groups)) * bar_width_inches, 6)
+    fig.set_size_inches((num_bars + len(bar_groups)) * bar_width_inches, fig_height_inches)
 
     if save_path is not None:
         fig.savefig(save_path, bbox_inches="tight")
@@ -277,8 +285,11 @@ def plot_lines(
     y_scale: str = "linear",
     y_lim: tuple[float, float] | None = None,
     line_thickness: float = 1.5,
-    title: str = None,
     legend_max_cols=4,
+    legend_offset: float = 0.1,
+    no_legend: bool = False,
+    title: str = None,
+    fig_height_inches: float = 6.0,
     only_max_points: bool = True,
     mark_minimum: bool = False,
     save_path: str | None = None,
@@ -296,7 +307,11 @@ def plot_lines(
     :param y_scale: The scale to use for the y-axis.
     :param y_lim: The range to use for the y-axis. If `None`, the range is automatically determined.
     :param line_thickness: The thickness of the lines.
+    :param legend_max_cols: The maximum number of columns in the legend.
+    :param legend_offset: The offset of the legend from the top of the plot.
+    :param no_legend: If `True`, do not show the legend.
     :param title: The title of the plot.
+    :param fig_height_inches: The height of the figure in inches.
     :param only_max_points: If `True`, only plot lines with the maximum number of points.
     :param mark_minimum: If `True`, mark the minimum points on each line.
     :param save_path: The path to save the plot to. If `None`, the plot is not saved.
@@ -355,7 +370,9 @@ def plot_lines(
     ax.set_title(title)
     ax.grid(True)
 
-    place_legend(ax, len(legend), legend_max_cols)
+    if not no_legend:
+        place_legend(ax, len(legend), legend_max_cols, legend_offset)
+    fig.set_figheight(fig_height_inches)
 
     if save_path is not None:
         fig.savefig(save_path, bbox_inches="tight")
@@ -654,7 +671,9 @@ def get_config_label(
                     label_parts.append(f"Sample={int(val)}")
             case ISC.SEGMENTATION_STRATEGY:
                 if isinstance(val, str) and len(val) > 0:
-                    label_parts.append(f"SEG={abbreviate(val)}")
+                    label_parts.append(
+                        "EqW Seg" if val == "uniform" else "EqD Seg" if val == "adaptive" else f"SEG={abbreviate(val)}"
+                    )
             case ISC.BREAKPOINT_STRATEGY:
                 if isinstance(val, str) and len(val) > 0:
                     label_parts.append(f"BRK={abbreviate(val)}")

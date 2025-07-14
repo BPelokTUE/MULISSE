@@ -94,9 +94,9 @@ def visualize_experiments(
     num_query_intervals: int = 1,
     # Separating plots
     merge_csv_datasets: bool = False,
-    separate_plots_dict: dict[tuple, set] = {},
+    separate_plots_dict: dict[tuple, list] = {},
     # Filtering
-    regex_dict: dict[Column, str] = {},
+    regex_dict: dict[Column, str | tuple] = {},
     regex_sep: str = "::",
     ignored_attrs: set = set(),
     # Plotting
@@ -104,6 +104,9 @@ def visualize_experiments(
     y_scale: str = "linear",
     title_base: str = "",
     legend_max_cols: int = 4,
+    legend_offset: float = 0.18,
+    no_legend: bool = False,
+    fig_height_inches: float = 3.5,
     # Bar plots
     hatches=None,
     hatch_labels=None,
@@ -111,8 +114,8 @@ def visualize_experiments(
     bar_width_inches: float = 0.4,
     bar_gap_inches: float = 0.4,
     bar_plot_color_attrs: Column | list[Column] | None = SSC.METHOD_NAME,
-    bar_plot_color_map: dict[str, str] = METHOD_COLORS,
-    bar_plot_label_map: dict[str, str] = METHOD_LABELS,
+    bar_plot_color_map: dict[str | tuple, str] = METHOD_COLORS,
+    bar_plot_label_map: dict[str | tuple, str] = METHOD_LABELS,
     # Line plots
     line_plot_x_attr: Column | None = None,
     line_plot_included_cols: set[Column] | None = None,
@@ -189,7 +192,7 @@ def visualize_experiments(
     def create_plots(
         title_key: list,
         title_columns: list[Column],
-        remaining_separate_plots_dict: dict[tuple, set],
+        remaining_separate_plots_dict: dict[tuple, list],
         reduced_values_subset: dict[tuple, list],
     ):
         if len(remaining_separate_plots_dict) > 0:
@@ -297,9 +300,12 @@ def visualize_experiments(
                     y_scale=y_scale,
                     bar_width_inches=bar_width_inches,
                     bar_gap_inches=bar_gap_inches,
+                    fig_height_inches=fig_height_inches,
                     color_map=bar_plot_color_map,
                     label_map=bar_plot_label_map,
                     legend_max_cols=legend_max_cols,
+                    legend_offset=legend_offset,
+                    no_legend=no_legend,
                     save_path=get_plot_save_path("bar"),
                 )
 
@@ -310,8 +316,6 @@ def visualize_experiments(
                     discard_cols={line_plot_x_attr},
                     include_cols=line_plot_included_cols,
                 )
-                for config in config_label_map:
-                    print(config)
                 legend = {key: line_plot_legend_map.get(key, val) for key, val in config_label_map.items()}
                 colors = {
                     key: line_plot_colors_map.get(key, CATEGORY_COLORS[i % len(CATEGORY_COLORS)])
@@ -330,7 +334,10 @@ def visualize_experiments(
                     y_lim=y_lim,
                     line_thickness=line_plot_thickness,
                     title=title,
+                    fig_height_inches=fig_height_inches,
                     legend_max_cols=legend_max_cols,
+                    legend_offset=legend_offset,
+                    no_legend=no_legend,
                     mark_minimum=True,
                     save_path=get_plot_save_path("line"),
                 )

@@ -5,7 +5,7 @@
     "syn_num_channels": [1],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [100],
-    "l_range_ratios": [[0.125, 1.0], [0.5, 1.0], [0.125, 0.75]],
+    "l_range_ratios": [[0.125, 1.0]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": ["sax_envelope"],

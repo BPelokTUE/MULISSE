@@ -24,6 +24,7 @@ CK_LG_SEGMENTATION_STRATEGIES = "lg_segmentation_strategies"
 CK_CH_SEGMENTATION_STRATEGIES = "ch_segmentation_strategies"
 CK_SEGMENTATION_STRATEGIES = "segmentation_strategies"
 CK_NUM_SEGMENTS = "num_segments"
+CK_OPTIMAL_NUM_SEGMENTS = "optimal_num_segments"
 CK_MULTI_CHSS_NUM_SEG_FILES = "multi_chss_num_seg_files"
 CK_SCORE_BASED_CHSS_SEGMENT_LENS = "score_based_chss_segment_lens"
 CK_SCORE_BASED_CHSS_SAMPLE_SIZES = "score_based_chss_sample_sizes"
@@ -101,6 +102,7 @@ RK_LG_SEGMENTATION_STRATEGY = "lg_segmentation_strategy"
 RK_CH_SEGMENTATION_STRATEGY = "ch_segmentation_strategy"
 RK_SEGMENTATION_STRATEGY = "segmentation_strategy"
 RK_NUM_SEGMENTS = "num_segments"
+RK_OPTIMAL_NUM_SEGMENTS = "optimal_num_segments"
 RK_MULTI_CHSS_NUM_SEG_FILE = "multi_chss_num_seg_file"
 RK_SCORE_BASED_CHSS_SEGMENT_LEN = "score_based_chss_segment_len"
 RK_SCORE_BASED_CHSS_SAMPLE_SIZE = "score_based_chss_sample_size"
@@ -231,7 +233,14 @@ RUNS_CSV = "runs.csv"
 CHECK_RESULTS_SCRIPT_PATH = "../scripts/py/check_results.py"
 
 # Index flag
-INDEX_FLAGS = [RK_ADAPT, RK_ISAX_MERGE_IN_LEAVES, RK_ISAX_PREFER_FIRST_IN_EM, RK_USE_INV_SAX, RK_GROUP_PER_SERIES]
+INDEX_FLAGS = [
+    RK_ADAPT,
+    RK_ISAX_MERGE_IN_LEAVES,
+    RK_ISAX_PREFER_FIRST_IN_EM,
+    RK_USE_INV_SAX,
+    RK_GROUP_PER_SERIES,
+    RK_OPTIMAL_NUM_SEGMENTS,
+]
 
 
 def check_config_keys(config: dict, required: list[str]):
@@ -425,6 +434,7 @@ def parse_config_file(input_config) -> ParsedConfig:
                 **common_settings,
                 **get_key_or_none(RK_ENVLEOPE_SIZE_RATIO, CK_ENVELOPE_SIZE_RATIOS),
                 **get_key_or_none(RK_ENVELOPE_SIZE, CK_ENVELOPE_SIZES),
+                **get_key_or_none(RK_OPTIMAL_NUM_SEGMENTS, CK_OPTIMAL_NUM_SEGMENTS),
                 **param_estimator_settings,
             }
             tree_envelope_settings = {
