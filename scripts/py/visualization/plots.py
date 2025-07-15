@@ -20,6 +20,7 @@ from scripts.py.visualization.reduction import (
     MinReducer,
     Reducer,
     ReductionResult,
+    RobustMeanReducer,
     StdReducer,
 )
 from scripts.py.visualization.style import CATEGORY_COLORS, PALETTE
@@ -603,7 +604,8 @@ def get_config_label(
             case ISC.POS_PER_ENV:
                 label_parts.append(f"PPE={int(val)}")
             case ISC.INDEX_SIZE_LIMIT:
-                label_parts.append(f"Size={val:.1f}")
+                if val is not None and val > 0:
+                    label_parts.append(f"S={val:.1f}")
             case ISC.NUM_BITS_LIMIT:
                 if val is not None and val > 0:
                     label_parts.append(f"BLim={int(val)}")
@@ -691,7 +693,7 @@ def get_config_label(
                     label_parts.append(f"Ns={int(val)}")
             case ISC.PARAM_ESTIMATOR_TYPE:
                 if isinstance(val, str) and len(val) > 0:
-                    label_parts.append(f"EST={abbreviate(val)}")
+                    label_parts.append(f"EST={''.join([w[0].upper() for w in val.split('_')])}")
 
     if "l_min" in length_values:
         l_min = length_values["l_min"]
@@ -776,15 +778,27 @@ def get_config_labels(
 
 def get_y_label(targets: list[tuple[ERD, Column, Reducer]]) -> str:
     reducer_str = ""
-    match targets[0][2]:
-        case MeanReducer():
+    reducer = targets[0][2]
+    if isinstance(reducer, MeanReducer):
+        reducer_str = "mean"
+    elif isinstance(reducer, StdReducer):
+        reducer_str = "std"
+    elif isinstance(reducer, MinReducer):
+        reducer_str = "min"
+    elif isinstance(reducer, MaxReducer):
+        reducer_str = "max"
+    elif isinstance(reducer, RobustMeanReducer):
+        lower_quantile = reducer.discard_lower_quantile
+        upper_quantile = reducer.discard_upper_quantile
+        if lower_quantile > 0:
+            if upper_quantile > 0:
+                reducer_str = f"mean wo. l. {lower_quantile:.1f} and u. {upper_quantile:.1f}"
+            else:
+                reducer_str = f"mean wo. l. {lower_quantile:.1f}"
+        elif upper_quantile > 0:
+            reducer_str = f"mean wo. u. {upper_quantile:.1f}"
+        else:
             reducer_str = "mean"
-        case StdReducer():
-            reducer_str = "std"
-        case MinReducer():
-            reducer_str = "min"
-        case MaxReducer():
-            reducer_str = "max"
 
     columns = tuple([target[1] for target in targets])
     columns = columns[0] if len(columns) == 1 else columns

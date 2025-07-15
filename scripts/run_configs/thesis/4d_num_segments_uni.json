@@ -18,6 +18,9 @@
     },
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
+    "length_group_size_ratios": {
+        "norm": [0.025]
+    },
     "envelope_sizes": [64],
     "num_segments": {
         "norm": [4, 8, 12, 16, 24, 32, 48, 72],

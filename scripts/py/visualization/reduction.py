@@ -654,10 +654,11 @@ class MeanReducer(Reducer):
 
 
 class RobustMeanReducer(Reducer):
-    discard_quantile: float = Field(0.05, ge=0.0, le=1.0)
+    discard_lower_quantile: float = Field(0.05, ge=0.0, le=1.0)
+    discard_upper_quantile: float = Field(0.05, ge=0.0, le=1.0)
 
     def __call__(self, value: np.ndarray) -> float:
-        quantiles = np.quantile(value, [self.discard_quantile, 1 - self.discard_quantile])
+        quantiles = np.quantile(value, [self.discard_lower_quantile, 1 - self.discard_upper_quantile])
         return np.mean(value[(value >= quantiles[0]) & (value <= quantiles[1])])
 
 

@@ -21,13 +21,10 @@
     "length_group_size_ratios": {
         "norm": [0.025]
     },
-    "envelope_sizes": {
-        "norm": [64],
-        "raw": []
-    },
+    "envelope_sizes": [64],
     "num_segments": {
-        "norm": [8, 16, 24, 32, 40, 56, 72, 92],
-        "raw": []
+        "norm": [4, 8, 12, 16, 24, 32, 48, 72],
+        "raw": [4, 8, 12, 16, 24, 32, 48, 72]
     },
     "distance_measures": ["ed"],
     "early_abandon": [true],

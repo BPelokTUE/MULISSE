@@ -9,7 +9,8 @@
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
     "search_methods": {
-        "scan": ["scan"],
+        "mass": ["scan"],
+        "ucr": ["scan"],
         "ulisse": ["isax_env_w_sax_env"],
         "eqw": ["sax_envelope"],
         "eqd": ["sax_envelope"],
@@ -45,7 +46,8 @@
         "eqd": [0.025]
     },
     "distance_measures": {
-        "scan": ["ed", "mass"],
+        "mass": ["mass"],
+        "ucr": ["ed"],
         "ulisse": ["ed"],
         "eqw": ["ed"],
         "eqd": ["ed"],
@@ -53,7 +55,7 @@
     },
     "early_abandon": [true],
     "sort_query": {
-        "scan": [true],
+        "ucr": [true],
         "ulisse": [true]
     },
     "adapt_index": [false],
@@ -62,7 +64,8 @@
     "search_ks": [1],
     "search_approx": [false],
     "search_raw": {
-        "scan": [false, true],
+        "mass": [false, true],
+        "ucr": [false, true],
         "ulisse": [false, true],
         "eqw": [false],
         "eqd": [false],
