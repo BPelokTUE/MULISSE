@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
     SaxSegIndT num_segments = 0;
     uint num_series = 0, series_len, num_queries, l_min = 0, l_max = 0, pos_per_env = 0, l_per_group = 0,
          num_l_groups = 0, knn_k = 1, seed = 0, num_lags = 5, score_based_chss_segment_len = 1,
-         score_based_chss_sample_size = 0, estimator_num_configs;
+         score_based_chss_sample_size = 0, estimator_num_configs = 0;
     size_t leaf_capacity = 0, max_leaves_to_visit = 0;
     vec<uint> exact_lengths = {};
     MtsNumChannelsT num_channels, used_channels = 0;
@@ -328,7 +328,8 @@ int main(int argc, char **argv) {
                      "Fraction of the dataset to sample for the envelope generation in EnvelopeSamplingParamEstimator")
         ->check(fraction);
     index_subcommand->add_option("--param_estimator_seed,--pe_seed", seed, "Seed for envelope parameter estimation");
-    index_subcommand->add_option("--estimator_num_configs", estimator_num_configs, "");
+    index_subcommand->add_option("--param_estimator_num_configs,--pe_num_configs", estimator_num_configs,
+                                 "Number of configurations to generate for random envelope parameter estimation");
     index_subcommand
         ->add_option("--index_sample_frac", index_sample_frac,
                      "Fraction of the dataset to index, intended for testing, "

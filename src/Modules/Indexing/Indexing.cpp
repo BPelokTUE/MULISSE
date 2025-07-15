@@ -61,17 +61,12 @@ int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_pe
     }
 
     auto env_index_params = dynamic_cast<EnvelopeIndexParams *>(opts.m_index_params.get());
-    if (opts.m_estimator_params) {
-        // Estimate approximately optimal parameters if requested
-        if (!env_index_params) {
-            std::cerr << "FlatEnvelopeIndex requires EnvelopeIndexParams.\n";
-            return 2;
-        }
-        if (env_index_params->m_segmentation_params.m_lg_strategy_type == ADAPTIVE_MULTI) {
-            std::cerr << "Index size estimation is not supported for AdaptiveMultiSegmentationStrategy.\n";
-            return 2;
-        }
-    } else if (auto estimated_params = estimate_envelope_params(opts)) {
+    if (opts.m_estimator_params && !env_index_params) {
+        std::cerr << "FlatEnvelopeIndex requires EnvelopeIndexParams.\n";
+        return 2;
+    }
+
+    if (auto estimated_params = estimate_envelope_params(opts)) {
         // Estimate flat envelope parameters if requested
         RS.set_flat_envelope_params(*estimated_params);
         logger.set_flat_envelope_params(*estimated_params);
