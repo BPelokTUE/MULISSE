@@ -1,0 +1,74 @@
+{
+    "profiles": [
+        "4C-mass", "4C-ucr", "4C-ulisse", "4C-eqw", "4C-eqd", "4C-raw",
+        "5C-mass", "5C-ucr", "5C-ulisse", "5C-eqw", "5C-eqd", "5C-raw"
+    ],
+    "csv_data_dirs": {
+        "4C-mass": ["weather"], "4C-ucr": ["weather"], "4C-ulisse": ["weather"], "4C-eqw": ["weather"], "4C-eqd": ["weather"], "4C-raw": ["weather"],
+        "5C-mass": ["stocks"], "5C-ucr": ["stocks"], "5C-ulisse": ["stocks"], "5C-eqw": ["stocks"], "5C-eqd": ["stocks"], "5C-raw": ["stocks"]
+    },
+    "dataset_sizes": [1000],
+    "series_lengths": [2048],
+    "syn_num_channels": {
+        "4C-mass": [4], "4C-ucr": [4], "4C-ulisse": [4], "4C-eqw": [4], "4C-eqd": [4], "4C-raw": [4]
+    },
+    "syn_step_stdevs": [1.0],
+    "query_set_sizes": [100],
+    "l_range_ratios": [[0.125, 1.0]],
+    "used_channel_ratios": {
+        "4C-mass": [0.25, 0.5, 0.75], "4C-ucr": [0.25, 0.5, 0.75], "4C-ulisse": [0.25, 0.5, 0.75], "4C-eqw": [0.25, 0.5, 0.75], "4C-eqd": [0.25, 0.5, 0.75], "4C-raw": [0.25, 0.5, 0.75],
+        "5C-mass": [0.2, 0,4, 0.6, 0.8], "5C-ucr": [0.2, 0.4, 0.6, 0.8], "5C-ulisse": [0.2, 0.4, 0.6, 0.8], "5C-eqw": [0.2, 0.4, 0.6, 0.8], "5C-eqd": [0.2, 0.4, 0.6, 0.8], "5C-raw": [0.2, 0.4, 0.6, 0.8]
+    },
+    "query_noise_stdevs": [0.1],
+    "search_methods": {
+        "4C-mass": ["scan"], "4C-ucr": ["scan"], "4C-ulisse": ["isax_env_w_sax_env"], "4C-eqw": ["sax_envelope"], "4C-eqd": ["sax_envelope"], "4C-raw": ["envelope"],
+        "5C-mass": ["scan"], "5C-ucr": ["scan"], "5C-ulisse": ["isax_env_w_sax_env"], "5C-eqw": ["sax_envelope"], "5C-eqd": ["sax_envelope"], "5C-raw": ["envelope"]
+    },
+    "segmentation_strategies": {
+        "4C-eqw": ["uniform"], "4C-eqd": ["adaptive"], "4C-raw": ["uniform"],
+        "5C-eqw": ["uniform"], "5C-eqd": ["adaptive"], "5C-raw": ["uniform"]
+    },
+    "sax_breakpoint_strategies": ["equiprobable"],
+    "sax_num_bits": [15],
+    "isax_split_strategies": ["em"],
+    "isax_leaf_cap_ratios": [0.05],
+    "max_leaves_to_visit": [5],
+    "isax_start_bit_numbers": [1],
+    "envelope_sizes": {
+        "4C-ulisse": [3072], "4C-eqw": [64], "4C-eqd": [64], "4C-raw": [256],
+        "5C-ulisse": [3072], "5C-eqw": [64], "5C-eqd": [64], "5C-raw": [256]
+    },
+    "optimal_num_segments": {
+        "4C-eqw": [true], "4C-eqd": [true], "4C-raw": [true],
+        "5C-eqw": [true], "5C-eqd": [true], "5C-raw": [true]
+    },
+    "num_segments": {
+        "4C-ulisse": [16], "5C-ulisse": [16]
+    },
+    "length_group_size_ratios": {
+        "4C-eqw": [0.025], "4C-eqd": [0.025],
+        "5C-eqw": [0.025], "5C-eqd": [0.025]
+    },
+    "distance_measures": {
+        "4C-mass": ["mass"], "4C-ucr": ["ed"], "4C-ulisse": ["ed"], "4C-eqw": ["ed"], "4C-eqd": ["ed"], "4C-raw": ["ed"],
+        "5C-mass": ["mass"], "5C-ucr": ["ed"], "5C-ulisse": ["ed"], "5C-eqw": ["ed"], "5C-eqd": ["ed"], "5C-raw": ["ed"]
+    },
+    "early_abandon": [true],
+    "sort_query": {
+        "4C-ucr": [true], "4C-ulisse": [true],
+        "5C-ucr": [true], "5C-ulisse": [true]
+    },
+    "adapt_index": [false],
+    "index_inserters": ["parallel"],
+    "search_types": ["knn"],
+    "search_ks": [1],
+    "search_approx": [false],
+    "search_raw": {
+        "4C-mass": [false, true], "4C-ucr": [false, true], "4C-ulisse": [false, true], "4C-eqw": [false], "4C-eqd": [false], "4C-raw": [true],
+        "5C-mass": [false, true], "5C-ucr": [false, true], "5C-ulisse": [false, true], "5C-eqw": [false], "5C-eqd": [false], "5C-raw": [true]
+    },
+    "dataset_seeds": [0],
+    "query_set_seeds": [0],
+    "separate_csv_datasets": false,
+    "calculate_index_stats": false
+}

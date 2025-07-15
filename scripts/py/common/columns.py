@@ -87,6 +87,7 @@ class IndexSettingsColumn(StrEnum):
     NUM_ENTRIES = auto()
     INDEXING_TIME_S = auto()
     FFT_CALC_TIME_S = auto()
+    ENV_PARAM_ESTIMATION_TIME_S = auto()
     SIZE_ON_DISK_B = auto()
     ESTIMATED_SIZE_ON_DISK_B = auto()
     SAMPLE_FRAC = auto()

@@ -1,0 +1,73 @@
+{
+    "csv_data_dirs": [],
+    "dataset_sizes": {
+        "C1-scan": [4096], "C1-eqw": [4096], "C1-eqd": [4096], "C1-raw": [4096],
+        "C4-scan": [1024], "C4-eqw": [1024], "C4-eqd": [1024], "C4-raw": [1024],
+        "C16-scan": [256], "C16-eqw": [256], "C16-eqd": [256], "C16-raw": [256],
+        "C64-scan": [64], "C64-eqw": [64], "C64-eqd": [64], "C64-raw": [64],
+        "C256-scan": [16], "C256-eqw": [16], "C256-eqd": [16], "C256-raw": [16]
+    },
+    "syn_num_channels": {
+        "C1-scan": [1], "C1-eqw": [1], "C1-eqd": [1], "C1-raw": [1],
+        "C4-scan": [4], "C4-eqw": [4], "C4-eqd": [4], "C4-raw": [4],
+        "C16-scan": [16], "C16-eqw": [16], "C16-eqd": [16], "C16-raw": [16],
+        "C64-scan": [64], "C64-eqw": [64], "C64-eqd": [64], "C64-raw": [64],
+        "C256-scan": [256], "C256-eqw": [256], "C256-eqd": [256], "C256-raw": [256]
+    },
+    "series_lengths": [1024],
+    "syn_step_stdevs": [1.0],
+    "query_set_sizes": [100],
+    "l_range_ratios": [[0.125, 1.0]],
+    "used_channel_ratios": [1.0],
+    "query_noise_stdevs": [0.1],
+    "search_methods": {
+        "C1-scan": ["scan"], "C1-eqw": ["sax_envelope"], "C1-eqd": ["sax_envelope"], "C1-raw": ["envelope"],
+        "C4-scan": ["scan"], "C4-eqw": ["sax_envelope"], "C4-eqd": ["sax_envelope"], "C4-raw": ["envelope"],
+        "C16-scan": ["scan"], "C16-eqw": ["sax_envelope"], "C16-eqd": ["sax_envelope"], "C16-raw": ["envelope"],
+        "C64-scan": ["scan"], "C64-eqw": ["sax_envelope"], "C64-eqd": ["sax_envelope"], "C64-raw": ["envelope"],
+        "C256-scan": ["scan"], "C256-eqw": ["sax_envelope"], "C256-eqd": ["sax_envelope"], "C256-raw": ["envelope"]
+    },
+    "segmentation_strategies": {
+        "C1-eqw": ["uniform"], "C1-eqd": ["adaptive"], "C1-raw": ["uniform"],
+        "C4-eqw": ["uniform"], "C4-eqd": ["adaptive"], "C4-raw": ["uniform"],
+        "C16-eqw": ["uniform"], "C16-eqd": ["adaptive"], "C16-raw": ["uniform"],
+        "C64-eqw": ["uniform"], "C64-eqd": ["adaptive"], "C64-raw": ["uniform"],
+        "C256-eqw": ["uniform"], "C256-eqd": ["adaptive"], "C256-raw": ["uniform"]
+    },
+    "sax_breakpoint_strategies": ["equiprobable"],
+    "sax_num_bits": [15],
+    "envelope_sizes": {
+        "C1-eqw": [64], "C1-eqd": [64], "C1-raw": [256],
+        "C4-eqw": [64], "C4-eqd": [64], "C4-raw": [256],
+        "C16-eqw": [64], "C16-eqd": [64], "C16-raw": [256],
+        "C64-eqw": [64], "C64-eqd": [64], "C64-raw": [256],
+        "C256-eqw": [64], "C256-eqd": [64], "C256-raw": [256]
+    },
+    "optimal_num_segments": [true],
+    "distance_measures": {
+        "C1-scan": ["ed", "mass"], "C1-eqw": ["ed"], "C1-eqd": ["ed"], "C1-raw": ["ed"],
+        "C4-scan": ["ed", "mass"], "C4-eqw": ["ed"], "C4-eqd": ["ed"], "C4-raw": ["ed"],
+        "C16-scan": ["ed", "mass"], "C16-eqw": ["ed"], "C16-eqd": ["ed"], "C16-raw": ["ed"],
+        "C64-scan": ["ed", "mass"], "C64-eqw": ["ed"], "C64-eqd": ["ed"], "C64-raw": ["ed"],
+        "C256-scan": ["ed", "mass"], "C256-eqw": ["ed"], "C256-eqd": ["ed"], "C256-raw": ["ed"]
+    },
+    "early_abandon": [true],
+    "sort_query": {
+        "C1-scan": [true], "C4-scan": [true], "C16-scan": [true], "C64-scan": [true], "C256-scan": [true]
+    },
+    "adapt_index": [false],
+    "index_inserters": ["parallel"],
+    "search_types": ["knn"],
+    "search_ks": [1],
+    "search_approx": [false],
+    "search_raw": {
+        "C1-scan": [false, true], "C1-eqw": [false], "C1-eqd": [false], "C1-raw": [true],
+        "C4-scan": [false, true], "C4-eqw": [false], "C4-eqd": [false], "C4-raw": [true],
+        "C16-scan": [false, true], "C16-eqw": [false], "C16-eqd": [false], "C16-raw": [true],
+        "C64-scan": [false, true], "C64-eqw": [false], "C64-eqd": [false], "C64-raw": [true],
+        "C256-scan": [false, true], "C256-eqw": [false], "C256-eqd": [false], "C256-raw": [true]
+    },
+    "dataset_seeds": [0],
+    "query_set_seeds": [0],
+    "calculate_index_stats": false
+}

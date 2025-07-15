@@ -1,12 +1,6 @@
 {
     "csv_data_dirs": [],
-    "dataset_sizes": {
-        "C1-scan": [4096], "C1-eqw": [4096], "C1-eqd": [4096], "C1-raw": [4096],
-        "C4-scan": [1024], "C4-eqw": [1024], "C4-eqd": [1024], "C4-raw": [1024],
-        "C16-scan": [256], "C16-eqw": [256], "C16-eqd": [256], "C16-raw": [256],
-        "C64-scan": [64], "C64-eqw": [64], "C64-eqd": [64], "C64-raw": [64],
-        "C256-scan": [16], "C256-eqw": [16], "C256-eqd": [16], "C256-raw": [16]
-    },
+    "dataset_sizes": [1024],
     "syn_num_channels": {
         "C1-scan": [1], "C1-eqw": [1], "C1-eqd": [1], "C1-raw": [1],
         "C4-scan": [4], "C4-eqw": [4], "C4-eqd": [4], "C4-raw": [4],
@@ -14,7 +8,13 @@
         "C64-scan": [64], "C64-eqw": [64], "C64-eqd": [64], "C64-raw": [64],
         "C256-scan": [256], "C256-eqw": [256], "C256-eqd": [256], "C256-raw": [256]
     },
-    "series_lengths": [1024],
+    "series_lengths": {
+        "C1-scan": [4096], "C1-eqw": [4096], "C1-eqd": [4096], "C1-raw": [4096],
+        "C4-scan": [1024], "C4-eqw": [1024], "C4-eqd": [1024], "C4-raw": [1024],
+        "C16-scan": [256], "C16-eqw": [256], "C16-eqd": [256], "C16-raw": [256],
+        "C64-scan": [64], "C64-eqw": [64], "C64-eqd": [64], "C64-raw": [64],
+        "C256-scan": [16], "C256-eqw": [16], "C256-eqd": [16], "C256-raw": [16]
+    },
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [100],
     "l_range_ratios": [[0.125, 1.0]],
@@ -36,7 +36,13 @@
     },
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
-    "envelope_sizes": [64],
+    "envelope_sizes": {
+        "C1-eqw": [64], "C1-eqd": [64], "C1-raw": [256],
+        "C4-eqw": [64], "C4-eqd": [64], "C4-raw": [256],
+        "C16-eqw": [64], "C16-eqd": [64], "C16-raw": [256],
+        "C64-eqw": [64], "C64-eqd": [64], "C64-raw": [256],
+        "C256-eqw": [64], "C256-eqd": [64], "C256-raw": [256]
+    },
     "optimal_num_segments": [true],
     "distance_measures": {
         "C1-scan": ["ed", "mass"], "C1-eqw": ["ed"], "C1-eqd": ["ed"], "C1-raw": ["ed"],

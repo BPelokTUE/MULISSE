@@ -384,6 +384,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
             (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
         },
         # title_base=dim_suffix_to_titles[dim_suffix],
+        x_scale="log",
         legend_plots_dict={DSC.SERIES_LENGTH: {2048}, ISC.SEGMENTATION_STRATEGY: {"uniform"}, QSC.L_MIN_RATIO: {0.125}},
         bar_plot_color_attrs=None,
         line_plot_x_attr=ISC.NUM_SEGMENTS,
@@ -761,11 +762,74 @@ for target_args in [TargetArgs.QUERY_TIME]:
         line_plot_included_cols={SSC.METHOD_NAME, ISC.SEGMENTATION_STRATEGY},
         line_plot_legend_map=method_comparison_labels,
         line_plot_colors_map=method_comparison_colors,
+        x_scale="log",
         y_scale="log",
         merge_csv_datasets=True,
         save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_{target_args.name.lower()}"),
         **target_args.value,
     )
+
+# %%
+# 9a - Method comparison across query lengths
+
+for target_args in [TargetArgs.QUERY_TIME]:
+    visualize_experiments(
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_9a_method_comparison"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME, SSC.NORMALIZED],
+            ERD.DATASETS_COLS: [DSC.SERIES_LENGTH],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO],
+            ERD.INDEXES_COLS: [ISC.SEGMENTATION_STRATEGY],
+        },
+        separate_plots_dict={(DSC.SERIES_LENGTH,): [], (SSC.NORMALIZED,): [], (QSC.L_MIN_RATIO,): []},
+        legend_plots_dict={DSC.SERIES_LENGTH: {2048}, QSC.L_MIN_RATIO: {0.125}},
+        legend_max_cols=3,
+        num_query_intervals=10,
+        bar_plot_color_attrs=None,
+        line_plot_x_attr=QC.QUERY_INTERVAL,
+        line_plot_show_min=False,
+        line_plot_included_cols={SSC.METHOD_NAME, ISC.SEGMENTATION_STRATEGY},
+        line_plot_legend_map=method_comparison_labels,
+        line_plot_colors_map=method_comparison_colors,
+        y_scale="log",
+        merge_csv_datasets=True,
+        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_{target_args.name.lower()}_per_ql"),
+        **target_args.value,
+    )
+
+# %%
+# 9b - Method comparison by number of channels
+
+for constant in ["m"]:
+    for target_args in [TargetArgs.QUERY_TIME]:
+        visualize_experiments(
+            logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_9b_num_channels_{constant}"],
+            groups_dict={
+                ERD.METHODS_COLS: [SSC.METHOD_NAME, SSC.NORMALIZED],
+                ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS],
+                ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
+                ERD.INDEXES_COLS: [ISC.SEGMENTATION_STRATEGY],
+            },
+            separate_plots_dict={
+                (DSC.DATASET_FILE,): [],
+                (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
+                (SSC.NORMALIZED,): [],
+            },
+            title_base=f"Constant {constant}",
+            legend_max_cols=2,
+            legend_plots_dict={SSC.NORMALIZED: {True}},
+            bar_plot_color_attrs=None,
+            line_plot_x_attr=DSC.NUM_CHANNELS,
+            line_plot_show_min=False,
+            line_plot_included_cols={SSC.METHOD_NAME, ISC.SEGMENTATION_STRATEGY},
+            line_plot_legend_map=method_comparison_labels,
+            line_plot_colors_map=method_comparison_colors,
+            x_scale="log",
+            y_scale="log",
+            merge_csv_datasets=True,
+            save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9b_num_channels_{constant}_{target_args.name.lower()}"),
+            **target_args.value,
+        )
 
 
 # %%
@@ -853,7 +917,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
         bar_plot_color_attrs=[SSC.METHOD_NAME, ISC.SEGMENTATION_STRATEGY],
         bar_plot_label_map=method_comparison_labels,
         bar_plot_color_map=method_comparison_colors,
-        y_scale="linear",
+        y_scale="log",
         merge_csv_datasets=True,
         # save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_{target_args.name.lower()}"),
         **target_args.value,

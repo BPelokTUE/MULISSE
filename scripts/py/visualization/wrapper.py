@@ -133,7 +133,7 @@ def visualize_experiments(
     save_dir: str | None = None,
 ):
     if num_query_intervals > 1:
-        groups_dict[ERD.RUNS_COLS] = [QC.QUERY_INTERVAL]
+        groups_dict[ERD.RUNS_COLS] = groups_dict.get(ERD.RUNS_COLS, []) + [QC.QUERY_INTERVAL]
     columns = groups_dict.copy()
     for erd, target_cols in targets_dict.items():
         columns[erd] = target_cols + groups_dict.get(erd, [])
