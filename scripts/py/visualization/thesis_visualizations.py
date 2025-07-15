@@ -78,6 +78,7 @@ for dim_suffix, title in dim_suffix_to_titles.items():
             ignored_attrs={DSC.NUM_CHANNELS},
             title_base=title,
             legend_max_cols=2,
+            legend_plots_dict={DSC.DATASET_FILE: {"synthetic"}} if target_args.name == "QUERY_TIME" else None,
             merge_csv_datasets=True,
             bar_plot_label_padding=False,
             bar_plot_label_map={
@@ -115,6 +116,7 @@ for dim_suffix, title in dim_suffix_to_titles.items():
             title_base=title,
             merge_csv_datasets=True,
             legend_max_cols=2,
+            legend_plots_dict={DSC.DATASET_FILE: {"synthetic"}} if target_args.name == "QUERY_TIME" else None,
             bar_plot_color_attrs=SSC.METHOD_NAME,
             bar_plot_label_padding=False,
             bar_plot_label_map={
@@ -142,6 +144,7 @@ for target_args in [TargetArgs.PRUNING_RATIO]:
         title_base=dim_suffix_to_titles["uni"],
         merge_csv_datasets=False,
         legend_max_cols=2,
+        legend_plots_dict={DSC.DATASET_FILE: {"stocks/second_clean.csv"}},
         bar_plot_color_attrs=SSC.METHOD_NAME,
         bar_plot_label_padding=False,
         bar_plot_label_map={
@@ -169,6 +172,7 @@ for target_args in IMPORTANT_METRICS:
         separate_plots_dict={(DSC.DATASET_FILE, DSC.NUM_CHANNELS): []},
         bar_plot_color_attrs=[SSC.METHOD_NAME, ISC.NUM_BITS_LIMIT],
         legend_max_cols=2,
+        legend_plots_dict={DSC.NUM_CHANNELS: {3}} if target_args.name == "PRUNING_RATIO" else None,
         bar_plot_label_map={
             ("isax-ed-early", 1): "iSAX, Blim=1",
             ("isax-ed-early", 2): "iSAX, Blim=2",
@@ -298,6 +302,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
             (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
         },
         # title_base=dim_suffix_to_titles[dim_suffix],
+        legend_plots_dict={DSC.SERIES_LENGTH: {2048}, SSC.NORMALIZED: {True}, ISC.SEGMENTATION_STRATEGY: {"uniform"}},
         bar_plot_color_attrs=None,
         line_plot_x_attr=ISC.NUM_LEN_GROUPS,
         line_plot_included_cols={DSC.DATASET_FILE},
@@ -329,6 +334,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
             (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
         },
         # title_base=dim_suffix_to_titles[dim_suffix],
+        legend_plots_dict={DSC.SERIES_LENGTH: {2048}, SSC.NORMALIZED: {True}, ISC.SEGMENTATION_STRATEGY: {"uniform"}},
         bar_plot_color_attrs=None,
         line_plot_x_attr=ISC.POS_PER_ENV,
         line_plot_included_cols={DSC.DATASET_FILE},
@@ -356,14 +362,12 @@ for target_args in [TargetArgs.QUERY_TIME]:
         separate_plots_dict={
             (DSC.SERIES_LENGTH,): [],
             (SSC.NORMALIZED,): [],
-            # (ISC.SEGMENTATION_STRATEGY,): [],
-            # (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
-            (ISC.SEGMENTATION_STRATEGY,): [("uniform",)],
-            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
+            (ISC.SEGMENTATION_STRATEGY,): [],
+            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
         },
         title_base=dim_suffix_to_titles[dim_suffix],
         # no_legend=True,
-        no_legend=False,
+        legend_plots_dict={DSC.SERIES_LENGTH: {2048}, ISC.SEGMENTATION_STRATEGY: {"uniform"}, QSC.L_MIN_RATIO: {0.125}},
         bar_plot_color_attrs=None,
         line_plot_x_attr=ISC.NUM_SEGMENTS,
         line_plot_included_cols={DSC.DATASET_FILE},
@@ -393,6 +397,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
             (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
         },
         # title_base=dim_suffix_to_titles[dim_suffix],
+        legend_plots_dict={DSC.SERIES_LENGTH: {2048}, SSC.NORMALIZED: {True}, ISC.SEGMENTATION_STRATEGY: {"uniform"}},
         bar_plot_color_attrs=None,
         line_plot_x_attr=DSC.NUM_SERIES,
         line_plot_included_cols={DSC.DATASET_FILE},
@@ -684,12 +689,26 @@ for target_args_dict in [
     )
 
 # %%
-# 10a - Size limiting
+# 9a - Method comparison
+
+method_comparison_labels = {
+    ("sax_envelope-ed-early", "uniform"): "MT-Env EqW",
+    ("sax_envelope-ed-early", "adaptive"): "MT-Env EqD",
+    ("envelope-ed-early", "uniform"): "MT-Env",
+    ("sequential_scan-ed-early", 0): "UCR Suite",
+    ("sequential_scan-mass", 0): "MASS",
+}
+method_comparison_colors = {
+    ("sax_envelope-ed-early", "uniform"): PALETTE["Blues"][6],
+    ("sax_envelope-ed-early", "adaptive"): PALETTE["Blues"][2],
+    ("envelope-ed-early", "uniform"): PALETTE["Blues"][6],
+    ("sequential_scan-ed-early", 0): PALETTE["Greens"][6],
+    ("sequential_scan-mass", 0): PALETTE["Purples"][6],
+}
 
 for target_args in [TargetArgs.QUERY_TIME]:
     visualize_experiments(
-        # logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_9a_method_comparison"],
-        logs_dirs=["LOGS"],
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_9a_method_comparison"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME, SSC.NORMALIZED],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
@@ -704,24 +723,35 @@ for target_args in [TargetArgs.QUERY_TIME]:
         legend_max_cols=2,
         bar_plot_label_padding=False,
         bar_plot_color_attrs=[SSC.METHOD_NAME, ISC.SEGMENTATION_STRATEGY],
-        bar_plot_label_map={
-            ("sax_envelope-ed-early", "uniform"): "MT-Env EqW",
-            ("sax_envelope-ed-early", "adaptive"): "MT-Env EqD",
-            ("envelope-ed-early", "uniform"): "MT-Env",
-            ("sequential_scan-ed-early", 0): "UCR Suite",
-            ("sequential_scan-mass", 0): "MASS",
-        },
-        bar_plot_color_map={
-            ("sax_envelope-ed-early", "uniform"): PALETTE["Blues"][6],
-            ("sax_envelope-ed-early", "adaptive"): PALETTE["Blues"][2],
-            ("envelope-ed-early", "uniform"): PALETTE["Blues"][6],
-            ("sequential_scan-ed-early", 0): PALETTE["Greens"][6],
-            ("sequential_scan-mass", 0): PALETTE["Purples"][6],
-        },
+        bar_plot_label_map=method_comparison_labels,
+        bar_plot_color_map=method_comparison_colors,
         y_scale="log",
         merge_csv_datasets=True,
         **target_args.value,
     )
+
+for target_args in [TargetArgs.QUERY_TIME]:
+    visualize_experiments(
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_9a_method_comparison"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME, SSC.NORMALIZED],
+            ERD.DATASETS_COLS: [DSC.SERIES_LENGTH],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO],
+            ERD.INDEXES_COLS: [ISC.SEGMENTATION_STRATEGY],
+        },
+        separate_plots_dict={(DSC.SERIES_LENGTH,): [], (SSC.NORMALIZED,): []},
+        legend_max_cols=2,
+        bar_plot_color_attrs=None,
+        line_plot_x_attr=QSC.L_MIN_RATIO,
+        line_plot_show_min=False,
+        line_plot_included_cols={SSC.METHOD_NAME, ISC.SEGMENTATION_STRATEGY},
+        line_plot_legend_map=method_comparison_labels,
+        line_plot_colors_map=method_comparison_colors,
+        y_scale="log",
+        merge_csv_datasets=True,
+        **target_args.value,
+    )
+
 
 # %%
 # 10b - Size limiting

@@ -146,7 +146,7 @@ def plot_bars(
     fig_height_inches: float = 6.0,
     legend_max_cols: int = 4,
     legend_offset: float = 0.1,
-    no_legend: bool = False,
+    add_legend: bool = True,
     title: str = None,
     hatches: list[str] = None,
     hatch_labels: list[str] = None,
@@ -168,7 +168,7 @@ def plot_bars(
     :param fig_height_inches: The height of the figure in inches.
     :param legend_max_cols: The maximum number of columns in the legend.
     :param legend_offset: The offset of the legend from the top of the plot.
-    :param no_legend: If `True`, do not show the legend.
+    :param add_legend: If `True`, show the legend.
     :param title: The title of the plot.
     :param hatches: The hatches to use for the bars. If `None`, no hatches are used.
     :param hatch_labels: The labels for the hatches. If `None`, no hatch labels are used.
@@ -252,7 +252,7 @@ def plot_bars(
     for h_ind in seen_hatches:
         ax.bar(0, 0, color="white", edgecolor="black", hatch=hatches[h_ind], label=hatch_labels[h_ind])
 
-    if not no_legend:
+    if add_legend:
         place_legend(ax, len(seen_labels) + len(seen_hatches), legend_max_cols, legend_offset)
 
     ax.set_yscale(y_scale)
@@ -287,7 +287,7 @@ def plot_lines(
     line_thickness: float = 1.5,
     legend_max_cols=4,
     legend_offset: float = 0.1,
-    no_legend: bool = False,
+    add_legend: bool = True,
     title: str = None,
     fig_height_inches: float = 6.0,
     only_max_points: bool = True,
@@ -309,7 +309,7 @@ def plot_lines(
     :param line_thickness: The thickness of the lines.
     :param legend_max_cols: The maximum number of columns in the legend.
     :param legend_offset: The offset of the legend from the top of the plot.
-    :param no_legend: If `True`, do not show the legend.
+    :param add_legend: If `True`, show the legend.
     :param title: The title of the plot.
     :param fig_height_inches: The height of the figure in inches.
     :param only_max_points: If `True`, only plot lines with the maximum number of points.
@@ -370,7 +370,7 @@ def plot_lines(
     ax.set_title(title)
     ax.grid(True)
 
-    if not no_legend:
+    if add_legend:
         place_legend(ax, len(legend), legend_max_cols, legend_offset)
     fig.set_figheight(fig_height_inches)
 

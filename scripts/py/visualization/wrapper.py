@@ -105,7 +105,7 @@ def visualize_experiments(
     title_base: str = "",
     legend_max_cols: int = 4,
     legend_offset: float = 0.18,
-    no_legend: bool = False,
+    legend_plots_dict: dict[tuple, str] | None = {},
     fig_height_inches: float = 3.5,
     # Bar plots
     hatches=None,
@@ -122,6 +122,7 @@ def visualize_experiments(
     line_plot_legend_map: dict[tuple, str] = {},
     line_plot_colors_map: dict[tuple, str] = {},
     line_plot_thickness: float = 2.25,
+    line_plot_show_min: bool = True,
     # Heat maps
     heat_map_x_attr: Column | None = None,
     heat_map_y_attr: Column | None = None,
@@ -248,6 +249,14 @@ def visualize_experiments(
                     return os.path.join(save_dir, f"{'-'.join([str(k) for k in title_key])}_{type}.{SAVE_EXTENSION}")
                 return None
 
+            add_legend = legend_plots_dict is not None
+            if legend_plots_dict is not None:
+                for col, val in zip(title_columns, title_key):
+                    accepted_vals = legend_plots_dict.get(col, None)
+                    if accepted_vals is not None and val not in accepted_vals:
+                        add_legend = False
+                        break
+
             if save_dir is not None:
                 os.makedirs(os.path.dirname(get_plot_save_path("")), exist_ok=True)
 
@@ -305,7 +314,7 @@ def visualize_experiments(
                     label_map=bar_plot_label_map,
                     legend_max_cols=legend_max_cols,
                     legend_offset=legend_offset,
-                    no_legend=no_legend,
+                    add_legend=add_legend,
                     save_path=get_plot_save_path("bar"),
                 )
 
@@ -337,8 +346,8 @@ def visualize_experiments(
                     fig_height_inches=fig_height_inches,
                     legend_max_cols=legend_max_cols,
                     legend_offset=legend_offset,
-                    no_legend=no_legend,
-                    mark_minimum=True,
+                    add_legend=add_legend,
+                    mark_minimum=line_plot_show_min,
                     save_path=get_plot_save_path("line"),
                 )
 
