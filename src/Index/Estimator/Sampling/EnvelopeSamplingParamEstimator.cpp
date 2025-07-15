@@ -85,7 +85,7 @@ EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params(
     if (!params_ptr) throw std::runtime_error("EnvelopeMinDistParamEstimator requires EnvelopeIndexParams.");
 
     // 4. For each configuration
-    Real max_config_score = -INF;
+    Real min_config_score = INF;
     for (uint config_ind = 0; config_ind < configurations.size(); ++config_ind) {
         auto &config = configurations[config_ind];
 
@@ -125,9 +125,9 @@ EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params(
         // 4.2. Update selected configuration if current is better
         Real config_score =
             get_config_score(std::move(entries), config_opts, length_props, lg_segmentation_strategy.get());
-        if (config_score > max_config_score) {
+        if (config_score < min_config_score) {
             m_estimated_params = config;
-            max_config_score = config_score;
+            min_config_score = config_score;
         }
 
         logger.write_entry(config, config_score);

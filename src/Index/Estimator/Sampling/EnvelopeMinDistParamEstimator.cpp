@@ -87,5 +87,5 @@ Real EnvelopeMinDistParamEstimator::get_config_score(vec<vec<IndexEntry<Envelope
             min_dist += min_dist_sum_query / R(entries[lg_ind].size());
         }
     }
-    return min_dist;
+    return -min_dist;
 }

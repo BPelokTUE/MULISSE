@@ -129,5 +129,5 @@ Real EnvelopeQueryTimeParamEstimator::get_config_score(
         TimePoint end_time = std::chrono::high_resolution_clock::now();
         total_time += std::chrono::duration<double>(end_time - start_time).count();
     }
-    return -R(total_time / static_cast<double>(m_queries.size()));
+    return R(total_time / static_cast<double>(m_queries.size()));
 }
