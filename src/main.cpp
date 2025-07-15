@@ -661,7 +661,7 @@ int main(int argc, char **argv) {
                 uptr<EnvConfigGeneratorParams> envelope_config_gen_params_ptr = nullptr;
                 if (param_estimator_type != NO_EST && env_config_gen_type == RANDOM) {
                     envelope_config_gen_params_ptr =
-                        std::make_unique<RandomEnvConfigGeneratorParams>(estimator_num_configs, seed);
+                        std::make_unique<RandomEnvConfigGeneratorParams>(estimator_num_configs, seed, num_segments);
                 }
 
                 estimator_params = std::make_unique<EstimatorParams>(

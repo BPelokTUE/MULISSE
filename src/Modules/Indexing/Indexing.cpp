@@ -66,12 +66,7 @@ int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_pe
         return 2;
     }
 
-    if (auto estimated_params = estimate_envelope_params(opts)) {
-        // Estimate flat envelope parameters if requested
-        RS.set_flat_envelope_params(*estimated_params);
-        logger.set_flat_envelope_params(*estimated_params);
-        opts.set_flat_envelope_params(*estimated_params);
-    } else if (env_index_params && env_index_params->m_segmentation_params.m_optimal_num_segments) {
+    if (env_index_params && env_index_params->m_segmentation_params.m_optimal_num_segments) {
         // Calculate optimal number of segments if requested
         uint series_len = RS.get_dataset_props().m_series_len;
         Real multiplier = opts.m_normalized
@@ -82,6 +77,12 @@ int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_pe
 
         logger.set_num_segments(num_segments);
         opts.set_num_segments(num_segments);
+    }
+    if (auto estimated_params = estimate_envelope_params(opts)) {
+        // Estimate flat envelope parameters if requested
+        RS.set_flat_envelope_params(*estimated_params);
+        logger.set_flat_envelope_params(*estimated_params);
+        opts.set_flat_envelope_params(*estimated_params);
     }
 
     // Set up segmentation strategies
