@@ -1,35 +1,56 @@
 {
     "csv_data_dirs": [],
     "dataset_sizes": [1000],
-    "series_lengths": [1024],
+    "series_lengths": [1024, 2048, 3072],
     "syn_num_channels": [1],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [100],
     "l_range_ratios": [[0.125, 1.0]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
-    "search_methods": ["sax_envelope"],
+    "search_methods": {
+        "ed_raw": ["envelope"],
+        "mass_raw": ["envelope"],
+        "mass_ffts_raw": ["envelope"] ,
+        "ed_norm": ["sax_envelope"],
+        "mass_norm": ["sax_envelope"],
+        "mass_ffts_norm": ["sax_envelope"] 
+    },
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
-    "num_segments": [32],
-    "length_group_size_ratios": [0.025],
+    "optimal_num_segments": [true],
+    "length_group_size_ratios": {
+        "ed_norm": [0.025],
+        "mass_norm": [0.025],
+        "mass_ffts_norm": [0.025] 
+    },
     "envelope_sizes": [24, 32, 48, 64, 128, 256, 512, 3072],
     "distance_measures": {
-        "ed": ["ed"],
-        "mass": ["mass"],
-        "mass_ffts": ["mass"] 
+        "ed_raw": ["ed"],
+        "mass_raw": ["mass"],
+        "mass_ffts_raw": ["mass"] ,
+        "ed_norm": ["ed"],
+        "mass_norm": ["mass"],
+        "mass_ffts_norm": ["mass"] 
     },
     "early_abandon": [true],
     "precalculate_ffts": {
-        "mass": [false],
-        "mass_ffts": [true]
+        "mass_raw": [false],
+        "mass_ffts_raw": [true] ,
+        "mass_norm": [false],
+        "mass_ffts_norm": [true] 
     },
     "examine_whole": {
-        "ed": [true, false],
-        "mass": [true, false]
+        "ed_raw": [true, false],
+        "mass_raw": [true, false],
+        "mass_ffts_raw": [true] ,
+        "ed_norm": [true, false],
+        "mass_norm": [true, false],
+        "mass_ffts_norm": [true] 
     },
     "sort_query": {
-        "ed": [false, true]
+        "ed_raw": [false, true],
+        "ed_norm": [false, true]
     },
     "index_inserters": ["parallel"],
     "search_types": ["knn"],

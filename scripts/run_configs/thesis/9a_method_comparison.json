@@ -10,6 +10,7 @@
     "query_noise_stdevs": [0.1],
     "search_methods": {
         "scan": ["scan"],
+        "ulisse": ["isax_env_w_sax_env"],
         "eqw": ["sax_envelope"],
         "eqd": ["sax_envelope"],
         "raw": ["envelope"]
@@ -21,17 +22,39 @@
     },
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
-    "envelope_sizes": [64],
-    "optimal_num_segments": [true],
+    "isax_split_strategies": ["em"],
+    "isax_leaf_cap_ratios": [0.05],
+    "max_leaves_to_visit": [5],
+    "isax_start_bit_numbers": [1],
+    "envelope_sizes": {
+        "ulisse": [3072],
+        "eqw": [64],
+        "eqd": [64],
+        "raw": [64]
+    },
+    "optimal_num_segments": {
+        "eqw": [true],
+        "eqd": [true],
+        "raw": [true]
+    },
+    "num_segments": {
+        "ulisse": [16]
+    },
+    "length_group_size_ratios": {
+        "eqw": [0.025],
+        "eqd": [0.025]
+    },
     "distance_measures": {
         "scan": ["ed", "mass"],
+        "ulisse": ["ed"],
         "eqw": ["ed"],
         "eqd": ["ed"],
         "raw": ["ed"]
     },
     "early_abandon": [true],
     "sort_query": {
-        "scan": [true]
+        "scan": [true],
+        "ulisse": [true]
     },
     "adapt_index": [false],
     "index_inserters": ["parallel"],
@@ -40,6 +63,7 @@
     "search_approx": [false],
     "search_raw": {
         "scan": [false, true],
+        "ulisse": [false, true],
         "eqw": [false],
         "eqd": [false],
         "raw": [true]

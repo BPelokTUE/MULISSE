@@ -1,21 +1,30 @@
 {
     "csv_data_dirs": [],
     "dataset_sizes": [100],
-    "series_lengths": [1024],
-    "syn_num_channels": [1],
+    "series_lengths": [1024, 2048, 3072],
+    "syn_num_channels": [4],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [1],
     "l_range_ratios": [[0.125, 1.0]],
     "used_channel_ratios": [1.0],
     "query_noise_stdevs": [0.1],
-    "search_methods": ["envelope", "sax_envelope"],
+    "search_methods": {
+        "scan": ["scan"],
+        "mt-env": ["sax_envelope"]
+    },
+    "segmentation_strategies": {
+        "mt-env": ["uniform", "adaptive"]
+    },
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
-    "index_size_limits": [0.1, 1.0, 10.0],
+    "index_size_limits": {
+        "mt-env": [0.1, 0.5, 1.0, 5,0, 10.0]
+    },
     "pe_types": ["min_dist", "query_time"],
-    "pe_steps": [11],
-    "pe_num_queries": [101],
-    "pe_samples_fracs": [0.06],
+    "pe_steps": [10],
+    "pe_num_queries": [100],
+    "pe_num_configs": [100],
+    "pe_samples_fracs": [0.05],
     "pe_seeds": [1],
     "pe_config_gen_types": ["random"],
     "distance_measures": ["ed"],
