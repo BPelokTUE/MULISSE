@@ -335,7 +335,7 @@ def parse_config_file(input_config) -> ParsedConfig:
                     RK_COMMAND: SUB_CREATE_DS,
                     RK_LOCATION: LOC_SYNTHETIC,
                     RK_SIZE: config[CK_DATASET_SIZES],
-                    **get_key_or_none(RK_NUM_CHANNELS, CK_SYN_NUM_CHANNELS),
+                    RK_NUM_CHANNELS: config.get(CK_SYN_NUM_CHANNELS, []),
                     **get_key_or_none(RK_STEP_STDEV, CK_SYN_STEP_STDEVS),
                     **get_key_or_none(RK_DATASET_SEED, CK_DATASET_SEEDS),
                     RK_CALCULATE_DATASET_STATS: calculate_dataset_stats,

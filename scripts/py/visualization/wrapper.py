@@ -244,9 +244,11 @@ def visualize_experiments(
                 max([label.count("\n") + 1 for label in labels_dict.values()]) if bar_plot_label_padding else 0
             )
 
-            def get_plot_save_path(type: str) -> str | None:
+            def get_plot_save_path(type: str, suffix: str = "") -> str | None:
                 if save_dir is not None:
-                    return os.path.join(save_dir, f"{'-'.join([str(k) for k in title_key])}_{type}.{SAVE_EXTENSION}")
+                    return os.path.join(
+                        save_dir, f"{'-'.join([str(k) for k in title_key])}_{type}{suffix}.{SAVE_EXTENSION}"
+                    )
                 return None
 
             add_legend = legend_plots_dict is not None
@@ -257,8 +259,13 @@ def visualize_experiments(
                         add_legend = False
                         break
 
+            # TODO: this is horrible
+            suffixes = [""]
             if save_dir is not None:
                 os.makedirs(os.path.dirname(get_plot_save_path("")), exist_ok=True)
+                # If legend was specifically requested only for certain plots, create separate version with legend
+                if legend_plots_dict is not None and len(legend_plots_dict) > 0:
+                    suffixes.append("_legend")
 
             if bar_plot_color_attrs is not None:
                 use_tuple_keys = isinstance(bar_plot_color_attrs, list)
@@ -292,31 +299,32 @@ def visualize_experiments(
                     set(bar_plot_color_attrs) if isinstance(bar_plot_color_attrs, list) else {bar_plot_color_attrs}
                 )
 
-                plot_bars(
-                    reduced_values_subset,
-                    bar_plot_color_attrs_inds,
-                    x_labels=get_config_labels(
+                for suffix in suffixes:
+                    plot_bars(
                         reduced_values_subset,
-                        groups_dict_filtered,
-                        discard_cols=discard_cols,
-                        padding_rows=padding_rows,
-                    ),
-                    y_label=y_label,
-                    y_lim=y_lim,
-                    title=title,
-                    hatches=hatches,
-                    hatch_labels=hatch_labels,
-                    y_scale=y_scale,
-                    bar_width_inches=bar_width_inches,
-                    bar_gap_inches=bar_gap_inches,
-                    fig_height_inches=fig_height_inches,
-                    color_map=bar_plot_color_map,
-                    label_map=bar_plot_label_map,
-                    legend_max_cols=legend_max_cols,
-                    legend_offset=legend_offset,
-                    add_legend=add_legend,
-                    save_path=get_plot_save_path("bar"),
-                )
+                        bar_plot_color_attrs_inds,
+                        x_labels=get_config_labels(
+                            reduced_values_subset,
+                            groups_dict_filtered,
+                            discard_cols=discard_cols,
+                            padding_rows=padding_rows,
+                        ),
+                        y_label=y_label,
+                        y_lim=y_lim,
+                        title=title,
+                        hatches=hatches,
+                        hatch_labels=hatch_labels,
+                        y_scale=y_scale,
+                        bar_width_inches=bar_width_inches,
+                        bar_gap_inches=bar_gap_inches,
+                        fig_height_inches=fig_height_inches,
+                        color_map=bar_plot_color_map,
+                        label_map=bar_plot_label_map,
+                        legend_max_cols=legend_max_cols,
+                        legend_offset=legend_offset,
+                        add_legend=add_legend if len(suffixes) == 1 else suffix == "_legend",
+                        save_path=get_plot_save_path("bar", suffix),
+                    )
 
             if line_plot_x_attr is not None:
                 config_label_map = get_config_labels(
@@ -331,25 +339,26 @@ def visualize_experiments(
                     for i, key in enumerate(config_label_map)
                 }
 
-                plot_lines(
-                    reduced_values_subset,
-                    get_col_index(line_plot_x_attr, groups_filtered),
-                    legend=legend,
-                    colors=colors,
-                    x_label=str(line_plot_x_attr).replace("_", " ").capitalize(),
-                    y_label=y_label,
-                    x_scale=x_scale,
-                    y_scale=y_scale,
-                    y_lim=y_lim,
-                    line_thickness=line_plot_thickness,
-                    title=title,
-                    fig_height_inches=fig_height_inches,
-                    legend_max_cols=legend_max_cols,
-                    legend_offset=legend_offset,
-                    add_legend=add_legend,
-                    mark_minimum=line_plot_show_min,
-                    save_path=get_plot_save_path("line"),
-                )
+                for suffix in suffixes:
+                    plot_lines(
+                        reduced_values_subset,
+                        get_col_index(line_plot_x_attr, groups_filtered),
+                        legend=legend,
+                        colors=colors,
+                        x_label=str(line_plot_x_attr).replace("_", " ").capitalize(),
+                        y_label=y_label,
+                        x_scale=x_scale,
+                        y_scale=y_scale,
+                        y_lim=y_lim,
+                        line_thickness=line_plot_thickness,
+                        title=title,
+                        fig_height_inches=fig_height_inches,
+                        legend_max_cols=legend_max_cols,
+                        legend_offset=legend_offset,
+                        add_legend=add_legend if len(suffixes) == 1 else suffix == "_legend",
+                        mark_minimum=line_plot_show_min,
+                        save_path=get_plot_save_path("line", suffix),
+                    )
 
             if heat_map_x_attr is not None and heat_map_y_attr is not None:
                 plot_heat_map(
