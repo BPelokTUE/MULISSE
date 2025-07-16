@@ -839,7 +839,6 @@ for target_args in [TargetArgs.QUERY_TIME]:
         line_plot_legend_map=method_comparison_labels,
         line_plot_colors_map=method_comparison_colors,
         y_scale="log",
-        merge_csv_datasets=True,
         save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_{target_args.name.lower()}_per_ql"),
         **target_args.value,
     )
@@ -874,10 +873,33 @@ for constant in ["m"]:
             line_plot_colors_map=method_comparison_colors,
             x_scale="log",
             y_scale="log",
-            merge_csv_datasets=True,
             save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9b_num_channels{suffix}_{target_args.name.lower()}"),
             **target_args.value,
         )
+
+# %%
+# 9c - Method comparison under ad-hoc channel selection
+
+for target_args in [TargetArgs.QUERY_TIME]:
+    visualize_experiments(
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_9c_ad_hoc_channels"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME, SSC.NORMALIZED],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+            ERD.QUERY_SETS_COLS: [QSC.USED_CHANNELS],
+            ERD.INDEXES_COLS: [ISC.SEGMENTATION_STRATEGY],
+        },
+        separate_plots_dict={(DSC.SERIES_LENGTH,): [], (SSC.NORMALIZED,): [], (DSC.DATASET_FILE,): []},
+        legend_plots_dict=None,
+        bar_plot_color_attrs=None,
+        line_plot_x_attr=QSC.USED_CHANNELS,
+        line_plot_show_min=False,
+        line_plot_included_cols={SSC.METHOD_NAME, ISC.SEGMENTATION_STRATEGY},
+        line_plot_legend_map=method_comparison_labels,
+        line_plot_colors_map=method_comparison_colors,
+        y_scale="log",
+        **target_args.value,
+    )
 
 
 # %%

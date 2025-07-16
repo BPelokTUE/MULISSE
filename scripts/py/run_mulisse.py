@@ -313,8 +313,7 @@ def parse_config_file(input_config) -> ParsedConfig:
     check_config_keys(
         config,
         required = [
-            CK_CSV_DATA_DIRS, CK_DATASET_SIZES, CK_SERIES_LENGTHS, CK_QUERY_SET_SIZES,
-            CK_SEARCH_METHODS, CK_DISTANCE_MEASURES, 
+            CK_DATASET_SIZES, CK_SERIES_LENGTHS, CK_QUERY_SET_SIZES, CK_SEARCH_METHODS, CK_DISTANCE_MEASURES, 
         ],
     )
     # fmt: on
@@ -344,7 +343,7 @@ def parse_config_file(input_config) -> ParsedConfig:
 
             separate_csv_datasets = config.get(CK_SEPARATE_CSV_DATASETS, False)
             csv_data_paths = [
-                os.path.join(local_settings[LS_CSV_PATH], data_dir) for data_dir in config[CK_CSV_DATA_DIRS]
+                os.path.join(local_settings[LS_CSV_PATH], data_dir) for data_dir in config.get(CK_CSV_DATA_DIRS, [])
             ]
             for path in csv_data_paths:
                 item = {
@@ -848,6 +847,7 @@ if __name__ == "__main__":
                             args += [f"--{key}", str(value)]
                     return args
 
+                created_queries = set()
                 for q_profile, query_setting in SettingIterator(query_set_settings, d_profile).iterate(
                     desc="Query settings", leave=False
                 ):
@@ -864,7 +864,7 @@ if __name__ == "__main__":
                     if RK_CHANNEL_MASK in query_setting:
                         args += ["-M", *[str(int(c)) for c in query_setting[RK_CHANNEL_MASK]]]
                     elif RK_USED_CHANNEL_RATIO in query_setting:
-                        args += ["-u", str(int(num_channels * query_setting[RK_USED_CHANNEL_RATIO]))]
+                        args += ["-u", str(int(round(num_channels * query_setting[RK_USED_CHANNEL_RATIO])))]
 
                     exact_query_lengths = query_setting.get(RK_EXACT_QUERY_LENGTHS, [])
                     if RK_NOISE_STDEV in query_setting:
@@ -876,20 +876,20 @@ if __name__ == "__main__":
                     else:
                         args += ["-l", str(l_min), "-L", str(l_max)]
                     # fmt: on
-                    queries_created = run_command_with_logging(
-                        [EXECUTABLE_PATH, *args], command_log_path, timeout=input_args.timeout
-                    )
+                    if run_command_with_logging([EXECUTABLE_PATH, *args], command_log_path, timeout=input_args.timeout):
+                        created_queries.add(query_file)
 
-                    if queries_created and query_setting.get(RK_CALCULATE_QUERY_STATS, False):
-                        # fmt: off
-                        args = [
-                            SUB_CALC_Q_STATS, "-d", data_file, "-q", query_file, "-c", str(num_channels),
-                            "-m", str(series_len), *output_args
-                        ]
-                        # fmt: on
-                        run_command_with_logging([EXECUTABLE_PATH, *args], command_log_path, timeout=input_args.timeout)
+                        if query_setting.get(RK_CALCULATE_QUERY_STATS, False):
+                            # fmt: off
+                            args = [
+                                SUB_CALC_Q_STATS, "-d", data_file, "-q", query_file, "-c", str(num_channels),
+                                "-m", str(series_len), *output_args
+                            ]
+                            # fmt: on
+                            run_command_with_logging(
+                                [EXECUTABLE_PATH, *args], command_log_path, timeout=input_args.timeout
+                            )
 
-                    if queries_created:
                         futures = []
                         helper_logs_dirs = []
                         for m_ind, (sm_profile, scan_method_setting) in enumerate(
@@ -924,136 +924,135 @@ if __name__ == "__main__":
                             future.result()
                             add_logs_to_logs_dir(helper_logs_dir, logs_dir, command_log_path)
 
-                    for i_profile, index_setting in SettingIterator(index_settings, q_profile).iterate(
-                        desc="Index settings", leave=False
-                    ):
-                        index_method = index_setting[RK_INDEX_TYPE]
-                        index_file = os.path.join(dataset_setting[RK_LOCATION], f"index-{index_method}-{index_id}")
-                        index_id += 1
-                        index_setting_copy = index_setting.copy()
+                for i_profile, index_setting in SettingIterator(index_settings, q_profile).iterate(
+                    desc="Index settings", leave=False
+                ):
+                    index_method = index_setting[RK_INDEX_TYPE]
+                    index_file = os.path.join(dataset_setting[RK_LOCATION], f"index-{index_method}-{index_id}")
+                    index_id += 1
+                    index_setting_copy = index_setting.copy()
 
-                        # fmt: off
-                        args = [
-                            SUB_INDEX, "-i", index_file, "-l", str(l_min), "-L", str(l_max), "-t", 
-                            index_setting_copy.pop(RK_INDEX_TYPE), "-m", str(series_len), "-c", str(num_channels),
-                            "-d", data_file, *output_args
-                        ]
-                        # fmt: on
+                    # fmt: off
+                    args = [
+                        SUB_INDEX, "-i", index_file, "-l", str(l_min), "-L", str(l_max), "-t", 
+                        index_setting_copy.pop(RK_INDEX_TYPE), "-m", str(series_len), "-c", str(num_channels),
+                        "-d", data_file, *output_args
+                    ]
+                    # fmt: on
 
-                        l_range = l_max - l_min + 1
-                        lens_per_group = 0
-                        num_l_groups = 0
+                    l_range = l_max - l_min + 1
+                    lens_per_group = 0
+                    num_l_groups = 0
 
-                        index_raw = False
-                        if index_setting_copy.pop(RK_RAW, False):
-                            args += ["--raw"]
-                            index_raw = True
-                        if RK_LENS_PER_GROUP in index_setting_copy:
-                            lens_per_group = max(1, int(math.ceil(l_range * index_setting_copy.pop(RK_LENS_PER_GROUP))))
-                            if lens_per_group > 0:
-                                args += ["-g", str(lens_per_group)]
-                                num_l_groups = (l_range + lens_per_group - 1) // lens_per_group
+                    index_raw = False
+                    if index_setting_copy.pop(RK_RAW, False):
+                        args += ["--raw"]
+                        index_raw = True
+                    if RK_LENS_PER_GROUP in index_setting_copy:
+                        lens_per_group = max(1, int(math.ceil(l_range * index_setting_copy.pop(RK_LENS_PER_GROUP))))
+                        if lens_per_group > 0:
+                            args += ["-g", str(lens_per_group)]
+                            num_l_groups = (l_range + lens_per_group - 1) // lens_per_group
 
-                        pos_per_env = 1
-                        if RK_ENVLEOPE_SIZE_RATIO in index_setting_copy:
-                            max_pos_per_env = series_len - l_min + 1
-                            pos_per_env = math.ceil(max_pos_per_env * index_setting_copy.pop(RK_ENVLEOPE_SIZE_RATIO))
-                            args += ["-p", str(pos_per_env)]
-                        elif RK_ENVELOPE_SIZE in index_setting_copy:
-                            pos_per_env = index_setting_copy.pop(RK_ENVELOPE_SIZE)
-                            args += ["-p", str(pos_per_env)]
+                    pos_per_env = 1
+                    if RK_ENVLEOPE_SIZE_RATIO in index_setting_copy:
+                        max_pos_per_env = series_len - l_min + 1
+                        pos_per_env = math.ceil(max_pos_per_env * index_setting_copy.pop(RK_ENVLEOPE_SIZE_RATIO))
+                        args += ["-p", str(pos_per_env)]
+                    elif RK_ENVELOPE_SIZE in index_setting_copy:
+                        pos_per_env = index_setting_copy.pop(RK_ENVELOPE_SIZE)
+                        args += ["-p", str(pos_per_env)]
 
-                        if RK_LEAF_CAP_RATIO in index_setting_copy:
-                            num_entries = num_series
-                            if index_method == METHOD_ISAX:
-                                num_entries = l_range * ((series_len - l_max + 1) + (l_range - 1) / 2) * num_series
-                            elif index_method in ENVELOPE_METHODS:
-                                num_entries = ((series_len - l_min + pos_per_env) // pos_per_env) * num_series
-                            leaf_capacity = int(index_setting_copy.pop(RK_LEAF_CAP_RATIO) * num_entries)
-                            leaf_capacity = max(1, leaf_capacity)
-                            args += ["--leaf_capacity", str(leaf_capacity)]
+                    if RK_LEAF_CAP_RATIO in index_setting_copy:
+                        num_entries = num_series
+                        if index_method == METHOD_ISAX:
+                            num_entries = l_range * ((series_len - l_max + 1) + (l_range - 1) / 2) * num_series
+                        elif index_method in ENVELOPE_METHODS:
+                            num_entries = ((series_len - l_min + pos_per_env) // pos_per_env) * num_series
+                        leaf_capacity = int(index_setting_copy.pop(RK_LEAF_CAP_RATIO) * num_entries)
+                        leaf_capacity = max(1, leaf_capacity)
+                        args += ["--leaf_capacity", str(leaf_capacity)]
 
-                        breakpoint_strategy = index_setting_copy.get(RK_BREAKPOINT_STRATEGY, "")
-                        if breakpoints_file := index_setting_copy.pop(RK_SAX_BREAKPOINTS_FILE, ""):
-                            if len(breakpoints_file) > 0:
-                                args += ["--breakpoints", breakpoints_file]
-                        if sax_num_bits := index_setting_copy.pop(RK_SAX_NUM_BITS, 0):
-                            if sax_num_bits > 0:
-                                args += ["--num_bits", str(sax_num_bits)]
+                    breakpoint_strategy = index_setting_copy.get(RK_BREAKPOINT_STRATEGY, "")
+                    if breakpoints_file := index_setting_copy.pop(RK_SAX_BREAKPOINTS_FILE, ""):
+                        if len(breakpoints_file) > 0:
+                            args += ["--breakpoints", breakpoints_file]
+                    if sax_num_bits := index_setting_copy.pop(RK_SAX_NUM_BITS, 0):
+                        if sax_num_bits > 0:
+                            args += ["--num_bits", str(sax_num_bits)]
 
-                        calculate_index_stats = index_setting_copy.pop(RK_CALCULATE_INDEX_STATS, False)
-                        separate_segment_stats = index_setting_copy.pop(RK_SEPARATE_SEGMENT_STATS, False)
+                    calculate_index_stats = index_setting_copy.pop(RK_CALCULATE_INDEX_STATS, False)
+                    separate_segment_stats = index_setting_copy.pop(RK_SEPARATE_SEGMENT_STATS, False)
 
-                        for flag in INDEX_FLAGS:
-                            if index_setting_copy.pop(flag, False):
-                                args.append(f"--{flag}")
+                    for flag in INDEX_FLAGS:
+                        if index_setting_copy.pop(flag, False):
+                            args.append(f"--{flag}")
 
-                        for key, value in index_setting_copy.items():
-                            args += [f"--{key}", str(value)]
+                    for key, value in index_setting_copy.items():
+                        args += [f"--{key}", str(value)]
 
-                        if run_command_with_logging(
-                            [EXECUTABLE_PATH, *args], command_log_path, timeout=input_args.timeout
-                        ):
-                            if calculate_index_stats:
+                    if run_command_with_logging([EXECUTABLE_PATH, *args], command_log_path, timeout=input_args.timeout):
+                        if calculate_index_stats:
+                            # fmt: off
+                            args = [
+                                SUB_CALC_I_STATS, "-i", index_file, "-c", str(num_channels), "-t", index_method,
+                                *output_args
+                            ]
+                            # fmt: on
+                            if num_l_groups > 0:
+                                args += ["-g", str(num_l_groups)]
+                            if separate_segment_stats:
+                                args += ["--separate_segment_stats"]
+                            run_command_with_logging(
+                                [EXECUTABLE_PATH, *args], command_log_path, timeout=input_args.timeout
+                            )
+
+                        for query_file in created_queries:
+                            futures = []
+                            helper_logs_dirs = []
+                            for m_ind, (im_profile, index_method_setting) in enumerate(
+                                SettingIterator(index_method_settings, i_profile).iterate(
+                                    desc="Indexing method settings", leave=False
+                                )
+                            ):
+                                if (
+                                    index_method_setting[RK_METHOD_TYPE] != index_method
+                                    or index_method_setting.get(RK_RAW, False) != index_raw
+                                ):
+                                    continue
                                 # fmt: off
-                                args = [
-                                    SUB_CALC_I_STATS, "-i", index_file, "-c", str(num_channels), "-t", index_method,
-                                    *output_args
+                                args = get_method_args(index_method_setting) + [
+                                    "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q",
+                                    query_file, "-i", index_file
                                 ]
                                 # fmt: on
-                                if num_l_groups > 0:
-                                    args += ["-g", str(num_l_groups)]
-                                if separate_segment_stats:
-                                    args += ["--separate_segment_stats"]
-                                run_command_with_logging(
-                                    [EXECUTABLE_PATH, *args], command_log_path, timeout=input_args.timeout
+                                if len(breakpoint_strategy) > 0:
+                                    args += ["-B", breakpoint_strategy]
+                                if sax_num_bits > 0:
+                                    args += ["-b", str(sax_num_bits)]
+                                if len(breakpoints_file) > 0:
+                                    args += ["--breakpoints", breakpoints_file]
+
+                                helper_logs_dirs.append(f"{logs_dir}_{m_ind}")
+                                args += ["--data", data_dir, "--logs", helper_logs_dirs[-1]]
+                                os.makedirs(helper_logs_dirs[-1], exist_ok=True)
+
+                                futures.append(
+                                    executor.submit(
+                                        run_command_with_logging,
+                                        [EXECUTABLE_PATH, *args],
+                                        timeout=input_args.timeout,
+                                        command_log_path=os.path.join(helper_logs_dirs[-1], COMMAND_LOG_NAME),
+                                    )
                                 )
-
-                            if queries_created:
-                                futures = []
-                                helper_logs_dirs = []
-                                for m_ind, (im_profile, index_method_setting) in enumerate(
-                                    SettingIterator(index_method_settings, i_profile).iterate(
-                                        desc="Indexing method settings", leave=False
-                                    )
-                                ):
-                                    if (
-                                        index_method_setting[RK_METHOD_TYPE] != index_method
-                                        or index_method_setting.get(RK_RAW, False) != index_raw
-                                    ):
-                                        continue
-                                    # fmt: off
-                                    args = get_method_args(index_method_setting) + [
-                                        "-m", str(series_len), "-c", str(num_channels), "-d", data_file, "-q",
-                                        query_file, "-i", index_file
-                                    ]
-                                    # fmt: on
-                                    if len(breakpoint_strategy) > 0:
-                                        args += ["-B", breakpoint_strategy]
-                                    if sax_num_bits > 0:
-                                        args += ["-b", str(sax_num_bits)]
-                                    if len(breakpoints_file) > 0:
-                                        args += ["--breakpoints", breakpoints_file]
-
-                                    helper_logs_dirs.append(f"{logs_dir}_{m_ind}")
-                                    args += ["--data", data_dir, "--logs", helper_logs_dirs[-1]]
-                                    os.makedirs(helper_logs_dirs[-1], exist_ok=True)
-
-                                    futures.append(
-                                        executor.submit(
-                                            run_command_with_logging,
-                                            [EXECUTABLE_PATH, *args],
-                                            timeout=input_args.timeout,
-                                            command_log_path=os.path.join(helper_logs_dirs[-1], COMMAND_LOG_NAME),
-                                        )
-                                    )
 
                             # Wait for all futures to complete
                             for helper_logs_dir, future in zip(helper_logs_dirs, futures):
                                 future.result()
                                 add_logs_to_logs_dir(helper_logs_dir, logs_dir, command_log_path)
 
-                        file_cleanup(index_file)
+                    file_cleanup(index_file)
+                for query_file in created_queries:
                     file_cleanup(query_file)
                 file_cleanup(data_file)
                 file_cleanup(ffts_file)
