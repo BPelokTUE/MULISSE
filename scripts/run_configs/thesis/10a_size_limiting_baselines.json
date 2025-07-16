@@ -21,7 +21,7 @@
     "num_segments": {
         "gt": [32, 16, 8, 4]
     },
-    "index_size_limits": [0.1, 0.5, 1.0, 2.0, 5.0, 10.0],
+    "index_size_limits": [0.1, 0.5, 1.0, 5.0, 10.0],
     "pe_types": {
         "estimator": ["min_dist", "query_time"]
     },

@@ -385,12 +385,13 @@ for target_args in [TargetArgs.QUERY_TIME]:
         },
         # title_base=dim_suffix_to_titles[dim_suffix],
         x_scale="log",
+        y_scale="log",
         legend_plots_dict={DSC.SERIES_LENGTH: {2048}, ISC.SEGMENTATION_STRATEGY: {"uniform"}, QSC.L_MIN_RATIO: {0.125}},
         bar_plot_color_attrs=None,
         line_plot_x_attr=ISC.NUM_SEGMENTS,
         line_plot_included_cols={DSC.DATASET_FILE},
         line_plot_colors_map=dataset_line_colors,
-        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4d_Ns_{target_args.name.lower()}_{dim_suffix}"),
+        # save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4d_Ns_{target_args.name.lower()}_{dim_suffix}"),
         **target_args.value,
     )
 
@@ -835,11 +836,13 @@ for constant in ["m"]:
 # %%
 # 10b - Size limiting
 
+size_limit = 0.5
+dataset = "synthetic"
+
 for target_args in [TargetArgs.ESTIMATE_SCORE]:
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_10a_size_limiting_baselines"],
         groups_dict={
-            ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
             ERD.INDEXES_COLS: [
@@ -850,8 +853,8 @@ for target_args in [TargetArgs.ESTIMATE_SCORE]:
             ERD.PARAM_ESTIMATES_COLS: [PEC.NUM_LEN_GROUPS, PEC.NUM_SEGMENTS],
         },
         separate_plots_dict={
-            (SSC.METHOD_NAME,): [],
-            (ISC.INDEX_SIZE_LIMIT,): [],
+            (DSC.DATASET_FILE,): [(dataset,)],
+            (ISC.INDEX_SIZE_LIMIT,): [(size_limit,)],
             (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
             (ISC.PARAM_ESTIMATOR_TYPE,): [("min_dist",), ("query_time",)],
         },
@@ -859,8 +862,9 @@ for target_args in [TargetArgs.ESTIMATE_SCORE]:
         merge_csv_datasets=True,
         heat_map_x_attr=PEC.NUM_LEN_GROUPS,
         heat_map_y_attr=PEC.NUM_SEGMENTS,
-        heat_map_included_cols={DSC.DATASET_FILE, ISC.SEGMENTATION_STRATEGY},
+        heat_map_included_cols={ISC.SEGMENTATION_STRATEGY},
         cell_width_inches=7.5,
+        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10a_siz_lim_baselines_est_{target_args.name.lower()}"),
         **target_args.value,
     )
 
@@ -868,19 +872,19 @@ for target_args in [TargetArgs.QUERY_TIME]:
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_10a_size_limiting_baselines"],
         groups_dict={
-            ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
             ERD.INDEXES_COLS: [
                 ISC.INDEX_SIZE_LIMIT,
                 ISC.NUM_LEN_GROUPS,
                 ISC.NUM_SEGMENTS,
+                ISC.SEGMENTATION_STRATEGY,
                 ISC.PARAM_ESTIMATOR_TYPE,
             ],
         },
         separate_plots_dict={
-            (SSC.METHOD_NAME,): [],
-            (ISC.INDEX_SIZE_LIMIT,): [],
+            (DSC.DATASET_FILE,): [(dataset,)],
+            (ISC.INDEX_SIZE_LIMIT,): [(size_limit,)],
             (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
             (ISC.PARAM_ESTIMATOR_TYPE,): [("no_est",)],
         },
@@ -890,6 +894,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
         heat_map_y_attr=ISC.NUM_SEGMENTS,
         heat_map_included_cols={DSC.DATASET_FILE, ISC.SEGMENTATION_STRATEGY},
         cell_width_inches=7.5,
+        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10a_size&_lim_baselines_gt_{target_args.name.lower()}"),
         **target_args.value,
     )
 

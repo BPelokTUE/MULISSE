@@ -22,6 +22,7 @@
         "mt-env": [0.1, 0.5, 1.0, 5.0, 10.0]
     },
     "envelope_sizes": [64],
+    "optimal_num_segments": [true],
     "pe_types": ["min_dist", "query_time"],
     "pe_steps": [10],
     "pe_num_queries": [100],

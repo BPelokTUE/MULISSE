@@ -21,7 +21,7 @@ struct RandomEnvConfigGeneratorParams : public EnvConfigGeneratorParams {
     RandomEnvConfigGeneratorParams(uint num_configs = 100, uint seed = 0, SaxSegIndT num_segments_max = 64,
                                    SaxSegIndT num_segments_min = 1)
         : m_num_segments_min(num_segments_min),
-          m_num_segments_max(num_segments_max),
+          m_num_segments_max(num_segments_max > 0 ? num_segments_max : 64),
           m_num_configs(num_configs),
           m_seed(seed) {}
 };

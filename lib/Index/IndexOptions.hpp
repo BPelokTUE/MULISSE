@@ -54,9 +54,11 @@ struct IndexOptions {
     void set_num_segments(SaxSegIndT num_segments) {
         if (auto paa_index_params = dynamic_cast<PaaIndexParams *>(m_index_params.get())) {
             paa_index_params->m_segmentation_params.m_num_segments = num_segments;
-            if (auto rand_env_config_gen_params = dynamic_cast<RandomEnvConfigGeneratorParams *>(
-                    m_estimator_params->m_config_generator_params.get())) {
-                rand_env_config_gen_params->m_num_segments_max = num_segments;
+            if (m_estimator_params && m_estimator_params->m_config_generator_params) {
+                if (auto rand_env_config_gen_params = dynamic_cast<RandomEnvConfigGeneratorParams *>(
+                        m_estimator_params->m_config_generator_params.get())) {
+                    rand_env_config_gen_params->m_num_segments_max = num_segments;
+                }
             }
         } else {
             throw std::runtime_error("Index does not use num_segments");
