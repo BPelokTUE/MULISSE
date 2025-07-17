@@ -23,7 +23,7 @@ void IIndex<T>::construct(const str &dataset_path, uptr<IEntryGenerator<T>> gene
 
     assert(sample_frac >= 0.0 && sample_frac <= 1.0);
     if (sample_frac < 1.0) {
-        num_series = U(R(num_series) * sample_frac);
+        num_series = U(std::ceil(R(num_series) * sample_frac));
         std::shuffle(mts_inds.begin(), mts_inds.end(), std::mt19937{std::random_device{}()});
     }
 

@@ -31,19 +31,6 @@ namespace fs = std::filesystem;
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"
 
-LengthProperties determine_length_properties(const SearchOptions &opts) {
-    auto &RS = RunSettings::get_instance();
-    // Check if the index is a directory (indicating length-based grouping)
-    str index_path = RS.get_index_path();
-    if (fs::is_directory(index_path)) {
-        LengthProperties length_props;
-        length_props.load(fs::path(index_path) / LengthProperties::DEFAULT_FILE_NAME);
-        return length_props;
-    } else {
-        return {.m_use_length_groups = false};
-    }
-}
-
 /**
  * @brief Helper function for loading index-based search methods
  * @tparam FTag The traits of the entries in the index
@@ -67,7 +54,7 @@ uptr<ISearchMethod<S, D, SQ>> load_index_based_method(
     str index_path = RS.get_index_path();
 
     // Temporary solution until metafiles are introduced
-    LengthProperties length_props = determine_length_properties(opts);
+    LengthProperties length_props = RS.determine_length_properties();
     //
     uint num_len_groups = length_props.m_num_l_groups, use_length_groups = length_props.m_use_length_groups;
 

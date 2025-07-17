@@ -11,6 +11,7 @@
 #include "Modules/Indexing/IndexFactory/GetFlatEnvelopeIndex.hpp"
 #include "Modules/Indexing/IndexFactory/IndexFactoryParams.hpp"
 #include "Search/DistanceMeasure/EuclideanDistance.hpp"
+#include "Search/DistanceMeasure/Mass.hpp"
 #include "Search/IndexSearch/FlatEnvelopeIndexSearch.hpp"
 #include "Search/IndexSearch/LengthGroupingIndexSearch.hpp"
 #include "Search/Results/ResultSet.hpp"
@@ -21,14 +22,16 @@
 
 using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
-EnvelopeParams EnvelopeQueryTimeParamEstimator::get_estimated_params(
+template <DistanceType D, bool EW>
+EnvelopeParams EnvelopeQueryTimeParamEstimator<D, EW>::get_estimated_params(
     const IndexOptions &index_opts, uptr<IEnvelopeConfigGenerator> env_config_generator) {
     m_queries.resize(index_opts.m_estimator_params->m_sampling_params->m_num_queries,
                      vec<vec<Real>>(index_opts.m_num_channels));
     return EnvelopeSamplingParamEstimator::get_estimated_params(index_opts, std::move(env_config_generator));
 }
 
-void EnvelopeQueryTimeParamEstimator::update_queries(std::stringstream &query_stream, uint num_queries) {
+template <DistanceType D, bool EW>
+void EnvelopeQueryTimeParamEstimator<D, EW>::update_queries(std::stringstream &query_stream, uint num_queries) {
     query_stream.seekg(0);
     MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(m_queries[0].size());
 
@@ -57,18 +60,19 @@ void EnvelopeQueryTimeParamEstimator::update_queries(std::stringstream &query_st
     }
 }
 
-Real EnvelopeQueryTimeParamEstimator::get_config_score(
+template <DistanceType D, bool EW>
+Real EnvelopeQueryTimeParamEstimator<D, EW>::get_config_score(
     vec<vec<IndexEntry<Envelope>>> &&entries, const IndexOptions &config_opts, const LengthProperties &length_props,
     const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
     // 1. Create index factory using the type of index method in the the index options
     std::function<sptr<IIndex<Envelope>>(IndexFactoryParams &)> index_factory;
-    std::function<uptr<ISearchMethod<KNN, ED>>(uptr<IFinalizedIndex<EnvelopeTag>>)> search_method_factory;
+    std::function<uptr<ISearchMethod<KNN, D>>(uptr<IFinalizedIndex<EnvelopeTag>>)> search_method_factory;
 
     switch (config_opts.m_index_method) {
         case ENVELOPE:
             index_factory = get_flat_envelope_index<Envelope>;
             search_method_factory = [](uptr<IFinalizedIndex<EnvelopeTag>> index) {
-                return std::make_unique<FlatEnvelopeIndexSearch<Envelope, KNN, ED, false, false>>(
+                return std::make_unique<FlatEnvelopeIndexSearch<Envelope, KNN, D, EW, false>>(
                     uptr<FinalizedFlatEnvelopeIndex<Envelope>>(
                         static_cast<FinalizedFlatEnvelopeIndex<Envelope> *>(index.release())));
             };
@@ -76,7 +80,7 @@ Real EnvelopeQueryTimeParamEstimator::get_config_score(
         case SAX_ENVELOPE:
             index_factory = get_flat_envelope_index<SaxEnvelope>;
             search_method_factory = [](uptr<IFinalizedIndex<EnvelopeTag>> index) {
-                return std::make_unique<FlatEnvelopeIndexSearch<SaxEnvelope, KNN, ED, false, false>>(
+                return std::make_unique<FlatEnvelopeIndexSearch<SaxEnvelope, KNN, D, EW, false>>(
                     uptr<FinalizedFlatEnvelopeIndex<SaxEnvelope>>(
                         static_cast<FinalizedFlatEnvelopeIndex<SaxEnvelope> *>(index.release())));
             };
@@ -92,31 +96,31 @@ Real EnvelopeQueryTimeParamEstimator::get_config_score(
     auto finalized_index = index->finalize();
 
     // 3. Create search method
-    uptr<ISearchMethod<KNN, ED>> search_method;
+    uptr<ISearchMethod<KNN, D>> search_method;
     if (config_opts.m_use_length_groups) {
-        vec<uptr<ISearchMethod<KNN, ED>>> search_methods(length_props.m_num_l_groups);
+        vec<uptr<ISearchMethod<KNN, D>>> search_methods(length_props.m_num_l_groups);
         auto grouping_index = uptr<FinalizedLengthGroupingIndex<EnvelopeTag>>(
             static_cast<FinalizedLengthGroupingIndex<EnvelopeTag> *>(finalized_index.release()));
         for (uint l_ind = 0; l_ind < length_props.m_num_l_groups; l_ind++) {
             search_methods[l_ind] =
                 search_method_factory(uptr<IFinalizedIndex<EnvelopeTag>>(grouping_index->release_index(l_ind)));
         }
-        search_method = std::make_unique<LengthGroupingIndexSearch<KNN, ED>>(std::move(search_methods), length_props);
+        search_method = std::make_unique<LengthGroupingIndexSearch<KNN, D>>(std::move(search_methods), length_props);
     } else {
         search_method = search_method_factory(std::move(finalized_index));
     }
 
     // 4. Set up arguments for search
     uint knn_k = 1;
-    bool normalized = config_opts.m_normalized, use_early_abandoning = true;
+    bool normalized = config_opts.m_normalized;
     ResultSet<KNN> result_set(knn_k);
-    DistanceMeasure<KNN, ED> distance_measure(normalized, use_early_abandoning);
+    DistanceMeasure<KNN, D> distance_measure(normalized);
     SearchOptions search_opts{
         .m_normalized = normalized,
-        .m_use_early_abandoning = use_early_abandoning,
+        .m_use_early_abandoning = true,
         .m_search_method_type = config_opts.m_index_method,
         .m_search_type = KNN,
-        .m_distance_type = ED,
+        .m_distance_type = D,
         .m_knn_k = knn_k,
     };
     std::ifstream data_stream(RunSettings::get_instance().get_dataset_path(), std::ios::binary);
@@ -131,3 +135,9 @@ Real EnvelopeQueryTimeParamEstimator::get_config_score(
     }
     return R(total_time / static_cast<double>(m_queries.size()));
 }
+
+// Explicit template specializations
+template class EnvelopeQueryTimeParamEstimator<ED, false>;
+template class EnvelopeQueryTimeParamEstimator<ED, true>;
+template class EnvelopeQueryTimeParamEstimator<MASS, false>;
+template class EnvelopeQueryTimeParamEstimator<MASS, true>;

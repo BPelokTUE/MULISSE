@@ -1,9 +1,16 @@
 #ifndef INDEX_ESTIMATOR_SAMPLING_ENVELOPEQUERYTIMEPARAMESTIMATOR_HPP
 #define INDEX_ESTIMATOR_SAMPLING_ENVELOPEQUERYTIMEPARAMESTIMATOR_HPP
 
+#include "Enums/DistanceType.hpp"
 #include "Index/Estimator/Sampling/EnvelopeSamplingParamEstimator.hpp"
 #include "Index/Estimator/Sampling/EstimatorSamplingParams.hpp"
 
+/**
+ * @brief EnvelopeQueryTimeParamEstimator estimates envelope parameters based on query time
+ * @tparam D DistanceType to use for the queries
+ * @tparam EW Whether to examine the whole series when a subsequence examination is performed
+ */
+template <DistanceType D, bool EW>
 class EnvelopeQueryTimeParamEstimator : public EnvelopeSamplingParamEstimator {
    protected:
     EnvelopeParams get_estimated_params(const IndexOptions &index_opts,

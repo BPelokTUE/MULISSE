@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     bool zero_start = false, raw = false, approximate = false, early_abandon = false, sort_query = false,
          examine_whole = false, no_use_pq = false, adapt_index = false, merge_in_leaves = false,
          prefer_first_in_em = false, separate_segment_stats = false, no_log_num_seg_per_ch = false,
-         log_num_seg_all = false, use_inv_sax = false, group_per_series = false, optimal_num_segments = false;
+         log_num_seg_all = false, use_inv_sax = false, group_per_series = false;
 
     // Options for creating dataset
     rw_subcommand->add_option("-d,--dataset", dataset_path, "Output dataset path relative to `DATA`")->required();
@@ -258,8 +258,6 @@ int main(int argc, char **argv) {
     index_subcommand->add_option("-s,--num_segments", num_segments, "Number of segments")
         ->capture_default_str()
         ->check(positive_int);
-    index_subcommand->add_flag("--optimal_num_segments", optimal_num_segments,
-                               "Use the optimal number of segments for FlatEnvelopeIndex");
     index_subcommand->add_option("-p,--pos_per_env", pos_per_env, "Positions per envelope")
         ->capture_default_str()
         ->check(positive_int);
@@ -311,6 +309,11 @@ int main(int argc, char **argv) {
                      "Type of EnvelopeParamEstimator to use")
         ->capture_default_str()
         ->check(CLI::IsMember(ACCEPTED_ENV_PARAM_ESTIMATOR_TYPE_STRS));
+    index_subcommand->add_flag(
+        "--param_estimator_qt_examine_whole,--pe_qt_examine_whole", examine_whole,
+        "Examine the whole series when a subsequence examination is performed in query_time param estimator");
+    index_subcommand->add_option("--param_estimator_qt_distance,--pe_qt_distance", distance_measure_str,
+                                 "Distance measure to use in query time param estimator");
     index_subcommand
         ->add_option("--param_estimator_config_gen_type,--pe_config_gen_type", env_config_gen_type_str,
                      "Type of configuration generator to use for the parameter estimator")
@@ -456,10 +459,6 @@ int main(int argc, char **argv) {
         return 1;
     }
     if (command_type == INDEX) {
-        if (num_segments == 0 && !optimal_num_segments && !estimate_parameters) {
-            std::cerr << "--num_segments or --optimal_num_segments or --index_size_limit is required\n";
-            return 1;
-        }
         if (method_type == ISAX || method_type == ISAX_ENVELOPE) {
             // Leaf capacity required
             if (leaf_capacity == 0) {
@@ -504,10 +503,6 @@ int main(int argc, char **argv) {
             }
         }
         if (!estimate_parameters && arr_contains(METHODS_W_ENVELOPE, method_type)) {
-            if (pos_per_env == 0) {
-                std::cerr << "--pos_per_env is required\n";
-                return 1;
-            }
             pos_per_env = std::min(pos_per_env, series_len - l_min + 1);
         }
     } else if (command_type == SEARCH) {
@@ -585,7 +580,6 @@ int main(int argc, char **argv) {
                     STR_TO_ENVELOPE_SCORES_TYPE.at(env_score_func_type_str));
             }
             SegmentationParams segmentation_params{
-                .m_optimal_num_segments = optimal_num_segments,
                 .m_num_segments = num_segments,
                 .m_lg_strategy_type = lg_segmentation_strategy_type,
                 .m_ch_strategy_type = ch_segmentation_strategy_type,
@@ -664,8 +658,9 @@ int main(int argc, char **argv) {
                         std::make_unique<RandomEnvConfigGeneratorParams>(estimator_num_configs, seed, num_segments);
                 }
 
+                auto qt_distance_type = STR_TO_DISTANCE_TYPE.at(distance_measure_str);
                 estimator_params = std::make_unique<EstimatorParams>(
-                    index_size_limit, param_estimator_type, env_config_gen_type,
+                    examine_whole, index_size_limit, param_estimator_type, qt_distance_type, env_config_gen_type,
                     std::move(estimator_sampling_params_ptr), std::move(envelope_config_gen_params_ptr));
             }
 

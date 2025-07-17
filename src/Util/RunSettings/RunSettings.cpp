@@ -37,14 +37,16 @@ void RunSettings::initialize(CommandType command_type, DatasetProperties dataset
 
     instance->m_command_type = command_type;
     instance->m_dataset_props = dataset_props;
-    if (dataset_props.m_num_series == 0 && !dataset_props.m_file.empty()) {
-        size_t dataset_size = get_dataset_size(instance->get_dataset_path());
-        instance->m_dataset_props.m_num_series =
-            U(dataset_size / (dataset_props.m_series_len * dataset_props.m_num_channels * sizeof(Real)));
+    if (!dataset_props.m_file.empty()) {
+        if (dataset_props.m_num_series == 0) {
+            size_t dataset_size = get_dataset_size(instance->get_dataset_path());
+            instance->m_dataset_props.m_num_series =
+                U(dataset_size / (dataset_props.m_series_len * dataset_props.m_num_channels * sizeof(Real)));
+        }
+        instance->m_dataset_stats = ChannelStats(dataset_props.m_num_channels);
+        instance->m_channel_stats_file = dataset_props.m_file.replace(dataset_props.m_file.find_last_of('.'),
+                                                                      dataset_props.m_file.size(), "_ch_stats.json");
     }
-    instance->m_dataset_stats = ChannelStats(dataset_props.m_num_channels);
-    instance->m_channel_stats_file = dataset_props.m_file.replace(dataset_props.m_file.find_last_of('.'),
-                                                                  dataset_props.m_file.size(), "_ch_stats.json");
 
     instance->m_length_props = length_props;
     if (!length_props.m_use_length_groups) {
@@ -257,6 +259,18 @@ const BreakpointProperties &RunSettings::get_breakpoint_props() const { return m
 const EnvelopeProperties &RunSettings::get_envelope_props() const { return m_envelope_props; }
 
 const LengthProperties &RunSettings::get_length_props() const { return m_length_props; }
+
+LengthProperties RunSettings::determine_length_properties() const {
+    // Check if the index is a directory (indicating length-based grouping)
+    str index_path = get_index_path();
+    if (fs::is_directory(index_path)) {
+        LengthProperties length_props;
+        length_props.load(fs::path(index_path) / LengthProperties::DEFAULT_FILE_NAME);
+        return length_props;
+    } else {
+        return {.m_use_length_groups = false};
+    }
+}
 
 void RunSettings::set_pos_per_env(uint pos_per_env) {
     m_envelope_props.m_pos_per_env = pos_per_env;

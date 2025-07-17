@@ -7,9 +7,7 @@ using std::to_string;
 template <typename FTag>
 FinalizedLengthGroupingIndex<FTag>::FinalizedLengthGroupingIndex(vec<uptr<IFinalizedIndex<FTag>>> indexes,
                                                                  LengthProperties length_props)
-    : m_indexes(std::move(indexes)), m_length_props(length_props) {
-    assert(U(m_indexes.size()) == m_length_props.m_num_l_groups);
-}
+    : m_indexes(std::move(indexes)), m_length_props(length_props) {}
 
 template <typename FTag>
 void FinalizedLengthGroupingIndex<FTag>::save(const str &out_file, ArchiveType ar_type) {

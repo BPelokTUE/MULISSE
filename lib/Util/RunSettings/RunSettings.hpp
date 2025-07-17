@@ -175,6 +175,12 @@ class RunSettings {
      */
     virtual const LengthProperties& get_length_props() const;
 
+    /**
+     * @brief Determine length properties from length_properties.json file
+     * @return The length properties
+     * */
+    LengthProperties determine_length_properties() const;
+
     void set_lengths_per_group(uint l_per_group);
 
     // Paths

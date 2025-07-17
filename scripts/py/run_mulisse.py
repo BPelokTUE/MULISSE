@@ -73,6 +73,8 @@ CK_ENVELOPE_SIZES = "envelope_sizes"
 CK_INDEX_SIZE_LIMITS = "index_size_limits"
 CK_PARAM_ESTIMATOR_TYPES = "pe_types"
 CK_PARAM_ESTIMATOR_STEPS = "pe_steps"
+CK_PARAM_ESTIMATOR_QT_EXAMINE_WHOLE = "pe_qt_examine_whole"
+CK_PARAM_ESTIMATOR_QT_DISTANCES = "pe_qt_distances"
 CK_PARAM_ESTIMATOR_NUM_QUERIES = "pe_num_queries"
 CK_PARAM_ESTIMATOR_SAMPLE_FRACS = "pe_sample_fracs"
 CK_PARAM_ESTIMATOR_SEEDS = "pe_seeds"
@@ -141,6 +143,8 @@ RK_ENVELOPE_SIZE = "envelope_size"
 RK_INDEX_SIZE_LIMIT = "size_limit"
 RK_PARAM_ESTIMATOR_TYPE = "pe_type"
 RK_PARAM_ESTIMATOR_STEP = "pe_step"
+RK_PARAM_ESTIMATOR_QT_EXAMINE_WHOLE = "pe_qt_examine_whole"
+RK_PARAM_ESTIMATOR_QT_DISTANCE = "pe_qt_distance"
 RK_PARAM_ESTIMATOR_NUM_QUERIES = "pe_num_queries"
 RK_PARAM_ESTIMATOR_SAMPLE_FRAC = "pe_sample_frac"
 RK_PARAM_ESTIMATOR_SEED = "pe_seed"
@@ -240,6 +244,7 @@ INDEX_FLAGS = [
     RK_USE_INV_SAX,
     RK_GROUP_PER_SERIES,
     RK_OPTIMAL_NUM_SEGMENTS,
+    RK_PARAM_ESTIMATOR_QT_EXAMINE_WHOLE,
 ]
 
 
@@ -423,6 +428,8 @@ def parse_config_file(input_config) -> ParsedConfig:
                 **get_key_or_none(RK_INDEX_SIZE_LIMIT, CK_INDEX_SIZE_LIMITS),
                 **get_key_or_none(RK_PARAM_ESTIMATOR_TYPE, CK_PARAM_ESTIMATOR_TYPES),
                 **get_key_or_none(RK_PARAM_ESTIMATOR_STEP, CK_PARAM_ESTIMATOR_STEPS),
+                **get_key_or_none(RK_PARAM_ESTIMATOR_QT_EXAMINE_WHOLE, CK_PARAM_ESTIMATOR_QT_EXAMINE_WHOLE),
+                **get_key_or_none(RK_PARAM_ESTIMATOR_QT_DISTANCE, CK_PARAM_ESTIMATOR_QT_DISTANCES),
                 **get_key_or_none(RK_PARAM_ESTIMATOR_NUM_QUERIES, CK_PARAM_ESTIMATOR_NUM_QUERIES),
                 **get_key_or_none(RK_PARAM_ESTIMATOR_SAMPLE_FRAC, CK_PARAM_ESTIMATOR_SAMPLE_FRACS),
                 **get_key_or_none(RK_PARAM_ESTIMATOR_SEED, CK_PARAM_ESTIMATOR_SEEDS),

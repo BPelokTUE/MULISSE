@@ -31,6 +31,7 @@ int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_pe
 
     // Initialized SAX breakpoints
 
+    auto paa_index_params = dynamic_cast<PaaIndexParams *>(opts.m_index_params.get());
     if (arr_contains(METHODS_W_ISAX, opts.m_index_method)) {
         auto *index_params = dynamic_cast<const iSaxIndexParams *>(opts.m_index_params.get());
         if (index_params && index_params->m_sax_params.m_num_bits > 0) {
@@ -48,9 +49,8 @@ int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_pe
             return 2;
         }
     } else if (arr_contains(METHODS_W_PAA, opts.m_index_method)) {
-        auto *index_params = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get());
-        if (index_params && arr_contains(MERGERS_W_SAX, index_params->m_merger_params.m_entry_merger_type)) {
-            auto merger_sax_params = index_params->m_merger_params.m_merger_sax_params;
+        if (paa_index_params && arr_contains(MERGERS_W_SAX, paa_index_params->m_merger_params.m_entry_merger_type)) {
+            auto merger_sax_params = paa_index_params->m_merger_params.m_merger_sax_params;
             if (merger_sax_params && merger_sax_params->m_num_bits > 0) {
                 initialize_sax_breakpoints(*merger_sax_params);
             } else {
@@ -66,11 +66,12 @@ int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_pe
         return 2;
     }
 
-    if (env_index_params && env_index_params->m_segmentation_params.m_optimal_num_segments) {
+    // Set num_segments dynamically if required
+    uint series_len = RS.get_dataset_props().m_series_len;
+    if (paa_index_params && paa_index_params->m_segmentation_params.m_num_segments == 0) {
         // Calculate optimal number of segments if requested
-        uint series_len = RS.get_dataset_props().m_series_len;
         Real multiplier = opts.m_normalized
-                              ? (env_index_params->m_segmentation_params.m_strategy_type == UNIFORM ? 16.0 : 12.0)
+                              ? (paa_index_params->m_segmentation_params.m_strategy_type == UNIFORM ? 16.0 : 12.0)
                               : 8.0;
         SaxSegIndT num_segments =
             static_cast<SaxSegIndT>(std::ceil(std::sqrt(R(series_len) / R(2 * opts.m_l_min)) * multiplier));
@@ -78,11 +79,38 @@ int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_pe
         logger.set_num_segments(num_segments);
         opts.set_num_segments(num_segments);
     }
-    if (auto estimated_params = estimate_envelope_params(opts)) {
+    // Set pos_per_env dynamically if required
+    if (env_index_params && env_index_params->m_pos_per_env == 0) {
+        // Calculate optimal positions per envelope if requested
+        Real multiplier = opts.m_normalized ? 512.0 : 2048.0;
+        uint pos_per_env = U(std::ceil(R(opts.m_l_min) / R(series_len) * multiplier));
+
+        RS.set_pos_per_env(pos_per_env);
+        logger.set_pos_per_env(pos_per_env);
+        opts.set_pos_per_env(pos_per_env);
+    }
+
+    if (opts.m_estimator_params) {
         // Estimate flat envelope parameters if requested
-        RS.set_flat_envelope_params(*estimated_params);
-        logger.set_flat_envelope_params(*estimated_params);
-        opts.set_flat_envelope_params(*estimated_params);
+        std::optional<EnvelopeParams> estimated_params;
+        if (opts.m_estimator_params->m_qt_distance_type == ED) {
+            if (opts.m_estimator_params->m_qt_examine_whole) {
+                estimated_params = estimate_envelope_params<ED, true>(opts);
+            } else {
+                estimated_params = estimate_envelope_params<ED, false>(opts);
+            }
+        } else {  // D == MASS
+            if (opts.m_estimator_params->m_qt_examine_whole) {
+                estimated_params = estimate_envelope_params<MASS, true>(opts);
+            } else {
+                estimated_params = estimate_envelope_params<MASS, false>(opts);
+            }
+        }
+        if (estimated_params) {
+            RS.set_flat_envelope_params(*estimated_params);
+            logger.set_flat_envelope_params(*estimated_params);
+            opts.set_flat_envelope_params(*estimated_params);
+        }
     }
 
     // Set up segmentation strategies

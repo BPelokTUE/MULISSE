@@ -58,7 +58,7 @@ EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params(
 
     assert(sampling_params.m_sample_frac >= 0.0 && sampling_params.m_sample_frac <= 1.0);
     if (sampling_params.m_sample_frac < 1.0) {
-        num_series = U(R(num_series) * sampling_params.m_sample_frac);
+        num_series = U(std::ceil(R(num_series) * sampling_params.m_sample_frac));
         std::shuffle(m_mts_inds.begin(), m_mts_inds.end(), std::mt19937{std::random_device{}()});
     }
 

@@ -51,6 +51,22 @@ struct IndexOptions {
         m_l_per_group = params.m_l_per_group;
     }
 
+    /**
+     * @brief Set positions per envelope for envelope-based indexes
+     * @param pos_per_env The number of positions per envelope to set
+     */
+    void set_pos_per_env(uint pos_per_env) {
+        if (auto env_index_params = dynamic_cast<EnvelopeIndexParams *>(m_index_params.get())) {
+            env_index_params->m_pos_per_env = pos_per_env;
+        } else {
+            throw std::runtime_error("Index does not use pos_per_env");
+        }
+    }
+
+    /**
+     * @brief Set the number of segments for PAA segmentation-based indexes
+     * @param num_segments The number of segments to set
+     */
     void set_num_segments(SaxSegIndT num_segments) {
         if (auto paa_index_params = dynamic_cast<PaaIndexParams *>(m_index_params.get())) {
             paa_index_params->m_segmentation_params.m_num_segments = num_segments;
