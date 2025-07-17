@@ -1,8 +1,8 @@
 {
     "csv_data_dirs": [],
-    "dataset_sizes": [1024],
+    "dataset_sizes": [1000],
     "syn_num_channels": [1, 4, 16, 64, 256],
-    "series_lengths": [1024],
+    "series_lengths": [2048],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [100],
     "l_range_ratios": [[0.125, 1.0]],
@@ -36,9 +36,7 @@
         "scan": ["ed", "mass"], "eqw": ["ed"], "eqd": ["ed"], "raw": ["ed"], "ulisse": ["ed"]
     },
     "early_abandon": [true],
-    "sort_query": {
-        "scan": [true], "ulisse": [true]
-    },
+    "sort_query": [true],
     "adapt_index": [false],
     "index_inserters": ["parallel"],
     "search_types": ["knn"],

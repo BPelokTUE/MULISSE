@@ -62,11 +62,7 @@
         "10C-mass": ["mass"], "10C-ucr": ["ed"], "10C-ulisse": ["ed"], "10C-eqw": ["ed"], "10C-eqd": ["ed"], "10C-raw": ["ed"]
     },
     "early_abandon": [true],
-    "sort_query": {
-        "4C-ucr": [true], "4C-ulisse": [true],
-        "5C-ucr": [true], "5C-ulisse": [true],
-        "10C-ucr": [true], "10C-ulisse": [true]
-    },
+    "sort_query": [true],
     "adapt_index": [false],
     "index_inserters": ["parallel"],
     "search_types": ["knn"],

@@ -2,7 +2,7 @@
 {
     "csv_data_dirs": ["stocks", "weather"],
     "dataset_sizes": [1000],
-    "series_lengths": [1024],
+    "series_lengths": [2048],
     "syn_num_channels": [3],
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [100],
@@ -53,10 +53,12 @@
         "single2": [8],
         "single3": [16]
     },
-    "envelope_size_ratios": [0.05],
+    "envelope_sizes": [64],
     "length_group_size_ratios": [0.025],
     "distance_measures": ["ed"],
     "early_abandon": [true],
+    "sort_query": [true],
     "dataset_seeds": [0],
-    "query_set_seeds": [0]
+    "query_set_seeds": [0],
+    "separate_csv_datasets": false
 }

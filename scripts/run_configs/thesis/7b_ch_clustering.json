@@ -4,7 +4,7 @@
     "index_sample_fracs": {
         "bands": [0.01, 0.05, 0.1, 0.2]
     },
-    "series_lengths": [1024],
+    "series_lengths": [2048],
     "syn_num_channels": [1],
     "syn_step_stdevs": [0.1, 1.0, 10.0],
     "query_set_sizes": [50],
@@ -14,12 +14,16 @@
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
     "num_segments": {
-        "bands": [256, 512, 1024],
-        "index": [32]
+        "bands": [256, 512, 1024]
+    },
+    "optimal_num_segments": {
+        "index": [true]
     },
     "envelope_size_ratios": {
-        "bands": [1.0],
-        "index": [0.025]
+        "bands": [1.0]
+    },
+    "envelope_sizes": {
+        "index": [64]
     },
     "length_group_size_ratios": {
         "bands": [1.0],
@@ -30,6 +34,7 @@
         "index": ["ed"]
     },
     "early_abandon": [true],
+    "sort_query": [true],
     "dataset_seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     "query_set_seeds": [0],
     "calculate_index_stats": {

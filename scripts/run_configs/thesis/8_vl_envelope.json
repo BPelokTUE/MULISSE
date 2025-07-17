@@ -1,9 +1,7 @@
 {
-    "csv_data_dirs": ["stocks", "weather"],
+    "csv_data_dirs": ["stocks"],
     "dataset_sizes": [1000],
-    "series_lengths": [1024],
-    "syn_num_channels": [3],
-    "syn_step_stdevs": [0.1],
+    "series_lengths": [2048],
     "query_set_sizes": [100],
     "l_range_ratios": [[0.125, 1.0]],
     "used_channel_ratios": [1.0],
@@ -26,7 +24,8 @@
         "envelope": [48],
         "vl_envelope": [1]
     },
-    "num_segments": [32],
+    "optimal_num_segments": [true],
+    "segmentation_strategies": ["uniform", "adaptive"],
     "distance_measures": ["ed"],
     "early_abandon": [true],
     "adapt_index": [false],
@@ -36,5 +35,6 @@
     "search_approx": [false],
     "search_raw": [false],
     "dataset_seeds": [42],
-    "query_seeds": [42]
+    "query_seeds": [42],
+    "separate_csv_datasets": false
 }

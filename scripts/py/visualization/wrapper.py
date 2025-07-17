@@ -131,6 +131,7 @@ def visualize_experiments(
     cell_width_inches: float = 5.0,
     # Output
     save_dir: str | None = None,
+    verbose: bool = False,
 ):
     if num_query_intervals > 1:
         groups_dict[ERD.RUNS_COLS] = groups_dict.get(ERD.RUNS_COLS, []) + [QC.QUERY_INTERVAL]
@@ -258,6 +259,11 @@ def visualize_experiments(
                     if accepted_vals is not None and val not in accepted_vals:
                         add_legend = False
                         break
+
+            if verbose:
+                max_key_length = max([len(str(key)) for key in reduced_values_subset.keys()])
+                for key, values in reduced_values_subset.items():
+                    print(f"{str(key):<{max_key_length}}:\t{values}")
 
             # TODO: this is horrible
             suffixes = [""]

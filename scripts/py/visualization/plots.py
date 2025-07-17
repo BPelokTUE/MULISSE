@@ -126,6 +126,22 @@ ORDERED_DATASETS = [
     "synthetic",
 ]
 
+DATASET_LABELS = {
+    "weather": {
+        "TMP": "Temperature",
+        "DEW": "Humidity",
+        "SLP": "Pressure",
+        "WND": "Wind speed",
+    },
+    "stocks": {
+        "first": "Open",
+        "second": "Close",
+        "third": "Low",
+        "fourth": "High",
+        "fifth": "Volume",
+    },
+}
+
 
 def place_legend(ax: plt.Axes, num_labels: int, max_cols: int, offset: float = 0.1):
     legend_num_cols = min(num_labels, max_cols)
@@ -619,7 +635,24 @@ def get_config_label(
                 if val == 1:
                     label_parts.append("Merge leaves")
             case DSC.DATASET_FILE:
-                label_parts.append(val)
+                keyword_dict = DATASET_LABELS
+                label_part = ""
+                while keyword_dict is not None:
+                    keyword_found = False
+                    for keyword, label_or_dict in keyword_dict.items():
+                        if keyword in val:
+                            keyword_found = True
+                            if isinstance(label_or_dict, dict):
+                                label_part += f"{keyword.capitalize()}: "
+                                keyword_dict = label_or_dict
+                                break
+                            else:
+                                label_parts.append(f"{label_part}{label_or_dict}")
+                                keyword_dict = None
+                                break
+                    if not keyword_found:
+                        label_parts.append(val.capitalize() if isinstance(val, str) else val)
+                        keyword_dict = None
             case DSC.NUM_SERIES:
                 label_parts.append(f"n={int(val)}")
             case DSC.SERIES_LENGTH:
