@@ -33,7 +33,6 @@
     "length_group_size_ratios": [0.025],
     "distance_measures": ["ed"], 
     "early_abandon": [true],
-    "sort_query": [true],
     "precalculate_ffts": [true],
     "adapt_index": [false],
     "index_inserters": ["parallel"],

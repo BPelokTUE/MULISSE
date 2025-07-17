@@ -1,5 +1,6 @@
 {
     "csv_data_dirs": ["stocks"],
+    "min_subs_sigmas": [0],
     "dataset_sizes": [1000],
     "series_lengths": [2048],
     "query_set_sizes": [100],
@@ -16,7 +17,6 @@
     "segmentation_strategies": ["uniform", "adaptive"],
     "distance_measures": ["ed"],
     "early_abandon": [true],
-    "sort_query": [true],
     "adapt_index": [false],
     "search_types": ["knn"],
     "search_ks": [1],

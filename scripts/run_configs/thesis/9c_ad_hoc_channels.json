@@ -1,36 +1,41 @@
 {
-    "profiles": [
-        "4C-mass", "4C-ucr", "4C-ulisse", "4C-eqw", "4C-eqd", "4C-raw",
-        "5C-mass", "5C-ucr", "5C-ulisse", "5C-eqw", "5C-eqd", "5C-raw",
-        "10C-mass", "10C-ucr", "10C-ulisse", "10C-eqw", "10C-eqd", "10C-raw"
-    ],
     "dataset_sizes": [1000],
     "series_lengths": [2048],
     "csv_data_dirs": {
-        "4C-mass": ["weather"], "4C-ucr": ["weather"], "4C-ulisse": ["weather"], "4C-eqw": ["weather"], "4C-eqd": ["weather"], "4C-raw": ["weather"],
-        "5C-mass": ["stocks"], "5C-ucr": ["stocks"], "5C-ulisse": ["stocks"], "5C-eqw": ["stocks"], "5C-eqd": ["stocks"], "5C-raw": ["stocks"]
+        "4C-mass": ["weather"], "4C-ucr": ["weather"], "4C-ulisse": ["weather"], "4C-eqw": ["weather"], "4C-eqd": ["weather"], "4C-raw": ["weather"], "4C-eqw-mass": ["weather"], "4C-eqd-mass": ["weather"], "4C-raw-mass": ["weather"],
+        "5C-mass": ["stocks"], "5C-ucr": ["stocks"], "5C-ulisse": ["stocks"], "5C-eqw": ["stocks"], "5C-eqd": ["stocks"], "5C-raw": ["stocks"], "5C-eqw-mass": ["weather"], "5C-eqd-mass": ["weather"], "5C-raw-mass": ["weather"]
     },
     "syn_num_channels": {
-        "10C-mass": [10], "10C-ucr": [10], "10C-ulisse": [10], "10C-eqw": [10], "10C-eqd": [10], "10C-raw": [10]
+        "10C-mass": [10], "10C-ucr": [10], "10C-ulisse": [10], "10C-eqw": [10], "10C-eqd": [10], "10C-raw": [10], "10C-eqw-mass": [10], "10C-eqd-mass": [10], "10C-raw-mass": [10]
     },
     "syn_step_stdevs": [1.0],
     "query_set_sizes": [100],
     "l_range_ratios": [[0.125, 1.0]],
     "used_channel_ratios": {
         "4C-mass": [0.25, 0.5, 0.75, 1.0], "4C-ucr": [0.25, 0.5, 0.75, 1.0], "4C-ulisse": [0.25, 0.5, 0.75, 1.0], "4C-eqw": [0.25, 0.5, 0.75, 1.0], "4C-eqd": [0.25, 0.5, 0.75, 1.0], "4C-raw": [0.25, 0.5, 0.75, 1.0],
+        "4C-eqw-mass": [0.25, 0.5, 0.75, 1.0], "4C-eqd-mass": [0.25, 0.5, 0.75, 1.0], "4C-raw-mass": [0.25, 0.5, 0.75, 1.0],
         "5C-mass": [0.2, 0.4, 0.6, 0.8, 1.0], "5C-ucr": [0.2, 0.4, 0.6, 0.8, 1.0], "5C-ulisse": [0.2, 0.4, 0.6, 0.8, 1.0], "5C-eqw": [0.2, 0.4, 0.6, 0.8, 1.0], "5C-eqd": [0.2, 0.4, 0.6, 0.8, 1.0], "5C-raw": [0.2, 0.4, 0.6, 0.8, 1.0],
-        "10C-mass": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "10C-ucr": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "10C-ulisse": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "10C-eqw": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "10C-eqd": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "10C-raw": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        "5C-eqw-mass": [0.2, 0.4, 0.6, 0.8, 1.0], "5C-eqd-mass": [0.2, 0.4, 0.6, 0.8, 1.0], "5C-raw-mass": [0.2, 0.4, 0.6, 0.8, 1.0],
+        "10C-mass": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "10C-ucr": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "10C-ulisse": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], 
+        "10C-eqw": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "10C-eqd": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "10C-raw": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        "10C-eqw-mass": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "10C-eqd-mass": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "10C-raw-mass": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
     },
     "query_noise_stdevs": [0.1],
     "search_methods": {
         "4C-mass": ["scan"], "4C-ucr": ["scan"], "4C-ulisse": ["isax_env_w_sax_env"], "4C-eqw": ["sax_envelope"], "4C-eqd": ["sax_envelope"], "4C-raw": ["envelope"],
+        "4C-eqw-mass": ["sax_envelope"], "4C-eqd-mass": ["sax_envelope"], "4C-raw-mass": ["envelope"],
         "5C-mass": ["scan"], "5C-ucr": ["scan"], "5C-ulisse": ["isax_env_w_sax_env"], "5C-eqw": ["sax_envelope"], "5C-eqd": ["sax_envelope"], "5C-raw": ["envelope"],
-        "10C-mass": ["scan"], "10C-ucr": ["scan"], "10C-ulisse": ["isax_env_w_sax_env"], "10C-eqw": ["sax_envelope"], "10C-eqd": ["sax_envelope"], "10C-raw": ["envelope"]
+        "5C-eqw-mass": ["sax_envelope"], "5C-eqd-mass": ["sax_envelope"], "5C-raw-mass": ["envelope"],
+        "10C-mass": ["scan"], "10C-ucr": ["scan"], "10C-ulisse": ["isax_env_w_sax_env"], "10C-eqw": ["sax_envelope"], "10C-eqd": ["sax_envelope"], "10C-raw": ["envelope"],
+        "10C-eqw-mass": ["sax_envelope"], "10C-eqd-mass": ["sax_envelope"], "10C-raw-mass": ["envelope"]
     },
     "segmentation_strategies": {
         "4C-eqw": ["uniform"], "4C-eqd": ["adaptive"], "4C-raw": ["uniform"],
+        "4C-eqw-mass": ["uniform"], "4C-eqd-mass": ["adaptive"], "4C-raw-mass": ["uniform"],
         "5C-eqw": ["uniform"], "5C-eqd": ["adaptive"], "5C-raw": ["uniform"],
-        "10C-eqw": ["uniform"], "10C-eqd": ["adaptive"], "10C-raw": ["uniform"]
+        "5C-eqw-mass": ["uniform"], "5C-eqd-mass": ["adaptive"], "5C-raw-mass": ["uniform"],
+        "10C-eqw": ["uniform"], "10C-eqd": ["adaptive"], "10C-raw": ["uniform"],
+        "10C-eqw-mass": ["uniform"], "10C-eqd-mass": ["adaptive"], "10C-raw-mass": ["uniform"]
     },
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
@@ -39,30 +44,38 @@
     "max_leaves_to_visit": [5],
     "isax_start_bit_numbers": [1],
     "envelope_sizes": {
-        "4C-ulisse": [3072], "4C-eqw": [64], "4C-eqd": [64], "4C-raw": [256],
-        "5C-ulisse": [3072], "5C-eqw": [64], "5C-eqd": [64], "5C-raw": [256],
-        "10C-ulisse": [3072], "10C-eqw": [64], "10C-eqd": [64], "10C-raw": [256]
-    },
-    "optimal_num_segments": {
-        "4C-eqw": [true], "4C-eqd": [true], "4C-raw": [true],
-        "5C-eqw": [true], "5C-eqd": [true], "5C-raw": [true],
-        "10C-eqw": [true], "10C-eqd": [true], "10C-raw": [true]
+        "4C-ulisse": [3072], "5C-ulisse": [3072], "10C-ulisse": [3072]
     },
     "num_segments": {
         "4C-ulisse": [16], "5C-ulisse": [16], "10C-ulisse": [16]
     },
     "length_group_size_ratios": {
         "4C-eqw": [0.025], "4C-eqd": [0.025],
+        "4C-eqw-mass": [0.025], "4C-eqd-mass": [0.025],
         "5C-eqw": [0.025], "5C-eqd": [0.025],
-        "10C-eqw": [0.025], "10C-eqd": [0.025]
+        "5C-eqw-mass": [0.025], "5C-eqd-mass": [0.025],
+        "10C-eqw": [0.025], "10C-eqd": [0.025],
+        "10C-eqw-mass": [0.025], "10C-eqd-mass": [0.025]
     },
     "distance_measures": {
         "4C-mass": ["mass"], "4C-ucr": ["ed"], "4C-ulisse": ["ed"], "4C-eqw": ["ed"], "4C-eqd": ["ed"], "4C-raw": ["ed"],
+        "4C-eqw-mass": ["mass"], "4C-eqd-mass": ["mass"], "4C-raw-mass": ["mass"],
         "5C-mass": ["mass"], "5C-ucr": ["ed"], "5C-ulisse": ["ed"], "5C-eqw": ["ed"], "5C-eqd": ["ed"], "5C-raw": ["ed"],
-        "10C-mass": ["mass"], "10C-ucr": ["ed"], "10C-ulisse": ["ed"], "10C-eqw": ["ed"], "10C-eqd": ["ed"], "10C-raw": ["ed"]
+        "5C-eqw-mass": ["mass"], "5C-eqd-mass": ["mass"], "5C-raw-mass": ["mass"],
+        "10C-mass": ["mass"], "10C-ucr": ["ed"], "10C-ulisse": ["ed"], "10C-eqw": ["ed"], "10C-eqd": ["ed"], "10C-raw": ["ed"],
+        "10C-eqw-mass": ["mass"], "10C-eqd-mass": ["mass"], "10C-raw-mass": ["mass"]
     },
     "early_abandon": [true],
-    "sort_query": [true],
+    "sort_query": {
+        "4C-ucr": [true], "4C-ulisse": [true], 
+        "5C-ucr": [true], "5C-ulisse": [true], 
+        "10C-ucr": [true], "10C-ulisse": [true]
+    },
+    "precalculate_ffts": {
+        "4C-mass": [false, true], "4C-eqw-mass": [true], "4C-eqd-mass": [true], "4C-raw-mass": [true],
+        "5C-mass": [false, true], "5C-eqw-mass": [true], "5C-eqd-mass": [true], "5C-raw-mass": [true],
+        "10C-mass": [false, true], "10C-eqw-mass": [true], "10C-eqd-mass": [true], "10C-raw-mass": [true]
+    },
     "adapt_index": [false],
     "index_inserters": ["parallel"],
     "search_types": ["knn"],
@@ -70,8 +83,11 @@
     "search_approx": [false],
     "search_raw": {
         "4C-mass": [false, true], "4C-ucr": [false, true], "4C-ulisse": [false, true], "4C-eqw": [false], "4C-eqd": [false], "4C-raw": [true],
+        "4C-eqw-mass": [false], "4C-eqd-mass": [false], "4C-raw-mass": [true],
         "5C-mass": [false, true], "5C-ucr": [false, true], "5C-ulisse": [false, true], "5C-eqw": [false], "5C-eqd": [false], "5C-raw": [true],
-        "10C-mass": [false, true], "10C-ucr": [false, true], "10C-ulisse": [false, true], "10C-eqw": [false], "10C-eqd": [false], "10C-raw": [true]
+        "5C-eqw-mass": [false], "5C-eqd-mass": [false], "5C-raw-mass": [true],
+        "10C-mass": [false, true], "10C-ucr": [false, true], "10C-ulisse": [false, true], "10C-eqw": [false], "10C-eqd": [false], "10C-raw": [true],
+        "10C-eqw-mass": [false], "10C-eqd-mass": [false], "10C-raw-mass": [true]
     },
     "dataset_seeds": [0],
     "query_set_seeds": [0],

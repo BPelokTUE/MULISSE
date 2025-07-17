@@ -1,5 +1,6 @@
 {
     "csv_data_dirs": ["stocks"],
+    "min_subs_sigmas": [0.0],
     "dataset_sizes": [1000],
     "series_lengths": [2048],
     "query_set_sizes": [100],
@@ -11,7 +12,6 @@
         "vl_envelope": ["vl_envelope"]
     },
     "sax_breakpoint_strategies": ["equiprobable"],
-    "isax_split_strategies": ["em"],
     "sax_num_bits": [15],
     "max_width_changes": {
         "vl_envelope": [0.001, 0.0025, 0.005, 0.0075, 0.01, 0.025, 0.05, 0.075, 0.1]
@@ -21,10 +21,8 @@
     },
     "length_group_size_ratios": [0.025],
     "envelope_sizes": {
-        "envelope": [48],
         "vl_envelope": [1]
     },
-    "optimal_num_segments": [true],
     "segmentation_strategies": ["uniform", "adaptive"],
     "distance_measures": ["ed"],
     "early_abandon": [true],

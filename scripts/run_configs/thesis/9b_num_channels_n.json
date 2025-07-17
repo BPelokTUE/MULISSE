@@ -41,18 +41,7 @@
     "max_leaves_to_visit": [5],
     "isax_start_bit_numbers": [1],
     "envelope_sizes": {
-        "C1-eqw": [64], "C1-eqd": [64], "C1-raw": [256], "C1-ulisse": [3072],
-        "C4-eqw": [64], "C4-eqd": [64], "C4-raw": [256], "C4-ulisse": [3072],
-        "C16-eqw": [64], "C16-eqd": [64], "C16-raw": [256], "C16-ulisse": [3072],
-        "C64-eqw": [64], "C64-eqd": [64], "C64-raw": [256], "C64-ulisse": [3072],
-        "C256-eqw": [64], "C256-eqd": [64], "C256-raw": [256], "C256-ulisse": [3072]
-    },
-    "optimal_num_segments": {
-        "C1-eqw": [true], "C1-eqd": [true], "C1-raw": [true], 
-        "C4-eqw": [true], "C4-eqd": [true], "C4-raw": [true], 
-        "C16-eqw": [true], "C16-eqd": [true], "C16-raw": [true], 
-        "C64-eqw": [true], "C64-eqd": [true], "C64-raw": [true], 
-        "C256-eqw": [true], "C256-eqd": [true], "C256-raw": [true]
+        "C1-ulisse": [3072], "C4-ulisse": [3072], "C16-ulisse": [3072], "C64-ulisse": [3072], "C256-ulisse": [3072]
     },
     "num_segments": {
         "C1-ulisse": [16], "C4-ulisse": [16], "C16-ulisse": [16], "C64-ulisse": [16], "C256-ulisse": [16]
@@ -69,7 +58,13 @@
         "C256-scan": ["ed", "mass"], "C256-eqw": ["ed"], "C256-eqd": ["ed"], "C256-raw": ["ed"], "C256-ulisse": ["ed"]
     },
     "early_abandon": [true],
-    "sort_query": [true],
+    "sort_query": {
+        "C1-scan": [true], "C1-ulisse": [true],
+        "C4-scan": [true], "C4-ulisse": [true],
+        "C16-scan": [true], "C16-ulisse": [true],
+        "C64-scan": [true], "C64-ulisse": [true],
+        "C256-scan": [true], "C256-ulisse": [true]
+    },
     "adapt_index": [false],
     "index_inserters": ["parallel"],
     "search_types": ["knn"],

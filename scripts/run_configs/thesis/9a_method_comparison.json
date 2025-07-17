@@ -14,12 +14,18 @@
         "ulisse": ["isax_env_w_sax_env"],
         "eqw": ["sax_envelope"],
         "eqd": ["sax_envelope"],
-        "raw": ["envelope"]
+        "raw": ["envelope"],
+        "eqw-mass": ["sax_envelope"],
+        "eqd-mass": ["sax_envelope"],
+        "raw-mass": ["envelope"]
     },
     "segmentation_strategies": {
         "eqw": ["uniform"],
         "eqd": ["adaptive"],
-        "raw": ["uniform"]
+        "raw": ["uniform"],
+        "eqw-mass": ["uniform"],
+        "eqd-mass": ["adaptive"],
+        "raw-mass": ["uniform"]
     },
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
@@ -28,22 +34,16 @@
     "max_leaves_to_visit": [5],
     "isax_start_bit_numbers": [1],
     "envelope_sizes": {
-        "ulisse": [3072],
-        "eqw": [64],
-        "eqd": [64],
-        "raw": [256]
-    },
-    "optimal_num_segments": {
-        "eqw": [true],
-        "eqd": [true],
-        "raw": [true]
+        "ulisse": [3072]
     },
     "num_segments": {
         "ulisse": [16]
     },
     "length_group_size_ratios": {
         "eqw": [0.025],
-        "eqd": [0.025]
+        "eqd": [0.025],
+        "eqw-mass": [0.025],
+        "eqd-mass": [0.025]
     },
     "distance_measures": {
         "mass": ["mass"],
@@ -51,10 +51,16 @@
         "ulisse": ["ed"],
         "eqw": ["ed"],
         "eqd": ["ed"],
-        "raw": ["ed"]
+        "raw": ["ed"],
+        "eqw-mass": ["mass"],
+        "eqd-mass": ["mass"],
+        "raw-mass": ["mass"]
     },
     "early_abandon": [true],
-    "sort_query": [true],
+    "sort_query": {
+        "ucr": [true],
+        "ulisse": [true]
+    },
     "adapt_index": [false],
     "index_inserters": ["parallel"],
     "search_types": ["knn"],
@@ -66,7 +72,16 @@
         "ulisse": [false, true],
         "eqw": [false],
         "eqd": [false],
-        "raw": [true]
+        "raw": [true],
+        "eqw-mass": [false],
+        "eqd-mass": [false],
+        "raw-mass": [true]
+    },
+    "precalculate_ffts": {
+        "mass": [false, true],
+        "eqw-mass": [true],
+        "eqd-mass": [true],
+        "raw-mass": [true]
     },
     "dataset_seeds": [0],
     "query_set_seeds": [0],

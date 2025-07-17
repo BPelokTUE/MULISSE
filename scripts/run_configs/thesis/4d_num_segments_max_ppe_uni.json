@@ -16,7 +16,6 @@
     "num_segments": [8, 16, 24, 32, 40, 56, 72, 92],
     "distance_measures": ["ed"],
     "early_abandon": [true],
-    "sort_query": [true],
     "adapt_index": [false],
     "index_inserters": ["parallel"],
     "search_types": ["knn"],

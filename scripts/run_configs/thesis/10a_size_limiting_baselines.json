@@ -30,7 +30,6 @@
     },
     "distance_measures": ["ed"],
     "early_abandon": [true],
-    "sort_query": [true],
     "index_inserters": ["parallel"],
     "search_types": ["knn"],
     "search_ks": [1],

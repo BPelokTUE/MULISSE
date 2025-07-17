@@ -36,8 +36,6 @@
     },
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
-    "envelope_sizes": [64],
-    "optimal_num_segments": [true],
     "distance_measures": {
         "C1-scan": ["ed", "mass"], "C1-eqw": ["ed"], "C1-eqd": ["ed"], "C1-raw": ["ed"],
         "C4-scan": ["ed", "mass"], "C4-eqw": ["ed"], "C4-eqd": ["ed"], "C4-raw": ["ed"],
@@ -46,7 +44,13 @@
         "C256-scan": ["ed", "mass"], "C256-eqw": ["ed"], "C256-eqd": ["ed"], "C256-raw": ["ed"]
     },
     "early_abandon": [true],
-    "sort_query": [true],
+    "sort_query": {
+        "C1-scan": [true], "C1-ulisse": [true],
+        "C4-scan": [true], "C4-ulisse": [true],
+        "C16-scan": [true], "C16-ulisse": [true],
+        "C64-scan": [true], "C64-ulisse": [true],
+        "C256-scan": [true], "C256-ulisse": [true]
+    },
     "adapt_index": [false],
     "index_inserters": ["parallel"],
     "search_types": ["knn"],
