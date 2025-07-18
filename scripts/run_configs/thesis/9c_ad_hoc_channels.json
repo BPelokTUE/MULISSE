@@ -3,7 +3,7 @@
     "series_lengths": [2048],
     "csv_data_dirs": {
         "4C-mass": ["weather"], "4C-ucr": ["weather"], "4C-ulisse": ["weather"], "4C-eqw": ["weather"], "4C-eqd": ["weather"], "4C-raw": ["weather"], "4C-eqw-mass": ["weather"], "4C-eqd-mass": ["weather"], "4C-raw-mass": ["weather"],
-        "5C-mass": ["stocks"], "5C-ucr": ["stocks"], "5C-ulisse": ["stocks"], "5C-eqw": ["stocks"], "5C-eqd": ["stocks"], "5C-raw": ["stocks"], "5C-eqw-mass": ["weather"], "5C-eqd-mass": ["weather"], "5C-raw-mass": ["weather"]
+        "5C-mass": ["stocks"], "5C-ucr": ["stocks"], "5C-ulisse": ["stocks"], "5C-eqw": ["stocks"], "5C-eqd": ["stocks"], "5C-raw": ["stocks"], "5C-eqw-mass": ["stocks"], "5C-eqd-mass": ["stocks"], "5C-raw-mass": ["stocks"]
     },
     "syn_num_channels": {
         "10C-mass": [10], "10C-ucr": [10], "10C-ulisse": [10], "10C-eqw": [10], "10C-eqd": [10], "10C-raw": [10], "10C-eqw-mass": [10], "10C-eqd-mass": [10], "10C-raw-mass": [10]

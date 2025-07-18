@@ -40,9 +40,9 @@ plt.rcParams.update(
         "font.size": 18,
         "axes.titlesize": 18,
         "axes.labelsize": 16,
-        "xtick.labelsize": 14,
-        "ytick.labelsize": 14,
-        "legend.fontsize": 14,
+        "xtick.labelsize": 16,
+        "ytick.labelsize": 16,
+        "legend.fontsize": 16,
     }
 )
 
@@ -57,18 +57,30 @@ dataset_line_colors = {
 method_comparison_labels = {
     ("sax_envelope-ed-early", "uniform"): "MT-Env EqW",
     ("sax_envelope-ed-early", "adaptive"): "MT-Env EqD",
+    ("sax_envelope-mass-ffts", "uniform"): "MT-Env EqW MASS",
+    ("sax_envelope-mass-ffts", "adaptive"): "MT-Env EqD MASS",
+    ("sax_envelope-mass", "uniform"): "MT-Env EqW MASS",
+    ("sax_envelope-mass", "adaptive"): "MT-Env EqD MASS",
     ("envelope-ed-early", "uniform"): "MT-Env",
+    ("envelope-mass-ffts", "uniform"): "MT-Env MASS",
     ("isax_env_w_sax_env-ed-early", "uniform"): "MULISSE",
     ("sequential_scan-ed-early", 0): "UCR Suite",
     ("sequential_scan-mass", 0): "MASS",
+    ("sequential_scan-mass-ffts", 0): "MASS Prec.",
 }
 method_comparison_colors = {
     ("sax_envelope-ed-early", "uniform"): PALETTE["Blues"][6],
     ("sax_envelope-ed-early", "adaptive"): PALETTE["Blues"][2],
+    ("sax_envelope-mass-ffts", "uniform"): PALETTE["Oranges"][5],
+    ("sax_envelope-mass-ffts", "adaptive"): PALETTE["Oranges"][2],
+    ("sax_envelope-mass", "uniform"): PALETTE["Oranges"][5],
+    ("sax_envelope-mass", "adaptive"): PALETTE["Oranges"][2],
     ("envelope-ed-early", "uniform"): PALETTE["Blues"][6],
+    ("envelope-mass-ffts", "uniform"): PALETTE["Oranges"][5],
     ("isax_env_w_sax_env-ed-early", "uniform"): PALETTE["Greens"][2],
-    ("sequential_scan-ed-early", 0): PALETTE["Oranges"][4],
+    ("sequential_scan-ed-early", 0): PALETTE["Greys"][2],
     ("sequential_scan-mass", 0): PALETTE["Purples"][6],
+    ("sequential_scan-mass-ffts", 0): PALETTE["Purples"][2],
 }
 
 
@@ -342,7 +354,7 @@ for normalized in [False, True]:
             )
 
 # %%
-# 4b - Number of lengths per LG (λ) univariate
+# 4b - Number of lengths per LG (λ)
 
 dim_suffix = "multi"
 
@@ -374,101 +386,112 @@ for target_args in [TargetArgs.QUERY_TIME]:
     )
 
 # %%
-# 4c - Positions per envelope (γ) univariate
+# 4c - Positions per envelope (γ)
 
-dim_suffix = "multi"
-
-for target_args in [TargetArgs.QUERY_TIME]:
-    visualize_experiments(
-        logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_4c_ppe_{dim_suffix}"],
-        groups_dict={
-            ERD.METHODS_COLS: [SSC.NORMALIZED],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
-            ERD.INDEXES_COLS: [ISC.POS_PER_ENV, ISC.SEGMENTATION_STRATEGY],
-        },
-        merge_csv_datasets=True,
-        separate_plots_dict={
-            (DSC.SERIES_LENGTH,): [],
-            (SSC.NORMALIZED,): [],
-            (ISC.SEGMENTATION_STRATEGY,): [],
-            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
-        },
-        # title_base=dim_suffix_to_titles[dim_suffix],
-        legend_plots_dict={DSC.SERIES_LENGTH: {2048}, SSC.NORMALIZED: {True}, ISC.SEGMENTATION_STRATEGY: {"uniform"}},
-        bar_plot_color_attrs=None,
-        line_plot_x_attr=ISC.POS_PER_ENV,
-        line_plot_included_cols={DSC.DATASET_FILE},
-        line_plot_colors_map=dataset_line_colors,
-        x_scale="log",
-        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4c_ppe_{target_args.name.lower()}_{dim_suffix}"),
-        **target_args.value,
-    )
+for dim_suffix in ["multi"]:
+    for target_args in [TargetArgs.QUERY_TIME]:
+        visualize_experiments(
+            logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_4c_ppe_{dim_suffix}"],
+            groups_dict={
+                ERD.METHODS_COLS: [SSC.NORMALIZED],
+                ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+                ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
+                ERD.INDEXES_COLS: [ISC.POS_PER_ENV, ISC.SEGMENTATION_STRATEGY],
+            },
+            merge_csv_datasets=True,
+            separate_plots_dict={
+                (DSC.SERIES_LENGTH,): [(2048,)],
+                (SSC.NORMALIZED,): [],
+                (ISC.SEGMENTATION_STRATEGY,): [],
+                (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
+            },
+            # title_base=dim_suffix_to_titles["multi"],
+            legend_plots_dict={
+                DSC.SERIES_LENGTH: {2048},
+                SSC.NORMALIZED: {True},
+                ISC.SEGMENTATION_STRATEGY: {"uniform"},
+            },
+            bar_plot_color_attrs=None,
+            line_plot_x_attr=ISC.POS_PER_ENV,
+            line_plot_included_cols={DSC.DATASET_FILE},
+            line_plot_colors_map=dataset_line_colors,
+            x_scale="log",
+            save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4c_ppe_{target_args.name.lower()}_{dim_suffix}"),
+            **target_args.value,
+        )
 
 # %%
 # 4c - PPE for different distance measures
 re_sep = "::"
 
+dist_calc_labels = {
+    ("ed", 0, False, False): "EA",
+    ("ed", 1, False, False): "EA Whole",
+    ("ed", 0, False, True): "EA Sorted",
+    ("ed", 1, False, True): "EA Whole Sorted",
+    ("mass", 0, False, False): "MASS",
+    ("mass", 1, False, False): "MASS Whole",
+    ("mass", 1, True, False): "MASS Precomputed",
+}
+dist_calc_colors = {
+    ("ed", 0, False, False): PALETTE["Blues"][6],
+    ("ed", 1, False, False): PALETTE["Blues"][2],
+    ("ed", 0, False, True): PALETTE["Greens"][6],
+    ("ed", 1, False, True): PALETTE["Greens"][2],
+    ("mass", 0, False, False): PALETTE["Purples"][6],
+    ("mass", 1, False, False): PALETTE["Purples"][3],
+    ("mass", 1, True, False): PALETTE["Oranges"][4],
+}
+
+regexes = {"mass": r"", "no_mass": r"(ed.*|mass::1.*)", "abr": r"^(?!mass).*"}
+
 for suffix in ["ds", "m", "lmin"]:
-    for target_args in [TargetArgs.QUERY_TIME, TargetArgs.ABANDONING_RATE]:
-        visualize_experiments(
-            logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_4c_ppe_dist_calc_methods_{suffix}"],
-            groups_dict={
-                ERD.METHODS_COLS: [
-                    SSC.DISTANCE_MEASURE,
-                    SSC.EXAMINE_WHOLE,
-                    SSC.PRECOMPUTED_FFTS,
-                    SSC.SORT_QUERY,
-                    SSC.NORMALIZED,
-                ],
-                ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
-                ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
-                ERD.INDEXES_COLS: [ISC.POS_PER_ENV],
-            },
-            merge_csv_datasets=True,
-            separate_plots_dict={
-                (DSC.SERIES_LENGTH, DSC.DATASET_FILE): [],
-                (SSC.NORMALIZED,): [],
-                (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
-            },
-            regex_dict={SSC.DISTANCE_MEASURE: r"^(?!mass)"}
-            if target_args.name == "ABANDONING_RATE"
-            else {(SSC.DISTANCE_MEASURE, SSC.EXAMINE_WHOLE): "(ed.*|mass::1)"},
-            bar_plot_color_attrs=None,
-            line_plot_x_attr=ISC.POS_PER_ENV,
-            line_plot_included_cols={
-                SSC.DISTANCE_MEASURE,
-                SSC.EXAMINE_WHOLE,
-                SSC.PRECOMPUTED_FFTS,
-                SSC.SORT_QUERY,
-            },
-            line_plot_legend_map={
-                ("ed", 0, False, False): "EA",
-                ("ed", 1, False, False): "EA Whole",
-                ("ed", 0, False, True): "EA Sorted",
-                ("ed", 1, False, True): "EA Whole Sorted",
-                ("mass", 0, False, False): "MASS",
-                ("mass", 1, False, False): "MASS Whole",
-                ("mass", 1, True, False): "MASS Precomputed",
-            },
-            line_plot_colors_map={
-                ("ed", 0, False, False): PALETTE["Blues"][6],
-                ("ed", 1, False, False): PALETTE["Blues"][2],
-                ("ed", 0, False, True): PALETTE["Greens"][6],
-                ("ed", 1, False, True): PALETTE["Greens"][2],
-                ("mass", 0, False, False): PALETTE["Purples"][6],
-                ("mass", 1, False, False): PALETTE["Purples"][3],
-                ("mass", 1, True, False): PALETTE["Oranges"][4],
-            },
-            legend_max_cols=3,
-            x_scale="log",
-            y_scale="linear",
-            # save_dir=os.path.join(
-            #     PARAMETRIZATION_FIGS_DIR,
-            #     f"5a_mt_env_w_mass_{target_args.name.lower()}",
-            # ),
-            **target_args.value,
-        )
+    for target_args in [TargetArgs.QUERY_TIME, TargetArgs.ABANDONING_RATE, TargetArgs.PRUNING_RATIO]:
+        for regex_key, regex in regexes.items():
+            abr_target = target_args.name == "ABANDONING_RATE"
+            abr_key = regex_key == "abr"
+            if (abr_target and not abr_key) or (not abr_target and abr_key):
+                continue
+
+            if target_args.name == "PRUNING_RATIO" and regex_key != "mass":
+                continue
+
+            visualize_experiments(
+                logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_4c_ppe_dist_calc_methods_{suffix}"],
+                groups_dict={
+                    ERD.METHODS_COLS: [
+                        SSC.DISTANCE_MEASURE,
+                        SSC.EXAMINE_WHOLE,
+                        SSC.PRECOMPUTED_FFTS,
+                        SSC.SORT_QUERY,
+                        SSC.NORMALIZED,
+                    ],
+                    ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
+                    ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO, QSC.L_MAX_RATIO],
+                    ERD.INDEXES_COLS: [ISC.POS_PER_ENV],
+                },
+                merge_csv_datasets=True,
+                separate_plots_dict={
+                    (DSC.SERIES_LENGTH, DSC.DATASET_FILE): [],
+                    (SSC.NORMALIZED,): [],
+                    (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
+                },
+                regex_dict={(SSC.DISTANCE_MEASURE, SSC.EXAMINE_WHOLE, SSC.PRECOMPUTED_FFTS): regex},
+                bar_plot_color_attrs=None,
+                line_plot_x_attr=ISC.POS_PER_ENV,
+                line_plot_included_cols={SSC.DISTANCE_MEASURE, SSC.EXAMINE_WHOLE, SSC.PRECOMPUTED_FFTS, SSC.SORT_QUERY},
+                line_plot_legend_map=dist_calc_labels,
+                line_plot_colors_map=dist_calc_colors,
+                legend_max_cols=2,
+                legend_plots_dict={DSC.DATASET_FILE: {"stocks"}} if target_args.name == "PRUNING_RATIO" else None,
+                x_scale="log",
+                y_scale="linear",
+                save_dir=os.path.join(
+                    PARAMETRIZATION_FIGS_DIR,
+                    f"4c_ppe_dist_calc_{regex_key}_{suffix}_{target_args.name.lower()}",
+                ),
+                **target_args.value,
+            )
 
 
 # %%
@@ -477,9 +500,11 @@ for suffix in ["ds", "m", "lmin"]:
 dim_suffix = "multi"
 
 for normalized in [False, True]:
+    suffix = "_m" if normalized else "_raw"
+    # suffix = ""
     for target_args in [TargetArgs.QUERY_TIME]:
         visualize_experiments(
-            logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_4d_num_segments_{dim_suffix}{'' if normalized else '_raw'}"],
+            logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_4d_num_segments_{dim_suffix}{suffix}"],
             groups_dict={
                 ERD.METHODS_COLS: [SSC.NORMALIZED],
                 ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
@@ -625,11 +650,11 @@ for target_args in [TargetArgs.INDEX_SIZE, TargetArgs.QUERY_TIME]:
         )
 
 # %%
-# 6c - Segment size (s) univariate for Envelope Tree
+# 6a - Segment size (s) univariate for Envelope Tree
 
 for target_args in [TargetArgs.QUERY_TIME]:
     visualize_experiments(
-        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_6a_tree_vs_flat"],
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_6b_tree_vs_flat"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME],
             ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
@@ -690,7 +715,7 @@ dataset_cols_map = {
 for target_args in [TargetArgs.QUERY_TIME]:
     for dataset, dataset_cols in dataset_cols_map.items():
         visualize_experiments(
-            logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_6_ch_performance"],
+            logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_7a_ch_performance"],
             groups_dict={ERD.DATASETS_COLS: dataset_cols},
             regex_dict={DSC.DATASET_FILE: rf"^{dataset}"},
             bar_plot_color_attrs=dataset_cols[-1],
@@ -706,8 +731,8 @@ for target_args in [TargetArgs.QUERY_TIME]:
 # %%
 # 7b - Channel clustering
 visualize_clusters(
-    logs_dir="EXPERIMENT_LOGS/thesis/LOGS_6_ch_clustering",
-    save_dir=os.path.join(EXTENSIONS_FIGS_DIR, "6_ch_clustering"),
+    logs_dir="EXPERIMENT_LOGS/thesis/LOGS_7b_ch_clustering",
+    save_dir=os.path.join(EXTENSIONS_FIGS_DIR, "7b_ch_clustering"),
 )
 
 # %%
@@ -788,15 +813,43 @@ for target_args in [TargetArgs.QUERY_TIME, TargetArgs.PRUNING_RATIO, TargetArgs.
             (SSC.NORMALIZED,): [],
             (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
         },
-        legend_max_cols=3,
+        legend_max_cols=4,
         legend_plots_dict={DSC.SERIES_LENGTH: {2048}, QSC.L_MIN_RATIO: {0.125}},
         bar_plot_label_padding=False,
         bar_plot_color_attrs=[SSC.METHOD_NAME, ISC.SEGMENTATION_STRATEGY],
         bar_plot_label_map=method_comparison_labels,
         bar_plot_color_map=method_comparison_colors,
+        bar_width_inches=0.4,
         y_scale="log" if target_args.name == "QUERY_TIME" else "linear",
         merge_csv_datasets=True,
         save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_{target_args.name.lower()}"),
+        **target_args.value,
+    )
+
+# %%
+# 9a - Method comparison across series lengths
+
+for target_args in [TargetArgs.QUERY_TIME]:
+    visualize_experiments(
+        logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_9a_method_comparison"],
+        groups_dict={
+            ERD.METHODS_COLS: [SSC.METHOD_NAME, SSC.NORMALIZED],
+            ERD.DATASETS_COLS: [DSC.SERIES_LENGTH],
+            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO],
+            ERD.INDEXES_COLS: [ISC.SEGMENTATION_STRATEGY],
+        },
+        separate_plots_dict={(QSC.L_MIN_RATIO,): [(0.125,)], (SSC.NORMALIZED,): []},
+        legend_max_cols=2,
+        legend_plots_dict={DSC.DATASET_FILE: {"synthetic"}, QSC.L_MIN_RATIO: {0.125}, SSC.NORMALIZED: {True}},
+        bar_plot_color_attrs=None,
+        line_plot_x_attr=DSC.SERIES_LENGTH,
+        line_plot_show_min=False,
+        line_plot_included_cols={SSC.METHOD_NAME, ISC.SEGMENTATION_STRATEGY},
+        line_plot_legend_map=method_comparison_labels,
+        line_plot_colors_map=method_comparison_colors,
+        y_scale="log",
+        merge_csv_datasets=True,
+        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_m_{target_args.name.lower()}"),
         **target_args.value,
     )
 
@@ -808,12 +861,13 @@ for target_args in [TargetArgs.QUERY_TIME]:
         logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_9a_method_comparison"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME, SSC.NORMALIZED],
-            ERD.DATASETS_COLS: [DSC.SERIES_LENGTH],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
             ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO],
             ERD.INDEXES_COLS: [ISC.SEGMENTATION_STRATEGY],
         },
-        separate_plots_dict={(DSC.SERIES_LENGTH,): [], (SSC.NORMALIZED,): []},
-        legend_plots_dict=None,
+        separate_plots_dict={(DSC.SERIES_LENGTH,): [(2048,)], (SSC.NORMALIZED,): [(False,)], (DSC.DATASET_FILE,): []},
+        legend_max_cols=2,
+        legend_plots_dict={DSC.SERIES_LENGTH: {2048}, SSC.NORMALIZED: {True}},
         bar_plot_color_attrs=None,
         line_plot_x_attr=QSC.L_MIN_RATIO,
         line_plot_show_min=False,
@@ -821,9 +875,9 @@ for target_args in [TargetArgs.QUERY_TIME]:
         line_plot_legend_map=method_comparison_labels,
         line_plot_colors_map=method_comparison_colors,
         x_scale="log",
-        y_scale="log",
+        y_scale="log" if target_args.name == "QUERY_TIME" else "linear",
         merge_csv_datasets=True,
-        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_{target_args.name.lower()}"),
+        # save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_lmin_{target_args.name.lower()}"),
         **target_args.value,
     )
 
@@ -850,14 +904,14 @@ for target_args in [TargetArgs.QUERY_TIME]:
         line_plot_legend_map=method_comparison_labels,
         line_plot_colors_map=method_comparison_colors,
         y_scale="log",
-        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_{target_args.name.lower()}_per_ql"),
+        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_ql_{target_args.name.lower()}"),
         **target_args.value,
     )
 
 # %%
 # 9b - Method comparison by number of channels
 
-for constant in ["m"]:
+for constant in [""]:
     suffix = f"_{constant}" if len(constant) > 0 else ""
     for target_args in [TargetArgs.QUERY_TIME]:
         visualize_experiments(
@@ -873,7 +927,7 @@ for constant in ["m"]:
                 (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
                 (SSC.NORMALIZED,): [],
             },
-            title_base=f"Constant {constant}" if len(constant) > 0 else None,
+            # title_base=f"Constant {constant}" if len(constant) > 0 else None,
             legend_max_cols=2,
             legend_plots_dict={SSC.NORMALIZED: {True}},
             bar_plot_color_attrs=None,
@@ -900,8 +954,13 @@ for target_args in [TargetArgs.QUERY_TIME]:
             ERD.QUERY_SETS_COLS: [QSC.USED_CHANNELS],
             ERD.INDEXES_COLS: [ISC.SEGMENTATION_STRATEGY],
         },
-        separate_plots_dict={(DSC.SERIES_LENGTH,): [], (SSC.NORMALIZED,): [], (DSC.DATASET_FILE,): []},
-        legend_plots_dict=None,
+        separate_plots_dict={
+            (DSC.SERIES_LENGTH,): [],
+            (SSC.NORMALIZED,): [(True,)],
+            (DSC.DATASET_FILE,): [("synthetic",)],
+        },
+        legend_max_cols=2,
+        legend_plots_dict={DSC.DATASET_FILE: {"synthetic"}, SSC.NORMALIZED: {True}},
         bar_plot_color_attrs=None,
         line_plot_x_attr=QSC.USED_CHANNELS,
         line_plot_show_min=False,
@@ -909,6 +968,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
         line_plot_legend_map=method_comparison_labels,
         line_plot_colors_map=method_comparison_colors,
         y_scale="log",
+        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9c_ad_hoc_channels_{target_args.name.lower()}"),
         **target_args.value,
     )
 
@@ -917,7 +977,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
 # 10b - Size limiting
 
 size_limit = 0.5
-dataset = "synthetic"
+dataset = "weather"
 
 for target_args in [TargetArgs.ESTIMATE_SCORE]:
     visualize_experiments(
@@ -944,7 +1004,7 @@ for target_args in [TargetArgs.ESTIMATE_SCORE]:
         heat_map_y_attr=PEC.NUM_SEGMENTS,
         heat_map_included_cols={ISC.SEGMENTATION_STRATEGY},
         cell_width_inches=7.5,
-        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10a_size_lim_baselines_est_{target_args.name.lower()}"),
+        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10a_size_lim_baselines_est_{dataset}_{target_args.name.lower()}"),
         **target_args.value,
     )
 
@@ -974,14 +1034,14 @@ for target_args in [TargetArgs.QUERY_TIME]:
         heat_map_y_attr=ISC.NUM_SEGMENTS,
         heat_map_included_cols={DSC.DATASET_FILE, ISC.SEGMENTATION_STRATEGY},
         cell_width_inches=7.5,
-        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10a_size_lim_baselines_gt_{target_args.name.lower()}"),
+        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10a_size_lim_baselines_gt_{dataset}_{target_args.name.lower()}"),
         **target_args.value,
     )
 
 # %%
 # 10b - Size limiting performance
 
-for target_args in [TargetArgs.QUERY_TIME]:
+for target_args in [TargetArgs.PRUNING_RATIO]:
     visualize_experiments(
         logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_10b_size_limiting_performance"],
         groups_dict={
@@ -996,9 +1056,10 @@ for target_args in [TargetArgs.QUERY_TIME]:
             (SSC.NORMALIZED,): [],
             (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
         },
-        legend_max_cols=4,
+        regex_dict={(ISC.INDEX_SIZE_LIMIT, SSC.METHOD_NAME): r"^(0\.0::.*|.*::.*ed-early)"},
+        legend_max_cols=5,
         # legend_plots_dict={DSC.SERIES_LENGTH: {2048}, QSC.L_MIN_RATIO: {0.125}},
-        bar_plot_label_padding=False,
+        bar_plot_label_padding=True,
         bar_plot_color_attrs=[SSC.METHOD_NAME, ISC.SEGMENTATION_STRATEGY],
         bar_plot_label_map=method_comparison_labels,
         bar_plot_color_map=method_comparison_colors,

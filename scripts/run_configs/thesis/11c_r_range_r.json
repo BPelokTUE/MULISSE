@@ -1,0 +1,120 @@
+{
+    "csv_data_dirs": ["weather", "stocks"],
+    "dataset_sizes": [100],
+    "series_lengths": [2048],
+    "syn_num_channels": [4],
+    "syn_step_stdevs": [1.0],
+    "query_set_sizes": [1],
+    "l_range_ratios": [[0.125, 1.0]],
+    "used_channel_ratios": [1.0],
+    "query_noise_stdevs": [0.1],
+    "search_methods": {
+        "mass": ["scan"],
+        "mass-raw": ["scan"],
+        "ucr": ["scan"],
+        "ucr-raw": ["scan"],
+        "ulisse": ["isax_env_w_sax_env"],
+        "ulisse-raw": ["isax_env_w_sax_env"],
+        "eqw": ["sax_envelope"],
+        "eqd": ["sax_envelope"],
+        "raw": ["envelope"],
+        "eqw-mass": ["sax_envelope"],
+        "eqd-mass": ["sax_envelope"],
+        "raw-mass": ["envelope"]
+    },
+    "segmentation_strategies": {
+        "eqw": ["uniform"],
+        "eqd": ["adaptive"],
+        "raw": ["uniform"],
+        "eqw-mass": ["uniform"],
+        "eqd-mass": ["adaptive"],
+        "raw-mass": ["uniform"]
+    },
+    "sax_breakpoint_strategies": ["equiprobable"],
+    "sax_num_bits": [15],
+    "isax_split_strategies": ["em"],
+    "isax_leaf_cap_ratios": [0.05],
+    "max_leaves_to_visit": {
+        "ulisse": [5],
+        "ulisse-raw": [5]
+    },
+    "isax_start_bit_numbers": [1],
+    "envelope_sizes": {
+        "ulisse": [3072],
+        "ulisse-raw": [3072]
+    },
+    "num_segments": {
+        "ulisse": [16],
+        "ulisse-raw": [16]
+    },
+    "length_group_size_ratios": {
+        "eqw": [0.025],
+        "eqd": [0.025],
+        "eqw-mass": [0.025],
+        "eqd-mass": [0.025]
+    },
+    "distance_measures": {
+        "mass": ["mass"],
+        "mass-raw": ["mass"],
+        "ucr": ["ed"],
+        "ucr-raw": ["ed"],
+        "ulisse": ["ed"],
+        "ulisse-raw": ["ed"],
+        "eqw": ["ed"],
+        "eqd": ["ed"],
+        "raw": ["ed"],
+        "eqw-mass": ["mass"],
+        "eqd-mass": ["mass"],
+        "raw-mass": ["mass"]
+    },
+    "early_abandon": [true],
+    "sort_query": {
+        "ucr": [true],
+        "ucr-raw": [true],
+        "ulisse": [true],
+        "ulisse-raw": [true]
+    },
+    "adapt_index": [false],
+    "index_inserters": ["parallel"],
+    "search_types": ["r_range"],
+    "search_rs": {
+        "mass": [5.0, 10.0, 15.0, 20.0, 25.0],
+        "mass-raw": [500.0, 1000.0, 1500.0, 2000.0, 2500.0],
+        "ucr": [5.0, 10.0, 15.0, 20.0, 25.0],
+        "ucr-raw": [100.0, 1100.0, 1100.0, 2100.0, 2100.0],
+        "ulisse": [5.0, 10.0, 15.0, 20.0, 25.0],
+        "ulisse-raw": [500.0, 1000.0, 1500.0, 2000.0, 2500.0],
+        "eqw": [5.0, 10.0, 15.0, 20.0, 25.0],
+        "eqd": [5.0, 10.0, 15.0, 20.0, 25.0],
+        "raw": [500.0, 1000.0, 1500.0, 2000.0, 2500.0],
+        "eqw-mass": [5.0, 10.0, 15.0, 20.0, 25.0],
+        "eqd-mass": [5.0, 10.0, 15.0, 20.0, 25.0],
+        "raw-mass": [500.0, 1000.0, 1500.0, 2000.0, 2500.0] 
+    },
+    "search_approx": [false],
+    "search_raw": {
+        "mass": [false],
+        "mass-raw": [true],
+        "ucr": [false],
+        "ucr-raw": [true],
+        "ulisse": [false],
+        "ulisse-raw": [true],
+        "eqw": [false],
+        "eqd": [false],
+        "raw": [true],
+        "eqw-mass": [false],
+        "eqd-mass": [false],
+        "raw-mass": [true] 
+    },
+    "precalculate_ffts": {
+        "mass": [false, true],
+        "mass-raw": [false, true],
+        "eqw-mass": [true],
+        "eqd-mass": [true],
+        "raw-mass": [true]
+    },
+    "dataset_seeds": [0],
+    "query_set_seeds": [0],
+    "separate_csv_datasets": false,
+    "calculate_index_stats": false
+}

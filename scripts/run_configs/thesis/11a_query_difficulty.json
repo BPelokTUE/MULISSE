@@ -1,0 +1,90 @@
+{
+    "csv_data_dirs": ["weather", "stocks"],
+    "dataset_sizes": [1000],
+    "series_lengths": [2048],
+    "syn_num_channels": [4],
+    "syn_step_stdevs": [1.0],
+    "query_set_sizes": [100],
+    "l_range_ratios": [[0.125, 1.0]],
+    "used_channel_ratios": [1.0],
+    "query_noise_stdevs": [0.01, 0.025, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
+    "search_methods": {
+        "mass": ["scan"],
+        "ucr": ["scan"],
+        "ulisse": ["isax_env_w_sax_env"],
+        "eqw": ["sax_envelope"],
+        "eqd": ["sax_envelope"],
+        "raw": ["envelope"],
+        "eqw-mass": ["sax_envelope"],
+        "eqd-mass": ["sax_envelope"],
+        "raw-mass": ["envelope"]
+    },
+    "segmentation_strategies": {
+        "eqw": ["uniform"],
+        "eqd": ["adaptive"],
+        "raw": ["uniform"],
+        "eqw-mass": ["uniform"],
+        "eqd-mass": ["adaptive"],
+        "raw-mass": ["uniform"]
+    },
+    "sax_breakpoint_strategies": ["equiprobable"],
+    "sax_num_bits": [15],
+    "isax_split_strategies": ["em"],
+    "isax_leaf_cap_ratios": [0.05],
+    "max_leaves_to_visit": [5],
+    "isax_start_bit_numbers": [1],
+    "envelope_sizes": {
+        "ulisse": [3072]
+    },
+    "num_segments": {
+        "ulisse": [16]
+    },
+    "length_group_size_ratios": {
+        "eqw": [0.025],
+        "eqd": [0.025],
+        "eqw-mass": [0.025],
+        "eqd-mass": [0.025]
+    },
+    "distance_measures": {
+        "mass": ["mass"],
+        "ucr": ["ed"],
+        "ulisse": ["ed"],
+        "eqw": ["ed"],
+        "eqd": ["ed"],
+        "raw": ["ed"],
+        "eqw-mass": ["mass"],
+        "eqd-mass": ["mass"],
+        "raw-mass": ["mass"]
+    },
+    "early_abandon": [true],
+    "sort_query": {
+        "ucr": [true],
+        "ulisse": [true]
+    },
+    "adapt_index": [false],
+    "index_inserters": ["parallel"],
+    "search_types": ["knn"],
+    "search_ks": [1],
+    "search_approx": [false],
+    "search_raw": {
+        "mass": [false, true],
+        "ucr": [false, true],
+        "ulisse": [false, true],
+        "eqw": [false],
+        "eqd": [false],
+        "raw": [true],
+        "eqw-mass": [false],
+        "eqd-mass": [false],
+        "raw-mass": [true]
+    },
+    "precalculate_ffts": {
+        "mass": [false, true],
+        "eqw-mass": [true],
+        "eqd-mass": [true],
+        "raw-mass": [true]
+    },
+    "dataset_seeds": [0],
+    "query_set_seeds": [0],
+    "separate_csv_datasets": false,
+    "calculate_index_stats": false
+}

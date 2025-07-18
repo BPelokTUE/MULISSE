@@ -50,7 +50,7 @@ class ResultSet {
             m_results.insert(it, result);
             if (m_results.size() > c_param) m_results.pop_back();
         } else {  // R_RANGE
-            if (result.m_distance <= c_param) m_results.push_back(result);
+            if (result.m_distance <= c_param * c_param) m_results.push_back(result);
         }
     }
 
@@ -62,7 +62,7 @@ class ResultSet {
         if constexpr (S == KNN) {
             return m_results.size() < c_param ? INF : m_results[c_param - 1].m_distance;
         } else {  // R_RANGE
-            return c_param;
+            return c_param * c_param;
         }
     }
 

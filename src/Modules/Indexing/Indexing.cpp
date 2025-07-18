@@ -81,10 +81,8 @@ int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_pe
     }
     // Set pos_per_env dynamically if required
     if (env_index_params && env_index_params->m_pos_per_env == 0) {
-        // Calculate optimal positions per envelope if requested
-        Real multiplier = opts.m_normalized ? 512.0 : 2048.0;
-        uint pos_per_env = U(std::ceil(R(opts.m_l_min) / R(series_len) * multiplier));
-
+        // Use optimal positions per envelope if requested
+        uint pos_per_env = opts.m_normalized ? 64 : 256;
         RS.set_pos_per_env(pos_per_env);
         logger.set_pos_per_env(pos_per_env);
         opts.set_pos_per_env(pos_per_env);

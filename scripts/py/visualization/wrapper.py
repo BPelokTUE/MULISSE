@@ -270,7 +270,7 @@ def visualize_experiments(
             if save_dir is not None:
                 os.makedirs(os.path.dirname(get_plot_save_path("")), exist_ok=True)
                 # If legend was specifically requested only for certain plots, create separate version with legend
-                if legend_plots_dict is not None and len(legend_plots_dict) > 0:
+                if add_legend and len(legend_plots_dict) > 0:
                     suffixes.append("_legend")
 
             if bar_plot_color_attrs is not None:
@@ -340,6 +340,8 @@ def visualize_experiments(
                     include_cols=line_plot_included_cols,
                 )
                 legend = {key: line_plot_legend_map.get(key, val) for key, val in config_label_map.items()}
+                label_order = {key: i for i, key in enumerate(line_plot_colors_map.keys())}
+                legend = dict(sorted(legend.items(), key=lambda item: label_order.get(item[0], float("inf"))))
                 colors = {
                     key: line_plot_colors_map.get(key, CATEGORY_COLORS[i % len(CATEGORY_COLORS)])
                     for i, key in enumerate(config_label_map)

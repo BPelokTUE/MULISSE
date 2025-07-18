@@ -155,7 +155,7 @@ RK_MERGER_NUM_BITS = "merger_num_bits"
 RK_LENS_PER_GROUP = "lens_per_group"
 RK_INDEX_TYPE = "index_type"
 RK_K = "k"
-RK_R = "r"
+RK_RANGE = "range"
 RK_SEARCH_TYPE = "search_type"
 RK_APPROX = "approx"
 RK_RAW = "raw"
@@ -480,8 +480,8 @@ def parse_config_file(input_config) -> ParsedConfig:
             search_types = config.get(CK_SEARCH_TYPES, [])
             if TYPE_KNN in search_types or RK_K in config:
                 method_settings_base.append({RK_SEARCH_TYPE: TYPE_KNN, **get_key_or_none(RK_K, CK_SEARCH_KS)})
-            if TYPE_R_RANGE in search_types or RK_R in config:
-                method_settings_base.append({RK_SEARCH_TYPE: TYPE_R_RANGE, **get_key_or_none(RK_R, CK_SEARCH_RS)})
+            if TYPE_R_RANGE in search_types or RK_RANGE in config:
+                method_settings_base.append({RK_SEARCH_TYPE: TYPE_R_RANGE, **get_key_or_none(RK_RANGE, CK_SEARCH_RS)})
 
             if len(method_settings_base) == 0:
                 method_settings_base.append({})

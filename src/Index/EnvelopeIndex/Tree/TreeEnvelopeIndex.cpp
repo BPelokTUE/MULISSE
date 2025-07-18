@@ -21,7 +21,7 @@ TreeEnvelopeIndex::TreeEnvelopeIndex(sptr<IChannelSegmentationStrategy> ch_segme
 void TreeEnvelopeIndex::insert_entries(vec<IndexEntry<Envelope>> &entries, EntryInserterType inserter_type) {
     uptr<IEntryInserter<TreeEnvelopeIndex>> inserter;
     switch (inserter_type) {
-        case PARALLEL:  // Temporary solution to support two-stage indexes
+        case PARALLEL:
         case TOP_DOWN:
             inserter = std::make_unique<TopDownInserter<TreeEnvelopeIndex>>(this->shared_from_this());
             break;

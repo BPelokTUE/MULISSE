@@ -143,10 +143,17 @@ DATASET_LABELS = {
 }
 
 
-def place_legend(ax: plt.Axes, num_labels: int, max_cols: int, offset: float = 0.1):
-    legend_num_cols = min(num_labels, max_cols)
+def place_legend(ax: plt.Axes, legend: list[str], max_cols: int, offset: float = 0.1):
+    legend_num_cols = min(len(legend), max_cols)
     legend_y_coord = 1.0 + offset
-    ax.legend(loc="lower center", bbox_to_anchor=(0.5, legend_y_coord), ncol=legend_num_cols)
+
+    # Sort legend in the order of appearance in the legend
+    handles, labels = ax.get_legend_handles_labels()
+    sorted_legend = sorted(zip(labels, handles), key=lambda x: legend.index(x[0]))
+    sorted_labels, sorted_handles = zip(*sorted_legend)
+    ax.legend(
+        sorted_handles, sorted_labels, loc="lower center", bbox_to_anchor=(0.5, legend_y_coord), ncol=legend_num_cols
+    )
 
 
 def plot_bars(
@@ -270,7 +277,16 @@ def plot_bars(
         ax.bar(0, 0, color="white", edgecolor="black", hatch=hatches[h_ind], label=hatch_labels[h_ind])
 
     if add_legend:
-        place_legend(ax, len(seen_labels) + len(seen_hatches), legend_max_cols, legend_offset)
+        label_order = list(label_map.values())
+        ordered_labels = [label for label in label_order if label in seen_labels]
+        extra_labels = [label for label in seen_labels if label not in label_order]
+
+        hatch_order = hatches if hatches is not None else []
+        ordered_hatches = [hatch for hatch in hatch_order if hatch in seen_hatches]
+        extra_hatches = [hatch for hatch in seen_hatches if hatch not in hatch_order]
+
+        legend = ordered_labels + extra_labels + ordered_hatches + extra_hatches
+        place_legend(ax, legend, legend_max_cols, legend_offset)
 
     ax.set_yscale(y_scale)
     ax.yaxis.grid(True)
@@ -388,7 +404,7 @@ def plot_lines(
     ax.grid(True)
 
     if add_legend:
-        place_legend(ax, len(legend), legend_max_cols, legend_offset)
+        place_legend(ax, list(legend.values()), legend_max_cols, legend_offset)
     fig.set_figheight(fig_height_inches)
 
     if save_path is not None:

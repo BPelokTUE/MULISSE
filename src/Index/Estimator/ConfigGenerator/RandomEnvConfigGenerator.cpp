@@ -16,8 +16,20 @@ vec<EnvelopeParams> RandomEnvConfigGenerator::generate_configurations(const Enve
     size_t size_limit_bytes = get_bytes_limit(index_size_limit);
     vec<EnvelopeParams> configurations(m_params.m_num_configs);
 
-    std::uniform_int_distribution<SaxSegIndT> num_segments_dist(m_params.m_num_segments_min,
-                                                                m_params.m_num_segments_max);
+    SaxSegIndT act_min_num_segments = std::max(m_params.m_num_segments_min, static_cast<SaxSegIndT>(l_max / l_min));
+    // Lower min number of segments until the estimated size of the minimal config is less than the limit
+    while (act_min_num_segments > 0) {
+        auto [estimated_size, env_params] =
+            get_envelope_params_and_size(env_index_params, act_min_num_segments, 1.0, index_type, index_size_limit);
+        if (estimated_size <= size_limit_bytes) break;
+        --act_min_num_segments;
+    }
+    if (act_min_num_segments == 0) {
+        throw std::runtime_error(
+            "Cannot generate configurations: no valid number of segments found within size limit.");
+    }
+
+    std::uniform_int_distribution<SaxSegIndT> num_segments_dist(act_min_num_segments, m_params.m_num_segments_max);
     std::uniform_real_distribution<Real> num_len_groups_dist(1.0, R(l_max - l_min + 1));
     std::mt19937 rng(m_params.m_seed);
 

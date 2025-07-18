@@ -14,7 +14,7 @@
     "sax_breakpoint_strategies": ["equiprobable"],
     "sax_num_bits": [15],
     "max_width_changes": {
-        "vl_envelope": [0.001, 0.0025, 0.005, 0.0075, 0.01, 0.025, 0.05, 0.075, 0.1]
+        "vl_envelope": [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0]
     },
     "use_inv_sax": {
         "vl_envelope": [true, false]

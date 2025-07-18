@@ -13,7 +13,7 @@
     "bucket_sizes": [2],
     "envelope_sizes": [64],
     "length_group_size_ratios": [0.025],
-    "num_segments": [4, 8, 12, 16, 24, 32, 48, 72],
+    "num_segments": [8, 16, 24, 32, 48, 72, 96, 128, 160],
     "segmentation_strategies": ["uniform", "adaptive"],
     "distance_measures": ["ed"],
     "early_abandon": [true],
