@@ -143,13 +143,17 @@ DATASET_LABELS = {
 }
 
 
-def place_legend(ax: plt.Axes, legend: list[str], max_cols: int, offset: float = 0.1):
+def place_legend(ax: plt.Axes, legend: list[str], max_cols: int, offset: float = 0.1, only_hatch_legend: bool = False):
     legend_num_cols = min(len(legend), max_cols)
     legend_y_coord = 1.0 + offset
 
     # Sort legend in the order of appearance in the legend
     handles, labels = ax.get_legend_handles_labels()
-    sorted_legend = sorted(zip(labels, handles), key=lambda x: legend.index(x[0]))
+    if only_hatch_legend:
+        num_hatches = len(legend)
+        handles = handles[-num_hatches:]
+        labels = labels[-num_hatches:]
+    sorted_legend = sorted(zip(labels, handles), key=lambda x: legend.index(x[0]) if x[0] in legend else float("inf"))
     sorted_labels, sorted_handles = zip(*sorted_legend)
     ax.legend(
         sorted_handles, sorted_labels, loc="lower center", bbox_to_anchor=(0.5, legend_y_coord), ncol=legend_num_cols
@@ -163,6 +167,7 @@ def plot_bars(
     label_map: dict = METHOD_LABELS,
     x_labels: dict[tuple, str] = {},
     y_label: str = "",
+    x_ticks_rotation: int = 0,
     y_lim: tuple[float, float] = None,
     y_scale: str = "linear",
     bar_width_inches: float = 0.4,
@@ -171,6 +176,7 @@ def plot_bars(
     legend_max_cols: int = 4,
     legend_offset: float = 0.1,
     add_legend: bool = True,
+    only_hatch_legend: bool = False,
     title: str = None,
     hatches: list[str] = None,
     hatch_labels: list[str] = None,
@@ -185,6 +191,7 @@ def plot_bars(
     :param label_map: The label map to use for labeling the bars.
     :param x_labels: The labels for the x-axis for each group.
     :param y_label: The label for the y-axis.
+    :param x_ticks_rotation: The rotation of the x-axis tick labels.
     :param y_range: The range to use for the y-axis. If `None`, the range is automatically determined.
     :param y_scale: The scale to use for the y-axis.
     :param bar_width_inches: The width of the bars in inches.
@@ -193,6 +200,7 @@ def plot_bars(
     :param legend_max_cols: The maximum number of columns in the legend.
     :param legend_offset: The offset of the legend from the top of the plot.
     :param add_legend: If `True`, show the legend.
+    :param only_hatch_legend: If `True`, show the legend only for hatches.
     :param title: The title of the plot.
     :param hatches: The hatches to use for the bars. If `None`, no hatches are used.
     :param hatch_labels: The labels for the hatches. If `None`, no hatch labels are used.
@@ -239,10 +247,20 @@ def plot_bars(
     replacement_color_ind = 0
 
     for bar_group_key, bars in bar_groups.items():
-        bars_values = [bar[1] for bar in bars]
+        # Sort bars based on the label map
+        bars_copy = bars.copy()
+        bars_sorted = []
+        for key in label_map:
+            for i, bar in enumerate(bars_copy):
+                if bar is not None and bar[0] == key:
+                    bars_sorted.append(bar)
+                    bars_copy[i] = None
+        bars_sorted.extend([bar for bar in bars_copy if bar is not None])
+
+        bars_values = [bar[1] for bar in bars_sorted]
 
         colors = []
-        for bar in bars:
+        for bar in bars_sorted:
             if bar[0] in color_map:
                 color = color_map[bar[0]]
             else:
@@ -269,9 +287,9 @@ def plot_bars(
                 if hatch is not None and hatch not in seen_hatches:
                     seen_hatches.add(v_ind)
 
-        x_ticks.append(x_start + len(bars) * bar_width / 2)
+        x_ticks.append(x_start + len(bars_sorted) * bar_width / 2)
         x_tick_labels.append(x_labels.get(bar_group_key, ""))
-        x_start += len(bars) * bar_width + bar_gap
+        x_start += len(bars_sorted) * bar_width + bar_gap
 
     for h_ind in seen_hatches:
         ax.bar(0, 0, color="white", edgecolor="black", hatch=hatches[h_ind], label=hatch_labels[h_ind])
@@ -285,8 +303,11 @@ def plot_bars(
         ordered_hatches = [hatch for hatch in hatch_order if hatch in seen_hatches]
         extra_hatches = [hatch for hatch in seen_hatches if hatch not in hatch_order]
 
-        legend = ordered_labels + extra_labels + ordered_hatches + extra_hatches
-        place_legend(ax, legend, legend_max_cols, legend_offset)
+        if only_hatch_legend:
+            legend = ordered_hatches + extra_hatches
+        else:
+            legend = ordered_labels + extra_labels + ordered_hatches + extra_hatches
+        place_legend(ax, legend, legend_max_cols, legend_offset, only_hatch_legend)
 
     ax.set_yscale(y_scale)
     ax.yaxis.grid(True)
@@ -294,6 +315,7 @@ def plot_bars(
     ax.set_ylim(y_lim)
     ax.set_xticks(x_ticks)
     ax.set_xticklabels(x_tick_labels)
+    ax.tick_params(axis="x", rotation=x_ticks_rotation)
     ax.set_title(title)
 
     fig.set_size_inches((num_bars + len(bar_groups)) * bar_width_inches, fig_height_inches)
@@ -552,7 +574,7 @@ Misc. helpers
 
 # %%
 TIME_TARGETS = [QC.TOTAL_TIME_S, QC.AMORTIZED_PREP_TIME_S]
-TIME_LABELS = ["Search time", "Prep. time"]
+TIME_LABELS = ["Search time", "Amortized prep. time"]
 PREP_TIME_HATCH = "/////"
 
 PQ_TIME_TARGETS = [QC.TS_EXAMINATION_TIME_S, QC.FIRST_LAYER_TIME_S]
@@ -560,7 +582,7 @@ PQ_TIME_LABELS = ["TS examination time", "First layer time"]
 FIRST_LAYER_TIME_HATCH = "+++"
 
 QUERY_TIME_Y_LABEL = "Query time (S)"
-COMBINED_TIME_Y_LABEL = "Query + amortized prep. time (S)"
+COMBINED_TIME_Y_LABEL = "Query + amortized\nprep. time (S)"
 AMORTIZED_PREP_TIME_Y_LABEL = "Amortized prep. time (S)"
 TS_EXAMINATION_TIME_Y_LABEL = "Time for TS examination (S)"
 FIRST_LAYER_TIME_S_Y_LABEL = "Time for first layer (S)"

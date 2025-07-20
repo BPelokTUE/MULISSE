@@ -102,10 +102,12 @@ def visualize_experiments(
     # Plotting
     x_scale: str = "linear",
     y_scale: str = "linear",
+    x_ticks_rotation: int = 0,
     title_base: str = "",
     legend_max_cols: int = 4,
     legend_offset: float = 0.18,
     legend_plots_dict: dict[tuple, str] | None = {},
+    legend_only_hatch: bool = False,
     fig_height_inches: float = 3.5,
     # Bar plots
     hatches=None,
@@ -272,6 +274,8 @@ def visualize_experiments(
                 # If legend was specifically requested only for certain plots, create separate version with legend
                 if add_legend and len(legend_plots_dict) > 0:
                     suffixes.append("_legend")
+                    if legend_only_hatch:
+                        suffixes.append("_hatch_legend")
 
             if bar_plot_color_attrs is not None:
                 use_tuple_keys = isinstance(bar_plot_color_attrs, list)
@@ -287,8 +291,8 @@ def visualize_experiments(
 
                         def key_func(x):
                             return (
-                                label_keys_list.index(tuple([x[0][ind] for ind in bar_plot_color_attrs_inds]))
-                                * [val for ind, val in enumerate(x[0]) if ind not in bar_plot_color_attrs_inds],
+                                label_keys_list.index(tuple([x[0][ind] for ind in bar_plot_color_attrs_inds])),
+                                *[val for ind, val in enumerate(list(x[0])) if ind not in bar_plot_color_attrs_inds],
                             )
                     else:
 
@@ -315,6 +319,7 @@ def visualize_experiments(
                             discard_cols=discard_cols,
                             padding_rows=padding_rows,
                         ),
+                        x_ticks_rotation=x_ticks_rotation,
                         y_label=y_label,
                         y_lim=y_lim,
                         title=title,
@@ -328,7 +333,8 @@ def visualize_experiments(
                         label_map=bar_plot_label_map,
                         legend_max_cols=legend_max_cols,
                         legend_offset=legend_offset,
-                        add_legend=add_legend if len(suffixes) == 1 else suffix == "_legend",
+                        add_legend=add_legend if len(suffixes) == 1 else len(suffix) > 0,
+                        only_hatch_legend=suffix == "_hatch_legend",
                         save_path=get_plot_save_path("bar", suffix),
                     )
 
@@ -340,7 +346,7 @@ def visualize_experiments(
                     include_cols=line_plot_included_cols,
                 )
                 legend = {key: line_plot_legend_map.get(key, val) for key, val in config_label_map.items()}
-                label_order = {key: i for i, key in enumerate(line_plot_colors_map.keys())}
+                label_order = {key: i for i, key in enumerate(line_plot_legend_map.keys())}
                 legend = dict(sorted(legend.items(), key=lambda item: label_order.get(item[0], float("inf"))))
                 colors = {
                     key: line_plot_colors_map.get(key, CATEGORY_COLORS[i % len(CATEGORY_COLORS)])
