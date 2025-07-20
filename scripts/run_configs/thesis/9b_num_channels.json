@@ -49,6 +49,7 @@
         "eqw-mass": [false], "eqd-mass": [false], "raw-mass": [true] 
     },
     "precalculate_ffts": {
+        "scan": [true, false],
         "eqw-mass": [true], "eqd-mass": [true], "raw-mass": [true] 
     },
     "dataset_seeds": [0],
