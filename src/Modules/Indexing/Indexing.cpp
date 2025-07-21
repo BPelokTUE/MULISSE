@@ -70,11 +70,14 @@ int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_pe
     uint series_len = RS.get_dataset_props().m_series_len;
     if (paa_index_params && paa_index_params->m_segmentation_params.m_num_segments == 0) {
         // Calculate optimal number of segments if requested
-        Real multiplier = opts.m_normalized
-                              ? (paa_index_params->m_segmentation_params.m_strategy_type == UNIFORM ? 16.0 : 12.0)
-                              : 8.0;
-        SaxSegIndT num_segments =
-            static_cast<SaxSegIndT>(std::ceil(std::sqrt(R(series_len) / R(2 * opts.m_l_min)) * multiplier));
+        SaxSegIndT num_segments = 0;
+        if (opts.m_normalized) {
+            Real multiplier = paa_index_params->m_segmentation_params.m_strategy_type == UNIFORM ? 16.0 : 12.0;
+            num_segments =
+                static_cast<SaxSegIndT>(std::ceil(std::sqrt(R(series_len) / R(2 * opts.m_l_min)) * multiplier));
+        } else {
+            num_segments = static_cast<SaxSegIndT>(std::ceil(R(2 * series_len) / R(opts.m_l_min)));
+        }
 
         logger.set_num_segments(num_segments);
         opts.set_num_segments(num_segments);

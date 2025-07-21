@@ -22,6 +22,7 @@ from scripts.py.common.columns import QueryColumn as QC
 from scripts.py.common.columns import StatsColumn as SC
 from scripts.py.common.columns import StatsColumnPrefix as SCP
 from scripts.py.visualization.helpers import dict_to_tuples
+from scripts.py.visualization.plots import Y_LABELS, get_dataset_label
 from scripts.py.visualization.reduction import (
     ERD,
     CollectionReducer,
@@ -153,6 +154,15 @@ def get_tensor_data(logs_dir: str) -> tuple[np.ndarray, np.ndarray, dict[str, li
             labels.append(f"{str(target_col)}_{reduction}".strip("_"))
             first_row.append(value)
 
+    label_map = {
+        "pruning_ratio": "Pruning ratio",
+        "mean_seg_range": "Mean envelope width",
+        "std_seg_lower": "Std of lower bound",
+        "std_seg_upper": "Std of upper bound",
+        "std_seg_mid": "Std of envelope middle",
+    }
+    labels = [label_map.get(label, label) for label in labels]
+
     print("Labels for first row:")
     for label, value in zip(labels, first_row):
         print(f"\t{label:<30}:\t{value}")
@@ -232,7 +242,7 @@ def get_tensor_data(logs_dir: str) -> tuple[np.ndarray, np.ndarray, dict[str, li
 """
 
 
-def visualize_clusters(logs_dir: str, save_dir: str | None = None):
+def visualize_clusters(logs_dir: str, save_dir: str | None = None, fig_size: tuple[float, float] = (10, 3)):
     xs, ys, artifacts = get_tensor_data(logs_dir)
 
     # PCA
@@ -242,10 +252,6 @@ def visualize_clusters(logs_dir: str, save_dir: str | None = None):
     pca_components = pca.components_
     for i, (comp, var) in enumerate(zip(pca_components, explained_variance)):
         print(f"Principal Component {i + 1}: {comp} ; var: {var:.4f}")
-
-    ys_lims = (ys.min(), ys.max())
-    ys_range = ys_lims[1] - ys_lims[0]
-    cbar_lims = (max(0.0, ys_lims[0] - 0.1 * ys_range), 1.0)
 
     # Plot pca, with pca1 on x-axis and pca2 on y-axis, and ys for the color scale
     channel_symbols = ["o", "x", "s", "*", "D"]
@@ -258,6 +264,7 @@ def visualize_clusters(logs_dir: str, save_dir: str | None = None):
         x_label: str = "PCA Component 1",
         y_labels: str | list[str] = "PCA Component 2",
         cbar_lims: tuple[float, float] | None = None,
+        dataset: str | None = None,
         channel_inds: np.ndarray = None,
         channel_names: list[str] = None,
         channel_symbols: list[str] = channel_symbols,
@@ -288,9 +295,16 @@ def visualize_clusters(logs_dir: str, save_dir: str | None = None):
                 mask = channel_inds == channel_idx
                 if np.any(mask):
                     channel_name = channel_names[channel_idx] if channel_names else f"Channel {channel_idx}"
+                    full_ch_name = f"{dataset}/{channel_name}" if dataset else channel_name
                     marker = channel_symbols[channel_idx % len(channel_symbols)]
                     xs_masked = xs[mask]
                     ys_masked = ys[mask]
+
+                    label = (
+                        (get_dataset_label(full_ch_name, only_last=True) if dataset != "synthetic" else channel_name)
+                        if ax_ind == 0
+                        else None
+                    )
 
                     plot = ax.scatter(
                         xs_masked[:, ind1],
@@ -300,7 +314,7 @@ def visualize_clusters(logs_dir: str, save_dir: str | None = None):
                         cmap=COLD_TO_HOT_COLORS,
                         vmin=cbar_lims[0],
                         vmax=cbar_lims[1],
-                        label=channel_name if ax_ind == 0 else None,
+                        label=label,
                     )
                     ax.set_xlabel(x_label)
                     ax.set_ylabel(y_label)
@@ -317,12 +331,13 @@ def visualize_clusters(logs_dir: str, save_dir: str | None = None):
                         )
 
         targets = artifacts["targets"]
+        target_label = Y_LABELS.get(targets[0][1], str(targets[0][1]))
         if len(axis_indices) > 1:
             divider = make_axes_locatable(axs[-1])
             cax = divider.append_axes("right", size="5%", pad=0.05)
-            fig.colorbar(plot, cax=cax, label=str(targets[0][1]))
+            fig.colorbar(plot, cax=cax, label=target_label)
         else:
-            fig.colorbar(plot, label=str(targets[0][1]))
+            fig.colorbar(plot, label=target_label)
 
         if verbose:
             channel_stats = {}
@@ -337,7 +352,8 @@ def visualize_clusters(logs_dir: str, save_dir: str | None = None):
             print(json.dumps(channel_stats, indent=4))
 
         fig.suptitle(title)
-        fig.legend(title="Channels", loc="center left", bbox_to_anchor=(0.95, 0.5))
+        fig.legend(title="Channels", loc="center left", bbox_to_anchor=(0.98, 0.5))
+        fig.set_size_inches(fig_size)
         if save_path is not None:
             plt.savefig(save_path, bbox_inches="tight")
 
@@ -370,15 +386,21 @@ def visualize_clusters(logs_dir: str, save_dir: str | None = None):
         xs_pca = pca_ds.transform(xs_ds)
         # plot_points(xs_pca, ys[ds_mask], title=f"PCA Plot for {ds.capitalize()}", **plot_props)
 
+        ys_ds = ys[ds_mask]
+        ys_lims = (ys_ds.min(), ys_ds.max())
+        ys_range = ys_lims[1] - ys_lims[0]
+        cbar_lims = (max(0.0, ys_lims[0] - 0.1 * ys_range), 1.0)
+
         y_axes = range(1, xs_pca.shape[1])
         plot_points(
             xs_ds,
             ys[ds_mask],
-            title=f"Points in Original Space for {ds.capitalize()}",
+            title=ds.capitalize(),
             x_label=labels[len(groups)],
             y_labels=[labels[len(groups) + i] for i in y_axes],
             axis_indices=[(0, i) for i in y_axes],
             cbar_lims=cbar_lims,
+            dataset=ds,
             save_path=os.path.join(save_dir, f"channel_clusters_{ds}.pdf") if save_dir is not None else None,
             **plot_props,
         )

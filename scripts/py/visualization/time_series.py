@@ -13,12 +13,8 @@ if True:
         os.chdir("..")
 
 
+from scripts.py.visualization.plots import get_dataset_label
 from scripts.py.visualization.style import CATEGORY_COLORS
-
-with open("local_settings.json", "r") as f:
-    LOCAL_SETTINGS = json.load(f)
-
-CSV_PATH = LOCAL_SETTINGS["CSV_PATH"]
 
 # %%
 
@@ -28,14 +24,16 @@ def plot_time_series(
     channel_labels: list[str] | None = None,
     channel_alphas: list[float] | None = None,
     title: str = "Time Series Data",
+    save_path: str | None = None,
 ):
     num_figs = data.shape[0] if data.ndim > 2 else 1
+    num_channels = data.shape[1] if data.ndim > 2 else data.shape[0]
     fig, axs = plt.subplots(nrows=num_figs, figsize=(10, num_figs * 3), squeeze=False)
 
     if channel_labels is None:
-        channel_labels = [f"Channel {i}" for i in range(data.shape[0])]
+        channel_labels = [f"Channel {i}" for i in range(num_channels)]
     if channel_alphas is None:
-        channel_alphas = [0.75] * len(channel_labels)
+        channel_alphas = [0.75] * num_channels
 
     for i, (ax_row, mts_data) in enumerate(zip(axs, data)):
         ax = ax_row[0]
@@ -44,6 +42,11 @@ def plot_time_series(
         if i == 0:
             ax.set_title(title)
         ax.legend(loc="center left", bbox_to_anchor=(1.0, 0.5))
+
+    if save_path is not None:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        plt.savefig(save_path, bbox_inches="tight")
+
     plt.show()
 
 
@@ -59,10 +62,39 @@ def normalize_time_series(data: np.ndarray) -> np.ndarray:
 # %%
 
 
+def get_random_walk(
+    series_length: int,
+    num_channels: int,
+    num_series: int = 1,
+    step_stdevs: list[float] | float = 1.0,
+    normalize: bool = True,
+) -> np.ndarray:
+    random_walk = np.zeros((num_series, num_channels, series_length))
+    if isinstance(step_stdevs, list):
+        for c, stdev in enumerate(step_stdevs):
+            noise = np.random.normal(0, stdev, (num_series, series_length - 1))
+            random_walk[:, c, 1:] += np.cumsum(noise, axis=-1)
+    else:
+        noise = np.random.normal(0, step_stdevs, (num_series, num_channels, series_length - 1))
+        random_walk[:, :, 1:] = np.cumsum(noise, axis=-1)
+    if normalize:
+        random_walk = normalize_time_series(random_walk)
+    return random_walk
+
+
+# %%
+
+
 def load_csv_data(
-    dir_path: str, series_length: int, series_inds: list[int], regex_query=r".*", normalize: bool = True
+    dir_path: str,
+    series_length: int,
+    series_inds: list[int],
+    files: list[str] = [],
+    regex_query=r".*",
+    normalize: bool = True,
 ) -> tuple[np.ndarray, list[str]]:
-    files = sorted([f for f in os.listdir(dir_path) if re.match(regex_query, f)])
+    if len(files) == 0:
+        files = sorted([f for f in os.listdir(dir_path) if re.match(regex_query, f)])
 
     data = np.zeros((len(series_inds), len(files), series_length))
     for i, file in enumerate(files):
@@ -78,26 +110,52 @@ def load_csv_data(
 
     if normalize:
         data = normalize_time_series(data)
-    return data, files
+
+    base_dir = os.path.basename(dir_path)
+    return data, [get_dataset_label(os.path.join(base_dir, file), only_last=True) for file in files]
 
 
 # %%
 
-series_inds = [481, 4312]
-for highlighted_channel in range(0, 4):
-    channel_alphas = [0.3] * 4
-    channel_alphas[highlighted_channel] = 1.0
+
+def visualize_time_series(stocks_series_inds=[200], weather_series_inds=[481], save_dir=None):
+    with open("local_settings.json", "r") as f:
+        LOCAL_SETTINGS = json.load(f)
+
+    CSV_PATH = LOCAL_SETTINGS["CSV_PATH"]
+
     plot_time_series(
-        *load_csv_data(os.path.join(CSV_PATH, "weather"), 1024, series_inds),
-        channel_alphas=channel_alphas,
-        title="Weather Data",
+        *load_csv_data(
+            os.path.join(CSV_PATH, "stocks"),
+            2048,
+            series_inds=stocks_series_inds,
+            files=[
+                "first_clean.csv",
+                "second_clean.csv",
+                "third_clean.csv",
+                "fourth_clean.csv",
+                "fifth_clean_fixed.csv",
+            ],
+        ),
+        title="Stock Data",
+        save_path=os.path.join(save_dir, "stocks.pdf") if save_dir else None,
     )
 
-# %%
+    num_channels_syn = 4
+    plot_time_series(
+        get_random_walk(2048, num_channels_syn, step_stdevs=1.0),
+        [f"Channel {i}" for i in range(num_channels_syn)],
+        title="Synthetic",
+        save_path=os.path.join(save_dir, "synthetic.pdf") if save_dir else None,
+    )
 
-regex_query = r".*"  # r"^(?!.*fifth).*$"
-plot_time_series(
-    *load_csv_data(os.path.join(CSV_PATH, "stocks"), 256, [i for i in [200]], regex_query),
-    # channel_alphas=[1.0, 0.25, 0.25, 0.25],
-    title="Stock Data",
-)
+    plot_time_series(
+        *load_csv_data(
+            os.path.join(CSV_PATH, "weather"), 2048, weather_series_inds, files=["TMP", "DEW", "SLP", "WND"]
+        ),
+        title="Weather Data",
+        save_path=os.path.join(save_dir, "weather.pdf") if save_dir else None,
+    )
+
+
+# %%

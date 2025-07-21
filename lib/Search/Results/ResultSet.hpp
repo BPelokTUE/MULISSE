@@ -49,9 +49,11 @@ class ResultSet {
             auto it = std::lower_bound(m_results.begin(), m_results.end(), result);
             m_results.insert(it, result);
             if (m_results.size() > c_param) m_results.pop_back();
-        } else {  // R_RANGE
-            if (result.m_distance <= c_param * c_param) m_results.push_back(result);
+        } else if (result.m_distance <= c_param * c_param) {  // R_RANGE
+            auto it = std::lower_bound(m_results.begin(), m_results.end(), result);
+            m_results.insert(it, result);
         }
+        m_results.resize(std::min(m_results.size(), RESULT_SET_MAX_CAPACITY));
     }
 
     /**

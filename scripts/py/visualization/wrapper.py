@@ -82,6 +82,8 @@ class TargetArgs(Enum):
     PRUNING_RATIO = {"targets_dict": {ERD.RUNS_COLS: [QC.PRUNING_RATIO]}}
     ABANDONING_RATE = {"targets_dict": {ERD.RUNS_COLS: [QC.ABANDONING_RATE]}}
     ESTIMATE_SCORE = {"targets_dict": {ERD.PARAM_ESTIMATES_COLS: [PEC.SCORE]}}
+    NUM_LEN_GROUPS = {"targets_dict": {ERD.INDEXES_COLS: [ISC.NUM_LEN_GROUPS]}}
+    ENV_PARAM_ESTIMATION_TIME = {"targets_dict": {ERD.INDEXES_COLS: [ISC.ENV_PARAM_ESTIMATION_TIME_S]}}
 
 
 def visualize_experiments(
@@ -113,6 +115,7 @@ def visualize_experiments(
     hatches=None,
     hatch_labels=None,
     bar_plot_label_padding: bool = True,
+    bar_plot_no_x_ticks: bool = False,
     bar_width_inches: float = 0.4,
     bar_gap_inches: float = 0.4,
     bar_plot_color_attrs: Column | list[Column] | None = SSC.METHOD_NAME,
@@ -132,6 +135,7 @@ def visualize_experiments(
     cell_height_inches: float = 5.0,
     cell_width_inches: float = 5.0,
     # Output
+    return_values: bool = False,
     save_dir: str | None = None,
     verbose: bool = False,
 ):
@@ -192,6 +196,7 @@ def visualize_experiments(
     act_ignored_attrs = ignored_attrs.copy()
     act_ignored_attrs.update({attr for key in separate_plots_dict for attr in key})
     ignored_attr_inds = {get_col_index(attr, groups) for attr in act_ignored_attrs}
+    values_to_return = {}
 
     def create_plots(
         title_key: list,
@@ -266,6 +271,8 @@ def visualize_experiments(
                 max_key_length = max([len(str(key)) for key in reduced_values_subset.keys()])
                 for key, values in reduced_values_subset.items():
                     print(f"{str(key):<{max_key_length}}:\t{values}")
+            if return_values:
+                values_to_return[tuple(title_key)] = reduced_values_subset
 
             # TODO: this is horrible
             suffixes = [""]
@@ -318,7 +325,9 @@ def visualize_experiments(
                             groups_dict_filtered,
                             discard_cols=discard_cols,
                             padding_rows=padding_rows,
-                        ),
+                        )
+                        if not bar_plot_no_x_ticks
+                        else {},
                         x_ticks_rotation=x_ticks_rotation,
                         y_label=y_label,
                         y_lim=y_lim,
@@ -395,6 +404,9 @@ def visualize_experiments(
                 )
 
     create_plots([], [], separate_plots_dict, reduced_values)
+
+    if return_values:
+        return values_to_return
 
 
 # %%

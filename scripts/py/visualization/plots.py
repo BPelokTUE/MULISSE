@@ -143,6 +143,32 @@ DATASET_LABELS = {
 }
 
 
+def get_dataset_label(ds_file: str, only_last: bool = False) -> str:
+    keyword_dict = DATASET_LABELS
+    label = ""
+    while keyword_dict is not None:
+        keyword_found = False
+        for keyword, label_or_dict in keyword_dict.items():
+            if keyword in ds_file:
+                keyword_found = True
+                if isinstance(label_or_dict, dict):
+                    if not only_last:
+                        label += f"{keyword.capitalize()}: "
+                    keyword_dict = label_or_dict
+                    break
+                else:
+                    if only_last:
+                        label = label_or_dict
+                    else:
+                        label += label_or_dict
+                    keyword_dict = None
+                    break
+        if not keyword_found:
+            label = ds_file.capitalize() if isinstance(ds_file, str) else ds_file
+            keyword_dict = None
+    return label
+
+
 def place_legend(ax: plt.Axes, legend: list[str], max_cols: int, offset: float = 0.1, only_hatch_legend: bool = False):
     legend_num_cols = min(len(legend), max_cols)
     legend_y_coord = 1.0 + offset
@@ -592,6 +618,8 @@ KEEP_RATE_Y_LABEL = "Keep rate (1 - abandoning rate)"
 NUM_PTS_EXAMINED_Y_LABEL = "Number of points examined"
 NUM_PTS_IN_EXAMINED_ENTRIES_Y_LABEL = "Number of points in examined entries"
 INDEX_SIZE_Y_LABEL = "Index size (B)"
+NUM_LEN_GROUPS_Y_LABEL = "No. length groups"
+ENV_PARAM_EST_TIME_Y_LABEL = "Estimation time (S)"
 
 Y_LABELS = {
     QC.TOTAL_TIME_S: QUERY_TIME_Y_LABEL,
@@ -605,6 +633,8 @@ Y_LABELS = {
     QC.NUM_PTS_EXAMINED: NUM_PTS_EXAMINED_Y_LABEL,
     QC.NUM_PTS_IN_EXAMINED_ENTRIES: NUM_PTS_IN_EXAMINED_ENTRIES_Y_LABEL,
     ISC.SIZE_ON_DISK_B: INDEX_SIZE_Y_LABEL,
+    ISC.NUM_LEN_GROUPS: NUM_LEN_GROUPS_Y_LABEL,
+    ISC.ENV_PARAM_ESTIMATION_TIME_S: ENV_PARAM_EST_TIME_Y_LABEL,
 }
 
 
@@ -673,24 +703,7 @@ def get_config_label(
                 if val == 1:
                     label_parts.append("Merge leaves")
             case DSC.DATASET_FILE:
-                keyword_dict = DATASET_LABELS
-                label_part = ""
-                while keyword_dict is not None:
-                    keyword_found = False
-                    for keyword, label_or_dict in keyword_dict.items():
-                        if keyword in val:
-                            keyword_found = True
-                            if isinstance(label_or_dict, dict):
-                                label_part += f"{keyword.capitalize()}: "
-                                keyword_dict = label_or_dict
-                                break
-                            else:
-                                label_parts.append(f"{label_part}{label_or_dict}")
-                                keyword_dict = None
-                                break
-                    if not keyword_found:
-                        label_parts.append(val.capitalize() if isinstance(val, str) else val)
-                        keyword_dict = None
+                label_parts.append(get_dataset_label(val))
             case DSC.NUM_SERIES:
                 label_parts.append(f"n={int(val)}")
             case DSC.SERIES_LENGTH:
@@ -764,7 +777,7 @@ def get_config_label(
                     label_parts.append(f"Ns={int(val)}")
             case ISC.PARAM_ESTIMATOR_TYPE:
                 if isinstance(val, str) and len(val) > 0:
-                    label_parts.append(f"EST={''.join([w[0].upper() for w in val.split('_')])}")
+                    label_parts.append(f"{''.join([w[0].upper() for w in val.split('_')])}-E.")
 
     if "l_min" in length_values:
         l_min = length_values["l_min"]
