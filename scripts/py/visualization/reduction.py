@@ -548,6 +548,7 @@ class ExperimentResults(BaseModel):
         if os.path.exists(os.path.join(self.logs_dir, CSV_FILES[ERD.INDEXES_COLS])):
             isc_dataset_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.DATASET_FILE))
             isc_index_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.INDEX_FILE))
+            isc_ffts_file = get_merged_col_name(ERD.INDEXES_COLS, str(ISC.FFTS_FILE))
 
             merged_df = merged_df.merge(
                 rename_df_columns(self.indexes_df, ERD.INDEXES_COLS),
@@ -583,26 +584,39 @@ class ExperimentResults(BaseModel):
             ssc_dataset_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.DATASET_FILE))
             ssc_query_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.QUERY_FILE))
             ssc_index_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.INDEX_FILE))
+            ssc_ffts_file = get_merged_col_name(ERD.METHODS_COLS, str(SSC.FFTS_FILE))
 
             has_index_file = self.methods_df[str(SSC.INDEX_FILE)].notna()
+            has_ffts_file = self.methods_df[str(SSC.FFTS_FILE)].notna()
             methods_w_index_df = self.methods_df[has_index_file]
-            methods_wo_index_df = self.methods_df[~has_index_file]
+            methods_wo_index_w_ffts_df = self.methods_df[~has_index_file & has_ffts_file]
+            methods_wo_index_wo_ffts_df = self.methods_df[~has_index_file & ~has_ffts_file]
 
             merged_w_index_df = pd.DataFrame()
-            if len(isc_index_file) > 0:
+            if not methods_w_index_df.empty:
                 merged_w_index_df = merged_df.merge(
                     rename_df_columns(methods_w_index_df, ERD.METHODS_COLS),
                     left_on=[dsc_dataset_file, qsc_query_file, isc_index_file],
                     right_on=[ssc_dataset_file, ssc_query_file, ssc_index_file],
                     how="right",
                 )
-            merged_wo_index_df = merged_df_before_indexes.merge(
-                rename_df_columns(methods_wo_index_df, ERD.METHODS_COLS),
+            merged_wo_index_w_ffts_df = pd.DataFrame()
+            if not methods_wo_index_w_ffts_df.empty:
+                merged_wo_index_w_ffts_df = merged_df.merge(
+                    rename_df_columns(methods_wo_index_w_ffts_df, ERD.METHODS_COLS),
+                    left_on=[dsc_dataset_file, qsc_query_file, isc_ffts_file],
+                    right_on=[ssc_dataset_file, ssc_query_file, ssc_ffts_file],
+                    how="right",
+                )
+            merged_wo_index_wo_ffts_df = merged_df_before_indexes.merge(
+                rename_df_columns(methods_wo_index_wo_ffts_df, ERD.METHODS_COLS),
                 left_on=[dsc_dataset_file, qsc_query_file],
                 right_on=[ssc_dataset_file, ssc_query_file],
                 how="right",
             )
-            merged_df = pd.concat([merged_w_index_df, merged_wo_index_df], ignore_index=True)
+            merged_df = pd.concat(
+                [merged_w_index_df, merged_wo_index_w_ffts_df, merged_wo_index_wo_ffts_df], ignore_index=True
+            )
 
             columns_to_drop += [ssc_dataset_file, ssc_query_file]
 

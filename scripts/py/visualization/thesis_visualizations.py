@@ -6,6 +6,7 @@ if True:
     while not os.getcwd().endswith("MULISSE"):
         os.chdir("..")
 
+import pandas as pd
 from matplotlib import pyplot as plt
 from scripts.py.common.columns import DatasetSettingsColumn as DSC
 from scripts.py.common.columns import IndexSettingsColumn as ISC
@@ -156,6 +157,7 @@ for dim_suffix, title in dim_suffix_to_titles.items():
             legend_plots_dict={SSC.NORMALIZED: {True}}
             if target_args.name == "PRUNING_RATIO" and dim_suffix == "multi"
             else None,
+            x_ticks_rotation=-15,
             bar_plot_color_attrs=SSC.METHOD_NAME,
             bar_plot_label_padding=False,
             bar_plot_label_map={
@@ -690,8 +692,8 @@ for target_args in [TargetArgs.QUERY_TIME, TargetArgs.PRUNING_RATIO]:
             ("envelope-ed-early", 0, "adaptive"): PALETTE["Blues"][2],
             ("tree_envelope-ed-early", 1, "uniform"): PALETTE["Pinks"][5],
             ("tree_envelope-ed-early", 1, "adaptive"): PALETTE["Pinks"][2],
-            ("tree_envelope-ed-early", 0, "uniform"): PALETTE["Yellows"][3],
-            ("tree_envelope-ed-early", 0, "adaptive"): PALETTE["Yellows"][0],
+            ("tree_envelope-ed-early", 0, "uniform"): PALETTE["Oranges"][3],
+            ("tree_envelope-ed-early", 0, "adaptive"): PALETTE["Oranges"][0],
         },
         line_plot_legend_map={
             ("tree_envelope-ed-early", 1, "uniform"): "TreeEnv EqW",
@@ -773,41 +775,42 @@ visualize_clusters(
 
 # %%
 # 7c - Channel prioritization
-for target_args in [TargetArgs.QUERY_TIME, TargetArgs.PRUNING_RATIO]:
-    visualize_experiments(
-        # logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_7c_ch_prioritization"],
-        logs_dirs=["LOGS"],
-        groups_dict={
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE],
-            ERD.INDEXES_COLS: [
-                ISC.NUM_SEGMENTS,
+for version in ["_a", "_b"]:
+    for target_args in [TargetArgs.QUERY_TIME, TargetArgs.PRUNING_RATIO]:
+        visualize_experiments(
+            logs_dirs=[f"EXPERIMENT_LOGS/thesis/LOGS_7c_ch_prioritization{version}"],
+            groups_dict={
+                ERD.DATASETS_COLS: [DSC.DATASET_FILE],
+                ERD.INDEXES_COLS: [
+                    ISC.NUM_SEGMENTS,
+                    ISC.CH_SEGMENTATION_STRATEGY,
+                    ISC.SCORE_BASED_CHSS_SCORE_EXP,
+                ],
+                ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO],
+            },
+            separate_plots_dict={(DSC.DATASET_FILE,): []},
+            legend_max_cols=2,
+            legend_plots_dict={DSC.DATASET_FILE: {"synthetic"}},
+            title_base="All channels" if version == "_a" else "Ad-hoc channels",
+            bar_plot_color_attrs=[
                 ISC.CH_SEGMENTATION_STRATEGY,
                 ISC.SCORE_BASED_CHSS_SCORE_EXP,
             ],
-            ERD.QUERY_SETS_COLS: [QSC.L_MIN_RATIO],
-        },
-        separate_plots_dict={(DSC.DATASET_FILE,): []},
-        legend_max_cols=2,
-        legend_plots_dict={DSC.DATASET_FILE: {"synthetic"}},
-        bar_plot_color_attrs=[
-            ISC.CH_SEGMENTATION_STRATEGY,
-            ISC.SCORE_BASED_CHSS_SCORE_EXP,
-        ],
-        bar_plot_label_padding=False,
-        bar_plot_label_map={
-            ("score_based", -1): "Easy prioritization",
-            ("score_based", 1): "Hard prioritization",
-            ("single", 0): "Simple",
-        },
-        bar_plot_color_map={
-            ("score_based", -1): PALETTE["Greens"][5],
-            ("score_based", 1): PALETTE["Reds"][3],
-            ("single", 0): PALETTE["Blues"][6],
-        },
-        # save_dir=os.path.join(EXTENSIONS_FIGS_DIR, f"7c_ch_prioritization_{target_args.name.lower()}"),
-        verbose=True,
-        **target_args.value,
-    )
+            bar_plot_label_padding=False,
+            bar_plot_label_map={
+                ("score_based", -1): "Easy prioritization",
+                ("score_based", 1): "Hard prioritization",
+                ("single", 0): "Simple",
+            },
+            bar_plot_color_map={
+                ("score_based", -1): PALETTE["Greens"][5],
+                ("score_based", 1): PALETTE["Reds"][3],
+                ("single", 0): PALETTE["Blues"][6],
+            },
+            save_dir=os.path.join(EXTENSIONS_FIGS_DIR, f"7c_ch_prioritization{version}_{target_args.name.lower()}"),
+            verbose=True,
+            **target_args.value,
+        )
 
 # %%
 # 8 - Envelope merging
@@ -815,7 +818,7 @@ for target_args in [TargetArgs.QUERY_TIME, TargetArgs.PRUNING_RATIO]:
 for target_args in [
     TargetArgs.QUERY_TIME,
     # TargetArgs.MINDIST_TIME,
-    # TargetArgs.PRUNING_RATIO,
+    TargetArgs.PRUNING_RATIO,
     TargetArgs.INDEX_SIZE,
 ]:
     visualize_experiments(
@@ -873,9 +876,9 @@ for target_args in [
             ERD.INDEXES_COLS: [ISC.SEGMENTATION_STRATEGY],
         },
         separate_plots_dict={
-            (DSC.SERIES_LENGTH,): [(2048,)],
+            (DSC.SERIES_LENGTH,): [],
             (SSC.NORMALIZED,): [],
-            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [(0.125, 1.0)],
+            (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
         },
         legend_max_cols=4,
         legend_plots_dict={DSC.SERIES_LENGTH: {2048}, QSC.L_MIN_RATIO: {0.125}},
@@ -896,8 +899,8 @@ for target_args in [
 
 key_to_col = {
     "m": DSC.SERIES_LENGTH,
-    "lmin": QSC.L_MIN_RATIO,
-    "ql": QC.QUERY_INTERVAL,
+    # "lmin": QSC.L_MIN_RATIO,
+    # "ql": QC.QUERY_INTERVAL,
 }
 
 for key, col in key_to_col.items():
@@ -933,6 +936,7 @@ for key, col in key_to_col.items():
             x_scale="log" if key == "lmin" else "linear",
             y_scale="log" if target_args.name == "QUERY_TIME" else "linear",
             save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_{key}_{target_args.name.lower()}"),
+            verbose=True,
             **target_args.value,
         )
 
@@ -1088,7 +1092,7 @@ for target_args in [TargetArgs.QUERY_TIME, TargetArgs.INDEX_SIZE]:
             (QSC.L_MIN_RATIO, QSC.L_MAX_RATIO): [],
         },
         regex_dict={(ISC.INDEX_SIZE_LIMIT, SSC.METHOD_NAME): r"^(0\.0::.*|.*::.*ed-early)"},
-        legend_max_cols=5,
+        legend_max_cols=6,
         legend_plots_dict={DSC.DATASET_FILE: {"stocks"}} if target_args.name == "QUERY_TIME" else None,
         bar_plot_label_padding=False,
         bar_plot_color_attrs=[SSC.METHOD_NAME, ISC.SEGMENTATION_STRATEGY],
@@ -1097,40 +1101,56 @@ for target_args in [TargetArgs.QUERY_TIME, TargetArgs.INDEX_SIZE]:
         bar_width_inches=0.4,
         y_scale="log",
         return_values=target_args.name == "QUERY_TIME",
+        verbose=True,
         save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10b_size_limiting_performance_{target_args.name.lower()}"),
         **target_args.value,
     )
 
 # %%
 
+
 # Calculate percentage differences (adaptive compared to uniform)
+rows = []
 for title_key, results in values[TargetArgs.QUERY_TIME.name].items():
     dataset = title_key[0]
-    print(f"\nDataset: {dataset}")
-
     method_name = "sax_envelope-ed-early"
-    size_limits = list(set([key[2] for key in results.keys() if key[0] == method_name]))
-    est_types = list(set([key[3] for key in results.keys() if key[0] == method_name]))
+    size_limits = set(key[2] for key in results.keys() if key[0] == method_name)
+    est_types = set(key[3] for key in results.keys() if key[0] == method_name)
 
-    diffs = []
     for size_limit in size_limits:
         for est_type in est_types:
             adaptive_val = results[(method_name, "adaptive", size_limit, est_type)][0]
             uniform_val = results[(method_name, "uniform", size_limit, est_type)][0]
-
             pct_diff = (uniform_val - adaptive_val) / uniform_val * 100
-            diffs.append(pct_diff)
-            print(f"Size limit {size_limit}, {est_type}: {pct_diff:.2f}%")
+            rows.append(
+                {
+                    "dataset": dataset,
+                    "size_limit": size_limit,
+                    "est_type": est_type,
+                    "adaptive_val": adaptive_val,
+                    "uniform_val": uniform_val,
+                    "diff_pct": pct_diff,
+                }
+            )
 
-    # Calculate statistics
-    avg_diff = sum(diffs) / len(diffs)
-    min_diff = min(diffs)
-    max_diff = max(diffs)
+df = pd.DataFrame(rows)
+df = df[df["size_limit"] > 0.1]
 
-    print("\nSummary statistics:")
-    print(f"Average improvement: {avg_diff:.2f}%")
-    print(f"Best improvement: {max_diff:.2f}%")
-    print(f"Worst case: {min_diff:.2f}%")
+
+def print_diff_stats_from_df(df, label="Overall"):
+    diffs = df["diff_pct"]
+    print(f"\n{label} differences:")
+    print(f"Average improvement: {diffs.mean():.2f}%")
+    print(f"Median improvement: {diffs.median():.2f}%")
+    print(f"Standard deviation: {diffs.std():.2f}")
+    print(f"Best improvement: {diffs.max():.2f}%")
+    print(f"Worst case: {diffs.min():.2f}%")
+
+
+for dataset, group in df.groupby("dataset"):
+    print_diff_stats_from_df(group, label=f"Dataset: {dataset}")
+
+print_diff_stats_from_df(df)
 
 
 # %%
@@ -1203,6 +1223,7 @@ for key, col in key_to_col.items():
             legend_max_cols=2,
             legend_plots_dict={SSC.NORMALIZED: {True}} if col == SSC.KNN_K else None,
             bar_plot_color_attrs=None,
+            line_plot_show_min=False,
             line_plot_x_attr=col,
             line_plot_included_cols={SSC.METHOD_NAME, ISC.SEGMENTATION_STRATEGY},
             line_plot_colors_map=method_comparison_colors,

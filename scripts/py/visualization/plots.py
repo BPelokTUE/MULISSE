@@ -689,7 +689,7 @@ def get_config_label(
                 label_parts.append(f"PPE={int(val)}")
             case ISC.INDEX_SIZE_LIMIT:
                 if val is not None and val > 0:
-                    label_parts.append(f"S={val:.1f}")
+                    label_parts.append(f"S={val:.2f}")
             case ISC.NUM_BITS_LIMIT:
                 if val is not None and val > 0:
                     label_parts.append(f"BLim={int(val)}")

@@ -57,7 +57,7 @@ where:
 
 \subsection{Cost Function}
 
-Let the set of values summarized in the $k$'th segment of the $j$'th envelope of the $i$'th length group of time series $t$ from dataset $\mathcal{D}$ be defined as follows:
+Let the set of values summarized in the $k$'th segment of the $j$'th envelope of the $i$'th length group of time series $t$ from dataset $\mathcal{D}$ be defined as follows: \textbf{The mean should not be divided. This mistake was carried through the rest of the calculations, so mostly everything else is incorrect.}
 $$
 \begin{array}{rcl}
     \envelopeijkt & := & \left\{ \frac{\segsumplk-\subsmeanpl}{s\subsvarpl}  \mid l\in \lengthrange{i},p\in \posrange{j} \right\} \\[4pt]
