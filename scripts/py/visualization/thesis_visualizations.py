@@ -126,7 +126,9 @@ for dim_suffix, title in dim_suffix_to_titles.items():
             save_dir=os.path.join(
                 PARAMETRIZATION_FIGS_DIR,
                 f"1_stages_{target_args.name.lower()}_{dim_suffix}",
-            ),
+            )
+            if SAVE_FIGURES
+            else None,
             **target_args.value,
         )
 
@@ -167,7 +169,9 @@ for dim_suffix, title in dim_suffix_to_titles.items():
             save_dir=os.path.join(
                 PARAMETRIZATION_FIGS_DIR,
                 f"2_sax_vs_no_sax_{target_args.name.lower()}_{dim_suffix}",
-            ),
+            )
+            if SAVE_FIGURES
+            else None,
             **target_args.value,
         )
 
@@ -196,7 +200,9 @@ for target_args in [TargetArgs.PRUNING_RATIO]:
         save_dir=os.path.join(
             PARAMETRIZATION_FIGS_DIR,
             f"2_sax_vs_no_sax_{target_args.name.lower()}_unmerged",
-        ),
+        )
+        if SAVE_FIGURES
+        else None,
         **target_args.value,
     )
 
@@ -231,7 +237,9 @@ for target_args in IMPORTANT_METRICS:
         bar_plot_label_padding=False,
         regex_dict={ISC.NUM_ENVELOPES: r"^(0|1)(\.0){0,1}$"},
         y_scale="log" if target_args.name != "PRUNING_RATIO" else "linear",
-        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"3_mt-env_vs_isax_{target_args.name.lower()}"),
+        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"3_mt-env_vs_isax_{target_args.name.lower()}")
+        if SAVE_FIGURES
+        else None,
         **target_args.value,
     )
 
@@ -270,7 +278,9 @@ for normalized in [False, True]:
                 save_dir=os.path.join(
                     PARAMETRIZATION_FIGS_DIR,
                     f"4a_low_res_{target_args.name.lower()}_{dim_suffix}",
-                ),
+                )
+                if SAVE_FIGURES
+                else None,
                 **target_args.value,
             )
 
@@ -306,7 +316,9 @@ visualize_experiments(
     save_dir=os.path.join(
         PARAMETRIZATION_FIGS_DIR,
         f"4a_low_res_{target_args.name.lower()}_{dim_suffix}_pretty",
-    ),
+    )
+    if SAVE_FIGURES
+    else None,
     **target_args.value,
 )
 
@@ -355,7 +367,9 @@ for normalized in [False, True]:
                 save_dir=os.path.join(
                     PARAMETRIZATION_FIGS_DIR,
                     f"4a_low_res_{target_args.name.lower()}_{dim_suffix}",
-                ),
+                )
+                if SAVE_FIGURES
+                else None,
                 **target_args.value,
             )
 
@@ -387,7 +401,9 @@ for target_args in [TargetArgs.QUERY_TIME]:
         line_plot_included_cols={DSC.DATASET_FILE},
         line_plot_colors_map=dataset_line_colors,
         x_scale="log",
-        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4b_Nl_{target_args.name.lower()}_{dim_suffix}"),
+        save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4b_Nl_{target_args.name.lower()}_{dim_suffix}")
+        if SAVE_FIGURES
+        else None,
         **target_args.value,
     )
 
@@ -422,7 +438,9 @@ for dim_suffix in ["multi", "lmin"]:
             line_plot_included_cols={DSC.DATASET_FILE},
             line_plot_colors_map=dataset_line_colors,
             x_scale="log",
-            save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4c_ppe_{target_args.name.lower()}_{dim_suffix}"),
+            save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4c_ppe_{target_args.name.lower()}_{dim_suffix}")
+            if SAVE_FIGURES
+            else None,
             **target_args.value,
         )
 
@@ -495,7 +513,9 @@ for suffix in ["ds", "m", "lmin"]:
                 save_dir=os.path.join(
                     PARAMETRIZATION_FIGS_DIR,
                     f"4c_ppe_dist_calc_{regex_key}_{suffix}_{target_args.name.lower()}",
-                ),
+                )
+                if SAVE_FIGURES
+                else None,
                 **target_args.value,
             )
 
@@ -535,7 +555,9 @@ for normalized in [False, True]:
             line_plot_x_attr=ISC.NUM_SEGMENTS,
             line_plot_included_cols={DSC.DATASET_FILE},
             line_plot_colors_map=dataset_line_colors,
-            save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4d_Ns_{target_args.name.lower()}_{dim_suffix}"),
+            save_dir=os.path.join(PARAMETRIZATION_FIGS_DIR, f"4d_Ns_{target_args.name.lower()}_{dim_suffix}")
+            if SAVE_FIGURES
+            else None,
             **target_args.value,
         )
 
@@ -578,7 +600,9 @@ for reducer_name, reducer in [
             save_dir=os.path.join(
                 PARAMETRIZATION_FIGS_DIR,
                 f"4e_num_series_{target_args.name.lower()}_{reducer_name}_{dim_suffix}",
-            ),
+            )
+            if SAVE_FIGURES
+            else None,
             **target_args.value,
         )
 
@@ -657,7 +681,9 @@ for target_args, version, size in itertools.product(target_args_list, versions, 
         bar_plot_label_padding=False,
         title_base=f"{size.capitalize()} Ns",
         ignored_attrs={DSC.DATASET_FILE, ISC.NUM_SEGMENTS, DSC.SERIES_LENGTH},
-        save_dir=os.path.join(EXTENSIONS_FIGS_DIR, f"5{version}_presence_{size}_{target_args.name.lower()}"),
+        save_dir=os.path.join(EXTENSIONS_FIGS_DIR, f"5{version}_presence_{size}_{target_args.name.lower()}")
+        if SAVE_FIGURES
+        else None,
         **target_args.value,
     )
 
@@ -711,7 +737,9 @@ for target_args in [TargetArgs.QUERY_TIME, TargetArgs.PRUNING_RATIO]:
         },
         x_scale="log",
         y_scale="log" if target_args.name == "QUERY_TIME" else "linear",
-        save_dir=os.path.join(EXTENSIONS_FIGS_DIR, f"6a_tree_vs_flat_{target_args.name.lower()}"),
+        save_dir=os.path.join(EXTENSIONS_FIGS_DIR, f"6a_tree_vs_flat_{target_args.name.lower()}")
+        if SAVE_FIGURES
+        else None,
         **target_args.value,
     )
 
@@ -760,7 +788,9 @@ for target_args in [TargetArgs.QUERY_TIME]:
             save_dir=os.path.join(
                 EXTENSIONS_FIGS_DIR,
                 f"7a_ch_performance_{target_args.name.lower()}_{dataset}",
-            ),
+            )
+            if SAVE_FIGURES
+            else None,
             verbose=True,
             **target_args.value,
         )
@@ -769,7 +799,7 @@ for target_args in [TargetArgs.QUERY_TIME]:
 # 7b - Channel clustering
 visualize_clusters(
     logs_dir="EXPERIMENT_LOGS/thesis/LOGS_7b_ch_clustering",
-    save_dir=os.path.join(EXTENSIONS_FIGS_DIR, "7b_ch_clustering"),
+    save_dir=os.path.join(EXTENSIONS_FIGS_DIR, "7b_ch_clustering") if SAVE_FIGURES else None,
     fig_size=(13, 3.5),
 )
 
@@ -807,7 +837,9 @@ for version in ["_a", "_b"]:
                 ("score_based", 1): PALETTE["Reds"][3],
                 ("single", 0): PALETTE["Blues"][6],
             },
-            save_dir=os.path.join(EXTENSIONS_FIGS_DIR, f"7c_ch_prioritization{version}_{target_args.name.lower()}"),
+            save_dir=os.path.join(EXTENSIONS_FIGS_DIR, f"7c_ch_prioritization{version}_{target_args.name.lower()}")
+            if SAVE_FIGURES
+            else None,
             verbose=True,
             **target_args.value,
         )
@@ -849,14 +881,16 @@ for target_args in [
             ("vl_envelope-ed-early", True): "VL-Env invSAX",
         },
         y_scale="log" if target_args.name == "QUERY_TIME" else "linear",
-        save_dir=os.path.join(EXTENSIONS_FIGS_DIR, f"8_vl_envelope_{target_args.name.lower()}"),
+        save_dir=os.path.join(EXTENSIONS_FIGS_DIR, f"8_vl_envelope_{target_args.name.lower()}")
+        if SAVE_FIGURES
+        else None,
         **target_args.value,
     )
 
 # %%
 # Dataset examples
 
-visualize_time_series(save_dir=os.path.join(EXPERIMENT_FIGS_DIR, "dataset_examples"))
+visualize_time_series(save_dir=os.path.join(EXPERIMENT_FIGS_DIR, "dataset_examples") if SAVE_FIGURES else None)
 
 # %%
 # 9a - Method comparison
@@ -890,7 +924,9 @@ for target_args in [
         bar_width_inches=0.4,
         y_scale="log" if target_args.name == "QUERY_TIME" else "linear",
         merge_csv_datasets=True,
-        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_{target_args.name.lower()}"),
+        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_{target_args.name.lower()}")
+        if SAVE_FIGURES
+        else None,
         **target_args.value,
     )
 
@@ -935,7 +971,9 @@ for key, col in key_to_col.items():
             line_plot_colors_map=method_comparison_colors,
             x_scale="log" if key == "lmin" else "linear",
             y_scale="log" if target_args.name == "QUERY_TIME" else "linear",
-            save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_{key}_{target_args.name.lower()}"),
+            save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9a_method_compare_{key}_{target_args.name.lower()}")
+            if SAVE_FIGURES
+            else None,
             verbose=True,
             **target_args.value,
         )
@@ -970,7 +1008,9 @@ for constant in [""]:
             line_plot_colors_map=method_comparison_colors,
             x_scale="log",
             y_scale="log" if target_args.name == "QUERY_TIME" else "linear",
-            save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9b_num_channels{suffix}_{target_args.name.lower()}"),
+            save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9b_num_channels{suffix}_{target_args.name.lower()}")
+            if SAVE_FIGURES
+            else None,
             **target_args.value,
         )
 
@@ -1002,7 +1042,9 @@ for target_args in [TargetArgs.QUERY_TIME, TargetArgs.PRUNING_RATIO]:
         line_plot_legend_map=method_comparison_labels,
         line_plot_colors_map=method_comparison_colors,
         y_scale="log" if target_args.name == "QUERY_TIME" else "linear",
-        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9c_ad_hoc_channels_{target_args.name.lower()}"),
+        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"9c_ad_hoc_channels_{target_args.name.lower()}")
+        if SAVE_FIGURES
+        else None,
         **target_args.value,
     )
 
@@ -1037,7 +1079,9 @@ for target_args in [TargetArgs.ESTIMATE_SCORE]:
         heat_map_y_attr=PEC.NUM_SEGMENTS,
         heat_map_included_cols={ISC.SEGMENTATION_STRATEGY},
         cell_width_inches=7.5,
-        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10a_size_lim_baselines_est_{target_args.name.lower()}"),
+        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10a_size_lim_baselines_est_{target_args.name.lower()}")
+        if SAVE_FIGURES
+        else None,
         **target_args.value,
     )
 
@@ -1067,7 +1111,9 @@ for target_args in [TargetArgs.QUERY_TIME]:
         heat_map_y_attr=ISC.NUM_SEGMENTS,
         heat_map_included_cols={DSC.DATASET_FILE, ISC.SEGMENTATION_STRATEGY},
         cell_width_inches=7.5,
-        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10a_size_lim_baselines_gt_{target_args.name.lower()}"),
+        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10a_size_lim_baselines_gt_{target_args.name.lower()}")
+        if SAVE_FIGURES
+        else None,
         **target_args.value,
     )
 
@@ -1102,7 +1148,9 @@ for target_args in [TargetArgs.QUERY_TIME, TargetArgs.INDEX_SIZE]:
         y_scale="log",
         return_values=target_args.name == "QUERY_TIME",
         verbose=True,
-        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10b_size_limiting_performance_{target_args.name.lower()}"),
+        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10b_size_limiting_performance_{target_args.name.lower()}")
+        if SAVE_FIGURES
+        else None,
         **target_args.value,
     )
 
@@ -1193,7 +1241,9 @@ for target_args in [TargetArgs.NUM_LEN_GROUPS, TargetArgs.ENV_PARAM_ESTIMATION_T
         line_plot_show_min=False,
         x_scale="log",
         y_scale="linear" if target_args.name == "NUM_LEN_GROUPS" else "log",
-        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10b_size_limiting_{target_args.name.lower()}"),
+        save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"10b_size_limiting_{target_args.name.lower()}")
+        if SAVE_FIGURES
+        else None,
         **target_args.value,
     )
 
@@ -1230,7 +1280,7 @@ for key, col in key_to_col.items():
             line_plot_legend_map=method_comparison_labels,
             x_scale="log" if col in [QSC.NOISE, SSC.KNN_K] else "linear",
             y_scale="log" if target_args.name == "QUERY_TIME" else "linear",
-            save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"11{key}_{target_args.name.lower()}"),
+            save_dir=os.path.join(EXPERIMENT_FIGS_DIR, f"11{key}_{target_args.name.lower()}") if SAVE_FIGURES else None,
             verbose=col == QSC.NOISE,
             **target_args.value,
         )

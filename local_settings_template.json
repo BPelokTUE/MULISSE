@@ -1,0 +1,8 @@
+{
+    "DEFAULT_RUN_CONFIG": "path/to/default run configuration file, OPTIONAL",
+    "CSV_PATH": "path/to/csv data directory",
+    "REPO_PATH": "path/to/the repository root",
+    "REMOTE_URL": "remote URL to be used by `run_on_server`, OPTIONAL",
+    "REMOTE_PATH": "repository path on the remote server, OPTIONAL",
+    "FFTW_PATH": "path/to/fftw installation"
+}

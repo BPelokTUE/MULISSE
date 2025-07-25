@@ -10,6 +10,10 @@ This document describes the values used in configuration files for [`run_mulisse
 - **Type**: `list[string]`
 - **Description**: List of directories within `local_settings.CSV_DIR`.
 
+#### `min_subs_sigmas`
+- **Type**: `list[Real]`
+- **Description**: List of minimum subsequence sigma values for CSV parsing.
+
 #### `dataset_sizes`
 - **Type**: `list[int]`
 - **Description**: List of dataset sizes.
@@ -18,6 +22,10 @@ This document describes the values used in configuration files for [`run_mulisse
 - **Type**: `list[int]`
 - **Description**: List of series lengths.
 
+#### `index_sample_fracs`
+- **Type**: `list[Real]`
+- **Description**: List of fractions of the dataset to use for index sampling.
+
 #### `syn_num_channels`
 - **Type**: `list[int]`
 - **Description**: List of numbers of channels for synthetic data. No experiments are run on synthetic dataset if `syn_num_channels=[]`.
@@ -25,6 +33,22 @@ This document describes the values used in configuration files for [`run_mulisse
 #### `syn_step_stdevs`
 - **Type**: `list[Real]`
 - **Description**: List of standard deviations to use for the steps in the synthetic (random walk) datasets. No experiments are run on synthetic dataset if `syn_step_stdevs=[]`.
+
+#### `lg_segmentation_strategies`
+- **Type**: `list[string]`
+- **Description**: List of length group segmentation strategies.
+
+#### `ch_segmentation_strategies`
+- **Type**: `list[string]`
+- **Description**: List of channel segmentation strategies.
+
+#### `segmentation_strategies`
+- **Type**: `list[string]`
+- **Description**: List of segmentation strategies.
+
+#### `num_channels`
+- **Type**: `list[int]`
+- **Description**: List of numbers of channels to use from datasets.
 
 #### `query_set_sizes`
 - **Type**: `list[int]`
