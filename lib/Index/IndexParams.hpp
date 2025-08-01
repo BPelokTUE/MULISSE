@@ -28,31 +28,31 @@ struct SegmentationParams {
     /** @brief Number of segments to use */
     SaxSegIndT m_num_segments;
     /** @brief Type of strategy to use for length group segmentation */
-    LengthGroupSegmentationStrategyType m_lg_strategy_type;
+    LengthGroupSegmentationStrategyType m_lg_strategy_type = SINGLE;
     /** @brief Type of strategy to use for channel segmentation */
-    ChannelSegmentationStrategyType m_ch_strategy_type;
+    ChannelSegmentationStrategyType m_ch_strategy_type = ChannelSegmentationStrategyType::SINGLE;
     /** @brief Type of strategy to use for segmentation */
-    SegmentationStrategyType m_strategy_type;
+    SegmentationStrategyType m_strategy_type = UNIFORM;
     /** @brief File containing the proportions of segments  */
-    const str m_ch_num_seg_props_file;
+    str m_ch_num_seg_props_file = "";
     /** @brief Parameters of ScoreBasedChSegmentationStrategy */
-    const ScoreBasedChSSParams *m_score_based_chss_params;
+    ScoreBasedChSSParams *m_score_based_chss_params = nullptr;
 };
 
 struct SaxParams {
     /** @brief Number of bits to use for the SAX breakpoints */
-    SaxNumBitsT m_num_bits;
+    SaxNumBitsT m_num_bits = MAX_NUM_BITS_LIMIT;
     /** @brief Strategy for getting the breakpoints of the symbol intervals */
-    SaxBreakpointStrategyType m_breakpoint_strategy_type;
+    SaxBreakpointStrategyType m_breakpoint_strategy_type = EQUIPROBABLE;
     /** @brief Only used for FixedBreakpointStrategy: path to the plain text file to load the fixed breakpoints from */
-    str m_breakpoints_file;
+    str m_breakpoints_file = "";
 };
 
 struct MergerParams {
     /** @brief Type of entry merger to use */
     EntryMergerType m_entry_merger_type;
     /** @brief SAX parameters for SAX-based mergers, nullptr for non-SAX-based mergers */
-    const SaxParams *m_merger_sax_params;
+    SaxParams *m_merger_sax_params;
 };
 
 struct PaaIndexParams : virtual IIndexParams {
@@ -131,14 +131,14 @@ struct SaxEnvelopeIndexParams : virtual EnvelopeIndexParams, virtual SaxIndexPar
 
 struct iSaxTrieParams {
     /** @brief Whether to merge entries in the leaves of the tree */
-    bool m_merge_in_leaves;
+    bool m_merge_in_leaves = false;
     /** @brief Only used for EntropyMaximizingSplitStrategy: whether to select the segment with the min number of bits
      * in case of a tie */
-    bool m_min_num_bits_on_tie;
+    bool m_min_num_bits_on_tie = true;
     /** @brief Starting number of bits per segment */
-    SaxNumBitsT m_first_layer_num_bits;
+    SaxNumBitsT m_first_layer_num_bits = 1;
     /** @brief Strategy for choosing the index to split on */
-    iSaxSplitStrategyType m_split_strategy_type;
+    iSaxSplitStrategyType m_split_strategy_type = iSaxSplitStrategyType::ENTROPY_MAXIMIZING;
     /** @brief Maximum number of entries in a leaf */
     size_t m_leaf_capacity;
 };
