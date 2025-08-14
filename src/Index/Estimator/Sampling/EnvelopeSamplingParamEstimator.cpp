@@ -17,7 +17,7 @@
 #include "Index/Summarization.hpp"
 #include "Modules/Indexing/StrategyFactory/GetLGSegmentationStrategy.hpp"
 #include "Modules/QueryGen.hpp"
-#include "Search/QuerySetOptions.hpp"
+#include "Search/QueryGenOptions.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/HelperFuncs/Parallelism.hpp"
@@ -68,7 +68,7 @@ EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params(
     {
         std::ifstream data_stream(dataset_path, std::ios::binary);
         std::stringstream query_stream;
-        QuerySetOptions query_opts{
+        QuerysetGenOptions query_opts{
             .m_noise = R(0.1),
             .m_num_queries = sampling_params.m_num_queries,
             .m_l_min = l_min,

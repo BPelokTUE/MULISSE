@@ -6,6 +6,8 @@
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"
 
+struct MtsDatasetSettings;
+
 /** @brief Enum of the columns of the dataset settings log file */
 enum class DatasetSettingsColumn {
     ID,              // Index of the setting within the log file
@@ -84,8 +86,11 @@ class DatasetLogger : public Logger {
     /**
      * @brief Write the entry
      * @param attributes Attributes of the generated dataset
-     * */
-    static void write_entry(uptr<IDatasetLogAttributes> attributes);
+     * @param dataset_settings Settings of the dataset
+     * @param logs_path Path to the logs directory
+     */
+    static void write_entry(uptr<IDatasetLogAttributes> attributes, const MtsDatasetSettings &dataset_settings,
+                            const str &logs_path);
 
    private:
     DatasetLogger() = default;

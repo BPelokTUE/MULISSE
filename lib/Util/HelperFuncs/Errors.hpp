@@ -5,6 +5,8 @@
 
 #include "Util/Types/String.hpp"
 
+struct LengthRange;
+
 std::runtime_error get_not_exist_error(const str &path);
 
 std::runtime_error get_not_a_directory_error(const str &path);
@@ -17,6 +19,6 @@ std::runtime_error get_not_writable_error(const str &path);
 
 std::runtime_error get_required_missing_error(const str &option);
 
-constexpr std::runtime_error get_l_min_gt_l_max_error();
+constexpr std::runtime_error get_l_min_gt_l_max_error(const LengthRange &l_range);
 
 #endif  // UTIL_HELPERFUNCS_ERRORS_HPP

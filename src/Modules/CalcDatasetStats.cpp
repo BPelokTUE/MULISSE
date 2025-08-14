@@ -3,23 +3,21 @@
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 
+#include "Util/Artefacts/MtsDataset.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/Logging/DatasetStatsLogger.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
 
 using namespace boost::accumulators;
 
-int calculate_dataset_stats(uint num_lags) {
-    auto &RS = RunSettings::get_instance();
-    auto [num_channels, series_len, num_series, file] = RS.get_dataset_props();
+void calculate_dataset_stats(MtsDataset &dataset, uint num_lags) {
+    auto [num_channels, series_len, num_series, dataset_path] = dataset.get_settings();
 
-    std::ifstream dataset_ifs(RS.get_dataset_path(), std::ios::binary);
     for (uint i = 0; i < num_series; ++i) {
+        auto mts = dataset.load_next_series();
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             accumulator_set<Real, stats<tag::mean, tag::variance, tag::skewness, tag::kurtosis>> channel_stats;
+            auto &channel = mts[c];
 
-            vec<Real> channel(series_len);
-            dataset_ifs.read(reinterpret_cast<char *>(channel.data()), series_len * sizeof(Real));
             for (auto val : channel) channel_stats(val);
 
             vec<uint> tv_lags, ac_lags;
@@ -57,8 +55,7 @@ int calculate_dataset_stats(uint num_lags) {
                                total_var_stds,
                                autocorr_means,
                                autocorr_stds};
-            DatasetStatsLogger::write_entry(file, i, c, stats);
+            DatasetStatsLogger::write_entry(dataset_path, i, c, stats);
         }
     }
-    return 0;
 }

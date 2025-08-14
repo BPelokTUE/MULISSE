@@ -3,6 +3,7 @@
 
 #include "CLI/Subcommands/Subcommand.hpp"
 #include "CLI11/CLI11.hpp"
+#include "Util/Artefacts/Settings/MtsDatasetSettings.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/String.hpp"
 #include "Util/Types/Vec.hpp"
@@ -15,15 +16,17 @@ class ParseCsvSubcommand : public ISubcommand {
      */
     ParseCsvSubcommand(CLI::App &app);
 
+    void set_up_execution(const CommonOptions *common_opts) override;
+
     void validate_arguments() override;
 
     void execute() override;
 
    private:
     vec<str> m_csv_paths;
-    str m_dataset_path;
-    uint m_num_series, m_series_len, m_l_min, m_l_max;
+    uint m_l_min, m_l_max;
     Real m_min_subs_sd;
+    MtsDatasetSettings m_settings;
 };
 
 #endif  // CLI_SUBCOMMANDS_PARSECSVSUBCOMMAND_HPP

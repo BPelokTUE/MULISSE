@@ -1,5 +1,5 @@
-#ifndef UTIL_ARTEFACTS_IARTIFACT_HPP
-#define UTIL_ARTEFACTS_IARTIFACT_HPP
+#ifndef UTIL_ARTEFACTS_ARTIFACT_HPP
+#define UTIL_ARTEFACTS_ARTIFACT_HPP
 
 #include "Util/Types/String.hpp"
 
@@ -7,6 +7,8 @@ enum class ArchiveType;
 
 class IArtifact {
    public:
+    virtual ~IArtifact() = default;
+
     /**
      * @brief Save the artifact into a file
      * @param out_file Path to the output file
@@ -22,4 +24,4 @@ class IArtifact {
     virtual void load(const str &in_file, ArchiveType ar_type) = 0;
 };
 
-#endif  // UTIL_ARTEFACTS_IARTIFACT_HPP
+#endif  // UTIL_ARTEFACTS_ARTIFACT_HPP

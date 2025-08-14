@@ -2,6 +2,7 @@
 
 #include <filesystem>
 
+#include "Util/Artefacts/Settings/MtsDatasetSettings.hpp"
 #include "Util/HelperFuncs/Path.hpp"
 
 namespace fs = std::filesystem;
@@ -26,17 +27,17 @@ const str DatasetLogger::DATASET_SETTINGS_FILE = "dataset_settings.csv";
 
 using DSC = DatasetSettingsColumn;
 
-void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes) {
+void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes, const MtsDatasetSettings &dataset_settings,
+                                const str &logs_path) {
 #ifndef DISABLE_LOGGING
     DatasetLogger instance;
 
-    str dataset_settings_path =
-        fs::path(RunSettings::get_instance().get_logs_path()) / DatasetLogger::DATASET_SETTINGS_FILE;
+    str dataset_settings_path = fs::path(logs_path) / DatasetLogger::DATASET_SETTINGS_FILE;
     instance.file_setup(dataset_settings_path, DATASET_SETTINGS_COL_STRS);
 
     // Append entry
     uint id = instance.determine_index(dataset_settings_path);
-    auto [num_channels, series_len, num_series, dataset_file] = RunSettings::get_instance().get_dataset_props();
+    auto [num_channels, series_len, num_series, dataset_file] = dataset_settings;
 
     str sd_str = "", min_subs_sd_str = "", source_csv_str = "", l_min_str = "", l_max_str = "", seed_str = "";
     switch (attributes->get_type()) {

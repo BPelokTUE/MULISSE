@@ -10,8 +10,10 @@
 #include "Util/Logging/DatasetLogger.hpp"
 #include "Util/Stats/ChannelStats.hpp"
 
-void create_random_walks(const MtsDataset &dataset, Real step_sigma, bool zero_start, uint seed) {
-    auto [num_channels, series_len, num_series, dataset_path] = dataset.get_settings();
+void create_random_walks(MtsDataset &dataset, Real step_sigma, bool zero_start, uint seed, const str &data_path,
+                         const str &logs_path) {
+    auto [num_channels, series_len, num_series, dataset_file] = dataset.get_settings();
+    str dataset_path = data_path / std::filesystem::path(dataset_file);
     std::filesystem::create_directories(std::filesystem::path(dataset_path).parent_path());
 
     // Create binary file containing the time series
@@ -41,5 +43,5 @@ void create_random_walks(const MtsDataset &dataset, Real step_sigma, bool zero_s
     }
     ChannelStats(sums, sum_sqs, series_len, num_series).save(dataset.get_channel_stats_path());
 
-    DatasetLogger::write_entry(std::make_unique<RandomWalkLogAttributes>(step_sigma, seed));
+    DatasetLogger::write_entry(std::make_unique<RandomWalkLogAttributes>(step_sigma, seed), logs_path);
 }

@@ -1,52 +1,43 @@
 #include "Modules/CsvParsing.hpp"
 
 #include <algorithm>
+#include <iostream>
 #include <random>
 
+#include "Util/Artefacts/MtsDataset.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/Logging/DatasetLogger.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
+#include "Util/Stats/ChannelStats.hpp"
 
-int create_dataset_from_csv(const DatasetProperties &dataset_props, const vec<str> &csv_paths, uint num_series,
-                            uint l_min, uint l_max, char col_sep, Real min_subs_sd, uint seed) {
-    for (str csv_path : csv_paths) {
-        if (!std::filesystem::exists(csv_path)) {
-            std::cerr << "Error: CSV file " << csv_path << " does not exist\n";
-            return 1;
-        }
-    }
-
+void create_dataset_from_csv(const MtsDataset &dataset, const vec<str> &csv_paths, uint num_series, uint l_min,
+                             uint l_max, char col_sep, Real min_subs_sd, uint seed) {
     vec<std::ifstream> csv_streams;
     for (str csv_path : csv_paths) {
         csv_streams.emplace_back(csv_path);
-        if (!csv_streams.back()) {
+        if (!csv_streams.back().is_open()) {
             std::cerr << "Error: Could not open CSV file " << csv_path << '\n';
-            return 2;
+            std::cerr << "Reason: " << std::strerror(errno) << std::endl;
         }
     }
 
-    MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(csv_paths.size());
-    uint series_len = dataset_props.m_series_len;
-    const str &dataset_path = dataset_props.m_dataset_file;
-
+    auto [num_channels, series_len, num_series, dataset_path] = dataset.get_settings();
     std::filesystem::create_directories(std::filesystem::path(dataset_path).parent_path());
 
     std::ofstream dataset_ofs(dataset_path, std::ios::binary);
-    if (!dataset_ofs) {
+    if (!dataset_ofs.is_open()) {
         std::cerr << "Error: Could not create dataset " << dataset_path << '\n';
         std::cerr << "Reason: " << std::strerror(errno) << std::endl;
-        return 3;
     }
 
     str line;
-    vec<vec<Real>> mts(num_channels, vec<Real>(series_len));
-    vec<vec<vec<Real>>> all_mts;
-    MtsNumChannelsT channel = 0;
+    vec<vec<Real>> mts_data(num_channels, vec<Real>(series_len));
+    vec<vec<vec<Real>>> all_mts_data;
+    MtsNumChannelsT channel_ind = 0;
     bool discard = false;
 
     while (true) {
-        std::getline(csv_streams[channel], line);
+        std::getline(csv_streams[channel_ind], line);
 
         if (!discard) {
             std::istringstream iss(line);
@@ -56,7 +47,7 @@ int create_dataset_from_csv(const DatasetProperties &dataset_props, const vec<st
 
             while (std::getline(iss, value, col_sep)) {
                 try {
-                    mts[channel][ind] = std::stof(value);
+                    mts_data[channel_ind][ind] = R(std::stod(value));
                 } catch (const std::exception &e) {
                     discard = true;
                     goto next_channel;
@@ -64,8 +55,8 @@ int create_dataset_from_csv(const DatasetProperties &dataset_props, const vec<st
 
                 ++ind;
                 if (min_subs_sd > 0) {
-                    sum += mts[channel][ind - 1];
-                    sum_sq += mts[channel][ind - 1] * mts[channel][ind - 1];
+                    sum += mts_data[channel_ind][ind - 1];
+                    sum_sq += mts_data[channel_ind][ind - 1] * mts_data[channel_ind][ind - 1];
 
                     uint start_min = U(std::max(0, static_cast<int>(ind - l_max)));
                     int start_max = static_cast<int>(ind - l_min);
@@ -76,12 +67,12 @@ int create_dataset_from_csv(const DatasetProperties &dataset_props, const vec<st
                             discard = true;
                             goto next_channel;
                         }
-                        sum_tmp -= mts[channel][start];
-                        sum_sq_tmp -= mts[channel][start] * mts[channel][start];
+                        sum_tmp -= mts_data[channel_ind][start];
+                        sum_sq_tmp -= mts_data[channel_ind][start] * mts_data[channel_ind][start];
                     }
                     if (ind >= l_max) {
-                        sum -= mts[channel][start_min];
-                        sum_sq -= mts[channel][start_min] * mts[channel][start_min];
+                        sum -= mts_data[channel_ind][start_min];
+                        sum_sq -= mts_data[channel_ind][start_min] * mts_data[channel_ind][start_min];
                     }
                 }
                 if (ind == series_len) break;
@@ -89,21 +80,21 @@ int create_dataset_from_csv(const DatasetProperties &dataset_props, const vec<st
             if (ind < series_len) discard = true;
         }
     next_channel:
-        if (++channel == num_channels) {
-            if (!discard) all_mts.push_back(mts);
-            channel = 0;
+        if (++channel_ind == num_channels) {
+            if (!discard) all_mts_data.push_back(mts_data);
+            channel_ind = 0;
             discard = false;
         }
-        if (csv_streams[channel].eof()) break;
+        if (csv_streams[channel_ind].eof()) break;
     }
 
-    if (all_mts.empty()) {
+    if (all_mts_data.empty()) {
         throw std::runtime_error("Error: No valid time series found in the dataset");
     }
 
     std::default_random_engine generator(seed);
 
-    vec<uint> mts_indexes(all_mts.size());
+    vec<uint> mts_indexes(all_mts_data.size());
     std::iota(mts_indexes.begin(), mts_indexes.end(), 0);
     std::shuffle(mts_indexes.begin(), mts_indexes.end(), generator);
     if (mts_indexes.size() > num_series) mts_indexes.resize(num_series);
@@ -111,7 +102,7 @@ int create_dataset_from_csv(const DatasetProperties &dataset_props, const vec<st
     vec<Real> sums(num_channels, R(0.0)), sum_sqs(num_channels, R(0.0));
     for (uint mts_ind : mts_indexes) {
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
-            auto &ts = all_mts[mts_ind][c];
+            auto &ts = all_mts_data[mts_ind][c];
             dataset_ofs.write(reinterpret_cast<const char *>(ts.data()), sizeof(Real) * series_len);
             for (uint i = 0; i < series_len; ++i) {
                 sums[c] += ts[i];
@@ -119,10 +110,9 @@ int create_dataset_from_csv(const DatasetProperties &dataset_props, const vec<st
             }
         }
     }
-    ChannelStats(sums, sum_sqs, series_len, U(mts_indexes.size())).save(dataset_props.get_channel_stats_path());
+
+    ChannelStats(sums, sum_sqs, series_len, U(mts_indexes.size())).save(dataset.get_channel_stats_path());
 
     DatasetLogger::write_entry(
         std::make_unique<CsvDatasetLogAttributes>(csv_paths, mts_indexes.size(), l_min, l_max, min_subs_sd, seed));
-
-    return 0;
 }

@@ -1,7 +1,10 @@
 #ifndef QUERY_SET_LOGGER_HPP
 #define QUERY_SET_LOGGER_HPP
 
-#include "Search/QuerySetOptions.hpp"
+struct MtsDatasetSettings;
+struct MtsQuerysetSettings;
+struct QuerysetGenOptions;
+
 #include "Util/HelperFuncs/Enums.hpp"
 #include "Util/Logging/Logger.hpp"
 
@@ -32,9 +35,13 @@ class QuerySetLogger : public Logger {
 
     /**
      * @brief Write the entry
-     * @param opts Options used to generate the query set
+     * @param dataset_settings Settings of the dataset used to generate the queries
+     * @param queryset_settings Settings of the query set
+     * @param query_gen_opts Options used to generate the query set
+     * @param logs_path Path to the logs directory
      */
-    static void write_entry(QuerySetOptions &opts);
+    static void write_entry(const MtsDatasetSettings &dataset_settings, const MtsQuerysetSettings &queryset_settings,
+                            const QuerysetGenOptions &query_gen_opts, const str &logs_path);
 
    private:
     QuerySetLogger() = default;

@@ -14,8 +14,6 @@ class RandomWalkSubcommand : public ISubcommand {
      */
     RandomWalkSubcommand(CLI::App &app);
 
-    virtual void set_up_execution(const CommonOptions *common_opts) override;
-
     void execute() override;
 
    private:

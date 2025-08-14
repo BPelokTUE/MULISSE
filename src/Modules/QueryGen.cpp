@@ -8,7 +8,6 @@
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/HelperFuncs/Path.hpp"
 #include "Util/Logging/QuerySetLogger.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
 #include "Util/Types/SubsequenceInfo.hpp"
 
 struct QueryDescriptor {
@@ -19,77 +18,60 @@ struct QueryDescriptor {
     bool operator<(const QueryDescriptor &other) const { return subs_info < other.subs_info; }
 };
 
-std::pair<bool, uint> get_use_random_lengths_and_total_num_queries(const QuerySetOptions &opts) {
-    bool random_lengths = (opts.m_l_min > 0 && opts.m_l_max >= opts.m_l_min);
-    uint total_num_queries = random_lengths ? opts.m_num_queries : opts.m_num_queries * U(opts.m_exact_lengths.size());
-    return {random_lengths, total_num_queries};
+bool get_use_random_lengths(const QuerysetGenOptions &opts) {
+    return opts.m_length_range.m_l_min > 0 && opts.m_length_range.m_l_max >= opts.m_length_range.m_l_min;
 }
 
-int create_queries(QuerySetOptions opts) {
-    auto &RS = RunSettings::get_instance();
-    const str &dataset_path = RS.get_dataset_path();
-    const str &query_path = RS.get_query_path();
-    MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
+uint get_total_num_queries(bool random_lengths, const QuerysetGenOptions &opts) {
+    return random_lengths ? opts.m_num_queries : opts.m_num_queries * U(opts.m_exact_lengths.size());
+}
 
-    if (!std::filesystem::exists(dataset_path)) {
-        std::cerr << "Error: Dataset " << dataset_path << " does not exist." << std::endl;
-        return 1;
-    }
+void create_queries(MtsDataset &dataset, MtsQueryset &queryset, QuerysetGenOptions opts) {
+    auto dataset_settings = dataset.get_settings();
+    auto queryset_settings = queryset.get_settings();
 
-    // Check channel selection
-    if (!opts.m_channel_mask.empty()) {
-        if (opts.m_channel_mask.size() != num_channels) {
-            std::cerr << "Error: Channel mask must have the same number of elements as the number of channels in the "
-                         "dataset ("
-                      << num_channels << "), but has " << opts.m_channel_mask.size() << '\n';
-            return 2;
-        }
-    } else if (opts.m_used_channels != 0 && opts.m_used_channels > num_channels) {
-        std::cerr << "Error: Number of used channels (" << opts.m_used_channels
-                  << ") must be less than or equal to the number of channels in the dataset (" << num_channels << ")\n";
-        return 3;
-    }
-
-    // Check length specification
-    if ((opts.m_l_min == 0 || opts.m_l_max < opts.m_l_min) && opts.m_exact_lengths.empty()) {
-        std::cerr << "Error: Either a list of exact lengths or a minimum and maximum length must be provided\n";
-        return 4;
-    }
+    MtsNumChannelsT num_channels = dataset_settings.m_num_channels;
+    str dataset_path = dataset_settings.m_dataset_path;
+    str query_path = queryset_settings.m_queryset_path;
 
     // Extract time series from dataset
     std::ifstream data_file(dataset_path, std::ios::binary);
     std::ofstream query_file(query_path);
-    auto [random_lengths, total_num_queries] = get_use_random_lengths_and_total_num_queries(opts);
+
+    bool random_lengths = get_use_random_lengths(opts);
+    uint total_num_queries = get_total_num_queries(random_lengths, opts);
 
     generate_queries(data_file, query_file, opts);
 
-    auto opts_to_log = opts;
-    opts_to_log.m_num_queries = total_num_queries;
-    if (random_lengths) {
-        opts_to_log.m_exact_lengths = vec<uint>{};
-    } else {
-        opts_to_log.m_l_min = 0;
-        opts_to_log.m_l_max = 0;
-    }
-    opts_to_log.m_used_channels = opts.m_channel_mask.empty() ? opts.m_used_channels : 0;
-    QuerySetLogger::write_entry(opts_to_log);
+    auto queryset_settings_to_log = queryset_settings;
+    auto query_gen_opts_to_log = opts;
 
-    return 0;
+    if (random_lengths) {
+        query_gen_opts_to_log.m_exact_lengths = vec<uint>{};
+    } else {
+        queryset_settings_to_log.m_length_range.m_l_min = 0;
+        queryset_settings_to_log.m_length_range.m_l_max = 0;
+    }
+    query_gen_opts_to_log.m_used_channels = opts.m_channel_mask.empty() ? opts.m_used_channels : 0;
+    QuerySetLogger::write_entry(queryset_settings_to_log, query_gen_opts_to_log);
 }
 
-void generate_queries(std::istream &data_is, std::ostream &query_os, const QuerySetOptions &opts,
+void generate_queries(std::istream &data_is, std::ostream &query_os, const MtsDatasetSettings &dataset_settings,
+                      const MtsQuerysetSettings &queryset_settings, const QuerysetGenOptions &opts,
                       const vec<uint> &series_inds) {
-    auto [random_lengths, total_num_queries] = get_use_random_lengths_and_total_num_queries(opts);
+    bool random_lengths = get_use_random_lengths(opts);
+    uint total_num_queries = get_total_num_queries(random_lengths, opts);
+
     vec<QueryDescriptor> query_descriptors(total_num_queries);
 
-    auto &RS = RunSettings::get_instance();
-    auto [num_channels, series_len, num_series, dataset_file] = RS.get_dataset_props();
+    auto [num_channels, series_len, num_series, dataset_file] = dataset_settings;
     uint num_series_inds = series_inds.empty() ? num_series : U(series_inds.size());
 
     std::default_random_engine rng(opts.m_seed);
     std::normal_distribution<Real> noise_normal_dist(0.0, opts.m_noise);
     std::uniform_int_distribution<uint> series_uniform_dist(0, num_series_inds - 1),
-        channel_uniform_dist(1, num_channels), length_uniform_dist(opts.m_l_min, opts.m_l_max);
+        channel_uniform_dist(1, num_channels),
+        length_uniform_dist(opts.m_length_range.m_l_min, opts.m_length_range.m_l_max);
 
     auto generate_query_descriptor = [&](uint length) -> QueryDescriptor {
         uint included_channels = opts.m_used_channels == 0 ? channel_uniform_dist(rng) : opts.m_used_channels;

@@ -1,5 +1,7 @@
 #include "CLI/Subcommands/RandomWalkSubcommand.hpp"
 
+#include <filesystem>
+
 #include "CLI/CommonOptions.hpp"
 #include "CLI/Validators.hpp"
 #include "Enums/CommandType.hpp"
@@ -9,7 +11,7 @@
 RandomWalkSubcommand::RandomWalkSubcommand(CLI::App &app) {
     auto rw_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_DS), "Create random walk dataset");
 
-    rw_subcommand->add_option("-d,--dataset", m_settings.m_dataset_file, "Output dataset path")->required();
+    rw_subcommand->add_option("-d,--dataset", m_settings.m_dataset_path, "Output dataset path")->required();
     rw_subcommand->add_option("-s,--step_sd", m_step_sd, "Random walk step standard deviation")
         ->check(validators::positive_real)
         ->capture_default_str();
@@ -26,6 +28,7 @@ RandomWalkSubcommand::RandomWalkSubcommand(CLI::App &app) {
 }
 
 void RandomWalkSubcommand::execute() {
-    // Set up run properties
-    create_random_walks(MtsDataset(m_settings), m_step_sd, m_zero_start, m_common_opts->m_seed);
+    MtsDataset dataset(m_settings);
+    create_random_walks(dataset, m_step_sd, m_zero_start, m_common_opts);
+    dataset.save_meta(dataset.get_meta_path());
 }

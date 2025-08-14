@@ -3,6 +3,7 @@
 
 #include "CLI/Subcommands/Subcommand.hpp"
 #include "CLI11/CLI11.hpp"
+#include "Util/Artefacts/MtsDataset.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/String.hpp"
 
@@ -19,8 +20,9 @@ class DatasetStatsSubcommand : public ISubcommand {
     void execute() override;
 
    private:
-    str m_dataset_meta_path;
     uint m_num_lags;
+    str m_dataset_meta_path;
+    MtsDataset m_mts_dataset;
 };
 
 #endif  // CLI_SUBCOMMANDS_DATASETSTATSSUBCOMMAND_HPP

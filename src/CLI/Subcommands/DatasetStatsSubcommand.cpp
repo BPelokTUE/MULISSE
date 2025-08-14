@@ -17,9 +17,8 @@ DatasetStatsSubcommand::DatasetStatsSubcommand(CLI::App &app) {
         ->check(validators::positive_int);
 }
 
-void DatasetStatsSubcommand::set_up_execution(const CommonOptions *common_opts) {}
-
-void DatasetStatsSubcommand::execute() {
-    // Set up run setting properties
-    calculate_dataset_stats(m_num_lags);
+void DatasetStatsSubcommand::set_up_execution(const CommonOptions *common_opts) {
+    m_mts_dataset.load_meta(std::filesystem::path(common_opts->m_data_path) / m_dataset_meta_path);
 }
+
+void DatasetStatsSubcommand::execute() { calculate_dataset_stats(m_mts_dataset, m_num_lags); }

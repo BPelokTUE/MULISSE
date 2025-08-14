@@ -8,7 +8,7 @@ struct MtsDatasetSettings {
     MtsNumChannelsT m_num_channels;
     uint m_series_len;
     uint m_num_series;
-    str m_dataset_file;
+    str m_dataset_path;
 };
 
 #endif  // UTIL_ARTEFACTS_SETTINGS_MTSDATASETSETTINGS_HPP
