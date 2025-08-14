@@ -2,7 +2,8 @@
 #define CLI_TRANSFORMERS_HPP
 
 #include "CLI11/CLI11.hpp"
-#include "Util/Types/Containers.hpp"
+#include "Util/Types/String.hpp"
+#include "Util/Types/UMap.hpp"
 
 namespace transformers {
 template <typename EnumType>

@@ -3,7 +3,6 @@
 
 #include "Search/Results/SearchResult.hpp"
 #include "Search/SearchOptions.hpp"
-#include "Util/HelperFuncs/Containers.hpp"
 #include "Util/HelperFuncs/Enums.hpp"
 #include "Util/Logging/Logger.hpp"
 #include "Util/Types/Numbers.hpp"

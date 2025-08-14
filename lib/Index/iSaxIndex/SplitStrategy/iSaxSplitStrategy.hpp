@@ -1,7 +1,7 @@
 #ifndef ISAX_SPLIT_STRATEGY_HPP
 #define ISAX_SPLIT_STRATEGY_HPP
 
-#include "Util/Types/Containers.hpp"
+#include "Util/Types/Vec.hpp"
 
 template <typename T>
 class iSaxSplittableLeaf;

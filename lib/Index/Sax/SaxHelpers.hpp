@@ -7,7 +7,6 @@
 #include "Index/Entry/EntryData.hpp"
 #include "Index/Entry/IndexEntry.hpp"
 #include "Index/Sax/iSaxWord.hpp"
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 
 /** @brief Hash function for SaxSymbolT */

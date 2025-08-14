@@ -4,7 +4,6 @@
 #include <atomic>
 
 #include "Index/IndexOptions.hpp"
-#include "Util/HelperFuncs/Containers.hpp"
 #include "Util/HelperFuncs/Enums.hpp"
 #include "Util/Logging/Logger.hpp"
 

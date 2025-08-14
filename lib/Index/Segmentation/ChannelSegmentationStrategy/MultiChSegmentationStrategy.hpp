@@ -2,8 +2,9 @@
 #define INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_MULTICHSEGMENTATIONSTRATEGY_HPP
 
 #include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+#include "Util/Types/String.hpp"
+#include "Util/Types/Vec.hpp"
 
 class MultiChSegmentationStrategy : public IChannelSegmentationStrategy {
    public:

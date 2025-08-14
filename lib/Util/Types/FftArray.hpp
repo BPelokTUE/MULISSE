@@ -6,7 +6,7 @@
 #include <cstring>
 #include <memory>
 
-#include "Util/Types/Numbers.hpp"
+#include "Util/Types/FftTypes.hpp"
 
 /** @brief A RAII wrapper for a fixed-size FFTW complex array */
 class FftArray {

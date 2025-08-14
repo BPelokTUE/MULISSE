@@ -1,8 +1,8 @@
 #ifndef INDEX_ENTRY_ENTRYDATA_HPP
 #define INDEX_ENTRY_ENTRYDATA_HPP
 
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+#include "Util/Types/Vec.hpp"
 
 /** @brief Interface for data of IndexEntry objects */
 class IEntryData {

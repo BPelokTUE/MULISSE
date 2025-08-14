@@ -4,7 +4,9 @@
 #include <magic_enum/magic_enum.hpp>
 #include <sstream>
 
-#include "Util/Types/Containers.hpp"
+#include "Util/Types/String.hpp"
+#include "Util/Types/UMap.hpp"
+#include "Util/Types/Vec.hpp"
 
 /**
  * @brief Generate string to enum map

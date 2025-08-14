@@ -11,10 +11,10 @@ class ISubcommand {
      * @brief Set up execution after parsing arguments
      * @param common_opts Common options for all subcommands
      * */
-    virtual void set_up_execution(const CommonOptions *common_opts) {};
+    virtual void set_up_execution(const CommonOptions *common_opts);
 
     /** @brief Do additional argument validation after setting up run */
-    virtual void validate_arguments() {};
+    virtual void validate_arguments();
 
     /** @brief Execute the subcommand */
     virtual void execute() = 0;

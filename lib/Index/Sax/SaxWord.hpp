@@ -5,7 +5,6 @@
 
 #include "Index/Entry/Paa.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 
 /** @brief Symbolic Aggregate approXimation (SAX) word */

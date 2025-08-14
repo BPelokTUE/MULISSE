@@ -8,8 +8,8 @@
 #include "Util/Logging/DatasetLogger.hpp"
 #include "Util/RunSettings/RunSettings.hpp"
 
-int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_min, uint l_max, char col_sep,
-                            Real min_subs_sd, uint seed) {
+int create_dataset_from_csv(const DatasetProperties &dataset_props, const vec<str> &csv_paths, uint num_series,
+                            uint l_min, uint l_max, char col_sep, Real min_subs_sd, uint seed) {
     for (str csv_path : csv_paths) {
         if (!std::filesystem::exists(csv_path)) {
             std::cerr << "Error: CSV file " << csv_path << " does not exist\n";
@@ -26,16 +26,15 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
         }
     }
 
-    auto &RS = RunSettings::get_instance();
     MtsNumChannelsT num_channels = static_cast<MtsNumChannelsT>(csv_paths.size());
-    uint series_len = RS.get_dataset_props().m_series_len;
-    str dataset_path = RS.get_dataset_path();
+    uint series_len = dataset_props.m_series_len;
+    const str &dataset_path = dataset_props.m_dataset_file;
 
     std::filesystem::create_directories(std::filesystem::path(dataset_path).parent_path());
 
     std::ofstream dataset_ofs(dataset_path, std::ios::binary);
     if (!dataset_ofs) {
-        std::cerr << "Error: Could not create dataset " << RS.get_dataset_path() << '\n';
+        std::cerr << "Error: Could not create dataset " << dataset_path << '\n';
         std::cerr << "Reason: " << std::strerror(errno) << std::endl;
         return 3;
     }
@@ -120,7 +119,7 @@ int create_dataset_from_csv(const vec<str> &csv_paths, uint num_series, uint l_m
             }
         }
     }
-    RS.calc_and_save_channel_stats(sums, sum_sqs, series_len, U(mts_indexes.size()));
+    ChannelStats(sums, sum_sqs, series_len, U(mts_indexes.size())).save(dataset_props.get_channel_stats_path());
 
     DatasetLogger::write_entry(
         std::make_unique<CsvDatasetLogAttributes>(csv_paths, mts_indexes.size(), l_min, l_max, min_subs_sd, seed));

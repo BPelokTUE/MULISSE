@@ -2,7 +2,6 @@
 #define ENUMS_DISTANCE_TYPE_HPP
 
 #include "Util/HelperFuncs/Enums.hpp"
-#include "Util/Types/Containers.hpp"
 
 /** @brief Types of distance measure */
 enum DistanceType { ED, MASS };

@@ -2,11 +2,10 @@
 #define INDEX_SAX_ISAXWORD_HPP
 
 #include <optional>
-#include <vector>
 
 #include "Index/Sax/SaxWord.hpp"
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+#include "Util/Types/Vec.hpp"
 
 /** @brief indexable Symbolic Aggregate approXimation (iSAX) word */
 class iSaxWord : public SaxWord {

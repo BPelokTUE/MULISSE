@@ -2,7 +2,8 @@
 #define ENUMS_ENTRYMERGERTYPE_HPP
 
 #include "Util/HelperFuncs/Enums.hpp"
-#include "Util/Types/Containers.hpp"
+#include "Util/Types/String.hpp"
+#include "Util/Types/UMap.hpp"
 
 /** @brief Enum for IEntryMerger implementations */
 enum EntryMergerType { DUMMY, SAX_BASED, LOWER_SAX_BASED, SAX_PAA_GENERATOR };

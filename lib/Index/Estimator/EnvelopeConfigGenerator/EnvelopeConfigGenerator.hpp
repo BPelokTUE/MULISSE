@@ -2,8 +2,8 @@
 #define INDEX_ESTIMATOR_ENVELOPECONFIGGENERATOR_ENVELOPECONFIGGENERATOR_HPP
 
 #include "Enums/SearchMethodType.hpp"
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+#include "Util/Types/Vec.hpp"
 
 struct EnvelopeParams;
 

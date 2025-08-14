@@ -1,9 +1,9 @@
 #ifndef INDEX_SAX_SAXBREAKPOINTSTRATEGY_HPP
 #define INDEX_SAX_SAXBREAKPOINTSTRATEGY_HPP
 
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"
+#include "Util/Types/Vec.hpp"
 
 /**
  * @brief Interface for breakpoints strategies

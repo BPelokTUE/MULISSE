@@ -1,9 +1,9 @@
 #ifndef SEARCH_RESULT_HPP
 #define SEARCH_RESULT_HPP
 
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/SubsequenceInfo.hpp"
+#include "Util/Types/Vec.hpp"
 
 /** @brief Search result */
 struct SearchResult {

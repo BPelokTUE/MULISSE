@@ -1,9 +1,9 @@
 #ifndef INDEX_SUMMARIZATION_HPP
 #define INDEX_SUMMARIZATION_HPP
 
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"
+#include "Util/Types/Vec.hpp"
 
 template <typename T>
 class IndexEntry;

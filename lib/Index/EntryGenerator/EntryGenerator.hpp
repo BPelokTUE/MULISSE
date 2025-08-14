@@ -2,8 +2,8 @@
 #define INDEX_ENTRYGENERATOR_ENTRYGENERATOR_HPP
 
 #include "Index/Entry/EntryData.hpp"
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+#include "Util/Types/Vec.hpp"
 
 template <typename T>
 class IndexEntry;

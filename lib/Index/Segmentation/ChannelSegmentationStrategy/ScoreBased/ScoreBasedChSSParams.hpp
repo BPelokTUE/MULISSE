@@ -2,8 +2,8 @@
 #define INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_SCOREBASED_SCOREBASEDCHSSPARAMS_HPP
 
 #include "Enums/EnvelopeScoresTypes.hpp"
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+#include "Util/Types/String.hpp"
 
 struct ScoreBasedChSSParams {
     /** @brief Whether to use normalized envelopes (subsequences) during sampling */

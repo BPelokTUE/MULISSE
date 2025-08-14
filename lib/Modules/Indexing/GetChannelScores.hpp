@@ -1,8 +1,8 @@
 #ifndef MODULES_INDEXING_STRATEGYFACTORY_GETCHANNELSCORES_HPP
 #define MODULES_INDEXING_STRATEGYFACTORY_GETCHANNELSCORES_HPP
 
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+#include "Util/Types/Vec.hpp"
 
 class IndexOptions;
 

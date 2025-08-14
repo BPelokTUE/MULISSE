@@ -1,9 +1,9 @@
 #ifndef MODULES_INDEXING_GETLGSEGMENTATIONSTRATEGY_HPP
 #define MODULES_INDEXING_GETLGSEGMENTATIONSTRATEGY_HPP
 
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"
+#include "Util/Types/Vec.hpp"
 
 class ILengthGroupSegmentationStrategy;
 class IndexOptions;

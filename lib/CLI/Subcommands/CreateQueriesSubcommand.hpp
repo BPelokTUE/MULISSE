@@ -4,8 +4,8 @@
 #include "CLI/Subcommands/Subcommand.hpp"
 #include "CLI11/CLI11.hpp"
 #include "Search/QuerySetOptions.hpp"
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+#include "Util/Types/String.hpp"
 
 class CreateQueriesSubcommand : public ISubcommand {
    public:

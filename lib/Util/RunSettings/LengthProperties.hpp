@@ -3,8 +3,8 @@
 
 #include <algorithm>
 
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+#include "Util/Types/String.hpp"
 
 struct LengthProperties {
     bool m_use_length_groups;

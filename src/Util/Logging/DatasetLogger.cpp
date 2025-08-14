@@ -3,7 +3,6 @@
 #include <filesystem>
 
 #include "Util/HelperFuncs/Path.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
 
 namespace fs = std::filesystem;
 

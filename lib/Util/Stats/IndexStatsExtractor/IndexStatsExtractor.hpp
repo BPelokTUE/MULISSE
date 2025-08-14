@@ -1,8 +1,8 @@
 #ifndef UTIL_STATS_SCOREFUNC_INDEXSTATSEXTRACTOR_HPP
 #define UTIL_STATS_SCOREFUNC_INDEXSTATSEXTRACTOR_HPP
 
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+#include "Util/Types/Vec.hpp"
 
 struct IndexStats;
 

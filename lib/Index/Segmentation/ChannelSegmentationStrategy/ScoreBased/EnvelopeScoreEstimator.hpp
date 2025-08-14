@@ -1,9 +1,9 @@
 #ifndef INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_SCOREBASED_ENVELOPESCOREESTIMATOR_HPP
 #define INDEX_SEGMENTATION_CHANNELSEGMENTATIONSTRATEGY_SCOREBASED_ENVELOPESCOREESTIMATOR_HPP
 
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"
+#include "Util/Types/Vec.hpp"
 
 class IEnvelopeScoreFunc;
 class ScoreBasedChSSParams;

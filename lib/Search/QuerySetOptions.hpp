@@ -2,7 +2,7 @@
 #define QUERY_SET_OPTIONS
 
 #include "Util/Types/Numbers.hpp"
-#include "Util/Types/Containers.hpp"
+#include "Util/Types/Vec.hpp"
 
 struct QuerySetOptions {
     /** @brief Noise to add to the queries */

@@ -2,7 +2,7 @@
 #define ENVELOPE_GROUPER_HPP
 
 #include "Index/EnvelopeIndex/Tree/EnvelopeNode.hpp"
-#include "Util/Types/Containers.hpp"
+#include "Util/Types/Vec.hpp"
 
 /** @brief Interface for envelope groupers */
 class IEnvelopeGrouper {

@@ -1,8 +1,8 @@
 #ifndef UTIL_STATS_SCOREFUNC_SCOREFUNC_HPP
 #define UTIL_STATS_SCOREFUNC_SCOREFUNC_HPP
 
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+#include "Util/Types/Vec.hpp"
 
 /** @brief Class for calculating scores of real-valued inputs */
 class IScoreFunc {

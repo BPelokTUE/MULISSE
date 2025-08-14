@@ -5,7 +5,7 @@
 
 #include "Index/EnvelopeIndex/EnvelopeParams.hpp"
 #include "Index/Estimator/EnvelopeParamEstimator.hpp"
-#include "Util/Types/Containers.hpp"
+#include "Util/Types/Vec.hpp"
 
 class Envelope;
 

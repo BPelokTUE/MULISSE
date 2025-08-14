@@ -3,7 +3,7 @@
 
 #include "CLI/Subcommands/Subcommand.hpp"
 #include "CLI11/CLI11.hpp"
-#include "Util/Types/Containers.hpp"
+#include "Util/Artefacts/Settings/MtsDatasetSettings.hpp"
 #include "Util/Types/Numbers.hpp"
 
 class RandomWalkSubcommand : public ISubcommand {
@@ -14,14 +14,14 @@ class RandomWalkSubcommand : public ISubcommand {
      */
     RandomWalkSubcommand(CLI::App &app);
 
+    virtual void set_up_execution(const CommonOptions *common_opts) override;
+
     void execute() override;
 
    private:
-    str m_dataset_path;
-    Real m_step_sd;
     bool m_zero_start;
-    uint m_num_series, m_series_len;
-    MtsNumChannels m_num_channels;
+    Real m_step_sd;
+    MtsDatasetSettings m_settings;
 };
 
-#endif CLI_SUBCOMMANDS_RANDOMWALKSUBCOMMAND_HPP
+#endif  // CLI_SUBCOMMANDS_RANDOMWALKSUBCOMMAND_HPP

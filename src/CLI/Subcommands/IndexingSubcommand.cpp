@@ -5,7 +5,6 @@
 #include "CLI/Validators.hpp"
 #include "Enums/CommandType.hpp"
 #include "Modules/Indexing/Indexing.hpp"
-#include "Util/HelperFuncs/Containers.hpp"
 #include "Util/HelperFuncs/Errors.hpp"
 
 IndexingSubcommand::IndexingSubcommand(CLI::App &app) {

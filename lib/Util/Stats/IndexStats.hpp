@@ -2,7 +2,7 @@
 #define INDEX_STATS_INDEXSTATS_HPP
 
 #include "Util/Stats/AttributesStats.hpp"
-#include "Util/Types/Containers.hpp"
+#include "Util/Types/Vec.hpp"
 
 struct IndexStats {
     bool m_separate_segment_stats = false;

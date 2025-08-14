@@ -1,7 +1,7 @@
 #ifndef ENTRY_MERGER_HPP
 #define ENTRY_MERGER_HPP
 
-#include "Util/Types/Containers.hpp"
+#include "Util/Types/Vec.hpp"
 
 template <typename T>
 struct IndexEntry;

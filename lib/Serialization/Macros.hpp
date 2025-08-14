@@ -11,7 +11,6 @@
 #include <fstream>
 
 #include "Enums/ArchiveType.hpp"
-#include "Util/Types/Containers.hpp"
 
 /**
  * @brief Macro to serializable / deserialize. Not intended to be used directly, but through MAKE_SERIALIZABLE.

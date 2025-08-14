@@ -1,8 +1,6 @@
 #ifndef INDEX_TRAITS_ENTRYTAGS_HPP
 #define INDEX_TRAITS_ENTRYTAGS_HPP
 
-#include "Util/Types/Containers.hpp"
-
 struct PaaTag {};
 
 struct EnvelopeTag {};

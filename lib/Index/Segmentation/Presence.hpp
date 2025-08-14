@@ -1,8 +1,8 @@
 #ifndef INDEX_SEGMENTATION_PRESENCE_HPP
 #define INDEX_SEGMENTATION_PRESENCE_HPP
 
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+#include "Util/Types/Vec.hpp"
 
 class PresenceArray {
    public:

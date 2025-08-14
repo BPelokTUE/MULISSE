@@ -1,9 +1,9 @@
 #ifndef ISAX_NODE_HPP
 #define ISAX_NODE_HPP
 
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/SaxSplitIndex.hpp"
 #include "Util/Types/SubsequenceInfo.hpp"
+#include "Util/Types/Vec.hpp"
 
 /** @brief Base class for iSAX nodes */
 class iSaxNode {

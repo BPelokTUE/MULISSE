@@ -2,7 +2,6 @@
 #define UTIL_RUNSETTINGS_BREAKPOINTPROPERTIES_HPP
 
 #include "Index/Sax/BreakpointStrategy/SaxBreakpointStrategy.hpp"
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"
 

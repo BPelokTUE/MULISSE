@@ -6,7 +6,6 @@
 #include "Enums/DistanceType.hpp"
 #include "Enums/SearchType.hpp"
 #include "Search/Results/ResultSet.hpp"
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
 
 template <SearchType S, DistanceType D, bool SQ>

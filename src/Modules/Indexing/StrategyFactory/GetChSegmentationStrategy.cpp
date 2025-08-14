@@ -5,7 +5,6 @@
 #include "Index/Segmentation/ChannelSegmentationStrategy/ScoreBased/ScoreToProportionalNumSegments.hpp"
 #include "Index/Segmentation/ChannelSegmentationStrategy/SingleChSegmentationStrategy.hpp"
 #include "Modules/Indexing/StrategyFactory/GetSegmentationStrategy.hpp"
-#include "Util/HelperFuncs/Containers.hpp"
 
 using CHSS = ChannelSegmentationStrategyType;
 

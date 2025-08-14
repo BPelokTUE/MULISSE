@@ -1,7 +1,7 @@
 #ifndef UTIL_HELPERFUNCS_CONTAINERS_HPP
 #define UTIL_HELPERFUNCS_CONTAINERS_HPP
 
-#include "Util/Types/Containers.hpp"
+#include "Util/Types/Vec.hpp"
 
 template <typename T>
 bool vec_contains(const vec<T>& vec, const T& value) {

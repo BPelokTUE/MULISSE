@@ -7,7 +7,7 @@
 #include "Enums/SearchMethodType.hpp"
 #include "Index/IndexOptions.hpp"
 #include "Util/Constants/Sax.hpp"
-#include "Util/Types/Containers.hpp"
+#include "Util/Types/String.hpp"
 
 class IndexingSubcommand : public ISubcommand {
    public:

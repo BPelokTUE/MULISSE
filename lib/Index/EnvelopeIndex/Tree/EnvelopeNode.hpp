@@ -3,9 +3,9 @@
 
 #include <cereal/access.hpp>
 
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Pointers.hpp"
 #include "Util/Types/SubsequenceInfo.hpp"
+#include "Util/Types/Vec.hpp"
 
 template <typename T>
 class IndexEntry;

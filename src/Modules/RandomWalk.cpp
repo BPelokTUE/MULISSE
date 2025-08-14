@@ -5,22 +5,19 @@
 #include <random>
 #include <sstream>
 
+#include "Util/Artefacts/MtsDataset.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/Logging/DatasetLogger.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
+#include "Util/Stats/ChannelStats.hpp"
 
-int create_random_walks(Real step_sigma, bool zero_start, uint seed) {
-    auto &RS = RunSettings::get_instance();
-    str dataset_path = RS.get_dataset_path();
-    auto [num_channels, series_len, num_series, file] = RS.get_dataset_props();
+void create_random_walks(const MtsDataset &dataset, Real step_sigma, bool zero_start, uint seed) {
+    auto [num_channels, series_len, num_series, dataset_path] = dataset.get_settings();
     std::filesystem::create_directories(std::filesystem::path(dataset_path).parent_path());
 
     // Create binary file containing the time series
     std::ofstream outfile(dataset_path, std::ios::binary);
     if (!outfile) {
-        std::cerr << "Error: Could not create dataset " << dataset_path << '\n';
-        std::cerr << "Reason: " << std::strerror(errno) << std::endl;
-        return 1;
+        throw std::runtime_error("Could not create dataset file: " + dataset_path + " - " + std::strerror(errno));
     }
 
     std::default_random_engine generator(seed);
@@ -42,8 +39,7 @@ int create_random_walks(Real step_sigma, bool zero_start, uint seed) {
             }
         }
     }
-    RS.calc_and_save_channel_stats(sums, sum_sqs, series_len, num_series);
+    ChannelStats(sums, sum_sqs, series_len, num_series).save(dataset.get_channel_stats_path());
 
     DatasetLogger::write_entry(std::make_unique<RandomWalkLogAttributes>(step_sigma, seed));
-    return 0;
 }

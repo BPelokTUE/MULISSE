@@ -2,7 +2,8 @@
 #define INSERTER_TYPE_HPP
 
 #include "Util/HelperFuncs/Enums.hpp"
-#include "Util/Types/Containers.hpp"
+#include "Util/Types/String.hpp"
+#include "Util/Types/UMap.hpp"
 
 /** @brief Enum for IEntryInserter implementations */
 enum EntryInserterType { TOP_DOWN, PARALLEL };

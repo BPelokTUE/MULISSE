@@ -1,9 +1,10 @@
 #ifndef CLI_COMMONOPTIONS_HPP
 #define CLI_COMMONOPTIONS_HPP
 
-#include "Util/Types/Containers.hpp"
 #include "Util/Types/Numbers.hpp"
+#include "Util/Types/String.hpp"
 
+/** @brief Common options for all subcommands */
 struct CommonOptions {
     bool m_raw = false;
     uint m_seed = 0;
