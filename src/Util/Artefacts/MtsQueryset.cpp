@@ -1,4 +1,4 @@
-#include "Util/Artefacts/MtsQueryset.hpp"
+#include "Util/Artefacts/MtsQuerySet.hpp"
 
 #include <cereal/archives/json.hpp>
 
@@ -6,17 +6,17 @@
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/Types/MtsQuery.hpp"
 
-MtsQueryset::MtsQueryset() = default;
+MtsQuerySet::MtsQuerySet() = default;
 
-MtsQueryset::MtsQueryset(const MtsQuerysetSettings &queryset_settings) : m_settings(queryset_settings) {}
+MtsQuerySet::MtsQuerySet(const MtsQuerySetProperties &query_set_props) : m_properties(query_set_props) {}
 
 template <typename Archive>
-void MtsQueryset::apply_archive(Archive &ar) {
-    ar(cereal::make_nvp("num_queries", m_settings.m_num_queries),
-       cereal::make_nvp("length_range", m_settings.m_length_range));
+void MtsQuerySet::apply_archive(Archive &ar) {
+    ar(cereal::make_nvp("num_queries", m_properties.m_num_queries),
+       cereal::make_nvp("length_range", m_properties.m_length_range));
 }
 
-void MtsQueryset::save(const str &out_file, ArchiveType) {
+void MtsQuerySet::save(const str &out_file, ArchiveType) {
     std::ofstream ofs(out_file);
     if (!ofs.is_open()) throw std::runtime_error("Failed to open output file: " + out_file);
     cereal::JSONOutputArchive ar(ofs);
@@ -24,30 +24,31 @@ void MtsQueryset::save(const str &out_file, ArchiveType) {
     apply_archive(ar);
 }
 
-void MtsQueryset::load(const str &in_file, ArchiveType) {
-    m_queryset_ifs.open(in_file);
-    if (!m_queryset_ifs.is_open()) throw std::runtime_error("Failed to open input file: " + in_file);
-    cereal::JSONInputArchive ar(m_queryset_ifs);
+void MtsQuerySet::load(const str &in_file, ArchiveType) {
+    m_query_set_ifs.open(in_file);
+    if (!m_query_set_ifs.is_open()) throw std::runtime_error("Failed to open input file: " + in_file);
+    cereal::JSONInputArchive ar(m_query_set_ifs);
 
     apply_archive(ar);
 }
 
-const MtsQuerysetSettings &MtsQueryset::get_settings() const { return m_settings; }
+const MtsQuerySetProperties &MtsQuerySet::get_properties() const { return m_properties; }
 
-str MtsQueryset::get_meta_path() const {
-    str path = m_settings.m_queryset_path;
+str MtsQuerySet::get_meta_path() const {
+    str path = m_properties.m_query_set_path;
     path.replace(path.find_last_of('.'), path.size() - path.find_last_of('.'), "_qs_meta.json");
     return path;
 }
 
-MtsQuery MtsQueryset::load_next_query(bool normalized) {
-    if (!m_queryset_ifs.is_open()) throw std::runtime_error("Queryset file is not open: " + m_settings.m_queryset_path);
+MtsQuery MtsQuerySet::load_next_query(bool normalized) {
+    if (!m_query_set_ifs.is_open())
+        throw std::runtime_error("QuerySet file is not open: " + m_properties.m_query_set_path);
 
     vec<vec<Real>> query_data;
 
-    for (MtsNumChannelsT c = 0; !m_queryset_ifs.eof();) {
+    for (MtsNumChannelsT c = 0; !m_query_set_ifs.eof();) {
         str line;
-        std::getline(m_queryset_ifs, line);
+        std::getline(m_query_set_ifs, line);
         std::istringstream iss(line);
 
         query_data[c].clear();

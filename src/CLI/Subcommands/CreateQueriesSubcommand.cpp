@@ -4,7 +4,7 @@
 #include "CLI/Validators.hpp"
 #include "Enums/CommandType.hpp"
 #include "Modules/QueryGen.hpp"
-#include "Util/Artefacts/MtsQueryset.hpp"
+#include "Util/Artefacts/MtsQuerySet.hpp"
 #include "Util/HelperFuncs/Errors.hpp"
 #include "Util/HelperFuncs/Path.hpp"
 
@@ -14,11 +14,11 @@ CreateQueriesSubcommand::CreateQueriesSubcommand(CLI::App &app) {
     qs_subcommand->add_option("-d,--dataset_meta", m_dataset_meta_path, "Path to the meta file of the dataset")
         ->required()
         ->check(validators::file_is_readable);
-    qs_subcommand->add_option("-q,--query", m_queryset_path, "Output query path relative to `DATA`")
+    qs_subcommand->add_option("-q,--query", m_query_set_path, "Output query path relative to `DATA`")
         ->required()
         ->check(validators::file_is_writable);
     qs_subcommand->add_option("--noise", m_query_gen_opts.m_noise, "Query noise")->capture_default_str();
-    qs_subcommand->add_option("-Q,--num_queries", m_queryset_settings.m_num_queries, "Number of queries")
+    qs_subcommand->add_option("-Q,--num_queries", m_query_set_props.m_num_queries, "Number of queries")
         ->required()
         ->check(validators::positive_int);
     qs_subcommand
@@ -28,12 +28,12 @@ CreateQueriesSubcommand::CreateQueriesSubcommand(CLI::App &app) {
         ->check(validators::positive_int);
     qs_subcommand
         ->add_option(
-            "-l,--l_min", m_queryset_settings.m_length_range.m_l_min,
+            "-l,--l_min", m_query_set_props.m_length_range.m_l_min,
             "Minimum length of queries to generate. If passed `--l_max` is also required. Overrides `--exact_lengths`.")
         ->capture_default_str();
     qs_subcommand
         ->add_option(
-            "-L,--l_max", m_queryset_settings.m_length_range.m_l_max,
+            "-L,--l_max", m_query_set_props.m_length_range.m_l_max,
             "Maximum length of queries to generate. If passed `--l_min` is also required. Overrides `--exact_lengths`.")
         ->capture_default_str();
     qs_subcommand
@@ -50,17 +50,17 @@ CreateQueriesSubcommand::CreateQueriesSubcommand(CLI::App &app) {
 
 void CreateQueriesSubcommand::set_up_execution(const CommonOptions *common_opts) {
     m_common_opts = common_opts;
-    m_queryset_path = std::filesystem::path(m_common_opts->m_data_path) / m_queryset_path;
+    m_query_set_path = std::filesystem::path(m_common_opts->m_data_path) / m_query_set_path;
     m_dataset.load_meta(m_dataset_meta_path);
 }
 
 void CreateQueriesSubcommand::validate_arguments() {
-    check_file_is_readable(m_dataset.get_settings().m_dataset_path);
+    check_file_is_readable(m_dataset.get_properties().m_dataset_path);
 
-    if (m_queryset_settings.m_length_range.m_l_min > m_queryset_settings.m_length_range.m_l_max) {
-        throw get_l_min_gt_l_max_error(m_queryset_settings.m_length_range);
+    if (m_query_set_props.m_length_range.m_l_min > m_query_set_props.m_length_range.m_l_max) {
+        throw get_l_min_gt_l_max_error(m_query_set_props.m_length_range);
     }
-    MtsNumChannelsT num_channels = m_dataset.get_settings().m_num_channels;
+    MtsNumChannelsT num_channels = m_dataset.get_properties().m_num_channels;
     if (size_t mask_size = m_query_gen_opts.m_channel_mask.size(); mask_size > 0 && mask_size != num_channels) {
         throw std::runtime_error(std::format(
             "Non-empty channel mask has different number of channels ({}) than dataset ({})", mask_size, num_channels));
@@ -79,8 +79,8 @@ void CreateQueriesSubcommand::validate_arguments() {
     }
 
     // Check length specification
-    if ((m_queryset_settings.m_length_range.m_l_min == 0 ||
-         m_queryset_settings.m_length_range.m_l_max < m_queryset_settings.m_length_range.m_l_min) &&
+    if ((m_query_set_props.m_length_range.m_l_min == 0 ||
+         m_query_set_props.m_length_range.m_l_max < m_query_set_props.m_length_range.m_l_min) &&
         m_query_gen_opts.m_exact_lengths.empty()) {
         throw std::runtime_error("Either a list of exact lengths or a minimum and maximum length must be provided");
     }
@@ -88,7 +88,7 @@ void CreateQueriesSubcommand::validate_arguments() {
 
 void CreateQueriesSubcommand::execute() {
     m_query_gen_opts.m_seed = m_common_opts->m_seed;
-    MtsQueryset queryset(m_queryset_settings);
-    create_queries(m_dataset, queryset, m_query_gen_opts);
-    queryset.save_meta(queryset.get_meta_path());
+    MtsQuerySet query_set(m_query_set_props);
+    create_queries(m_dataset, query_set, m_query_gen_opts, m_common_opts->m_logs_path);
+    query_set.save_meta(query_set.get_meta_path());
 }

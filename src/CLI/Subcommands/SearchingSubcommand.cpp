@@ -20,7 +20,7 @@ SearchingSubcommand::SearchingSubcommand(CLI::App &app) {
         ->capture_default_str();
     search_subcommand->add_option("-d,--dataset", m_dataset_meta_path, "Path to the meta file of the dataset to search")
         ->required();
-    search_subcommand->add_option("-q,--query", m_query_meta_path, "Path to the meta file of the queryset to answer")
+    search_subcommand->add_option("-q,--query", m_query_meta_path, "Path to the meta file of the query_set to answer")
         ->required();
     search_subcommand
         ->add_option("-F,--ffts", m_ffts_meta_path,

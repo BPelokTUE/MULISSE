@@ -6,7 +6,7 @@
 #include "Util/Types/Vec.hpp"
 
 /** @brief Options for generating queries */
-struct QuerysetGenOptions {
+struct QuerySetGenOptions {
     /** @brief The number of channels to use for each query. If 0, the number is random for each query. */
     MtsNumChannelsT m_used_channels;
     /** @brief Seed for the random number generator */

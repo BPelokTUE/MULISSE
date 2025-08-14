@@ -18,69 +18,71 @@ struct QueryDescriptor {
     bool operator<(const QueryDescriptor &other) const { return subs_info < other.subs_info; }
 };
 
-bool get_use_random_lengths(const QuerysetGenOptions &opts) {
-    return opts.m_length_range.m_l_min > 0 && opts.m_length_range.m_l_max >= opts.m_length_range.m_l_min;
+bool get_use_random_lengths(const LengthRange &length_range) {
+    return length_range.m_l_min > 0 && length_range.m_l_max >= length_range.m_l_min;
 }
 
-uint get_total_num_queries(bool random_lengths, const QuerysetGenOptions &opts) {
-    return random_lengths ? opts.m_num_queries : opts.m_num_queries * U(opts.m_exact_lengths.size());
+uint get_total_num_queries(bool random_lengths, uint num_queries, const vec<uint> &exact_lengths) {
+    return random_lengths ? num_queries : num_queries * U(exact_lengths.size());
 }
 
-void create_queries(MtsDataset &dataset, MtsQueryset &queryset, QuerysetGenOptions opts) {
-    auto dataset_settings = dataset.get_settings();
-    auto queryset_settings = queryset.get_settings();
+void create_queries(MtsDataset &dataset, MtsQuerySet &query_set, QuerySetGenOptions opts, const str &logs_path) {
+    auto dataset_props = dataset.get_properties();
+    auto query_set_props = query_set.get_properties();
 
-    MtsNumChannelsT num_channels = dataset_settings.m_num_channels;
-    str dataset_path = dataset_settings.m_dataset_path;
-    str query_path = queryset_settings.m_queryset_path;
+    MtsNumChannelsT num_channels = dataset_props.m_num_channels;
+    str dataset_path = dataset_props.m_dataset_path;
+    str query_path = query_set_props.m_query_set_path;
 
     // Extract time series from dataset
     std::ifstream data_file(dataset_path, std::ios::binary);
     std::ofstream query_file(query_path);
 
-    bool random_lengths = get_use_random_lengths(opts);
-    uint total_num_queries = get_total_num_queries(random_lengths, opts);
+    bool random_lengths = get_use_random_lengths(query_set_props.m_length_range);
+    uint total_num_queries = get_total_num_queries(random_lengths, query_set_props.m_num_queries, opts.m_exact_lengths);
 
     generate_queries(data_file, query_file, opts);
 
-    auto queryset_settings_to_log = queryset_settings;
+    auto query_set_props_to_log = query_set_props;
     auto query_gen_opts_to_log = opts;
 
     if (random_lengths) {
         query_gen_opts_to_log.m_exact_lengths = vec<uint>{};
     } else {
-        queryset_settings_to_log.m_length_range.m_l_min = 0;
-        queryset_settings_to_log.m_length_range.m_l_max = 0;
+        query_set_props_to_log.m_length_range.m_l_min = 0;
+        query_set_props_to_log.m_length_range.m_l_max = 0;
     }
     query_gen_opts_to_log.m_used_channels = opts.m_channel_mask.empty() ? opts.m_used_channels : 0;
-    QuerySetLogger::write_entry(queryset_settings_to_log, query_gen_opts_to_log);
+    QuerySetLogger::write_entry(dataset_props, query_set_props_to_log, query_gen_opts_to_log, logs_path);
 }
 
-void generate_queries(std::istream &data_is, std::ostream &query_os, const MtsDatasetSettings &dataset_settings,
-                      const MtsQuerysetSettings &queryset_settings, const QuerysetGenOptions &opts,
+void generate_queries(std::istream &data_is, std::ostream &query_os, const MtsDatasetProperties &dataset_props,
+                      const MtsQuerySetProperties &query_set_props, const QuerySetGenOptions &query_set_gen_opts,
                       const vec<uint> &series_inds) {
-    bool random_lengths = get_use_random_lengths(opts);
-    uint total_num_queries = get_total_num_queries(random_lengths, opts);
+    bool random_lengths = get_use_random_lengths(query_set_props.m_length_range);
+    uint total_num_queries =
+        get_total_num_queries(random_lengths, query_set_props.m_num_queries, query_set_gen_opts.m_exact_lengths);
 
     vec<QueryDescriptor> query_descriptors(total_num_queries);
 
-    auto [num_channels, series_len, num_series, dataset_file] = dataset_settings;
+    auto [num_channels, series_len, num_series, dataset_file] = dataset_props;
     uint num_series_inds = series_inds.empty() ? num_series : U(series_inds.size());
 
-    std::default_random_engine rng(opts.m_seed);
-    std::normal_distribution<Real> noise_normal_dist(0.0, opts.m_noise);
+    std::default_random_engine rng(query_set_gen_opts.m_seed);
+    std::normal_distribution<Real> noise_normal_dist(0.0, query_set_gen_opts.m_noise);
     std::uniform_int_distribution<uint> series_uniform_dist(0, num_series_inds - 1),
         channel_uniform_dist(1, num_channels),
-        length_uniform_dist(opts.m_length_range.m_l_min, opts.m_length_range.m_l_max);
+        length_uniform_dist(query_set_props.m_length_range.m_l_min, query_set_props.m_length_range.m_l_max);
 
     auto generate_query_descriptor = [&](uint length) -> QueryDescriptor {
-        uint included_channels = opts.m_used_channels == 0 ? channel_uniform_dist(rng) : opts.m_used_channels;
+        uint included_channels =
+            query_set_gen_opts.m_used_channels == 0 ? channel_uniform_dist(rng) : query_set_gen_opts.m_used_channels;
         vec<bool> channels(num_channels, false);
-        if (opts.m_channel_mask.empty()) {
+        if (query_set_gen_opts.m_channel_mask.empty()) {
             std::fill(channels.begin(), channels.begin() + included_channels, true);
             std::shuffle(channels.begin(), channels.end(), rng);
         } else {
-            channels = opts.m_channel_mask;
+            channels = query_set_gen_opts.m_channel_mask;
         }
 
         auto start_pos_dist = std::uniform_int_distribution<uint>(0, series_len - length);
@@ -89,13 +91,13 @@ void generate_queries(std::istream &data_is, std::ostream &query_os, const MtsDa
         return {subs_info, length, channels};
     };
 
-    for (uint i = 0; i < opts.m_num_queries; ++i) {
+    for (uint i = 0; i < query_set_props.m_num_queries; ++i) {
         if (random_lengths) {
             query_descriptors[i] = generate_query_descriptor(length_uniform_dist(rng));
         } else {
-            for (uint j = 0; j < opts.m_exact_lengths.size(); ++j) {
-                query_descriptors[i * opts.m_exact_lengths.size() + j] =
-                    generate_query_descriptor(opts.m_exact_lengths[j]);
+            for (uint j = 0; j < query_set_gen_opts.m_exact_lengths.size(); ++j) {
+                query_descriptors[i * query_set_gen_opts.m_exact_lengths.size() + j] =
+                    generate_query_descriptor(query_set_gen_opts.m_exact_lengths[j]);
             }
         }
     }

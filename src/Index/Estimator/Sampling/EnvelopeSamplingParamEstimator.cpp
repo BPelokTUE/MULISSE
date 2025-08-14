@@ -68,7 +68,7 @@ EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params(
     {
         std::ifstream data_stream(dataset_path, std::ios::binary);
         std::stringstream query_stream;
-        QuerysetGenOptions query_opts{
+        QuerySetGenOptions query_opts{
             .m_noise = R(0.1),
             .m_num_queries = sampling_params.m_num_queries,
             .m_l_min = l_min,

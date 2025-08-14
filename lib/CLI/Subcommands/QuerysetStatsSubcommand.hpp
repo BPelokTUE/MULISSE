@@ -5,13 +5,13 @@
 #include "CLI11/CLI11.hpp"
 #include "Util/Types/String.hpp"
 
-class QuerysetStatsSubcommand : public ISubcommand {
+class QuerySetStatsSubcommand : public ISubcommand {
    public:
     /**
      * @brief Constructor
      * @param app The CLI application to add the subcommand to
      */
-    QuerysetStatsSubcommand(CLI::App &app);
+    QuerySetStatsSubcommand(CLI::App &app);
 
     void execute() override;
 

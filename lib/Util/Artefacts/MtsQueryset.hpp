@@ -4,13 +4,13 @@
 #include <fstream>
 
 #include "Util/Artefacts/MetaArtifact.hpp"
-#include "Util/Artefacts/Settings/MtsQuerysetSettings.hpp"
+#include "Util/Artefacts/Properties/MtsQuerySetProperties.hpp"
 #include "Util/Types/MtsQuery.hpp"
 
-class MtsQueryset : public MetaArtifact {
+class MtsQuerySet : public MetaArtifact {
    private:
-    MtsQuerysetSettings m_settings;
-    std::ifstream m_queryset_ifs;
+    MtsQuerySetProperties m_properties;
+    std::ifstream m_query_set_ifs;
 
     /**
      * @brief Apply (save or load) the archive
@@ -22,32 +22,32 @@ class MtsQueryset : public MetaArtifact {
 
    public:
     /** @brief Default constructor */
-    MtsQueryset();
+    MtsQuerySet();
 
     /**
-     * @brief Constructor that initializes the queryset with given settings
-     * @param queryset_settings Settings for the multivariate time series queryset
+     * @brief Constructor that initializes the query_set with given properties
+     * @param query_set_props Properties for the multivariate time series query_set
      */
-    MtsQueryset(const MtsQuerysetSettings &queryset_settings);
+    MtsQuerySet(const MtsQuerySetProperties &query_set_props);
 
     void save(const str &out_file, ArchiveType ar_type) override;
 
     void load(const str &out_file, ArchiveType ar_type) override;
 
     /**
-     * @brief Get the settings of the multivariate time series queryset
-     * @return The settings of the multivariate time series queryset
+     * @brief Get the properties of the multivariate time series query_set
+     * @return The properties of the multivariate time series query_set
      */
-    const MtsQuerysetSettings &get_settings() const;
+    const MtsQuerySetProperties &get_properties() const;
 
     /**
-     * @brief Get the path to the queryset meta file
-     * @return The path to the queryset meta file
+     * @brief Get the path to the query_set meta file
+     * @return The path to the query_set meta file
      */
     str get_meta_path() const;
 
     /**
-     * @brief Load the next query from the queryset
+     * @brief Load the next query from the query_set
      * @param normalized Whether to load the query normalized
      * @return The next query time series
      */

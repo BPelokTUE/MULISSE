@@ -10,18 +10,20 @@
 
 MtsDataset::MtsDataset() = default;
 
-MtsDataset::MtsDataset(const MtsDatasetSettings &dataset_settings) : m_settings(dataset_settings) { open_ifs(); }
+MtsDataset::MtsDataset(const MtsDatasetProperties &dataset_props) : m_properties(dataset_props) { open_ifs(); }
 
 void MtsDataset::open_ifs() {
-    m_dataset_ifs.open(m_settings.m_dataset_path, std::ios::binary);
-    if (!m_dataset_ifs.is_open()) throw std::runtime_error("Could not open dataset file: " + m_settings.m_dataset_path);
+    m_dataset_ifs.open(m_properties.m_dataset_path, std::ios::binary);
+    if (!m_dataset_ifs.is_open())
+        throw std::runtime_error("Could not open dataset file: " + m_properties.m_dataset_path);
 }
 
 template <typename Archive>
 void MtsDataset::apply_archive(Archive &ar) {
-    ar(cereal::make_nvp("settings", m_settings.m_num_channels), cereal::make_nvp("series_len", m_settings.m_series_len),
-       cereal::make_nvp("num_series", m_settings.m_num_series),
-       cereal::make_nvp("dataset_file", m_settings.m_dataset_path));
+    ar(cereal::make_nvp("num_channels", m_properties.m_num_channels),
+       cereal::make_nvp("series_len", m_properties.m_series_len),
+       cereal::make_nvp("num_series", m_properties.m_num_series),
+       cereal::make_nvp("dataset_file", m_properties.m_dataset_path));
 }
 
 void MtsDataset::save(const str &out_file, ArchiveType) {
@@ -40,29 +42,34 @@ void MtsDataset::load(const str &in_file, ArchiveType) {
     open_ifs();
 }
 
-const MtsDatasetSettings &MtsDataset::get_settings() const { return m_settings; }
+const MtsDatasetProperties &MtsDataset::get_properties() const { return m_properties; }
 
 str MtsDataset::get_channel_stats_path() const {
-    str path = m_settings.m_dataset_path;
+    str path = m_properties.m_dataset_path;
     path.replace(path.find_last_of('.'), path.size() - path.find_last_of('.'), "_ch_stats.json");
     return path;
 }
 
 str MtsDataset::get_meta_path() const {
-    str path = m_settings.m_dataset_path;
+    str path = m_properties.m_dataset_path;
     path.replace(path.find_last_of('.'), path.size() - path.find_last_of('.'), "_ds_meta.json");
     return path;
 }
 
+size_t MtsDataset::get_size_on_disk() const {
+    return static_cast<size_t>(m_properties.m_num_channels) * m_properties.m_series_len * sizeof(Real) *
+           m_properties.m_num_series;
+}
+
 MultivariateTimeSeries MtsDataset::load_series(uint series_index) {
-    m_dataset_ifs.seekg(series_index * m_settings.m_num_channels * m_settings.m_series_len * sizeof(Real));
+    m_dataset_ifs.seekg(series_index * m_properties.m_num_channels * m_properties.m_series_len * sizeof(Real));
     load_next_series();
 }
 
 MultivariateTimeSeries MtsDataset::load_next_series() {
-    vec<vec<Real>> mts_data(m_settings.m_num_channels, vec<Real>(m_settings.m_series_len));
+    vec<vec<Real>> mts_data(m_properties.m_num_channels, vec<Real>(m_properties.m_series_len));
     for (auto &channel : mts_data) {
-        m_dataset_ifs.read(reinterpret_cast<char *>(channel.data()), m_settings.m_series_len * sizeof(Real));
+        m_dataset_ifs.read(reinterpret_cast<char *>(channel.data()), m_properties.m_series_len * sizeof(Real));
     }
     return MultivariateTimeSeries(std::move(mts_data));
 }

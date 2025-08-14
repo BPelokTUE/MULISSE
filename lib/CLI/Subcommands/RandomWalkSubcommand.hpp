@@ -3,7 +3,7 @@
 
 #include "CLI/Subcommands/Subcommand.hpp"
 #include "CLI11/CLI11.hpp"
-#include "Util/Artefacts/Settings/MtsDatasetSettings.hpp"
+#include "Util/Artefacts/Properties/MtsDatasetProperties.hpp"
 #include "Util/Types/Numbers.hpp"
 
 class RandomWalkSubcommand : public ISubcommand {
@@ -19,7 +19,7 @@ class RandomWalkSubcommand : public ISubcommand {
    private:
     bool m_zero_start;
     Real m_step_sd;
-    MtsDatasetSettings m_settings;
+    MtsDatasetProperties m_dataset_props;
 };
 
 #endif  // CLI_SUBCOMMANDS_RANDOMWALKSUBCOMMAND_HPP

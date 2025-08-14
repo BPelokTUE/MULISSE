@@ -4,7 +4,7 @@
 #include <fstream>
 
 #include "Util/Artefacts/MetaArtifact.hpp"
-#include "Util/Artefacts/Settings/MtsDatasetSettings.hpp"
+#include "Util/Artefacts/Properties/MtsDatasetProperties.hpp"
 
 class MultivariateTimeSeries;
 
@@ -12,7 +12,7 @@ class MtsDataset : public MetaArtifact {
     friend class RandomWalkSubcommand;
 
    private:
-    MtsDatasetSettings m_settings;
+    MtsDatasetProperties m_properties;
 
     std::ifstream m_dataset_ifs;
 
@@ -35,20 +35,20 @@ class MtsDataset : public MetaArtifact {
     MtsDataset();
 
     /**
-     * @brief Constructor that initializes the dataset with given settings
-     * @param dataset_settings Settings for the multivariate time series dataset
+     * @brief Constructor that initializes the dataset with given properties
+     * @param dataset_props Properties for the multivariate time series dataset
      */
-    MtsDataset(const MtsDatasetSettings &dataset_settings);
+    MtsDataset(const MtsDatasetProperties &dataset_props);
 
     void save(const str &out_file, ArchiveType ar_type) override;
 
     void load(const str &out_file, ArchiveType ar_type) override;
 
     /**
-     * @brief Get the settings of the multivariate time series dataset
-     * @return The settings of the multivariate time series dataset
+     * @brief Get the properties of the multivariate time series dataset
+     * @return The properties of the multivariate time series dataset
      */
-    const MtsDatasetSettings &get_settings() const;
+    const MtsDatasetProperties &get_properties() const;
 
     /**
      * @brief Get the path to the channel statistics file
@@ -61,6 +61,12 @@ class MtsDataset : public MetaArtifact {
      * @return The path to the dataset meta file
      */
     str get_meta_path() const;
+
+    /**
+     * @brief Get the size of the dataset on disk
+     * @return The size of the dataset on disk in bytes
+     */
+    size_t get_size_on_disk() const;
 
     /**
      * @brief Load a specific series from the dataset

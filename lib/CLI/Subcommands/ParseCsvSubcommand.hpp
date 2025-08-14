@@ -3,7 +3,7 @@
 
 #include "CLI/Subcommands/Subcommand.hpp"
 #include "CLI11/CLI11.hpp"
-#include "Util/Artefacts/Settings/MtsDatasetSettings.hpp"
+#include "Util/Artefacts/Properties/MtsDatasetProperties.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/String.hpp"
 #include "Util/Types/Vec.hpp"
@@ -26,7 +26,7 @@ class ParseCsvSubcommand : public ISubcommand {
     vec<str> m_csv_paths;
     uint m_l_min, m_l_max;
     Real m_min_subs_sd;
-    MtsDatasetSettings m_settings;
+    MtsDatasetProperties m_dataset_props;
 };
 
 #endif  // CLI_SUBCOMMANDS_PARSECSVSUBCOMMAND_HPP

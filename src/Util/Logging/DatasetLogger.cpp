@@ -2,7 +2,7 @@
 
 #include <filesystem>
 
-#include "Util/Artefacts/Settings/MtsDatasetSettings.hpp"
+#include "Util/Artefacts/MtsDataset.hpp"
 #include "Util/HelperFuncs/Path.hpp"
 
 namespace fs = std::filesystem;
@@ -27,7 +27,7 @@ const str DatasetLogger::DATASET_SETTINGS_FILE = "dataset_settings.csv";
 
 using DSC = DatasetSettingsColumn;
 
-void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes, const MtsDatasetSettings &dataset_settings,
+void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes, const MtsDataset &dataset,
                                 const str &logs_path) {
 #ifndef DISABLE_LOGGING
     DatasetLogger instance;
@@ -37,7 +37,7 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes, const Mt
 
     // Append entry
     uint id = instance.determine_index(dataset_settings_path);
-    auto [num_channels, series_len, num_series, dataset_file] = dataset_settings;
+    auto [num_channels, series_len, num_series, dataset_file] = dataset.get_properties();
 
     str sd_str = "", min_subs_sd_str = "", source_csv_str = "", l_min_str = "", l_max_str = "", seed_str = "";
     switch (attributes->get_type()) {
@@ -63,7 +63,6 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes, const Mt
             break;
         }
     }
-    size_t dataset_size = get_dataset_size(RunSettings::get_instance().get_dataset_path());
 
     instance.write_row(dataset_settings_path,
                        {
@@ -78,7 +77,7 @@ void DatasetLogger::write_entry(uptr<IDatasetLogAttributes> attributes, const Mt
                            {DSC::L_MIN, l_min_str},
                            {DSC::L_MAX, l_max_str},
                            {DSC::SEED, seed_str},
-                           {DSC::SIZE_ON_DISK_B, to_string(dataset_size)},
+                           {DSC::SIZE_ON_DISK_B, to_string(dataset.get_size_on_disk())},
                        },
                        DATASET_SETTINGS_COL_ENUMS);
 #endif  // DISABLE_LOGGING

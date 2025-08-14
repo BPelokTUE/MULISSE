@@ -8,7 +8,7 @@
 #include "CLI/Subcommands/IndexStatsSubcommand.hpp"
 #include "CLI/Subcommands/IndexingSubcommand.hpp"
 #include "CLI/Subcommands/ParseCsvSubcommand.hpp"
-#include "CLI/Subcommands/QuerysetStatsSubcommand.hpp"
+#include "CLI/Subcommands/QuerySetStatsSubcommand.hpp"
 #include "CLI/Subcommands/RandomWalkSubcommand.hpp"
 #include "CLI/Subcommands/SearchingSubcommand.hpp"
 #include "CLI/Validators.hpp"
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
         {PARSE_CSV, std::make_unique<ParseCsvSubcommand>(app)},
         {CALC_D_STATS, std::make_unique<DatasetStatsSubcommand>(app)},
         {CREATE_QS, std::make_unique<CreateQueriesSubcommand>(app)},
-        {CALC_Q_STATS, std::make_unique<QuerysetStatsSubcommand>(app)},
+        {CALC_Q_STATS, std::make_unique<QuerySetStatsSubcommand>(app)},
         {CALC_FFTS, std::make_unique<CalculateFftsSubcommand>(app)},
         {INDEX, std::make_unique<IndexingSubcommand>(app)},
         {CALC_I_STATS, std::make_unique<IndexStatsSubcommand>(app)},

@@ -5,7 +5,7 @@
 #include "CLI11/CLI11.hpp"
 #include "Search/QueryGenOptions.hpp"
 #include "Util/Artefacts/MtsDataset.hpp"
-#include "Util/Artefacts/Settings/MtsQuerysetSettings.hpp"
+#include "Util/Artefacts/Properties/MtsQuerySetProperties.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/String.hpp"
 
@@ -24,10 +24,10 @@ class CreateQueriesSubcommand : public ISubcommand {
     void execute() override;
 
    private:
-    str m_dataset_meta_path, m_queryset_path;
+    str m_dataset_meta_path, m_query_set_path;
     MtsDataset m_dataset;
-    MtsQuerysetSettings m_queryset_settings;
-    QuerysetGenOptions m_query_gen_opts;
+    MtsQuerySetProperties m_query_set_props;
+    QuerySetGenOptions m_query_gen_opts;
 };
 
 #endif  // CLI_SUBCOMMANDS_CREATEQUERIESSUBCOMMAND_HPP

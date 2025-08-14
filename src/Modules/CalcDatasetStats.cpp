@@ -10,7 +10,7 @@
 using namespace boost::accumulators;
 
 void calculate_dataset_stats(MtsDataset &dataset, uint num_lags) {
-    auto [num_channels, series_len, num_series, dataset_path] = dataset.get_settings();
+    auto [num_channels, series_len, num_series, dataset_path] = dataset.get_properties();
 
     for (uint i = 0; i < num_series; ++i) {
         auto mts = dataset.load_next_series();

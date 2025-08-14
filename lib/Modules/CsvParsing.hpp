@@ -24,8 +24,11 @@ struct MtsDataset;
  * @param col_sep The column separator in the CSV files
  * @param min_subs_sd The minimum standard deviation required for each valid length subsequence
  * @param seed The seed for the random number generator
+ * @param data_path The path to the data directory
+ * @param logs_path The path to the logs directory
  */
 void create_dataset_from_csv(const MtsDataset &dataset, const vec<str> &csv_paths, uint l_min, uint l_max,
-                             char col_sep = ',', Real min_subs_sd = DEFAULT_MIN_SUBS_SD, uint seed = 0);
+                             char col_sep = ',', Real min_subs_sd = DEFAULT_MIN_SUBS_SD, uint seed = 0,
+                             const str &data_path = DEFAULT_DATA_PATH, const str &logs_path = DEFAULT_LOGS_PATH);
 
 #endif  // MODULES_CSVPARSING_HPP

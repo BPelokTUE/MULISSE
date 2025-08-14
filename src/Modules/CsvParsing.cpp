@@ -11,7 +11,8 @@
 #include "Util/Stats/ChannelStats.hpp"
 
 void create_dataset_from_csv(const MtsDataset &dataset, const vec<str> &csv_paths, uint num_series, uint l_min,
-                             uint l_max, char col_sep, Real min_subs_sd, uint seed) {
+                             uint l_max, char col_sep, Real min_subs_sd, uint seed, const str &data_path,
+                             const str &logs_path) {
     vec<std::ifstream> csv_streams;
     for (str csv_path : csv_paths) {
         csv_streams.emplace_back(csv_path);
@@ -21,7 +22,8 @@ void create_dataset_from_csv(const MtsDataset &dataset, const vec<str> &csv_path
         }
     }
 
-    auto [num_channels, series_len, num_series, dataset_path] = dataset.get_settings();
+    auto [num_channels, series_len, num_series, dataset_file] = dataset.get_properties();
+    str dataset_path = std::filesystem::path(data_path) / dataset_file;
     std::filesystem::create_directories(std::filesystem::path(dataset_path).parent_path());
 
     std::ofstream dataset_ofs(dataset_path, std::ios::binary);
@@ -114,5 +116,6 @@ void create_dataset_from_csv(const MtsDataset &dataset, const vec<str> &csv_path
     ChannelStats(sums, sum_sqs, series_len, U(mts_indexes.size())).save(dataset.get_channel_stats_path());
 
     DatasetLogger::write_entry(
-        std::make_unique<CsvDatasetLogAttributes>(csv_paths, mts_indexes.size(), l_min, l_max, min_subs_sd, seed));
+        std::make_unique<CsvDatasetLogAttributes>(csv_paths, mts_indexes.size(), l_min, l_max, min_subs_sd, seed),
+        dataset, logs_path);
 }
