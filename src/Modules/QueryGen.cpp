@@ -8,6 +8,7 @@
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/HelperFuncs/Path.hpp"
 #include "Util/Logging/QuerySetLogger.hpp"
+#include "Util/Types/RunContext.hpp"
 #include "Util/Types/SubsequenceInfo.hpp"
 
 struct QueryDescriptor {
@@ -26,13 +27,16 @@ uint get_total_num_queries(bool random_lengths, uint num_queries, const vec<uint
     return random_lengths ? num_queries : num_queries * U(exact_lengths.size());
 }
 
-void create_queries(MtsDataset &dataset, MtsQuerySet &query_set, QuerySetGenOptions opts, const str &logs_path) {
+void create_queries(MtsDataset &dataset, MtsQuerySet &query_set, const QuerySetGenOptions &opts,
+                    const RunContext &run_context) {
+    auto [normalized, seed, data_path, logs_path] = run_context;
+
     auto dataset_props = dataset.get_properties();
     auto query_set_props = query_set.get_properties();
 
     MtsNumChannelsT num_channels = dataset_props.m_num_channels;
-    str dataset_path = dataset_props.m_dataset_path;
-    str query_path = query_set_props.m_query_set_path;
+    str dataset_path = std::filesystem::path(data_path) / dataset_props.m_dataset_path;
+    str query_path = std::filesystem::path(data_path) / query_set_props.m_query_set_path;
 
     // Extract time series from dataset
     std::ifstream data_file(dataset_path, std::ios::binary);

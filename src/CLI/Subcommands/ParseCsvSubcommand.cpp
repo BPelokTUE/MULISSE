@@ -1,12 +1,12 @@
 #include "CLI/Subcommands/ParseCsvSubcommand.hpp"
 
-#include "CLI/CommonOptions.hpp"
 #include "CLI/Validators.hpp"
 #include "Enums/CommandType.hpp"
 #include "Modules/CsvParsing.hpp"
 #include "Util/Artefacts/MtsDataset.hpp"
 #include "Util/HelperFuncs/Errors.hpp"
 #include "Util/Types/LengthRange.hpp"
+#include "Util/Types/RunContext.hpp"
 
 ParseCsvSubcommand::ParseCsvSubcommand(CLI::App &app) {
     auto csv_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(PARSE_CSV), "Create dataset from CSV");
@@ -33,8 +33,8 @@ ParseCsvSubcommand::ParseCsvSubcommand(CLI::App &app) {
         ->check(validators::positive_int);
 }
 
-void ParseCsvSubcommand::set_up_execution(const CommonOptions *common_opts) {
-    m_common_opts = common_opts;
+void ParseCsvSubcommand::set_up_execution(const RunContext *common_opts) {
+    m_run_context = common_opts;
     m_dataset_props.m_num_channels = static_cast<MtsNumChannelsT>(m_csv_paths.size());
 }
 
@@ -44,7 +44,6 @@ void ParseCsvSubcommand::validate_arguments() {
 
 void ParseCsvSubcommand::execute() {
     MtsDataset dataset(m_dataset_props);
-    create_dataset_from_csv(dataset, m_csv_paths, m_l_min, m_l_max, ',', m_min_subs_sd, m_common_opts->m_seed,
-                            m_common_opts->m_data_path, m_common_opts->m_logs_path);
+    create_dataset_from_csv(dataset, m_csv_paths, m_l_min, m_l_max, *m_run_context, ',', m_min_subs_sd);
     dataset.save_meta(dataset.get_meta_path());
 }

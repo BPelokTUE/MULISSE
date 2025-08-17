@@ -1,11 +1,11 @@
 #include "CLI/Subcommands/IndexingSubcommand.hpp"
 
-#include "CLI/CommonOptions.hpp"
 #include "CLI/Transformers.hpp"
 #include "CLI/Validators.hpp"
 #include "Enums/CommandType.hpp"
 #include "Modules/Indexing/Indexing.hpp"
 #include "Util/HelperFuncs/Errors.hpp"
+#include "Util/Types/RunContext.hpp"
 
 IndexingSubcommand::IndexingSubcommand(CLI::App &app) {
     auto index_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(INDEX), "Construct MULISSE index");
@@ -209,7 +209,7 @@ IndexingSubcommand::IndexingSubcommand(CLI::App &app) {
         ->capture_default_str();
 }
 
-void IndexingSubcommand::set_up_execution(const CommonOptions *common_opts) {
+void IndexingSubcommand::set_up_execution(const RunContext *common_opts) {
     // Index group specific parsing
     if (arr_contains(METHODS_W_ENVELOPE, m_index_options.m_index_method)) {
         // m_pos_per_env = std::min(m_pos_per_env, series_len - l_min + 1);
@@ -230,7 +230,7 @@ void IndexingSubcommand::set_up_execution(const CommonOptions *common_opts) {
 
     // Score-based channel segmentation strategy
     if (m_segmentation_params->m_ch_strategy_type == ChannelSegmentationStrategyType::SCORE_BASED) {
-        m_score_based_chss_params->m_normalized = !m_common_opts->m_raw;
+        m_score_based_chss_params->m_normalized = !m_run_context->m_raw;
         m_segmentation_params->m_score_based_chss_params = m_score_based_chss_params.get();
     }
     m_env_grouping_params->m_type = m_index_options.m_index_method;
@@ -271,13 +271,13 @@ void IndexingSubcommand::set_up_execution(const CommonOptions *common_opts) {
     if (arr_contains(METHODS_W_ESTIMABLE_SIZE, m_index_options.m_index_method) && m_index_size_limit > 0) {
         uptr<EstimatorSamplingParams> estimator_sampling_params_ptr = nullptr;
         if (arr_contains(SAMPLING_ESTIMATOR_TYPES, m_param_estimator_type)) {
-            m_estimator_sampling_params.m_seed = m_common_opts->m_seed;
+            m_estimator_sampling_params.m_seed = m_run_context->m_seed;
             estimator_sampling_params_ptr = std::make_unique<EstimatorSamplingParams>(m_estimator_sampling_params);
         }
         uptr<EnvConfigGeneratorParams> envelope_config_gen_params_ptr = nullptr;
         if (m_param_estimator_type != NO_EST && m_env_config_gen_type == RANDOM) {
             envelope_config_gen_params_ptr = std::make_unique<RandomEnvConfigGeneratorParams>(
-                m_estimator_num_configs, m_common_opts->m_seed, m_segmentation_params->m_num_segments);
+                m_estimator_num_configs, m_run_context->m_seed, m_segmentation_params->m_num_segments);
         }
         m_index_options.m_estimator_params = std::make_unique<EstimatorParams>(
             m_pe_qt_examine_whole, m_index_size_limit, m_param_estimator_type, m_pe_qt_distance_type,
@@ -288,7 +288,7 @@ void IndexingSubcommand::set_up_execution(const CommonOptions *common_opts) {
         arr_contains(METHODS_W_ESTIMABLE_SIZE, m_index_options.m_index_method) && m_index_size_limit > R(0.0);
     bool use_length_groups = m_index_options.m_l_per_group > 0 || estimate_parameters;
 
-    m_index_options.m_normalized = !m_common_opts->m_raw;     // Remove
+    m_index_options.m_normalized = !m_run_context->m_raw;     // Remove
     m_index_options.m_use_length_groups = use_length_groups;  // Is this needed?
     m_index_options.m_num_channels = 0;                       // TODO
     m_index_options.m_series_len = 0;                         // Remove

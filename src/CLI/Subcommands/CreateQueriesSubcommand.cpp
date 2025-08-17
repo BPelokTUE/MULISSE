@@ -1,12 +1,12 @@
 #include "CLI/Subcommands/CreateQueriesSubcommand.hpp"
 
-#include "CLI/CommonOptions.hpp"
 #include "CLI/Validators.hpp"
 #include "Enums/CommandType.hpp"
 #include "Modules/QueryGen.hpp"
 #include "Util/Artefacts/MtsQuerySet.hpp"
 #include "Util/HelperFuncs/Errors.hpp"
 #include "Util/HelperFuncs/Path.hpp"
+#include "Util/Types/RunContext.hpp"
 
 CreateQueriesSubcommand::CreateQueriesSubcommand(CLI::App &app) {
     auto qs_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_QS), "Create queries from dataset");
@@ -48,9 +48,9 @@ CreateQueriesSubcommand::CreateQueriesSubcommand(CLI::App &app) {
         ->capture_default_str();
 }
 
-void CreateQueriesSubcommand::set_up_execution(const CommonOptions *common_opts) {
-    m_common_opts = common_opts;
-    m_query_set_path = std::filesystem::path(m_common_opts->m_data_path) / m_query_set_path;
+void CreateQueriesSubcommand::set_up_execution(const RunContext *common_opts) {
+    m_run_context = common_opts;
+    m_query_set_path = std::filesystem::path(m_run_context->m_data_path) / m_query_set_path;
     m_dataset.load_meta(m_dataset_meta_path);
 }
 
@@ -87,8 +87,8 @@ void CreateQueriesSubcommand::validate_arguments() {
 }
 
 void CreateQueriesSubcommand::execute() {
-    m_query_gen_opts.m_seed = m_common_opts->m_seed;
+    m_query_gen_opts.m_seed = m_run_context->m_seed;
     MtsQuerySet query_set(m_query_set_props);
-    create_queries(m_dataset, query_set, m_query_gen_opts, m_common_opts->m_logs_path);
+    create_queries(m_dataset, query_set, m_query_gen_opts, m_run_context->m_logs_path);
     query_set.save_meta(query_set.get_meta_path());
 }

@@ -2,10 +2,12 @@
 
 #include <algorithm>
 
+#include "Util/Artefacts/MtsDataset.hpp"
+#include "Util/Artefacts/MtsQuerySet.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/Logging/QueryStatsLogger.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
+#include "Util/Types/RunContext.hpp"
 
 void update_query_stats(QueryStats &stats, const vec<vec<Real>> &query, const vec<vec<Real>> &mts, bool normalized) {
     int num_start_pos = 0;
@@ -56,12 +58,13 @@ void update_query_stats(QueryStats &stats, const vec<vec<Real>> &query, const ve
     }
 }
 
-int calculate_query_stats(bool normalized) {
-    auto &RS = RunSettings::get_instance();
-    auto [num_channels, series_len, num_series, file] = RS.get_dataset_props();
+int calculate_query_stats(const MtsDataset &dataset, const MtsQuerySet &query_set, const RunContext &run_context) {
+    auto [num_channels, series_len, num_series, dataset_path] = dataset.get_properties();
+    auto [num_queries, length_range, query_set_path] = query_set.get_properties();
+    auto [normalized, seed, data_path, logs_path] = run_context;
 
-    std::ifstream dataset_ifs(RS.get_dataset_path(), std::ios::binary);
-    std::ifstream query_ifs(RS.get_query_path());
+    std::ifstream dataset_ifs(std::filesystem::path(data_path) / dataset_path, std::ios::binary);
+    std::ifstream query_ifs(std::filesystem::path(data_path) / query_set_path);
     vec<vec<Real>> query(num_channels);
 
     uint query_count = 0;

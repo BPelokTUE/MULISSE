@@ -17,7 +17,7 @@ class IndexingSubcommand : public ISubcommand {
      */
     IndexingSubcommand(CLI::App &app);
 
-    void set_up_execution(const CommonOptions *common_opts) override;
+    void set_up_execution(const RunContext *common_opts) override;
 
     void validate_arguments() override;
 

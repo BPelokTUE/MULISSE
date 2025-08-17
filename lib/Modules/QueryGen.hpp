@@ -7,6 +7,8 @@
 #include "Util/Artefacts/MtsDataset.hpp"
 #include "Util/Artefacts/MtsQuerySet.hpp"
 
+struct RunContext;
+
 /**
  * @brief Create queries from dataset by extracting subsequences and adding noise
  *
@@ -18,10 +20,11 @@
  *
  * @param dataset The dataset to generate the queries from
  * @param query_set The query_set to generate the queries for
- * @param opts Options for generating the queries
- * @param logs_path Path to the logs directory
+ * @param query_set_gen_opts Options for generating the queries
+ * @param run_context Generic run context
  */
-void create_queries(MtsDataset &dataset, MtsQuerySet &query_set, QuerySetGenOptions opts, const str &logs_path);
+void create_queries(MtsDataset &dataset, MtsQuerySet &query_set, const QuerySetGenOptions &query_set_gen_opts,
+                    const RunContext &run_context);
 
 /**
  * @brief Generate queries from the data stream and write them to the query stream

@@ -1,6 +1,5 @@
 #include "CLI/Subcommands/SearchingSubcommand.hpp"
 
-#include "CLI/CommonOptions.hpp"
 #include "CLI/Validators.hpp"
 #include "Enums/CommandType.hpp"
 #include "Modules/Searching.hpp"
@@ -9,6 +8,7 @@
 #include "Search/DistanceMeasure/Mass.hpp"
 #include "Search/Results/ResultSet.hpp"
 #include "Search/SearchOptions.hpp"
+#include "Util/Types/RunContext.hpp"
 
 SearchingSubcommand::SearchingSubcommand(CLI::App &app) {
     auto search_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(SEARCH), "Search using MULISSE");
@@ -56,7 +56,7 @@ SearchingSubcommand::SearchingSubcommand(CLI::App &app) {
         ->check(positive_real);
 }
 
-void SearchingSubcommand::execute(const CommonOptions &common_opts) {
+void SearchingSubcommand::execute(const RunContext &common_opts) {
     SearchType search_type = STR_TO_SEARCH_TYPE.at(m_search_type_str);
     DistanceType distance_type = STR_TO_DISTANCE_TYPE.at(m_distance_measure_str);
 

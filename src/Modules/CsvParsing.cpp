@@ -9,10 +9,14 @@
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/Logging/DatasetLogger.hpp"
 #include "Util/Stats/ChannelStats.hpp"
+#include "Util/Types/RunContext.hpp"
 
 void create_dataset_from_csv(const MtsDataset &dataset, const vec<str> &csv_paths, uint num_series, uint l_min,
-                             uint l_max, char col_sep, Real min_subs_sd, uint seed, const str &data_path,
-                             const str &logs_path) {
+                             uint l_max, char col_sep, Real min_subs_sd, const RunContext &run_context) {
+    auto [num_channels, series_len, num_series, dataset_file] = dataset.get_properties();
+    auto [normalized, seed, data_path, logs_path] = run_context;
+
+    // Check files
     vec<std::ifstream> csv_streams;
     for (str csv_path : csv_paths) {
         csv_streams.emplace_back(csv_path);
@@ -22,10 +26,11 @@ void create_dataset_from_csv(const MtsDataset &dataset, const vec<str> &csv_path
         }
     }
 
-    auto [num_channels, series_len, num_series, dataset_file] = dataset.get_properties();
+    // Create dataset directory
     str dataset_path = std::filesystem::path(data_path) / dataset_file;
     std::filesystem::create_directories(std::filesystem::path(dataset_path).parent_path());
 
+    // Build dataset
     std::ofstream dataset_ofs(dataset_path, std::ios::binary);
     if (!dataset_ofs.is_open()) {
         std::cerr << "Error: Could not create dataset " << dataset_path << '\n';
@@ -48,6 +53,7 @@ void create_dataset_from_csv(const MtsDataset &dataset, const vec<str> &csv_path
             uint ind = 0;
 
             while (std::getline(iss, value, col_sep)) {
+                // Discard series if a values is not a valid number
                 try {
                     mts_data[channel_ind][ind] = R(std::stod(value));
                 } catch (const std::exception &e) {
@@ -56,6 +62,8 @@ void create_dataset_from_csv(const MtsDataset &dataset, const vec<str> &csv_path
                 }
 
                 ++ind;
+                // If required, check whether the standard deviation of all relevant-length subsequences is above the
+                // provided threshold. If that is not the case, discard the series.
                 if (min_subs_sd > 0) {
                     sum += mts_data[channel_ind][ind - 1];
                     sum_sq += mts_data[channel_ind][ind - 1] * mts_data[channel_ind][ind - 1];
@@ -79,6 +87,7 @@ void create_dataset_from_csv(const MtsDataset &dataset, const vec<str> &csv_path
                 }
                 if (ind == series_len) break;
             }
+            // Discard series if it does not have enough values
             if (ind < series_len) discard = true;
         }
     next_channel:
@@ -94,6 +103,7 @@ void create_dataset_from_csv(const MtsDataset &dataset, const vec<str> &csv_path
         throw std::runtime_error("Error: No valid time series found in the dataset");
     }
 
+    // Select a subset of all non-discarded time series
     std::default_random_engine generator(seed);
 
     vec<uint> mts_indexes(all_mts_data.size());
@@ -113,8 +123,10 @@ void create_dataset_from_csv(const MtsDataset &dataset, const vec<str> &csv_path
         }
     }
 
+    // Save channel statistics
     ChannelStats(sums, sum_sqs, series_len, U(mts_indexes.size())).save(dataset.get_channel_stats_path());
 
+    // Log dataset creation
     DatasetLogger::write_entry(
         std::make_unique<CsvDatasetLogAttributes>(csv_paths, mts_indexes.size(), l_min, l_max, min_subs_sd, seed),
         dataset, logs_path);

@@ -1,7 +1,6 @@
 #include <fstream>
 #include <iostream>
 
-#include "CLI/CommonOptions.hpp"
 #include "CLI/Subcommands/CalculateFftsSubcommand.hpp"
 #include "CLI/Subcommands/CreateQueriesSubcommand.hpp"
 #include "CLI/Subcommands/DatasetStatsSubcommand.hpp"
@@ -13,17 +12,18 @@
 #include "CLI/Subcommands/SearchingSubcommand.hpp"
 #include "CLI/Validators.hpp"
 #include "Enums/CommandType.hpp"
+#include "Util/Types/RunContext.hpp"
 
 int main(int argc, char **argv) {
     CLI::App app{"Run MULISSE"};
 
     app.require_subcommand(1);
 
-    auto common_opts = std::make_unique<CommonOptions>();
+    auto common_opts = std::make_unique<RunContext>();
     app.add_option("--seed", common_opts->m_seed, "Random seed")->capture_default_str();
     app.add_option("--logs", common_opts->m_logs_path, "Path to write logs to")->capture_default_str();
     app.add_option("--data", common_opts->m_data_path, "Path to the data directory")->capture_default_str();
-    app.add_flag("--raw,!--normalize", common_opts->m_raw, "Do not normalize");
+    app.add_flag("!--raw,--normalize", common_opts->m_normalized, "Do not normalize");
 
     umap<CommandType, uptr<ISubcommand>> subcommands{
         {CREATE_DS, std::make_unique<RandomWalkSubcommand>(app)},

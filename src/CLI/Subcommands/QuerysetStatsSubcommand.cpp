@@ -1,8 +1,8 @@
 #include "CLI/Subcommands/QuerySetStatsSubcommand.hpp"
 
-#include "CLI/CommonOptions.hpp"
 #include "Enums/CommandType.hpp"
 #include "Modules/CalcQueryStats.hpp"
+#include "Util/Types/RunContext.hpp"
 
 QuerySetStatsSubcommand::QuerySetStatsSubcommand(CLI::App &app) {
     auto q_stats_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CALC_Q_STATS), "Calculate query statistics");
@@ -14,5 +14,5 @@ QuerySetStatsSubcommand::QuerySetStatsSubcommand(CLI::App &app) {
 
 void QuerySetStatsSubcommand::execute() {
     // Set up run setting properties
-    calculate_query_stats(!m_common_opts->m_raw);
+    calculate_query_stats(!m_run_context->m_raw);
 }

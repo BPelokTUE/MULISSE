@@ -9,10 +9,12 @@
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/Logging/DatasetLogger.hpp"
 #include "Util/Stats/ChannelStats.hpp"
+#include "Util/Types/RunContext.hpp"
 
-void create_random_walks(MtsDataset &dataset, Real step_sigma, bool zero_start, uint seed, const str &data_path,
-                         const str &logs_path) {
+void create_random_walks(MtsDataset &dataset, Real step_sigma, bool zero_start, const RunContext &run_context) {
     auto [num_channels, series_len, num_series, dataset_file] = dataset.get_properties();
+    auto [normalized, seed, data_path, logs_path] = run_context;
+
     str dataset_path = std::filesystem::path(data_path) / dataset_file;
     std::filesystem::create_directories(std::filesystem::path(dataset_path).parent_path());
 

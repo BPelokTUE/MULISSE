@@ -2,11 +2,11 @@
 
 #include <filesystem>
 
-#include "CLI/CommonOptions.hpp"
 #include "CLI/Validators.hpp"
 #include "Enums/CommandType.hpp"
 #include "Modules/RandomWalk.hpp"
 #include "Util/Artefacts/MtsDataset.hpp"
+#include "Util/Types/RunContext.hpp"
 
 RandomWalkSubcommand::RandomWalkSubcommand(CLI::App &app) {
     auto rw_subcommand = app.add_subcommand(CMD_TYPE_TO_STR.at(CREATE_DS), "Create random walk dataset");
@@ -29,7 +29,6 @@ RandomWalkSubcommand::RandomWalkSubcommand(CLI::App &app) {
 
 void RandomWalkSubcommand::execute() {
     MtsDataset dataset(m_dataset_props);
-    create_random_walks(dataset, m_step_sd, m_zero_start, m_common_opts->m_seed, m_common_opts->m_data_path,
-                        m_common_opts->m_logs_path);
+    create_random_walks(dataset, m_step_sd, m_zero_start, *m_run_context);
     dataset.save_meta(dataset.get_meta_path());
 }

@@ -2,11 +2,11 @@
 
 #include <filesystem>
 
-#include "CLI/CommonOptions.hpp"
 #include "CLI/Validators.hpp"
 #include "Enums/CommandType.hpp"
 #include "Modules/CalcFfts.hpp"
 #include "Util/HelperFuncs/Path.hpp"
+#include "Util/Types/RunContext.hpp"
 
 namespace fs = std::filesystem;
 
@@ -20,8 +20,8 @@ CalculateFftsSubcommand::CalculateFftsSubcommand(CLI::App &app) {
         ->check(validators::file_is_writable);
 }
 
-void CalculateFftsSubcommand::set_up_execution(const CommonOptions *common_opts) {
+void CalculateFftsSubcommand::set_up_execution(const RunContext *common_opts) {
     // Set up run setting properties
 }
 
-void CalculateFftsSubcommand::execute() { calculate_ffts(!m_common_opts->m_raw); }
+void CalculateFftsSubcommand::execute() { calculate_ffts(!m_run_context->m_raw); }
