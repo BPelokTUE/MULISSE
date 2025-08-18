@@ -48,9 +48,8 @@ CreateQueriesSubcommand::CreateQueriesSubcommand(CLI::App &app) {
         ->capture_default_str();
 }
 
-void CreateQueriesSubcommand::set_up_execution(const RunContext *common_opts) {
-    m_run_context = common_opts;
-    m_query_set_path = std::filesystem::path(m_run_context->m_data_path) / m_query_set_path;
+void CreateQueriesSubcommand::set_up_execution(const RunContext *run_context) {
+    m_run_context = run_context;
     m_dataset.load_meta(m_dataset_meta_path);
 }
 
@@ -88,7 +87,8 @@ void CreateQueriesSubcommand::validate_arguments() {
 
 void CreateQueriesSubcommand::execute() {
     m_query_gen_opts.m_seed = m_run_context->m_seed;
-    MtsQuerySet query_set(m_query_set_props);
-    create_queries(m_dataset, query_set, m_query_gen_opts, m_run_context->m_logs_path);
+    auto ofs = std::make_unique<std::ofstream>(std::filesystem::path(m_run_context->m_data_path) / m_query_set_path);
+    MtsQuerySet query_set(&m_dataset, m_query_set_props, std::move(ofs));
+    create_queries(query_set, m_dataset, m_query_gen_opts, *m_run_context);
     query_set.save_meta(query_set.get_meta_path());
 }

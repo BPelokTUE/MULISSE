@@ -2,13 +2,19 @@
 
 #include <cereal/archives/json.hpp>
 
+#include "Util/Artefacts/MtsDataset.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Math.hpp"
 #include "Util/Types/MtsQuery.hpp"
 
 MtsQuerySet::MtsQuerySet() = default;
 
-MtsQuerySet::MtsQuerySet(const MtsQuerySetProperties &query_set_props) : m_properties(query_set_props) {}
+MtsQuerySet::MtsQuerySet(const MtsDataset *dataset, const MtsQuerySetProperties &query_set_props,
+                         uptr<std::ostream> ostream)
+    : m_properties(query_set_props) {
+    set_source_dataset(dataset);
+    set_ostream(std::move(ostream));
+}
 
 template <typename Archive>
 void MtsQuerySet::apply_archive(Archive &ar) {
@@ -25,9 +31,9 @@ void MtsQuerySet::save(const str &out_file, ArchiveType) {
 }
 
 void MtsQuerySet::load(const str &in_file, ArchiveType) {
-    m_query_set_ifs.open(in_file);
-    if (!m_query_set_ifs.is_open()) throw std::runtime_error("Failed to open input file: " + in_file);
-    cereal::JSONInputArchive ar(m_query_set_ifs);
+    std::ifstream ifs(in_file);
+    if (!ifs.is_open()) throw std::runtime_error("Failed to open input file: " + in_file);
+    cereal::JSONInputArchive ar(ifs);
 
     apply_archive(ar);
 }
@@ -40,15 +46,42 @@ str MtsQuerySet::get_meta_path() const {
     return path;
 }
 
+void MtsQuerySet::set_source_dataset(const MtsDataset *source_dataset) {
+    if (!source_dataset) {
+        throw std::runtime_error("Source dataset cannot be null.");
+    }
+    m_source_dataset = source_dataset;
+}
+
+const MtsDataset *MtsQuerySet::get_source_dataset() const {
+    if (!m_source_dataset) {
+        throw std::runtime_error("Source dataset is not set.");
+    }
+    return m_source_dataset;
+}
+
+void MtsQuerySet::set_istream(uptr<std::istream> istream) {
+    if (!istream || !(*istream) || !istream->good()) {
+        throw std::runtime_error("Failed to set input stream for MtsQuerySet: stream is not valid.");
+    }
+    m_istream = std::move(istream);
+}
+
+void MtsQuerySet::set_ostream(uptr<std::ostream> ostream) {
+    if (!ostream || !(*ostream) || !ostream->good()) {
+        throw std::runtime_error("Failed to set output stream for MtsQuerySet: stream is not valid.");
+    }
+    m_ostream = std::move(ostream);
+}
+
 MtsQuery MtsQuerySet::load_next_query(bool normalized) {
-    if (!m_query_set_ifs.is_open())
-        throw std::runtime_error("QuerySet file is not open: " + m_properties.m_query_set_path);
+    MtsNumChannelsT num_channels = m_source_dataset->get_properties().m_num_channels;
+    vec<vec<Real>> query_data(num_channels);
 
-    vec<vec<Real>> query_data;
-
-    for (MtsNumChannelsT c = 0; !m_query_set_ifs.eof();) {
+    for (MtsNumChannelsT c = 0; !m_istream->eof() && c < num_channels; ++c) {
         str line;
-        std::getline(m_query_set_ifs, line);
+        // m_istream->getline(line);
+        std::getline(*m_istream, line);
         std::istringstream iss(line);
 
         query_data[c].clear();

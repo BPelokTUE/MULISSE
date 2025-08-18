@@ -1,20 +1,26 @@
 #ifndef UTIL_ARTEFACTS_MTSDATASET_HPP
 #define UTIL_ARTEFACTS_MTSDATASET_HPP
 
-#include <fstream>
+#include <random>
 
 #include "Util/Artefacts/MetaArtifact.hpp"
 #include "Util/Artefacts/Properties/MtsDatasetProperties.hpp"
+#include "Util/Stats/ChannelStats.hpp"
+#include "Util/Types/Pointers.hpp"
 
 class MultivariateTimeSeries;
+struct RandomWalkGenOptions;
+struct CsvDatasetGenOptions;
 
 class MtsDataset : public MetaArtifact {
     friend class RandomWalkSubcommand;
 
    private:
     MtsDatasetProperties m_properties;
+    ChannelStats m_channel_stats;
 
-    std::ifstream m_dataset_ifs;
+    uptr<std::istream> m_istream;
+    uptr<std::ostream> m_ostream;
 
     /**
      * @brief Apply (save or load) the archive
@@ -23,12 +29,6 @@ class MtsDataset : public MetaArtifact {
      */
     template <typename Archive>
     void apply_archive(Archive &ar);
-
-    /**
-     * @brief Open the input file stream for the dataset
-     * @throws std::runtime_error if the dataset file cannot be opened
-     */
-    void open_ifs();
 
    public:
     /** @brief Default constructor */
@@ -44,6 +44,8 @@ class MtsDataset : public MetaArtifact {
 
     void load(const str &out_file, ArchiveType ar_type) override;
 
+    str get_meta_path() const override;
+
     /**
      * @brief Get the properties of the multivariate time series dataset
      * @return The properties of the multivariate time series dataset
@@ -51,22 +53,42 @@ class MtsDataset : public MetaArtifact {
     const MtsDatasetProperties &get_properties() const;
 
     /**
-     * @brief Get the path to the channel statistics file
-     * @return The path to the channel statistics file
-     */
-    str get_channel_stats_path() const;
-
-    /**
-     * @brief Get the path to the dataset meta file
-     * @return The path to the dataset meta file
-     */
-    str get_meta_path() const;
-
-    /**
      * @brief Get the size of the dataset on disk
      * @return The size of the dataset on disk in bytes
      */
     size_t get_size_on_disk() const;
+
+    /**
+     * @brief Set the output stream of the dataset
+     * @param ostream The output stream
+     * @throws std::runtime_error if the stream cannot be opened
+     */
+    void set_ostream(uptr<std::ostream> ostream);
+
+    /**
+     * @brief Set the input stream of the dataset
+     * @param istream The input stream
+     * @throws std::runtime_error if the stream cannot be opened
+     */
+    void set_istream(uptr<std::istream> istream);
+
+    /**
+     * @brief Set up dataset generation
+     * @param data_path Path to the data directory where the dataset will be saved
+     */
+    void set_up_generation(const str &data_path);
+
+    /**
+     * @brief Generate the random walk dataset
+     * @param rw_gen_opts Options for generating the random walk dataset
+     */
+    void generate_random_walks(const RandomWalkGenOptions &rw_gen_opts);
+
+    /**
+     * @brief Generate the dataset from CSV files
+     * @param csv_gen_opts Options for generating the dataset from CSV files
+     */
+    void generate_from_csvs(const CsvDatasetGenOptions &csv_gen_opts);
 
     /**
      * @brief Load a specific series from the dataset

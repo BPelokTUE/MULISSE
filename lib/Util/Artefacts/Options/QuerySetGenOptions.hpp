@@ -1,5 +1,5 @@
-#ifndef SEARCH_QUERYSETGENOPTIONS_HPP
-#define SEARCH_QUERYSETGENOPTIONS_HPP
+#ifndef UTIL_ARTEFACTS_OPTIONS_QUERYSETGENOPTIONS_HPP
+#define UTIL_ARTEFACTS_OPTIONS_QUERYSETGENOPTIONS_HPP
 
 #include "Util/Types/LengthRange.hpp"
 #include "Util/Types/Numbers.hpp"
@@ -20,4 +20,4 @@ struct QuerySetGenOptions {
     vec<bool> m_channel_mask;
 };
 
-#endif  // SEARCH_QUERYSETGENOPTIONS_HPP
+#endif  // UTIL_ARTEFACTS_OPTIONS_QUERYSETGENOPTIONS_HPP

@@ -27,11 +27,11 @@ uint get_total_num_queries(bool random_lengths, uint num_queries, const vec<uint
     return random_lengths ? num_queries : num_queries * U(exact_lengths.size());
 }
 
-void create_queries(MtsDataset &dataset, MtsQuerySet &query_set, const QuerySetGenOptions &opts,
+void create_queries(MtsQuerySet &query_set, const QuerySetGenOptions &query_set_gen_opts,
                     const RunContext &run_context) {
     auto [normalized, seed, data_path, logs_path] = run_context;
 
-    auto dataset_props = dataset.get_properties();
+    auto dataset_props = query_set.get_source_dataset()->get_properties();
     auto query_set_props = query_set.get_properties();
 
     MtsNumChannelsT num_channels = dataset_props.m_num_channels;
@@ -42,21 +42,20 @@ void create_queries(MtsDataset &dataset, MtsQuerySet &query_set, const QuerySetG
     std::ifstream data_file(dataset_path, std::ios::binary);
     std::ofstream query_file(query_path);
 
-    bool random_lengths = get_use_random_lengths(query_set_props.m_length_range);
-    uint total_num_queries = get_total_num_queries(random_lengths, query_set_props.m_num_queries, opts.m_exact_lengths);
-
-    generate_queries(data_file, query_file, opts);
+    generate_queries(data_file, query_file, dataset_props, query_set_props, query_set_gen_opts);
 
     auto query_set_props_to_log = query_set_props;
-    auto query_gen_opts_to_log = opts;
+    auto query_gen_opts_to_log = query_set_gen_opts;
 
-    if (random_lengths) {
+    if (get_use_random_lengths(query_set_props.m_length_range)) {
         query_gen_opts_to_log.m_exact_lengths = vec<uint>{};
     } else {
         query_set_props_to_log.m_length_range.m_l_min = 0;
         query_set_props_to_log.m_length_range.m_l_max = 0;
     }
-    query_gen_opts_to_log.m_used_channels = opts.m_channel_mask.empty() ? opts.m_used_channels : 0;
+    query_gen_opts_to_log.m_used_channels =
+        query_set_gen_opts.m_channel_mask.empty() ? query_set_gen_opts.m_used_channels : 0;
+
     QuerySetLogger::write_entry(dataset_props, query_set_props_to_log, query_gen_opts_to_log, logs_path);
 }
 

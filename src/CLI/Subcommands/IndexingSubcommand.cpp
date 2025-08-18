@@ -209,7 +209,7 @@ IndexingSubcommand::IndexingSubcommand(CLI::App &app) {
         ->capture_default_str();
 }
 
-void IndexingSubcommand::set_up_execution(const RunContext *common_opts) {
+void IndexingSubcommand::set_up_execution(const RunContext *run_context) {
     // Index group specific parsing
     if (arr_contains(METHODS_W_ENVELOPE, m_index_options.m_index_method)) {
         // m_pos_per_env = std::min(m_pos_per_env, series_len - l_min + 1);

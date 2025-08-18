@@ -3,8 +3,8 @@
 
 #include "CLI/Subcommands/Subcommand.hpp"
 #include "CLI11/CLI11.hpp"
-#include "Search/QueryGenOptions.hpp"
 #include "Util/Artefacts/MtsDataset.hpp"
+#include "Util/Artefacts/Options/QuerySetGenOptions.hpp"
 #include "Util/Artefacts/Properties/MtsQuerySetProperties.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/String.hpp"
@@ -17,7 +17,7 @@ class CreateQueriesSubcommand : public ISubcommand {
      */
     CreateQueriesSubcommand(CLI::App &app);
 
-    void set_up_execution(const RunContext *common_opts) override;
+    void set_up_execution(const RunContext *run_context) override;
 
     void validate_arguments() override;
 

@@ -15,9 +15,7 @@ class DatasetStatsSubcommand : public ISubcommand {
      */
     DatasetStatsSubcommand(CLI::App &app);
 
-    void set_up_execution(const RunContext *common_opts) override;
-
-    void execute() override;
+    void execute(const RunContext &run_context) override;
 
    private:
     uint m_num_lags;

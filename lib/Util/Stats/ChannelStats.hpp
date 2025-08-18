@@ -8,6 +8,9 @@
 class ChannelStats {
     friend class RunSettings;
 
+   private:
+    vec<Real> m_means, m_stds;
+
    public:
     /**
      * @brief Construct a new ChannelStats object, setting hardcoded mean and std values for all channels
@@ -26,20 +29,8 @@ class ChannelStats {
      */
     ChannelStats(const vec<Real> &sums, const vec<Real> &sum_sqs, uint series_len, uint num_series);
 
-    /**
-     * @brief Save the dataset stats to a `.json` file.
-     * @param filename The name of the file. Should be a `.json` file.
-     */
-    void save(const str &filename) const;
-
-    /**
-     * @brief Load the dataset stats from a `.json` file.
-     * @param filename The name of the file. Should be a `.json` file.
-     */
-    void load(const str &filename);
-
-   private:
-    vec<Real> m_means, m_stds;
+    template <typename Archive>
+    void serialize(Archive &ar);
 };
 
 #endif  // UTIL_STATS_CHANNELSTATS_HPP

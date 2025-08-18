@@ -2,10 +2,12 @@
 
 #include <fstream>
 
+#include "Util/Types/Vec.hpp"
+
 using std::to_string;
 
 // Logger
-uint Logger::determine_index(const str &file_path) {
+uint Logger::determine_index(const str &file_path) const {
     uint index = 0;
 #ifndef DISABLE_LOGGING
     std::ifstream file_stream(file_path);

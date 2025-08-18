@@ -25,8 +25,3 @@ std::runtime_error get_not_writable_error(const str &path) {
 std::runtime_error get_required_missing_error(const str &option) {
     return std::runtime_error("Required option missing: --" + option);
 }
-
-std::runtime_error get_l_min_gt_l_max_error(const LengthRange &l_range) {
-    return std::runtime_error(
-        std::format("Minimum length is greater than maximum length: {} > {}", l_range.m_l_min, l_range.m_l_max));
-}

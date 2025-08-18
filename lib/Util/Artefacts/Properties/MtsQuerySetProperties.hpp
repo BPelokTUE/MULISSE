@@ -13,6 +13,8 @@ struct MtsQuerySetProperties {
     LengthRange m_length_range;
     /** @brief Path to the query_set */
     str m_query_set_path;
+    /** @brief Path to the meta file of the dataset from which the query set is generated */
+    str m_dataset_meta_path;
 };
 
 #endif  // UTIL_ARTEFACTS_PROPERTIES_MTSQUERYSETPROPERTIES_HPP

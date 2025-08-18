@@ -56,7 +56,7 @@ SearchingSubcommand::SearchingSubcommand(CLI::App &app) {
         ->check(positive_real);
 }
 
-void SearchingSubcommand::execute(const RunContext &common_opts) {
+void SearchingSubcommand::execute(const RunContext &run_context) {
     SearchType search_type = STR_TO_SEARCH_TYPE.at(m_search_type_str);
     DistanceType distance_type = STR_TO_DISTANCE_TYPE.at(m_distance_measure_str);
 

@@ -2,6 +2,8 @@
 
 #include "Enums/CommandType.hpp"
 #include "Modules/CalcQueryStats.hpp"
+#include "Util/Artefacts/MtsDataset.hpp"
+#include "Util/Artefacts/MtsQuerySet.hpp"
 #include "Util/Types/RunContext.hpp"
 
 QuerySetStatsSubcommand::QuerySetStatsSubcommand(CLI::App &app) {
@@ -13,6 +15,9 @@ QuerySetStatsSubcommand::QuerySetStatsSubcommand(CLI::App &app) {
 }
 
 void QuerySetStatsSubcommand::execute() {
-    // Set up run setting properties
-    calculate_query_stats(!m_run_context->m_raw);
+    MtsDataset dataset;
+    MtsQuerySet query_set;
+    dataset.load_meta(m_dataset_meta_path);
+    query_set.load_meta(m_query_meta_path);
+    calculate_query_stats(dataset, query_set, *m_run_context);
 }

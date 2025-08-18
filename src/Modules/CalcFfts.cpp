@@ -1,12 +1,13 @@
 #include "Modules/CalcFfts.hpp"
 
+#include "Util/Artefacts/MtsDataset.hpp"
+#include "Util/Artefacts/MtsFfts.hpp"
 #include "Util/Logging/IndexLogger.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
+#include "Util/Types/RunContext.hpp"
 
-int calculate_ffts(bool normalized) {
-    auto &RS = RunSettings::get_instance();
-    uint series_len = RS.get_dataset_props().m_series_len;
-    MtsNumChannelsT num_channels = RS.get_dataset_props().m_num_channels;
+void calculate_ffts(MtsFfts &ffts, const MtsDataset &dataset, const RunContext &run_context) {
+    auto [num_channels, series_len, num_series, dataset_path] = dataset.get_properties();
+    auto [normalized, seed, data_path, logs_path] = run_context;
 
     IndexLogger::initialize({
         .m_normalized = normalized,
@@ -21,14 +22,9 @@ int calculate_ffts(bool normalized) {
     });
     auto &logger = IndexLogger::get_instance();
 
-    if (RS.ffts_supported()) {
-        logger.start_timer(ISC::FFT_CALC_TIME_S);
-        RS.calculate_ffts();
-        logger.stop_timer(ISC::FFT_CALC_TIME_S);
-        logger.increment_count_col(ISC::SIZE_ON_DISK_B, RS.get_ffts_size_on_disk());
-    }
-
+    logger.start_timer(ISC::FFT_CALC_TIME_S);
+    ffts.calculate(dataset);
+    logger.stop_timer(ISC::FFT_CALC_TIME_S);
+    logger.increment_count_col(ISC::SIZE_ON_DISK_B, ffts.get_size_on_disk());
     logger.write_entry();
-
-    return 0;
 }

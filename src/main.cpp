@@ -19,11 +19,11 @@ int main(int argc, char **argv) {
 
     app.require_subcommand(1);
 
-    auto common_opts = std::make_unique<RunContext>();
-    app.add_option("--seed", common_opts->m_seed, "Random seed")->capture_default_str();
-    app.add_option("--logs", common_opts->m_logs_path, "Path to write logs to")->capture_default_str();
-    app.add_option("--data", common_opts->m_data_path, "Path to the data directory")->capture_default_str();
-    app.add_flag("!--raw,--normalize", common_opts->m_normalized, "Do not normalize");
+    RunContext run_context;
+    app.add_option("--seed", run_context.m_seed, "Random seed")->capture_default_str();
+    app.add_option("--logs", run_context.m_logs_path, "Path to write logs to")->capture_default_str();
+    app.add_option("--data", run_context.m_data_path, "Path to the data directory")->capture_default_str();
+    app.add_flag("!--raw,--normalize", run_context.m_normalized, "Do not normalize");
 
     umap<CommandType, uptr<ISubcommand>> subcommands{
         {CREATE_DS, std::make_unique<RandomWalkSubcommand>(app)},
@@ -46,10 +46,7 @@ int main(int argc, char **argv) {
         if (subcommand_type != selected_command_type) subcommand_ptr.reset();
     }
 
-    auto selected_command = std::move(subcommands[selected_command_type]);
-    selected_command->set_up_execution(common_opts.get());
-    selected_command->validate_arguments();
-    selected_command->execute();
+    subcommands[selected_command_type]->execute(run_context);
 
     return 0;
 }

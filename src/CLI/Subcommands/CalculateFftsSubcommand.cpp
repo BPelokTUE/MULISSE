@@ -5,6 +5,8 @@
 #include "CLI/Validators.hpp"
 #include "Enums/CommandType.hpp"
 #include "Modules/CalcFfts.hpp"
+#include "Util/Artefacts/MtsDataset.hpp"
+#include "Util/Artefacts/MtsFfts.hpp"
 #include "Util/HelperFuncs/Path.hpp"
 #include "Util/Types/RunContext.hpp"
 
@@ -20,8 +22,11 @@ CalculateFftsSubcommand::CalculateFftsSubcommand(CLI::App &app) {
         ->check(validators::file_is_writable);
 }
 
-void CalculateFftsSubcommand::set_up_execution(const RunContext *common_opts) {
-    // Set up run setting properties
-}
+void CalculateFftsSubcommand::execute() {
+    MtsDataset dataset;
+    dataset.load_meta(m_dataset_meta_path);
+    MtsFfts ffts(m_ffts_path);
 
-void CalculateFftsSubcommand::execute() { calculate_ffts(!m_run_context->m_raw); }
+    calculate_ffts(ffts, dataset, *m_run_context);
+    ffts.save_meta(ffts.get_meta_path());
+}

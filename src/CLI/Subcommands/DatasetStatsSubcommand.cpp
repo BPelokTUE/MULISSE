@@ -17,7 +17,7 @@ DatasetStatsSubcommand::DatasetStatsSubcommand(CLI::App &app) {
         ->check(validators::positive_int);
 }
 
-void DatasetStatsSubcommand::set_up_execution(const RunContext *common_opts) {
+void DatasetStatsSubcommand::set_up_execution(const RunContext *run_context) {
     m_mts_dataset.load_meta(std::filesystem::path(common_opts->m_data_path) / m_dataset_meta_path);
 }
 

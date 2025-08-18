@@ -7,6 +7,8 @@
 #include "Util/Types/Pointers.hpp"
 
 struct MtsDataset;
+struct RandomWalkGenOptions;
+struct CsvDatasetGenOptions;
 
 /** @brief Enum of the columns of the dataset settings log file */
 enum class DatasetSettingsColumn {
@@ -26,75 +28,35 @@ enum class DatasetSettingsColumn {
 
 DEFINE_ENUM_CONSTS_NO_EXTRA(DatasetSettingsColumn, DATASET_SETTINGS_COL, false);
 
-// Dataset types
-
-enum DatasetType { RANDOM_WALK, CSV };
-
-struct IDatasetLogAttributes {
-    virtual ~IDatasetLogAttributes() = default;
-
-    /**
-     * @brief Get the type of the dataset
-     * @return The type of the dataset
-     */
-    virtual DatasetType get_type() = 0;
-};
-
-struct RandomWalkLogAttributes : IDatasetLogAttributes {
-    /**
-     * @brief Constructor for random walk dataset log attributes
-     * @param noise The standard deviation of the Gaussian noise used for generating the random walk dataset
-     * @param seed The random seed used for generating the dataset
-     */
-    RandomWalkLogAttributes(Real noise, int seed);
-
-    DatasetType get_type() override;
-
-    Real m_noise;
-    int m_seed;
-};
-
-struct CsvDatasetLogAttributes : IDatasetLogAttributes {
-    /**
-     * @brief Constructor for CSV dataset log attributes
-     * @param source_csvs The source CSV files used for generating the dataset
-     * @param series_generated The number of time series generated from the CSV files
-     * @param l_min The minimum length of subsequences to check standard deviation for
-     * @param l_max The maximum length of subsequences to check standard deviation for
-     * @param min_subs_sd The minimum standard deviation required for all subsequences
-     * @param seed The random seed used for generating the dataset
-     */
-    CsvDatasetLogAttributes(const vec<str> &source_csvs, uint series_generated, uint l_min, uint l_max,
-                            Real min_subs_sd, int seed);
-
-    DatasetType get_type() override;
-
-    uint m_series_generated, m_l_min, m_l_max;
-    int m_seed;
-    Real m_min_subs_sd;
-    vec<str> m_source_csvs;
-};
-
 // DatasetLogger class
 
 /** @brief Class for logging dataset settings */
 class DatasetLogger : public Logger {
    public:
-    DatasetLogger(const DatasetLogger &) = delete;
-    DatasetLogger &operator=(const DatasetLogger &) = delete;
+    /**
+     * @brief Constructor
+     * @param logs_path Path to the logs directory
+     */
+    DatasetLogger(const str &logs_path);
 
     /**
      * @brief Write the entry
-     * @param attributes Attributes of the generated dataset
-     * @param dataset The MTS dataset
-     * @param logs_path Path to the logs directory
+     * @param rw_gen_opts Options used for generating the random walk dataset
+     * @param dataset The MtsDataset
      */
-    static void write_entry(uptr<IDatasetLogAttributes> attributes, const MtsDataset &dataset, const str &logs_path);
+    void write_entry(const RandomWalkGenOptions &rw_gen_opts, const MtsDataset &dataset) const;
+
+    /**
+     * @brief Write the entry
+     * @param csv_gen_opts Options used for generating the CSV dataset
+     * @param dataset The MtsDataset
+     */
+    void write_entry(const CsvDatasetGenOptions &csv_gen_opts, const MtsDataset &dataset) const;
 
    private:
-    DatasetLogger() = default;
-
     static const str DATASET_SETTINGS_FILE;
+
+    str m_dataset_settings_path;
 };
 
 #endif  // DATASET_LOGGER_HPP

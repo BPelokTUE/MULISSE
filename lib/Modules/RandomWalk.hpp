@@ -5,7 +5,8 @@
 #include "Util/Types/String.hpp"
 
 struct MtsDataset;
-struct RunContext;
+struct RandomWalkGenOptions;
+class DatasetLogger;
 
 /**
  * @brief Creates random walks and writes them to a binary file
@@ -14,10 +15,9 @@ struct RunContext;
  * to a specified binary file. Run with `num_channels=1` for generating UTS.
  *
  * @param dataset Dataset to create time series for
- * @param step_sigma The standard deviation of the normal distribution used to generate the steps
- * @param zero_start If true, the random walk starts at zero; otherwise, it starts with a random value
- * @param run_context Generic run context (seed, data path, logs path)
+ * @param rw_gen_opts Options for generating the random walk dataset
+ * @param logger Logger to log the dataset generation
  */
-void create_random_walks(const MtsDataset &dataset, Real step_sigma, bool zero_start, const RunContext &run_context);
+void create_random_walks(MtsDataset &dataset, const RandomWalkGenOptions &rw_gen_opts, DatasetLogger &logger);
 
 #endif  // MODULES_RANDOMWALK_HPP

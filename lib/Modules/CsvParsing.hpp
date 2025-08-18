@@ -17,16 +17,10 @@ struct RunContext;
  * RunSettings.
  *
  * @param dataset The MTS dataset to create
- * @param csv_path The list of csv file paths in the order of channels
- * @param l_min Discard time series where the standard deviation is too low in any subsequence of length between `l_min`
- * and `l_max
- * @param l_max Discard time series where the standard deviation is too low in any subsequence of length between `l_min`
- * and `l_max
- * @param run_context Generic run context (seed, data path, logs path)
- * @param col_sep The column separator in the CSV files
- * @param min_subs_sd The minimum standard deviation required for each valid length subsequence
+ * @param csv_gen_opts Options for generating the dataset from CSV files
+ * @param logger Logger to log dataset settings
  */
-void create_dataset_from_csv(const MtsDataset &dataset, const vec<str> &csv_paths, uint l_min, uint l_max,
-                             const RunContext &run_context, char col_sep = ',', Real min_subs_sd = DEFAULT_MIN_SUBS_SD);
+void create_dataset_from_csv(MtsDataset &dataset, const CsvDatasetGenOptions &csv_gen_opts,
+                             const DatasetLogger &logger);
 
 #endif  // MODULES_CSVPARSING_HPP

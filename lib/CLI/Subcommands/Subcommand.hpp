@@ -8,16 +8,10 @@ class ISubcommand {
     virtual ~ISubcommand() = default;
 
     /**
-     * @brief Set up execution after parsing arguments
-     * @param common_opts Common options for all subcommands
-     * */
-    virtual void set_up_execution(const RunContext *common_opts);
-
-    /** @brief Do additional argument validation after setting up run */
-    virtual void validate_arguments();
-
-    /** @brief Execute the subcommand */
-    virtual void execute() = 0;
+     * @brief Execute the subcommand
+     * @param run_context Context for the run
+     */
+    virtual void execute(const RunContext &run_context) = 0;
 
    protected:
     const RunContext *m_run_context = nullptr;

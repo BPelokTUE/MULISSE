@@ -25,7 +25,7 @@ class Logger {
      * @param file_path The path to the file
      * @return The index of the new entry
      */
-    uint determine_index(const str &file_path);
+    uint determine_index(const str &file_path) const;
 
     /**
      * @brief Create a file with the given header if it does not exist
@@ -42,7 +42,7 @@ class Logger {
      * @param columns A vector defining the order of the columns
      */
     template <typename C>
-    void write_row(const str &file_path, const umap<C, str> &enum_to_val, const vec<C> &columns) {
+    void write_row(const str &file_path, const umap<C, str> &enum_to_val, const vec<C> &columns) const {
 #ifndef DISABLE_LOGGING
         std::ofstream ofs(file_path, std::ios::app);
 
@@ -56,7 +56,7 @@ class Logger {
             }
             if (i < columns.size() - 1) ofs << COL_SEP;
         }
-#endif
+#endif  // DISABLE_LOGGING
     }
 
     /**

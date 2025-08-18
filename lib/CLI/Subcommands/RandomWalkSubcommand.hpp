@@ -3,6 +3,7 @@
 
 #include "CLI/Subcommands/Subcommand.hpp"
 #include "CLI11/CLI11.hpp"
+#include "Util/Artefacts/Options/RandomWalkGenOptions.hpp"
 #include "Util/Artefacts/Properties/MtsDatasetProperties.hpp"
 #include "Util/Types/Numbers.hpp"
 
@@ -14,11 +15,10 @@ class RandomWalkSubcommand : public ISubcommand {
      */
     RandomWalkSubcommand(CLI::App &app);
 
-    void execute() override;
+    void execute(const RunContext &run_context) override;
 
    private:
-    bool m_zero_start;
-    Real m_step_sd;
+    RandomWalkGenOptions m_rw_gen_opts;
     MtsDatasetProperties m_dataset_props;
 };
 

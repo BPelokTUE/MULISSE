@@ -65,8 +65,8 @@ int calculate_query_stats(const MtsDataset &dataset, const MtsQuerySet &query_se
 
     std::ifstream dataset_ifs(std::filesystem::path(data_path) / dataset_path, std::ios::binary);
     std::ifstream query_ifs(std::filesystem::path(data_path) / query_set_path);
-    vec<vec<Real>> query(num_channels);
 
+    vec<vec<Real>> query(num_channels);
     uint query_count = 0;
     for (MtsNumChannelsT c = 0; !query_ifs.eof(); c = static_cast<MtsNumChannelsT>((c + 1) % num_channels)) {
         str line;

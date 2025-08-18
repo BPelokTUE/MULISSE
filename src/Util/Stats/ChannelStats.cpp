@@ -26,15 +26,7 @@ ChannelStats::ChannelStats(const vec<Real> &sums, const vec<Real> &sum_sqs, uint
     }
 }
 
-void ChannelStats::save(const str &filename) const {
-    std::ofstream ofs(filename);
-    cereal::JSONOutputArchive ar(ofs);
-    ar(cereal::make_nvp("means", m_means), cereal::make_nvp("stds", m_stds));
-}
-
-void ChannelStats::load(const str &filename) {
-    std::ifstream ifs(filename);
-    if (!ifs.is_open()) throw std::runtime_error("Could not open dataset stats file: " + filename);
-    cereal::JSONInputArchive ar(ifs);
+template <typename Archive>
+void ChannelStats::serialize(Archive &ar) {
     ar(cereal::make_nvp("means", m_means), cereal::make_nvp("stds", m_stds));
 }
