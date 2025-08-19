@@ -30,8 +30,7 @@ RandomWalkSubcommand::RandomWalkSubcommand(CLI::App &app) {
 
 void RandomWalkSubcommand::execute(const RunContext &run_context) {
     // Set up dataset generation
-    MtsDataset dataset(m_dataset_props);
-    dataset.set_up_generation(run_context.m_data_path);
+    MtsDataset dataset(m_dataset_props, run_context.m_data_path);
 
     m_rw_gen_opts.m_seed = run_context.m_seed;
 

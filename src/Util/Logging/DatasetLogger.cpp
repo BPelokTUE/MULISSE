@@ -19,9 +19,9 @@ DatasetLogger::DatasetLogger(const str &logs_path) {
     file_setup(m_dataset_settings_path, DATASET_SETTINGS_COL_STRS);
 }
 
-void DatasetLogger::write_entry(const RandomWalkGenOptions &rw_gen_opts, const MtsDataset &dataset) const {
-#ifndef DISABLE_LOGGING
+uint DatasetLogger::write_entry(const RandomWalkGenOptions &rw_gen_opts, const MtsDataset &dataset) const {
     uint id = determine_index(m_dataset_settings_path);
+#ifndef DISABLE_LOGGING
     auto [num_channels, series_len, num_series, dataset_file] = dataset.get_properties();
 
     write_row(m_dataset_settings_path,
@@ -37,11 +37,12 @@ void DatasetLogger::write_entry(const RandomWalkGenOptions &rw_gen_opts, const M
               },
               DATASET_SETTINGS_COL_ENUMS);
 #endif  // DISABLE_LOGGING
+    return id;
 }
 
-void DatasetLogger::write_entry(const CsvDatasetGenOptions &csv_gen_opts, const MtsDataset &dataset) const {
-#ifndef DISABLE_LOGGING
+uint DatasetLogger::write_entry(const CsvDatasetGenOptions &csv_gen_opts, const MtsDataset &dataset) const {
     uint id = determine_index(m_dataset_settings_path);
+#ifndef DISABLE_LOGGING
     auto [num_channels, series_len, num_series, dataset_file] = dataset.get_properties();
 
     str source_csv_str = "";
@@ -68,4 +69,5 @@ void DatasetLogger::write_entry(const CsvDatasetGenOptions &csv_gen_opts, const 
               },
               DATASET_SETTINGS_COL_ENUMS);
 #endif  // DISABLE_LOGGING
+    return id;
 }

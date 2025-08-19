@@ -4,6 +4,10 @@
 #include "Util/Artefacts/Artifact.hpp"
 
 class MetaArtifact : public IArtifact {
+   protected:
+    /** @brief The ID of the artifact within its respective log file */
+    uint m_log_id = 0;
+
    public:
     /**
      * @brief Save the meta artifact into a file
@@ -16,6 +20,18 @@ class MetaArtifact : public IArtifact {
      * @param in_file Path to the input file
      */
     void load_meta(const str &in_file);
+
+    /**
+     * @brief Set the logger ID of the artifact
+     * @param id The ID to set
+     */
+    void set_log_id(uint id);
+
+    /**
+     * @brief Get the logger ID of the artifact
+     * @return The ID of the artifact in the log file
+     */
+    uint MetaArtifact::get_log_id() const;
 
     /**
      * @brief Get the path to the query_set meta file

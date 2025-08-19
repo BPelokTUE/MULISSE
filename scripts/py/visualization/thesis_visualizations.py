@@ -156,7 +156,7 @@ for dim_suffix, title in dim_suffix_to_titles.items():
             merge_csv_datasets=True,
             fig_height_inches=3,
             legend_max_cols=2,
-            legend_plots_dict={SSC.NORMALIZED: {True}}
+            legend_plots_dict={SSC.NORMALIZED: {True, False}}
             if target_args.name == "PRUNING_RATIO" and dim_suffix == "multi"
             else None,
             x_ticks_rotation=-15,
@@ -182,15 +182,16 @@ for target_args in [TargetArgs.PRUNING_RATIO]:
         logs_dirs=["EXPERIMENT_LOGS/thesis/LOGS_2_sax_vs_no_sax_uni"],
         groups_dict={
             ERD.METHODS_COLS: [SSC.METHOD_NAME, SSC.NORMALIZED],
-            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.NUM_CHANNELS, DSC.SERIES_LENGTH],
+            ERD.DATASETS_COLS: [DSC.DATASET_FILE, DSC.SERIES_LENGTH],
         },
         separate_plots_dict={(DSC.DATASET_FILE,): [], (SSC.NORMALIZED,): [(False,)]},
         regex_dict={DSC.DATASET_FILE: r"stocks"},
-        title_base=dim_suffix_to_titles["uni"],
+        title_base=None,
         merge_csv_datasets=False,
         fig_height_inches=3,
         legend_max_cols=2,
-        legend_plots_dict={DSC.DATASET_FILE: {"stocks/second_clean.csv"}},
+        legend_plots_dict={DSC.DATASET_FILE: {"stocks/first_clean.csv"}},
+        x_ticks_rotation=-15,
         bar_plot_color_attrs=SSC.METHOD_NAME,
         bar_plot_label_padding=False,
         bar_plot_label_map={

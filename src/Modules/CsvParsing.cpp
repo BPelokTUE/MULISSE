@@ -14,5 +14,6 @@
 void create_dataset_from_csv(MtsDataset &dataset, const CsvDatasetGenOptions &csv_gen_opts,
                              const DatasetLogger &logger) {
     dataset.generate_from_csvs(csv_gen_opts);
-    logger.write_entry(csv_gen_opts, dataset);
+    uint logger_id = logger.write_entry(csv_gen_opts, dataset);
+    dataset.set_log_id(logger_id);
 }

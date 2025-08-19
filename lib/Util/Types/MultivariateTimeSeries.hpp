@@ -16,6 +16,12 @@ class MultivariateTimeSeries {
     MultivariateTimeSeries(const vec<vec<Real>> &&data);
 
     /**
+     * @brief Get the number of channels in the multivariate time series
+     * @return Number of channels
+     */
+    MtsNumChannelsT get_num_channels() const;
+
+    /**
      * @brief Indexing operator to access channels
      * @param channel_idx Index of the channel to access
      * @return Reference to the channel data

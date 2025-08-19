@@ -5,8 +5,12 @@
 #include "Util/Logging/Logger.hpp"
 #include "Util/Types/Numbers.hpp"
 
+class MtsDataset;
+
 /** @brief Enum of the columns of the dataset statistics log file */
 enum class DatasetStatsColumn {
+    ID,               // ID of the entry in the dataset stats log
+    DATASET_ID,       // ID of the dataset within the dataset log
     DATASET_FILE,     // Name of the dataset file
     TS_IND,           // Index of the time series
     CHANNEL,          // Channel index in the time series
@@ -31,9 +35,13 @@ struct DatasetStats {
 /** @brief Class for logging dataset statistics */
 class DatasetStatsLogger : public Logger {
    public:
-    static void write_entry(const str &dataset_file, uint ts_ind, MtsNumChannelsT channel, const DatasetStats &stats);
+    DatasetStatsLogger(const str &logs_path);
+
+    void write_entry(const MtsDataset &dataset, uint ts_ind, MtsNumChannelsT channel, const DatasetStats &stats);
 
     static const str DATASET_STATS_FILE;
+
+    str m_dataset_stats_path;
 };
 
 #endif  // UTIL_LOGGING_DATASETSTATSLOGGER_HPP

@@ -3,6 +3,7 @@
 #include "CLI/Validators.hpp"
 #include "Enums/CommandType.hpp"
 #include "Modules/CalcDatasetStats.hpp"
+#include "Util/Logging/DatasetStatsLogger.hpp"
 #include "Util/Types/RunContext.hpp"
 
 DatasetStatsSubcommand::DatasetStatsSubcommand(CLI::App &app) {
@@ -17,8 +18,14 @@ DatasetStatsSubcommand::DatasetStatsSubcommand(CLI::App &app) {
         ->check(validators::positive_int);
 }
 
-void DatasetStatsSubcommand::set_up_execution(const RunContext *run_context) {
-    m_mts_dataset.load_meta(std::filesystem::path(common_opts->m_data_path) / m_dataset_meta_path);
-}
+void DatasetStatsSubcommand::execute(const RunContext &run_context) {
+    // Set up dataset statistics calculation
+    m_mts_dataset.load_meta(std::filesystem::path(run_context.m_data_path) / m_dataset_meta_path);
+    m_mts_dataset.set_istream(std::make_unique<std::ifstream>(std::filesystem::path(run_context.m_data_path) /
+                                                              m_mts_dataset.get_properties().m_dataset_path));
 
-void DatasetStatsSubcommand::execute() { calculate_dataset_stats(m_mts_dataset, m_num_lags); }
+    DatasetStatsLogger logger(run_context.m_logs_path);
+
+    // Calculate dataset statistics
+    calculate_dataset_stats(m_mts_dataset, m_num_lags, logger);
+}

@@ -17,11 +17,7 @@ class CreateQueriesSubcommand : public ISubcommand {
      */
     CreateQueriesSubcommand(CLI::App &app);
 
-    void set_up_execution(const RunContext *run_context) override;
-
-    void validate_arguments() override;
-
-    void execute() override;
+    void execute(const RunContext &run_context) override;
 
    private:
     str m_dataset_meta_path, m_query_set_path;

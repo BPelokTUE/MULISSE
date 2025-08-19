@@ -1,49 +1,43 @@
 #include "Util/Logging/QueryStatsLogger.hpp"
 
+#include "Util/Artefacts/MtsDataset.hpp"
+#include "Util/Artefacts/MtsQuerySet.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
+#include "Util/Stats/QueryStats.hpp"
+#include "Util/Types/MtsQuery.hpp"
 
 const str QueryStatsLogger::QUERY_STATS_FILE = "query_stats.csv";
 
 using QSTC = QueryStatsColumn;
 
-void QueryStats::calculate() {
-    m_dist_stats.calculate(U(m_subs_count));
-    m_rc_using_max = (m_dist_stats.m_max - m_dist_stats.m_min) / m_dist_stats.m_min;
-    m_rc_using_mean = m_dist_stats.m_mean / m_dist_stats.m_min;
+QueryStatsLogger::QueryStatsLogger(const str &logs_path) {
+    m_query_stats_path = fs::path(logs_path) / QUERY_STATS_FILE;
+    m_base_id = determine_index(m_query_stats_path);
+    file_setup(m_query_stats_path, QUERY_STATS_COL_STRS);
 }
 
-void QueryStatsLogger::write_entry(uint query_id, const vec<vec<Real>> &query, QueryStats stats, bool normalized) {
+uint QueryStatsLogger::write_entry(const MtsQuerySet &query_set, const MtsQuery &query, const QueryStats &query_stats) {
 #ifndef DISABLE_LOGGING
-    QueryStatsLogger instance;
-    auto &RS = RunSettings::get_instance();
-
-    str dataset_file = RS.m_dataset_props.m_file;
-    str query_file = RS.m_query_file;
-
-    size_t query_len = 0;
     str query_channels_str = "";
-    for (MtsNumChannelsT c = 0; c < query.size(); ++c) {
-        query_channels_str += query[c].empty() ? "0" : "1";
-        if (c < query.size() - 1) query_channels_str += instance.ITEM_SEP;
-        query_len = std::max(query_len, query[c].size());
+    MtsNumChannelsT num_channels = query.get_num_channels();
+    for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
+        query_channels_str += query.is_channel_used(c) ? "1" : "0";
+        if (c < num_channels - 1) query_channels_str += ITEM_SEP;
     }
-    str query_len_str = to_string(query_len);
 
-    str query_stats_path = fs::path(RS.get_logs_path()) / QueryStatsLogger::QUERY_STATS_FILE;
-    instance.file_setup(query_stats_path, QUERY_STATS_COL_STRS);
-    instance.write_row(query_stats_path,
-                       {
-                           {QSTC::ID, to_string(query_id)},
-                           {QSTC::DATASET_FILE, dataset_file},
-                           {QSTC::QUERY_FILE, query_file},
-                           {QSTC::QUERY_LENGTH, query_len_str},
-                           {QSTC::QUERY_CHANNELS, query_channels_str},
-                           ADD_STATS_TO_ROW(QSTC, DIST, stats.m_dist_stats),
-                           {QSTC::RC_USING_MAX, to_string(stats.m_rc_using_max)},
-                           {QSTC::RC_USING_MEAN, to_string(stats.m_rc_using_mean)},
-                           {QSTC::NORMALIZED, to_string(normalized)},
-                       },
-                       QUERY_STATS_COL_ENUMS);
+    write_row(m_query_stats_path,
+              {
+                  {QSTC::ID, to_string(m_base_id)},
+                  {QSTC::DATASET_FILE, query_set.get_source_dataset().get_properties().m_dataset_path},
+                  {QSTC::QUERY_FILE, query_set.get_properties().m_query_set_path},
+                  {QSTC::QUERY_LENGTH, to_string(query.get_query_len())},
+                  {QSTC::QUERY_CHANNELS, query_channels_str},
+                  ADD_STATS_TO_ROW(QSTC, DIST, query_stats.m_dist_stats),
+                  {QSTC::RC_USING_MAX, to_string(query_stats.m_rc_using_max)},
+                  {QSTC::RC_USING_MEAN, to_string(query_stats.m_rc_using_mean)},
+                  {QSTC::NORMALIZED, to_string(query.is_normalized())},
+              },
+              QUERY_STATS_COL_ENUMS);
 #endif  // DISABLE_LOGGING
+    return m_base_id++;
 }

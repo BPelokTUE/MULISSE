@@ -12,7 +12,7 @@ struct CsvDatasetGenOptions;
 
 /** @brief Enum of the columns of the dataset settings log file */
 enum class DatasetSettingsColumn {
-    ID,              // Index of the setting within the log file
+    ID,              // ID of the setting within the log file
     DATASET_FILE,    // Name to the dataset file
     SERIES_LENGTH,   // Length of each time series
     NUM_CHANNELS,    // Number of channels
@@ -43,15 +43,17 @@ class DatasetLogger : public Logger {
      * @brief Write the entry
      * @param rw_gen_opts Options used for generating the random walk dataset
      * @param dataset The MtsDataset
+     * @return The ID of the entry within the log file, or 0 if logging is disabled
      */
-    void write_entry(const RandomWalkGenOptions &rw_gen_opts, const MtsDataset &dataset) const;
+    uint write_entry(const RandomWalkGenOptions &rw_gen_opts, const MtsDataset &dataset) const;
 
     /**
      * @brief Write the entry
      * @param csv_gen_opts Options used for generating the CSV dataset
      * @param dataset The MtsDataset
+     * @return The ID of the entry within the log file, or 0 if logging is disabled
      */
-    void write_entry(const CsvDatasetGenOptions &csv_gen_opts, const MtsDataset &dataset) const;
+    uint write_entry(const CsvDatasetGenOptions &csv_gen_opts, const MtsDataset &dataset) const;
 
    private:
     static const str DATASET_SETTINGS_FILE;

@@ -14,11 +14,15 @@
 
 MtsDataset::MtsDataset() = default;
 
-MtsDataset::MtsDataset(const MtsDatasetProperties &dataset_props) : m_properties(dataset_props) {}
+MtsDataset::MtsDataset(const MtsDatasetProperties &dataset_props, const str &data_path) : m_properties(dataset_props) {
+    str dataset_path = std::filesystem::path(data_path) / m_properties.m_dataset_path;
+    set_ostream(std::make_unique<std::ofstream>(dataset_path, std::ios::binary));
+    std::filesystem::create_directories(std::filesystem::path(dataset_path).parent_path());
+}
 
 template <typename Archive>
 void MtsDataset::apply_archive(Archive &ar) {
-    ar(cereal::make_nvp("num_channels", m_properties.m_num_channels),
+    ar(cereal::make_nvp("log_id", m_log_id), cereal::make_nvp("num_channels", m_properties.m_num_channels),
        cereal::make_nvp("series_len", m_properties.m_series_len),
        cereal::make_nvp("num_series", m_properties.m_num_series),
        cereal::make_nvp("dataset_file", m_properties.m_dataset_path),
@@ -65,12 +69,6 @@ void MtsDataset::set_istream(uptr<std::istream> istream) {
         throw std::runtime_error("Failed to set input stream for MtsDataset: stream is not valid.");
     }
     m_istream = std::move(istream);
-}
-
-void MtsDataset::set_up_generation(const str &data_path) {
-    str dataset_path = std::filesystem::path(data_path) / m_properties.m_dataset_path;
-    set_ostream(std::make_unique<std::ofstream>(dataset_path, std::ios::binary));
-    std::filesystem::create_directories(std::filesystem::path(dataset_path).parent_path());
 }
 
 void MtsDataset::generate_random_walks(const RandomWalkGenOptions &rw_gen_opts) {
@@ -197,15 +195,20 @@ void MtsDataset::generate_from_csvs(const CsvDatasetGenOptions &csv_gen_opts) {
     m_channel_stats = ChannelStats(sums, sum_sqs, series_len, U(mts_indexes.size()));
 }
 
-MultivariateTimeSeries MtsDataset::load_series(uint series_index) {
+MultivariateTimeSeries MtsDataset::load_series(uint series_index, const vec<bool> &channel_mask) {
     m_istream->seekg(series_index * m_properties.m_num_channels * m_properties.m_series_len * sizeof(Real));
-    load_next_series();
+    load_next_series(channel_mask);
 }
 
-MultivariateTimeSeries MtsDataset::load_next_series() {
+MultivariateTimeSeries MtsDataset::load_next_series(const vec<bool> &channel_mask) {
     vec<vec<Real>> mts_data(m_properties.m_num_channels, vec<Real>(m_properties.m_series_len));
-    for (auto &channel : mts_data) {
-        m_istream->read(reinterpret_cast<char *>(channel.data()), m_properties.m_series_len * sizeof(Real));
+    for (MtsNumChannelsT c = 0; c < m_properties.m_num_channels; ++c) {
+        size_t channel_size = m_properties.m_series_len * sizeof(Real);
+        if (!channel_mask.empty() && !channel_mask[c]) {
+            m_istream->ignore(channel_size);
+        } else {
+            m_istream->read(reinterpret_cast<char *>(mts_data[c].data()), channel_size);
+        }
     }
     return MultivariateTimeSeries(std::move(mts_data));
 }

@@ -14,5 +14,6 @@
 
 void create_random_walks(MtsDataset &dataset, const RandomWalkGenOptions &rw_gen_opts, DatasetLogger &logger) {
     dataset.generate_random_walks(rw_gen_opts);
-    logger.write_entry(rw_gen_opts, dataset);
+    uint logger_id = logger.write_entry(rw_gen_opts, dataset);
+    dataset.set_log_id(logger_id);
 }

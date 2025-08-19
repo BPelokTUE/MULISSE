@@ -6,6 +6,7 @@
 #include "Util/Artefacts/MtsQuerySet.hpp"
 #include "Util/HelperFuncs/Errors.hpp"
 #include "Util/HelperFuncs/Path.hpp"
+#include "Util/Logging/QuerySetLogger.hpp"
 #include "Util/Types/RunContext.hpp"
 
 CreateQueriesSubcommand::CreateQueriesSubcommand(CLI::App &app) {
@@ -48,24 +49,22 @@ CreateQueriesSubcommand::CreateQueriesSubcommand(CLI::App &app) {
         ->capture_default_str();
 }
 
-void CreateQueriesSubcommand::set_up_execution(const RunContext *run_context) {
-    m_run_context = run_context;
-    m_dataset.load_meta(m_dataset_meta_path);
-}
+void CreateQueriesSubcommand::execute(const RunContext &run_context) {
+    // Set up dataset
+    m_dataset.load_meta(std::filesystem::path(m_run_context->m_data_path) / m_dataset_meta_path);
+    m_dataset.set_istream(std::make_unique<std::ifstream>(std::filesystem::path(m_run_context->m_data_path) /
+                                                          m_dataset.get_properties().m_dataset_path));
 
-void CreateQueriesSubcommand::validate_arguments() {
-    check_file_is_readable(m_dataset.get_properties().m_dataset_path);
+    // Do extra argument validation
 
-    if (m_query_set_props.m_length_range.m_l_min > m_query_set_props.m_length_range.m_l_max) {
-        throw get_l_min_gt_l_max_error(m_query_set_props.m_length_range);
-    }
+    //// Check number of channels
     MtsNumChannelsT num_channels = m_dataset.get_properties().m_num_channels;
     if (size_t mask_size = m_query_gen_opts.m_channel_mask.size(); mask_size > 0 && mask_size != num_channels) {
         throw std::runtime_error(std::format(
-            "Non-empty channel mask has different number of channels ({}) than dataset ({})", mask_size, num_channels));
+            "Non-empty channel mask has different number of channels ({}) from dataset ({})", mask_size, num_channels));
     }
 
-    // Check channel selection
+    //// Check channel selection
     if (!m_query_gen_opts.m_channel_mask.empty() && m_query_gen_opts.m_channel_mask.size() != num_channels) {
         throw std::runtime_error(
             std::format("Channel mask must have the same number of elements as the number of channels in the "
@@ -77,18 +76,29 @@ void CreateQueriesSubcommand::validate_arguments() {
             m_query_gen_opts.m_used_channels, num_channels));
     }
 
-    // Check length specification
-    if ((m_query_set_props.m_length_range.m_l_min == 0 ||
-         m_query_set_props.m_length_range.m_l_max < m_query_set_props.m_length_range.m_l_min) &&
-        m_query_gen_opts.m_exact_lengths.empty()) {
-        throw std::runtime_error("Either a list of exact lengths or a minimum and maximum length must be provided");
+    //// Check length specification
+    if (m_query_set_props.m_length_range.m_l_min <= 0 ||
+        m_query_set_props.m_length_range.m_l_max < m_query_set_props.m_length_range.m_l_min) {
+        if (m_query_gen_opts.m_exact_lengths.empty()) {
+            throw std::runtime_error("Either a list of exact lengths or a minimum and maximum length must be provided");
+        } else {
+            m_query_set_props.m_length_range = {0, 0};
+        }
+    } else {
+        m_query_gen_opts.m_exact_lengths.clear();
     }
-}
 
-void CreateQueriesSubcommand::execute() {
+    // Set up query set and generation properties
     m_query_gen_opts.m_seed = m_run_context->m_seed;
     auto ofs = std::make_unique<std::ofstream>(std::filesystem::path(m_run_context->m_data_path) / m_query_set_path);
-    MtsQuerySet query_set(&m_dataset, m_query_set_props, std::move(ofs));
-    create_queries(query_set, m_dataset, m_query_gen_opts, *m_run_context);
+    MtsQuerySet query_set(m_dataset, m_query_set_props, std::move(ofs));
+
+    // Create logger
+    QuerySetLogger logger(run_context.m_logs_path);
+
+    // Generate queries
+    create_queries(query_set, m_query_gen_opts, logger);
+
+    // Save query set meta
     query_set.save_meta(query_set.get_meta_path());
 }

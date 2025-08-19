@@ -13,7 +13,7 @@ class QuerySetStatsSubcommand : public ISubcommand {
      */
     QuerySetStatsSubcommand(CLI::App &app);
 
-    void execute() override;
+    void execute(const RunContext &run_context) override;
 
    private:
     str m_dataset_meta_path, m_query_meta_path;

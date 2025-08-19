@@ -35,10 +35,11 @@ class MtsDataset : public MetaArtifact {
     MtsDataset();
 
     /**
-     * @brief Constructor that initializes the dataset with given properties
+     * @brief Constructor that initializes the dataset for generation
      * @param dataset_props Properties for the multivariate time series dataset
+     * @param data_path Path to the data directory where the dataset will be saved
      */
-    MtsDataset(const MtsDatasetProperties &dataset_props);
+    MtsDataset(const MtsDatasetProperties &dataset_props, const str &data_path);
 
     void save(const str &out_file, ArchiveType ar_type) override;
 
@@ -73,12 +74,6 @@ class MtsDataset : public MetaArtifact {
     void set_istream(uptr<std::istream> istream);
 
     /**
-     * @brief Set up dataset generation
-     * @param data_path Path to the data directory where the dataset will be saved
-     */
-    void set_up_generation(const str &data_path);
-
-    /**
      * @brief Generate the random walk dataset
      * @param rw_gen_opts Options for generating the random walk dataset
      */
@@ -93,16 +88,18 @@ class MtsDataset : public MetaArtifact {
     /**
      * @brief Load a specific series from the dataset
      * @param series_index The index of the series to load
+     * @param channel_mask Optional mask for channels to load, if empty all channels are loaded
      * @return The loaded multivariate time series
      * @throws std::runtime_error if the series cannot be loaded
      */
-    MultivariateTimeSeries load_series(uint series_index);
+    MultivariateTimeSeries load_series(uint series_index, const vec<bool> &channel_mask = {});
 
     /**
      * @brief Load the next series from the dataset
+     * @param channel_mask Optional mask for channels to load, if empty all channels are loaded
      * @return The loaded multivariate time series
      */
-    MultivariateTimeSeries load_next_series();
+    MultivariateTimeSeries load_next_series(const vec<bool> &channel_mask = {});
 };
 
 #endif  // UTIL_ARTEFACTS_MTSDATASET_HPP

@@ -1,7 +1,9 @@
 #ifndef UTIL_TYPES_NUMBERS_HPP
 #define UTIL_TYPES_NUMBERS_HPP
 
-#include <cstdint>
+#include <stdlib.h>  // for size_t
+
+#include <cstdint>  // for uint8_t, uint16_t, uint32_t
 
 using uint = uint32_t;
 using SaxNumBitsT = uint8_t;

@@ -9,7 +9,7 @@
 
 using namespace boost::accumulators;
 
-void calculate_dataset_stats(MtsDataset &dataset, uint num_lags) {
+void calculate_dataset_stats(MtsDataset &dataset, uint num_lags, DatasetStatsLogger &logger) {
     auto [num_channels, series_len, num_series, dataset_path] = dataset.get_properties();
 
     for (uint i = 0; i < num_series; ++i) {
@@ -55,7 +55,7 @@ void calculate_dataset_stats(MtsDataset &dataset, uint num_lags) {
                                total_var_stds,
                                autocorr_means,
                                autocorr_stds};
-            DatasetStatsLogger::write_entry(dataset_path, i, c, stats);
+            logger.write_entry(dataset, i, c, stats);
         }
     }
 }

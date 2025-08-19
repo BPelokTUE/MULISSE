@@ -2,6 +2,8 @@
 #define UTIL_ARTEFACTS_MTSQUERYSET_HPP
 
 #include <fstream>
+#include <functional>
+#include <optional>
 
 #include "Util/Artefacts/MetaArtifact.hpp"
 #include "Util/Artefacts/Properties/MtsQuerySetProperties.hpp"
@@ -9,12 +11,13 @@
 #include "Util/Types/Pointers.hpp"
 
 class MtsDataset;
+struct QuerySetGenOptions;
 
 class MtsQuerySet : public MetaArtifact {
    private:
     MtsQuerySetProperties m_properties;
 
-    const MtsDataset *m_source_dataset;
+    std::optional<std::reference_wrapper<MtsDataset>> m_source_dataset;
 
     uptr<std::istream> m_istream;
     uptr<std::ostream> m_ostream;
@@ -37,7 +40,7 @@ class MtsQuerySet : public MetaArtifact {
      * @param query_set_props Properties for the multivariate time series query_set
      * @param ostream Output stream to write the query set to
      */
-    MtsQuerySet(const MtsDataset *dataset, const MtsQuerySetProperties &query_set_props, uptr<std::ostream> ostream);
+    MtsQuerySet(MtsDataset &dataset, const MtsQuerySetProperties &query_set_props, uptr<std::ostream> ostream);
 
     void save(const str &out_file, ArchiveType ar_type) override;
 
@@ -55,13 +58,13 @@ class MtsQuerySet : public MetaArtifact {
      * @brief Set the source dataset for the query set
      * @param source_dataset Pointer to the source dataset
      */
-    void set_source_dataset(const MtsDataset *source_dataset);
+    void set_source_dataset(MtsDataset &source_dataset);
 
     /**
      * @brief Get the source dataset of the query set
      * @return Pointer to the source dataset
      */
-    const MtsDataset *get_source_dataset() const;
+    MtsDataset &get_source_dataset() const;
 
     /**
      * @brief Set the input stream of the query set

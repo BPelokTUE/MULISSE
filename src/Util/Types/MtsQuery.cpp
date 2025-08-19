@@ -12,9 +12,13 @@ MtsQuery::MtsQuery(const vec<vec<Real>> &&data) : MultivariateTimeSeries(std::mo
     }
 }
 
-uint MtsQuery::get_query_len() const { return m_query_len; }
+bool MtsQuery::is_normalized() const { return m_normalized; }
 
-bool MtsQuery::is_channel_used(MtsNumChannelsT channel_ind) {
+const vec<bool> &MtsQuery::get_used_channels() const { return m_used_channels; }
+
+bool MtsQuery::is_channel_used(MtsNumChannelsT channel_ind) const {
     if (channel_ind >= m_used_channels.size()) throw std::out_of_range("Channel index out of range");
     return m_used_channels[channel_ind];
 }
+
+uint MtsQuery::get_query_len() const { return m_query_len; }

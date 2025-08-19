@@ -44,8 +44,7 @@ void ParseCsvSubcommand::execute(const RunContext &run_context) {
 
     // Set up dataset generation
     m_dataset_props.m_num_channels = static_cast<MtsNumChannelsT>(m_csv_gen_opts.m_source_csvs.size());
-    MtsDataset dataset(m_dataset_props);
-    dataset.set_up_generation(run_context.m_data_path);
+    MtsDataset dataset(m_dataset_props, run_context.m_data_path);
 
     m_csv_gen_opts.m_seed = run_context.m_seed;
 
