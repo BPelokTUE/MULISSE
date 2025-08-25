@@ -10,6 +10,7 @@ struct QuerySetGenOptions;
 /** @brief Enum of the columns of the query set settings log file */
 enum class QuerySetSettingsColumn {
     ID,             // Index of the setting within the log file
+    DATASET_ID,     // ID of the dataset the query set was generated from
     DATASET_FILE,   // Name of the dataset file the queries were generated from
     QUERY_FILE,     // Name of the query file
     NUM_QUERIES,    // Number of queries
@@ -46,7 +47,7 @@ class QuerySetLogger : public Logger {
    private:
     QuerySetLogger() = default;
 
-    static const str QUERY_SET_SETTINGS_FILE;
+    static constexpr str QUERY_SET_SETTINGS_FILE = "query_set_settings.csv";
 
     str m_query_set_settings_path;
 };

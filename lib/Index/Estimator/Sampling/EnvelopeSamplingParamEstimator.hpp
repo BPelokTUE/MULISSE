@@ -20,13 +20,13 @@ class EnvelopeSamplingParamEstimator : public IEnvelopeParamEstimator {
    public:
     virtual ~EnvelopeSamplingParamEstimator() = default;
 
-    EnvelopeParams get_estimated_params(const IndexOptions &index_opts,
+    EnvelopeParams get_estimated_params(const GeneralIndexProperties &index_opts,
                                         uptr<IEnvelopeConfigGenerator> env_config_generator) override;
 
    protected:
     virtual void update_queries(std::stringstream &query_stream, uint num_queries) = 0;
 
-    virtual Real get_config_score(vec<vec<IndexEntry<Envelope>>> &&entries, const IndexOptions &index_opts,
+    virtual Real get_config_score(vec<vec<IndexEntry<Envelope>>> &&entries, const GeneralIndexProperties &index_opts,
                                   const LengthProperties &length_props,
                                   const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) = 0;
 

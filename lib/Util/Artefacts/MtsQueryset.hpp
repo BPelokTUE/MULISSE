@@ -5,22 +5,24 @@
 #include <functional>
 #include <optional>
 
-#include "Util/Artefacts/MetaArtifact.hpp"
+#include "Util/Artefacts/Artifact.hpp"
 #include "Util/Artefacts/Properties/MtsQuerySetProperties.hpp"
+#include "Util/Types/InputStream.hpp"
 #include "Util/Types/MtsQuery.hpp"
+#include "Util/Types/OutputStream.hpp"
 #include "Util/Types/Pointers.hpp"
 
 class MtsDataset;
 struct QuerySetGenOptions;
 
-class MtsQuerySet : public MetaArtifact {
+class MtsQuerySet : public IArtifact {
    private:
     MtsQuerySetProperties m_properties;
 
     std::optional<std::reference_wrapper<MtsDataset>> m_source_dataset;
 
-    uptr<std::istream> m_istream;
-    uptr<std::ostream> m_ostream;
+    InputStream m_istream;
+    OutputStream m_ostream;
 
     /**
      * @brief Apply (save or load) the archive
@@ -29,6 +31,10 @@ class MtsQuerySet : public MetaArtifact {
      */
     template <typename Archive>
     void apply_archive(Archive &ar);
+
+    void apply_in_archive(cereal::JSONInputArchive &ar) override;
+
+    void apply_out_archive(cereal::JSONOutputArchive &ar) override;
 
    public:
     /** @brief Default constructor */
@@ -40,11 +46,7 @@ class MtsQuerySet : public MetaArtifact {
      * @param query_set_props Properties for the multivariate time series query_set
      * @param ostream Output stream to write the query set to
      */
-    MtsQuerySet(MtsDataset &dataset, const MtsQuerySetProperties &query_set_props, uptr<std::ostream> ostream);
-
-    void save(const str &out_file, ArchiveType ar_type) override;
-
-    void load(const str &out_file, ArchiveType ar_type) override;
+    MtsQuerySet(MtsDataset &dataset, const MtsQuerySetProperties &query_set_props, OutputStream &&ostream);
 
     str get_meta_path() const override;
 
@@ -62,23 +64,9 @@ class MtsQuerySet : public MetaArtifact {
 
     /**
      * @brief Get the source dataset of the query set
-     * @return Pointer to the source dataset
+     * @return The source dataset
      */
     MtsDataset &get_source_dataset() const;
-
-    /**
-     * @brief Set the input stream of the query set
-     * @param istream The input stream
-     * @throws std::runtime_error if the stream cannot be opened
-     */
-    void set_istream(uptr<std::istream> istream);
-
-    /**
-     * @brief Set the output stream of the query set
-     * @param ostream The output stream
-     * @throws std::runtime_error if the stream cannot be opened
-     */
-    void set_ostream(uptr<std::ostream> ostream);
 
     /**
      * @brief Load the next query from the query_set

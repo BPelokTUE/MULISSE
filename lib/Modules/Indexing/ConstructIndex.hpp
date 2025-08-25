@@ -29,12 +29,13 @@ class ILengthGroupSegmentationStrategy;
  */
 template <typename T>
 void construct_index(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_factory,
-                     uptr<IEntryGenerator<T>> generator, uptr<IEntryMerger<T>> merger, const IndexOptions &opts,
+                     uptr<IEntryGenerator<T>> generator, uptr<IEntryMerger<T>> merger,
+                     const GeneralIndexProperties &opts,
                      uptr<ILengthGroupSegmentationStrategy> lg_segmentation_strategy, Real sample_frac = 1.0);
 
 template <typename T>
 sptr<IIndex<T>> get_index_without_data(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_factory,
-                                       const IndexOptions &opts,
+                                       const GeneralIndexProperties &opts,
                                        const ILengthGroupSegmentationStrategy *lg_segmentation_strategy);
 
 #endif  // MODULES_INDEXING_CONSTRUCTINDEX

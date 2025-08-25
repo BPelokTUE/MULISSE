@@ -7,46 +7,33 @@
 #include "Util/Artefacts/Options/QuerySetGenOptions.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 #include "Util/HelperFuncs/Math.hpp"
+#include "Util/HelperFuncs/Path.hpp"
 #include "Util/Types/MtsQuery.hpp"
 #include "Util/Types/SubsequenceInfo.hpp"
 
 MtsQuerySet::MtsQuerySet() = default;
 
-MtsQuerySet::MtsQuerySet(MtsDataset &dataset, const MtsQuerySetProperties &query_set_props, uptr<std::ostream> ostream)
+MtsQuerySet::MtsQuerySet(MtsDataset &dataset, const MtsQuerySetProperties &query_set_props, OutputStream &&ostream)
     : m_properties(query_set_props) {
     set_source_dataset(dataset);
-    set_ostream(std::move(ostream));
+    m_ostream = std::move(m_ostream);
 }
 
 template <typename Archive>
 void MtsQuerySet::apply_archive(Archive &ar) {
-    ar(cereal::make_nvp("num_queries", m_properties.m_num_queries),
-       cereal::make_nvp("length_range", m_properties.m_length_range));
+    ar(cereal::make_nvp("log_id", m_log_id), cereal::make_nvp("num_queries", m_properties.m_num_queries),
+       cereal::make_nvp("length_range", m_properties.m_length_range),
+       cereal::make_nvp("source_dataset_path", m_properties.m_source_dataset_path),
+       cereal::make_nvp("query_set_file", m_properties.m_query_set_path));
 }
 
-void MtsQuerySet::save(const str &out_file, ArchiveType) {
-    std::ofstream ofs(out_file);
-    if (!ofs.is_open()) throw std::runtime_error("Failed to open output file: " + out_file);
-    cereal::JSONOutputArchive ar(ofs);
+void MtsQuerySet::apply_in_archive(cereal::JSONInputArchive &ar) { apply_archive(ar); }
 
-    apply_archive(ar);
-}
-
-void MtsQuerySet::load(const str &in_file, ArchiveType) {
-    std::ifstream ifs(in_file);
-    if (!ifs.is_open()) throw std::runtime_error("Failed to open input file: " + in_file);
-    cereal::JSONInputArchive ar(ifs);
-
-    apply_archive(ar);
-}
+void MtsQuerySet::apply_out_archive(cereal::JSONOutputArchive &ar) { apply_archive(ar); }
 
 const MtsQuerySetProperties &MtsQuerySet::get_properties() const { return m_properties; }
 
-str MtsQuerySet::get_meta_path() const {
-    str path = m_properties.m_query_set_path;
-    path.replace(path.find_last_of('.'), path.size() - path.find_last_of('.'), "_qs_meta.json");
-    return path;
-}
+str MtsQuerySet::get_meta_path() const { return append_to_base(m_properties.m_query_set_path, "_qs_meta"); }
 
 void MtsQuerySet::set_source_dataset(MtsDataset &source_dataset) { m_source_dataset = source_dataset; }
 
@@ -57,28 +44,14 @@ MtsDataset &MtsQuerySet::get_source_dataset() const {
     return m_source_dataset->get();
 }
 
-void MtsQuerySet::set_istream(uptr<std::istream> istream) {
-    if (!istream || !(*istream) || !istream->good()) {
-        throw std::runtime_error("Failed to set input stream for MtsQuerySet: stream is not valid.");
-    }
-    m_istream = std::move(istream);
-}
-
-void MtsQuerySet::set_ostream(uptr<std::ostream> ostream) {
-    if (!ostream || !(*ostream) || !ostream->good()) {
-        throw std::runtime_error("Failed to set output stream for MtsQuerySet: stream is not valid.");
-    }
-    m_ostream = std::move(ostream);
-}
-
 MtsQuery MtsQuerySet::load_next_query(bool normalized) {
     MtsNumChannelsT num_channels = m_source_dataset->get().get_properties().m_num_channels;
     vec<vec<Real>> query_data(num_channels);
 
-    for (MtsNumChannelsT c = 0; !m_istream->eof() && c < num_channels; ++c) {
+    for (MtsNumChannelsT c = 0; !m_istream.get().eof() && c < num_channels; ++c) {
         str line;
-        // m_istream->getline(line);
-        std::getline(*m_istream, line);
+
+        std::getline(m_istream.get(), line);
         std::istringstream iss(line);
 
         query_data[c].clear();
@@ -174,11 +147,11 @@ void MtsQuerySet::generate(const QuerySetGenOptions &query_set_gen_opts, const v
 
                 for (uint j = 0; j < length; ++j) {
                     Real value = mts[c][j] + noise_normal_dist(rng) * sigma;
-                    m_ostream->write(reinterpret_cast<const char *>(&value), sizeof(value));
-                    if (j < length - 1) m_ostream->put(' ');
+                    m_ostream.get().write(reinterpret_cast<const char *>(&value), sizeof(value));
+                    if (j < length - 1) m_ostream.get().put(' ');
                 }
             }
-            if (q < query_descriptors.size() - 1 || c < num_channels - 1) m_ostream->put('\n');
+            if (q < query_descriptors.size() - 1 || c < num_channels - 1) m_ostream.get().put('\n');
         }
     }
 }

@@ -6,8 +6,9 @@
 #include "Enums/CommandType.hpp"
 #include "Modules/CalcFfts.hpp"
 #include "Util/Artefacts/MtsDataset.hpp"
-#include "Util/Artefacts/MtsFfts.hpp"
+#include "Util/Artefacts/MtsDatasetFfts.hpp"
 #include "Util/HelperFuncs/Path.hpp"
+#include "Util/Logging/FftsLogger.hpp"
 #include "Util/Types/RunContext.hpp"
 
 namespace fs = std::filesystem;
@@ -22,11 +23,17 @@ CalculateFftsSubcommand::CalculateFftsSubcommand(CLI::App &app) {
         ->check(validators::file_is_writable);
 }
 
-void CalculateFftsSubcommand::execute() {
-    MtsDataset dataset;
-    dataset.load_meta(m_dataset_meta_path);
-    MtsFfts ffts(m_ffts_path);
+void CalculateFftsSubcommand::execute(const RunContext &run_context) {
+    // Set up FFT generation
+    MtsDataset dataset(run_context.m_data_path, m_dataset_meta_path);
 
-    calculate_ffts(ffts, dataset, *m_run_context);
+    MtsDatasetFfts ffts(m_ffts_path, dataset);
+
+    FftsLogger logger(run_context.m_logs_path);
+
+    // Generate FFTs
+    calculate_ffts(ffts, logger);
+
+    // Save FFTs and its meta
     ffts.save_meta(ffts.get_meta_path());
 }

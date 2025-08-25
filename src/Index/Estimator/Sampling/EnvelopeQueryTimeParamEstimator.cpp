@@ -24,7 +24,7 @@ using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
 template <DistanceType D, bool EW>
 EnvelopeParams EnvelopeQueryTimeParamEstimator<D, EW>::get_estimated_params(
-    const IndexOptions &index_opts, uptr<IEnvelopeConfigGenerator> env_config_generator) {
+    const GeneralIndexProperties &index_opts, uptr<IEnvelopeConfigGenerator> env_config_generator) {
     m_queries.resize(index_opts.m_estimator_params->m_sampling_params->m_num_queries,
                      vec<vec<Real>>(index_opts.m_num_channels));
     return EnvelopeSamplingParamEstimator::get_estimated_params(index_opts, std::move(env_config_generator));
@@ -62,8 +62,8 @@ void EnvelopeQueryTimeParamEstimator<D, EW>::update_queries(std::stringstream &q
 
 template <DistanceType D, bool EW>
 Real EnvelopeQueryTimeParamEstimator<D, EW>::get_config_score(
-    vec<vec<IndexEntry<Envelope>>> &&entries, const IndexOptions &config_opts, const LengthProperties &length_props,
-    const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
+    vec<vec<IndexEntry<Envelope>>> &&entries, const GeneralIndexProperties &config_opts,
+    const LengthProperties &length_props, const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
     // 1. Create index factory using the type of index method in the the index options
     std::function<sptr<IIndex<Envelope>>(IndexFactoryParams &)> index_factory;
     std::function<uptr<ISearchMethod<KNN, D>>(uptr<IFinalizedIndex<EnvelopeTag>>)> search_method_factory;

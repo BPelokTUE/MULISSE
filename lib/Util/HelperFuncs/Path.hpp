@@ -9,18 +9,19 @@
 namespace fs = std::filesystem;
 
 /**
- * @brief Get the size of a dataset; TODO: this should be in `RunSettings`
- * @param dataset_path Path to the dataset
- * @return The size of the dataset
- */
-size_t get_dataset_size(const str& dataset_path);
-
-/**
  * @brief Get file base and extension
  * @param file_path Path to the file
  * @return The base name and extension of the file
  */
 std::pair<str, str> get_file_base_and_extension(const str& file_path);
+
+/**
+ * @brief Append a string to the base of a file path
+ * @param file_name Name of the file
+ * @param to_append String to append to the base
+ * @return The new file path with the appended string
+ */
+str append_to_base(const str& file_name, const str& to_append);
 
 /**
  * @brief Check if directory exists, throw error otherwise

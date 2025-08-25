@@ -15,7 +15,7 @@
 
 using std::pow;
 
-EnvelopeParams EnvelopeParamTheoEstimator::get_estimated_params(const IndexOptions &index_opts,
+EnvelopeParams EnvelopeParamTheoEstimator::get_estimated_params(const GeneralIndexProperties &index_opts,
                                                                 uptr<IEnvelopeConfigGenerator> env_config_generator) {
     // Generate X_c configurations
     // Sample X_p l-p pairs

@@ -3,7 +3,7 @@
 
 #include <atomic>
 
-#include "Index/IndexOptions.hpp"
+#include "Util/Artefacts/Options/IndexGenOptions.hpp"
 #include "Util/HelperFuncs/Enums.hpp"
 #include "Util/Logging/Logger.hpp"
 
@@ -15,7 +15,6 @@ enum class IndexSettingsColumn {
     ID,                               // Index of the setting within the log file
     DATASET_FILE,                     // Name of the indexed dataset file
     INDEX_FILE,                       // Name of the index file
-    FFTS_FILE,                        // Name of the FFTs file, empty if not used
     L_MIN,                            // Minimum allowed query length
     L_MAX,                            // Maximum allowed query length
     L_PER_GROUP,                      // Size of length groups
@@ -69,7 +68,6 @@ enum class IndexSettingsColumn {
     SEGMENTATION_SETUP_TIME_S,     // Time taken to set up the segmentation strategies in seconds
     SUMMARIZATION_TIME_S,          // Time taken to summarize the subsequences in the dataset in seconds
     INSERTION_TIME_S,              // Time taken to insert the subsequence summaries into the index in seconds
-    FFT_CALC_TIME_S,               // Time taken to calculate the FFTs in seconds
     ENV_PARAM_ESTIMATION_TIME_S,   // Time taken to estimate the envelope parameters in seconds
     SIZE_ON_DISK_B,                // Size of the index on disk in bytes
     ESTIMATED_SIZE_ON_DISK_B,      // Estimated size of the index on disk in bytes, only supported for FlatEnvelopeIndex
@@ -78,9 +76,9 @@ enum class IndexSettingsColumn {
 
 using ISC = IndexSettingsColumn;
 
-constexpr std::array INDEX_TIME_COLUMNS = {ISC::INDEXING_TIME_S,      ISC::SEGMENTATION_SETUP_TIME_S,
+constexpr std::array INDEX_TIME_COLUMNS = {ISC::INDEXING_TIME_S, ISC::SEGMENTATION_SETUP_TIME_S,
                                            ISC::SUMMARIZATION_TIME_S, ISC::INSERTION_TIME_S,
-                                           ISC::FFT_CALC_TIME_S,      ISC::ENV_PARAM_ESTIMATION_TIME_S};
+                                           ISC::ENV_PARAM_ESTIMATION_TIME_S};
 
 constexpr std::array INDEX_COUNT_COLUMNS = {ISC::NUM_LEAVES, ISC::NUM_NODES, ISC::NUM_ENTRIES, ISC::SIZE_ON_DISK_B,
                                             ISC::ESTIMATED_SIZE_ON_DISK_B};
@@ -94,14 +92,11 @@ class IndexLogger : public Logger {
    public:
     IndexLogger() = default;
 
-    inline static IndexLogger &get_instance() { return instance; };
-
     /**
-     * @brief Initialize the index logger with the given index options
-     * @param index_options The options for the index
-     * @param sample_frac The fraction of the dataset used for indexing, intended for testing
+     * @brief Construct an index logger with the given index options
+     * @param logs_path The path to the logs directory
      */
-    static void initialize(const IndexOptions &index_options, Real sample_frac = 1.0);
+    IndexLogger(const str &logs_path);
 
     /**
      * @brief Set the pos_per_env column in the log
@@ -138,29 +133,19 @@ class IndexLogger : public Logger {
      * @param col The column to increment, expected to be a value from INDEX_COUNT_COLUMNS
      * @param amount The amount to increment by
      */
-    inline void increment_count_col(ISC col, size_t amount = 1) {
-        assert(arr_contains(INDEX_COUNT_COLUMNS, col));
-        instance.m_count_cols[col] += amount;
-    }
+    void increment_count_col(ISC col, size_t amount = 1);
 
     /**
      * @brief Start the timer for the given column
      * @param col The column to start the timer for, expected to be a value from INDEX_TIME_COLUMNS
      */
-    inline void start_timer(ISC col) {
-        assert(arr_contains(INDEX_TIME_COLUMNS, col));
-        m_time_cols_start[col] = std::chrono::high_resolution_clock::now();
-    }
+    void start_timer(ISC col);
 
     /**
      * @brief Stop the timer for the given column and save the duration
      * @param col The column to stop the timer for, expected to be a value from INDEX_TIME_COLUMNS
      */
-    inline void stop_timer(ISC col) {
-        assert(arr_contains(INDEX_TIME_COLUMNS, col));
-        auto end = std::chrono::high_resolution_clock::now();
-        m_time_cols_duration[col] += std::chrono::duration<double>(end - m_time_cols_start[col]).count();
-    }
+    void stop_timer(ISC col);
 
    private:
     umap<ISC, str> m_columns;
@@ -170,10 +155,7 @@ class IndexLogger : public Logger {
     str m_index_settings_path;
 
     // Static
-    static IndexLogger instance;
-    static bool initialized;
-
-    static const str INDEX_SETTINGS_FILE;
+    static constexpr str INDEX_SETTINGS_FILE = "index_settings.csv";
 };
 
 #endif  // INDEX_LOGGER_HPP

@@ -14,7 +14,7 @@
 
 template <typename T>
 sptr<IIndex<T>> get_index_without_data(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_factory,
-                                       const IndexOptions &opts,
+                                       const GeneralIndexProperties &opts,
                                        const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
     // Temporary solution until metafile are introduced
     LengthProperties length_props{
@@ -48,7 +48,8 @@ sptr<IIndex<T>> get_index_without_data(std::function<sptr<IIndex<T>>(IndexFactor
 
 template <typename T>
 void construct_index(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_factory,
-                     uptr<IEntryGenerator<T>> generator, uptr<IEntryMerger<T>> merger, const IndexOptions &opts,
+                     uptr<IEntryGenerator<T>> generator, uptr<IEntryMerger<T>> merger,
+                     const GeneralIndexProperties &opts,
                      uptr<ILengthGroupSegmentationStrategy> lg_segmentation_strategy, Real sample_frac) {
     auto &RS = RunSettings::get_instance();
     auto &logger = IndexLogger::get_instance();
@@ -69,9 +70,9 @@ void construct_index(std::function<sptr<IIndex<T>>(IndexFactoryParams &)> index_
 
 // Template specializations
 template void construct_index<Paa>(std::function<sptr<IIndex<Paa>>(IndexFactoryParams &)>, uptr<IEntryGenerator<Paa>>,
-                                   uptr<IEntryMerger<Paa>>, const IndexOptions &,
+                                   uptr<IEntryMerger<Paa>>, const GeneralIndexProperties &,
                                    uptr<ILengthGroupSegmentationStrategy>, Real);
 
 template void construct_index<Envelope>(std::function<sptr<IIndex<Envelope>>(IndexFactoryParams &)>,
                                         uptr<IEntryGenerator<Envelope>>, uptr<IEntryMerger<Envelope>>,
-                                        const IndexOptions &, uptr<ILengthGroupSegmentationStrategy>, Real);
+                                        const GeneralIndexProperties &, uptr<ILengthGroupSegmentationStrategy>, Real);

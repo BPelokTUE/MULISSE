@@ -37,7 +37,7 @@ struct SearchOptions {
     /** @brief Maximum number of leaves to visit if approximate search is used. Defaults to 0, indicating no max. */
     size_t m_max_leaves_to_visit = 0;
     /** @brief SAX paramethers; Temporary solution for loading SAX breakpoints during search */
-    SaxParams m_sax_params;
+    SaxProperties m_sax_params;
 };
 
 #endif  // SEARCH_SEARCHOPTIONS_HPP

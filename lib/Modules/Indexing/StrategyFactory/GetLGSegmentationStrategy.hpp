@@ -6,7 +6,7 @@
 #include "Util/Types/Vec.hpp"
 
 class ILengthGroupSegmentationStrategy;
-class IndexOptions;
+class GeneralIndexProperties;
 
 /**
  * @brief Get the length group segmentation strategy based on the index options.
@@ -14,7 +14,7 @@ class IndexOptions;
  * @param channel_scores The scores for each channel, used by ScoreBasedChSegmentationStrategy.
  * @return The length group segmentation strategy.
  */
-uptr<ILengthGroupSegmentationStrategy> get_lg_segmentation_strategy(const IndexOptions &opts,
+uptr<ILengthGroupSegmentationStrategy> get_lg_segmentation_strategy(const GeneralIndexProperties &opts,
                                                                     const vec<Real> *channel_scores = nullptr);
 
 #endif  // MODULES_INDEXING_GETLGSEGMENTATIONSTRATEGY_HPP

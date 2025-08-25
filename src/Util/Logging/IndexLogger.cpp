@@ -4,25 +4,14 @@
 #include "Index/Segmentation/ChannelSegmentationStrategy/ChannelSegmentationStrategy.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
 #include "Index/Segmentation/SegmentationStrategy/SegmentationStrategy.hpp"
+#include "Util/HelperFuncs/Containers.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
-#include "Util/RunSettings/RunSettings.hpp"
-
-IndexLogger IndexLogger::instance = IndexLogger();
-bool IndexLogger::initialized = false;
 
 using ISC = IndexSettingsColumn;
 
-const str IndexLogger::INDEX_SETTINGS_FILE = "index_settings.csv";
-
-void IndexLogger::initialize(const IndexOptions &index_options, Real sample_frac) {
-    if (initialized) return;
-
-    initialized = true;
-
-    auto &RS = RunSettings::get_instance();
-    instance.m_index_settings_path =
-        fs::path(RunSettings::get_instance().get_logs_path()) / instance.INDEX_SETTINGS_FILE;
-    instance.file_setup(instance.m_index_settings_path, INDEX_SETTINGS_COL_STRS);
+IndexLogger::IndexLogger(const str &logs_path, const GeneralIndexProperties &index_options, Real sample_frac) {
+    m_index_settings_path = fs::path(logs_path) / IndexLogger::INDEX_SETTINGS_FILE;
+    file_setup(m_index_settings_path, INDEX_SETTINGS_COL_STRS);
 
     uint num_segments = 0, pos_per_env = 0, sampling_chss_sample_size = 0, sampling_chss_segment_len = 0,
          pe_num_configs = 0;
@@ -208,4 +197,20 @@ void IndexLogger::write_entry() {
     for (const auto &col : INDEX_COUNT_COLUMNS) m_columns[col] = to_string(m_count_cols[col]);
     for (const auto &col : INDEX_TIME_COLUMNS) m_columns[col] = to_string(m_time_cols_duration[col]);
     write_row(m_index_settings_path, m_columns, INDEX_SETTINGS_COL_ENUMS);
+}
+
+void IndexLogger::increment_count_col(ISC col, size_t amount = 1) {
+    assert(arr_contains(INDEX_COUNT_COLUMNS, col));
+    m_count_cols[col] += amount;
+}
+
+void IndexLogger::start_timer(ISC col) {
+    assert(arr_contains(INDEX_TIME_COLUMNS, col));
+    m_time_cols_start[col] = std::chrono::high_resolution_clock::now();
+}
+
+void IndexLogger::stop_timer(ISC col) {
+    assert(arr_contains(INDEX_TIME_COLUMNS, col));
+    auto end = std::chrono::high_resolution_clock::now();
+    m_time_cols_duration[col] += std::chrono::duration<double>(end - m_time_cols_start[col]).count();
 }

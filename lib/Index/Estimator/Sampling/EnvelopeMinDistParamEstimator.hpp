@@ -6,12 +6,12 @@
 
 class EnvelopeMinDistParamEstimator : public EnvelopeSamplingParamEstimator {
    protected:
-    EnvelopeParams get_estimated_params(const IndexOptions &index_opts,
+    EnvelopeParams get_estimated_params(const GeneralIndexProperties &index_opts,
                                         uptr<IEnvelopeConfigGenerator> env_config_generator) override;
 
     void update_queries(std::stringstream &query_stream, uint num_queries) override;
 
-    Real get_config_score(vec<vec<IndexEntry<Envelope>>> &&entries, const IndexOptions &index_opts,
+    Real get_config_score(vec<vec<IndexEntry<Envelope>>> &&entries, const GeneralIndexProperties &index_opts,
                           const LengthProperties &length_props,
                           const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) override;
 

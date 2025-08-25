@@ -4,7 +4,7 @@
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Vec.hpp"
 
-class IndexOptions;
+class GeneralIndexProperties;
 
 /**
  * @brief Get the score for each channel using the IEnvelopeScoreFunc specified in the index options.
@@ -12,6 +12,6 @@ class IndexOptions;
  * @return A vector of scores for each channel, or an empty vector if score-based channel segmentation strategy is not
  * used.
  */
-vec<Real> get_channel_scores(const IndexOptions &opts);
+vec<Real> get_channel_scores(const GeneralIndexProperties &opts);
 
 #endif  // MODULES_INDEXING_STRATEGYFACTORY_GETCHANNELSCORES_HPP

@@ -11,7 +11,7 @@
 #include "Util/RunSettings/LengthProperties.hpp"
 
 EnvelopeParams EnvelopeMinDistParamEstimator::get_estimated_params(
-    const IndexOptions &index_opts, uptr<IEnvelopeConfigGenerator> env_config_generator) {
+    const GeneralIndexProperties &index_opts, uptr<IEnvelopeConfigGenerator> env_config_generator) {
     m_query_accs.resize(index_opts.m_estimator_params->m_sampling_params->m_num_queries,
                         vec<vec<Real>>(index_opts.m_num_channels));
     return EnvelopeSamplingParamEstimator::get_estimated_params(index_opts, std::move(env_config_generator));
@@ -49,7 +49,7 @@ void EnvelopeMinDistParamEstimator::update_queries(std::stringstream &query_stre
 }
 
 Real EnvelopeMinDistParamEstimator::get_config_score(vec<vec<IndexEntry<Envelope>>> &&entries,
-                                                     const IndexOptions &config_opts,
+                                                     const GeneralIndexProperties &config_opts,
                                                      const LengthProperties &length_props,
                                                      const ILengthGroupSegmentationStrategy *lg_segmentation_strategy) {
     DistanceMeasure<KNN, ED> distance_measure(config_opts.m_normalized);

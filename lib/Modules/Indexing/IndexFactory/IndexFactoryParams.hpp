@@ -6,7 +6,7 @@
 
 struct IndexFactoryParams {
     sptr<IChannelSegmentationStrategy> m_ch_segmentation_strategy;
-    const IndexOptions &m_opts;
+    const GeneralIndexProperties &m_opts;
 };
 
 #endif  // MODULES_INDEXING_INDEXFACTORYPARAMS_HPP

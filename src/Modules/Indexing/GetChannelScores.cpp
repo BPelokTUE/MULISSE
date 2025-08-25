@@ -10,7 +10,7 @@
 #include "Util/Stats/ScoreFunc/IndexStatsScoreFunc.hpp"
 #include "Util/Stats/ScoreFunc/WeightedScoreFunc.hpp"
 
-vec<Real> get_channel_scores(const IndexOptions &opts) {
+vec<Real> get_channel_scores(const GeneralIndexProperties &opts) {
     auto index_params = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get());
     if (!index_params) {
         throw std::runtime_error("Index options must contain PaaIndexParams for channel scores.");

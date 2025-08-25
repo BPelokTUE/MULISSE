@@ -25,7 +25,7 @@
 #include "Util/RunSettings/RunSettings.hpp"
 
 EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params(
-    const IndexOptions &index_opts, uptr<IEnvelopeConfigGenerator> env_config_generator) {
+    const GeneralIndexProperties &index_opts, uptr<IEnvelopeConfigGenerator> env_config_generator) {
     // 1. Generate configurations
     // 2. Sample data
     // 3. Create queries from data
@@ -38,7 +38,7 @@ EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params(
         throw std::runtime_error("EnvelopeSamplingParamEstimator requires sampling parameters.");
     }
 
-    auto *env_index_params = dynamic_cast<EnvelopeIndexParams *>(index_opts.m_index_params.get());
+    auto *env_index_params = dynamic_cast<EnvelopeIndexProperties *>(index_opts.m_index_params.get());
     if (!env_index_params) {
         throw std::runtime_error("EnvelopeSamplingParamEstimator requires EnvelopeIndexParams.");
     }
@@ -81,7 +81,8 @@ EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params(
     }
 
     // Get envelope params
-    const EnvelopeIndexParams *params_ptr = dynamic_cast<const EnvelopeIndexParams *>(index_opts.m_index_params.get());
+    const EnvelopeIndexProperties *params_ptr =
+        dynamic_cast<const EnvelopeIndexProperties *>(index_opts.m_index_params.get());
     if (!params_ptr) throw std::runtime_error("EnvelopeMinDistParamEstimator requires EnvelopeIndexParams.");
 
     // 4. For each configuration
@@ -89,10 +90,10 @@ EnvelopeParams EnvelopeSamplingParamEstimator::get_estimated_params(
     for (uint config_ind = 0; config_ind < configurations.size(); ++config_ind) {
         auto &config = configurations[config_ind];
 
-        auto envelope_index_params = std::make_unique<EnvelopeIndexParams>(*params_ptr);
+        auto envelope_index_params = std::make_unique<EnvelopeIndexProperties>(*params_ptr);
         envelope_index_params->m_pos_per_env = config.m_pos_per_env;
         envelope_index_params->m_segmentation_params.m_num_segments = config.m_num_segments;
-        IndexOptions config_opts{
+        GeneralIndexProperties config_opts{
             .m_normalized = index_opts.m_normalized,
             .m_use_length_groups = true,
             .m_num_channels = index_opts.m_num_channels,

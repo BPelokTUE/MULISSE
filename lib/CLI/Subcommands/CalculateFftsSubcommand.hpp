@@ -13,7 +13,7 @@ class CalculateFftsSubcommand : public ISubcommand {
      */
     CalculateFftsSubcommand(CLI::App &app);
 
-    void execute() override;
+    void execute(const RunContext &run_context) override;
 
    private:
     str m_dataset_meta_path, m_ffts_path;

@@ -7,7 +7,7 @@
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/SingleLGSegmentationStrategy.hpp"
 #include "Modules/Indexing/StrategyFactory/GetChSegmentationStrategy.hpp"
 
-uptr<ILengthGroupSegmentationStrategy> get_lg_segmentation_strategy(const IndexOptions &opts,
+uptr<ILengthGroupSegmentationStrategy> get_lg_segmentation_strategy(const GeneralIndexProperties &opts,
                                                                     const vec<Real> *channel_scores) {
     auto index_params = dynamic_cast<const PaaIndexParams *>(opts.m_index_params.get());
     if (!index_params) {

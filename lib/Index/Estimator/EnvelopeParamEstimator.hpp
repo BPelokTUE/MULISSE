@@ -5,7 +5,7 @@
 
 struct EnvelopeParams;
 
-struct IndexOptions;
+struct GeneralIndexProperties;
 
 class IEnvelopeConfigGenerator;
 
@@ -19,7 +19,7 @@ class IEnvelopeParamEstimator {
      * @param env_config_generator The configuration generator to use
      * @return Estimated index parameters
      */
-    virtual EnvelopeParams get_estimated_params(const IndexOptions &index_opts,
+    virtual EnvelopeParams get_estimated_params(const GeneralIndexProperties &index_opts,
                                                 uptr<IEnvelopeConfigGenerator> env_config_generator) = 0;
 };
 

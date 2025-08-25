@@ -9,7 +9,7 @@
 #include "Util/RunSettings/RunSettings.hpp"
 
 std::pair<size_t, EnvelopeParams> IEnvelopeConfigGenerator::get_envelope_params_and_size(
-    const EnvelopeIndexParams *env_index_params, SaxSegIndT num_segments, Real l_per_group_ratio,
+    const EnvelopeIndexProperties *env_index_params, SaxSegIndT num_segments, Real l_per_group_ratio,
     SearchMethodType index_type, Real index_size_limit) const {
     auto &RS = RunSettings::get_instance();
     uint l_min = RS.get_length_props().m_l_min, l_max = RS.get_length_props().m_l_max;
@@ -21,9 +21,9 @@ std::pair<size_t, EnvelopeParams> IEnvelopeConfigGenerator::get_envelope_params_
     auto &dataset_props = RS.get_dataset_props();
     uptr<ILengthGroupSegmentationStrategy> lg_segmentation_strategy = nullptr;
     if (env_index_params) {
-        auto index_params = std::make_unique<EnvelopeIndexParams>(*env_index_params);
+        auto index_params = std::make_unique<EnvelopeIndexProperties>(*env_index_params);
         index_params->m_segmentation_params.m_num_segments = num_segments;
-        IndexOptions act_index_opts{
+        GeneralIndexProperties act_index_opts{
             .m_use_length_groups = true,
             .m_num_channels = dataset_props.m_num_channels,
             .m_index_method = index_type,

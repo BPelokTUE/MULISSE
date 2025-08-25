@@ -7,7 +7,7 @@
 
 struct EnvelopeParams;
 
-struct EnvelopeIndexParams;
+struct EnvelopeIndexProperties;
 
 class IEnvelopeConfigGenerator {
    public:
@@ -21,7 +21,7 @@ class IEnvelopeConfigGenerator {
      * size.
      * @return A vector of EnvelopeParams configurations.
      */
-    virtual vec<EnvelopeParams> generate_configurations(const EnvelopeIndexParams *env_index_params,
+    virtual vec<EnvelopeParams> generate_configurations(const EnvelopeIndexProperties *env_index_params,
                                                         SearchMethodType index_type, Real index_size_limit) = 0;
 
    protected:
@@ -35,7 +35,7 @@ class IEnvelopeConfigGenerator {
      * size.
      * @return A pair containing the size of the index and the corresponding EnvelopeParams
      */
-    std::pair<size_t, EnvelopeParams> get_envelope_params_and_size(const EnvelopeIndexParams *env_index_params,
+    std::pair<size_t, EnvelopeParams> get_envelope_params_and_size(const EnvelopeIndexProperties *env_index_params,
                                                                    SaxSegIndT num_segments, Real l_per_group_ratio,
                                                                    SearchMethodType index_type,
                                                                    Real index_size_limit) const;

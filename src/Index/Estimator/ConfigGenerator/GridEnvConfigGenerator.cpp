@@ -7,7 +7,7 @@
 #include "Index/IndexParams.hpp"
 #include "Util/HelperFuncs/Conversion.hpp"
 
-vec<EnvelopeParams> GridEnvConfigGenerator::generate_configurations(const EnvelopeIndexParams *env_index_params,
+vec<EnvelopeParams> GridEnvConfigGenerator::generate_configurations(const EnvelopeIndexProperties *env_index_params,
                                                                     SearchMethodType index_type,
                                                                     Real index_size_limit) {
     size_t size_limit_bytes = get_bytes_limit(index_size_limit);

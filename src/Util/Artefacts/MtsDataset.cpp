@@ -8,16 +8,24 @@
 #include "Util/Artefacts/Options/CsvDatasetGenOptions.hpp"
 #include "Util/Artefacts/Options/RandomWalkGenOptions.hpp"
 #include "Util/HelperFuncs/Math.hpp"
+#include "Util/HelperFuncs/Path.hpp"
 #include "Util/Types/MultivariateTimeSeries.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Vec.hpp"
 
+namespace fs = std::filesystem;
+
 MtsDataset::MtsDataset() = default;
 
 MtsDataset::MtsDataset(const MtsDatasetProperties &dataset_props, const str &data_path) : m_properties(dataset_props) {
-    str dataset_path = std::filesystem::path(data_path) / m_properties.m_dataset_path;
-    set_ostream(std::make_unique<std::ofstream>(dataset_path, std::ios::binary));
-    std::filesystem::create_directories(std::filesystem::path(dataset_path).parent_path());
+    str dataset_path = fs::path(data_path) / m_properties.m_dataset_path;
+    m_ostream = OutputStream(dataset_path, std::ios::binary);
+    fs::create_directories(fs::path(dataset_path).parent_path());
+}
+
+MtsDataset::MtsDataset(const str &data_path, const str &meta_path) {
+    load_meta(fs::path(data_path) / meta_path);
+    m_istream = InputStream(fs::path(data_path) / m_properties.m_dataset_path, std::ios::binary);
 }
 
 template <typename Archive>
@@ -29,46 +37,23 @@ void MtsDataset::apply_archive(Archive &ar) {
        cereal::make_nvp("channel_stats", m_channel_stats));
 }
 
-void MtsDataset::save(const str &out_file, ArchiveType) {
-    std::ofstream ofs(out_file);
-    cereal::JSONOutputArchive ar(ofs);
+void MtsDataset::apply_in_archive(cereal::JSONInputArchive &ar) { apply_archive(ar); }
 
-    apply_archive(ar);
-}
-
-void MtsDataset::load(const str &in_file, ArchiveType) {
-    std::ifstream ifs(in_file);
-    if (!ifs.is_open()) throw std::runtime_error("Could not open dataset meta file: " + in_file);
-    cereal::JSONInputArchive ar(ifs);
-
-    apply_archive(ar);
-}
+void MtsDataset::apply_out_archive(cereal::JSONOutputArchive &ar) { apply_archive(ar); }
 
 const MtsDatasetProperties &MtsDataset::get_properties() const { return m_properties; }
 
-str MtsDataset::get_meta_path() const {
-    str path = m_properties.m_dataset_path;
-    path.replace(path.find_last_of('.'), path.size() - path.find_last_of('.'), "_ds_meta.json");
-    return path;
-}
+str MtsDataset::get_meta_path() const { return append_to_base(m_properties.m_dataset_path, "_ds_meta"); }
 
 size_t MtsDataset::get_size_on_disk() const {
+    auto path = m_ostream.get_path();
+    if (path) return fs::file_size(*path);
+
+    path = m_istream.get_path();
+    if (path) return fs::file_size(*path);
+
     return static_cast<size_t>(m_properties.m_num_channels) * m_properties.m_series_len * sizeof(Real) *
            m_properties.m_num_series;
-}
-
-void MtsDataset::set_ostream(uptr<std::ostream> ostream) {
-    if (!ostream || !(*ostream) || !ostream->good()) {
-        throw std::runtime_error("Failed to set output stream for MtsDataset: stream is not valid.");
-    }
-    m_ostream = std::move(ostream);
-}
-
-void MtsDataset::set_istream(uptr<std::istream> istream) {
-    if (!istream || !(*istream) || !istream->good()) {
-        throw std::runtime_error("Failed to set input stream for MtsDataset: stream is not valid.");
-    }
-    m_istream = std::move(istream);
 }
 
 void MtsDataset::generate_random_walks(const RandomWalkGenOptions &rw_gen_opts) {
@@ -89,7 +74,7 @@ void MtsDataset::generate_random_walks(const RandomWalkGenOptions &rw_gen_opts) 
                 // Cast the reference to `value` into `const char` pointer, so `outfile.write` will
                 // try to write the bytes stored in `value` as chars. By definition a `char` contains
                 // a single byte, so `sizeof(value)` can be used to specify how many chars to write.
-                m_ostream->write(reinterpret_cast<const char *>(&value), sizeof(value));
+                m_ostream.get().write(reinterpret_cast<const char *>(&value), sizeof(value));
             }
         }
     }
@@ -131,8 +116,8 @@ void MtsDataset::generate_from_csvs(const CsvDatasetGenOptions &csv_gen_opts) {
                 }
 
                 ++ind;
-                // If required, check whether the standard deviation of all relevant-length subsequences is above the
-                // provided threshold. If that is not the case, discard the series.
+                // If required, check whether the standard deviation of all relevant-length subsequences is above
+                // the provided threshold. If that is not the case, discard the series.
                 if (min_subs_sd > 0) {
                     sum += mts_data[channel_ind][ind - 1];
                     sum_sq += mts_data[channel_ind][ind - 1] * mts_data[channel_ind][ind - 1];
@@ -184,7 +169,7 @@ void MtsDataset::generate_from_csvs(const CsvDatasetGenOptions &csv_gen_opts) {
     for (uint mts_ind : mts_indexes) {
         for (MtsNumChannelsT c = 0; c < num_channels; ++c) {
             auto &ts = all_mts_data[mts_ind][c];
-            m_ostream->write(reinterpret_cast<const char *>(ts.data()), sizeof(Real) * series_len);
+            m_ostream.get().write(reinterpret_cast<const char *>(ts.data()), sizeof(Real) * series_len);
             for (uint i = 0; i < series_len; ++i) {
                 sums[c] += ts[i];
                 sum_sqs[c] += ts[i] * ts[i];
@@ -196,7 +181,7 @@ void MtsDataset::generate_from_csvs(const CsvDatasetGenOptions &csv_gen_opts) {
 }
 
 MultivariateTimeSeries MtsDataset::load_series(uint series_index, const vec<bool> &channel_mask) {
-    m_istream->seekg(series_index * m_properties.m_num_channels * m_properties.m_series_len * sizeof(Real));
+    m_istream.get().seekg(series_index * m_properties.m_num_channels * m_properties.m_series_len * sizeof(Real));
     load_next_series(channel_mask);
 }
 
@@ -205,9 +190,9 @@ MultivariateTimeSeries MtsDataset::load_next_series(const vec<bool> &channel_mas
     for (MtsNumChannelsT c = 0; c < m_properties.m_num_channels; ++c) {
         size_t channel_size = m_properties.m_series_len * sizeof(Real);
         if (!channel_mask.empty() && !channel_mask[c]) {
-            m_istream->ignore(channel_size);
+            m_istream.get().ignore(channel_size);
         } else {
-            m_istream->read(reinterpret_cast<char *>(mts_data[c].data()), channel_size);
+            m_istream.get().read(reinterpret_cast<char *>(mts_data[c].data()), channel_size);
         }
     }
     return MultivariateTimeSeries(std::move(mts_data));

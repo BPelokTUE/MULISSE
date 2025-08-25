@@ -7,7 +7,7 @@
 
 template <typename T>
     requires DerivedFromEntryData<T>
-sptr<IIndex<T>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *params,
+sptr<IIndex<T>> get_isax_index(const GeneralIndexProperties &opts, const iSaxIndexParams *params,
                                sptr<IChannelSegmentationStrategy> ch_segmentation_strategy,
                                uptr<IiSaxSplitStrategy<T>> split_strategy) {
     return std::make_shared<iSaxIndex<T>>(params->m_isax_trie_params.m_first_layer_num_bits,
@@ -18,7 +18,7 @@ sptr<IIndex<T>> get_isax_index(const IndexOptions &opts, const iSaxIndexParams *
 template <typename T>
     requires DerivedFromEntryData<T>
 sptr<IIndex<T>> get_isax_index(IndexFactoryParams &factory_params) {
-    const IndexOptions &opts = factory_params.m_opts;
+    const GeneralIndexProperties &opts = factory_params.m_opts;
     auto *index_params = dynamic_cast<iSaxIndexParams *>(opts.m_index_params.get());
     auto split_strategy = get_split_strategy<T>(index_params, opts.m_num_channels);
 

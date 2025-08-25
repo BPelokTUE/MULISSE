@@ -8,8 +8,6 @@
 
 using QSC = QuerySetSettingsColumn;
 
-const str QuerySetLogger::QUERY_SET_SETTINGS_FILE = "query_set_settings.csv";
-
 QuerySetLogger::QuerySetLogger(const str &logs_path) {
     m_query_set_settings_path = fs::path(logs_path) / QUERY_SET_SETTINGS_FILE;
     file_setup(m_query_set_settings_path, QUERY_SET_SETTINGS_COL_STRS);
@@ -18,12 +16,14 @@ QuerySetLogger::QuerySetLogger(const str &logs_path) {
 uint QuerySetLogger::write_entry(const MtsQuerySet &query_set, const QuerySetGenOptions &query_gen_opts) {
     uint id = determine_index(m_query_set_settings_path);
 #ifndef DISABLE_LOGGING
-    auto query_set_props = query_set.get_properties();
+    auto &query_set_props = query_set.get_properties();
+    auto &dataset = query_set.get_source_dataset();
 
     write_row(m_query_set_settings_path,
               {
                   {QSC::ID, to_string(id)},
-                  {QSC::DATASET_FILE, query_set.get_source_dataset().get_properties().m_dataset_path},
+                  {QSC::DATASET_ID, to_string(dataset.get_log_id())},
+                  {QSC::DATASET_FILE, dataset.get_properties().m_dataset_path},
                   {QSC::QUERY_FILE, query_set_props.m_query_set_path},
                   {QSC::NUM_QUERIES, to_string(query_set_props.m_num_queries)},
                   {QSC::L_MIN, format_num_param(query_set_props.m_length_range.m_l_min)},

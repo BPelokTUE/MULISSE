@@ -56,7 +56,7 @@ class DatasetLogger : public Logger {
     uint write_entry(const CsvDatasetGenOptions &csv_gen_opts, const MtsDataset &dataset) const;
 
    private:
-    static const str DATASET_SETTINGS_FILE;
+    static constexpr str DATASET_SETTINGS_FILE = "dataset_settings.csv";
 
     str m_dataset_settings_path;
 };

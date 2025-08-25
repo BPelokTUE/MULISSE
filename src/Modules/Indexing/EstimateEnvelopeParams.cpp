@@ -18,7 +18,7 @@
 #include "Util/RunSettings/RunSettings.hpp"
 
 template <DistanceType D, bool EW>
-std::optional<EnvelopeParams> estimate_envelope_params(IndexOptions &opts) {
+std::optional<EnvelopeParams> estimate_envelope_params(GeneralIndexProperties &opts) {
     auto estimator_params = opts.m_estimator_params.get();
     if (!estimator_params) return std::nullopt;
 
@@ -83,7 +83,7 @@ std::optional<EnvelopeParams> estimate_envelope_params(IndexOptions &opts) {
 }
 
 // Explicit template specializations
-template std::optional<EnvelopeParams> estimate_envelope_params<ED, false>(IndexOptions &opts);
-template std::optional<EnvelopeParams> estimate_envelope_params<ED, true>(IndexOptions &opts);
-template std::optional<EnvelopeParams> estimate_envelope_params<MASS, false>(IndexOptions &opts);
-template std::optional<EnvelopeParams> estimate_envelope_params<MASS, true>(IndexOptions &opts);
+template std::optional<EnvelopeParams> estimate_envelope_params<ED, false>(GeneralIndexProperties &opts);
+template std::optional<EnvelopeParams> estimate_envelope_params<ED, true>(GeneralIndexProperties &opts);
+template std::optional<EnvelopeParams> estimate_envelope_params<MASS, false>(GeneralIndexProperties &opts);
+template std::optional<EnvelopeParams> estimate_envelope_params<MASS, true>(GeneralIndexProperties &opts);

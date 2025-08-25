@@ -51,14 +51,12 @@ CreateQueriesSubcommand::CreateQueriesSubcommand(CLI::App &app) {
 
 void CreateQueriesSubcommand::execute(const RunContext &run_context) {
     // Set up dataset
-    m_dataset.load_meta(std::filesystem::path(m_run_context->m_data_path) / m_dataset_meta_path);
-    m_dataset.set_istream(std::make_unique<std::ifstream>(std::filesystem::path(m_run_context->m_data_path) /
-                                                          m_dataset.get_properties().m_dataset_path));
+    MtsDataset dataset(m_run_context->m_data_path, m_dataset_meta_path);
 
     // Do extra argument validation
 
     //// Check number of channels
-    MtsNumChannelsT num_channels = m_dataset.get_properties().m_num_channels;
+    MtsNumChannelsT num_channels = dataset.get_properties().m_num_channels;
     if (size_t mask_size = m_query_gen_opts.m_channel_mask.size(); mask_size > 0 && mask_size != num_channels) {
         throw std::runtime_error(std::format(
             "Non-empty channel mask has different number of channels ({}) from dataset ({})", mask_size, num_channels));
@@ -90,8 +88,8 @@ void CreateQueriesSubcommand::execute(const RunContext &run_context) {
 
     // Set up query set and generation properties
     m_query_gen_opts.m_seed = m_run_context->m_seed;
-    auto ofs = std::make_unique<std::ofstream>(std::filesystem::path(m_run_context->m_data_path) / m_query_set_path);
-    MtsQuerySet query_set(m_dataset, m_query_set_props, std::move(ofs));
+    auto o_stream = OutputStream(std::filesystem::path(m_run_context->m_data_path) / m_query_set_path);
+    MtsQuerySet query_set(dataset, m_query_set_props, std::move(o_stream));
 
     // Create logger
     QuerySetLogger logger(run_context.m_logs_path);

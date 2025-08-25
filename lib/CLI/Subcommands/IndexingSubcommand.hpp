@@ -47,7 +47,7 @@ class IndexingSubcommand : public ISubcommand {
     uptr<iSaxTrieParams> m_isax_trie_params = nullptr;
     uptr<EnvelopeGroupingParams> m_env_grouping_params = nullptr;
     uptr<ScoreBasedChSSParams> m_score_based_chss_params = nullptr;
-    uptr<MergerParams> m_merger_params = nullptr;
+    uptr<MergerProperties> m_merger_params = nullptr;
 
     EnvelopeScoresType m_env_score_func_type = EnvelopeScoresType::WIDTH;
     str m_env_stats_weights_file = "";

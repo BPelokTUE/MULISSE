@@ -10,7 +10,6 @@
 namespace fs = std::filesystem;
 
 // DatasetLogger
-const str DatasetLogger::DATASET_SETTINGS_FILE = "dataset_settings.csv";
 
 using DSC = DatasetSettingsColumn;
 

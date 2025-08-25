@@ -3,24 +3,25 @@
 
 #include <random>
 
-#include "Util/Artefacts/MetaArtifact.hpp"
+#include "Util/Artefacts/Artifact.hpp"
 #include "Util/Artefacts/Properties/MtsDatasetProperties.hpp"
 #include "Util/Stats/ChannelStats.hpp"
+#include "Util/Types/InputStream.hpp"
+#include "Util/Types/OutputStream.hpp"
 #include "Util/Types/Pointers.hpp"
 
 class MultivariateTimeSeries;
 struct RandomWalkGenOptions;
 struct CsvDatasetGenOptions;
 
-class MtsDataset : public MetaArtifact {
+class MtsDataset : public IArtifact {
     friend class RandomWalkSubcommand;
 
-   private:
     MtsDatasetProperties m_properties;
     ChannelStats m_channel_stats;
 
-    uptr<std::istream> m_istream;
-    uptr<std::ostream> m_ostream;
+    InputStream m_istream;
+    OutputStream m_ostream;
 
     /**
      * @brief Apply (save or load) the archive
@@ -29,6 +30,10 @@ class MtsDataset : public MetaArtifact {
      */
     template <typename Archive>
     void apply_archive(Archive &ar);
+
+    void apply_in_archive(cereal::JSONInputArchive &ar) override;
+
+    void apply_out_archive(cereal::JSONOutputArchive &ar) override;
 
    public:
     /** @brief Default constructor */
@@ -41,9 +46,12 @@ class MtsDataset : public MetaArtifact {
      */
     MtsDataset(const MtsDatasetProperties &dataset_props, const str &data_path);
 
-    void save(const str &out_file, ArchiveType ar_type) override;
-
-    void load(const str &out_file, ArchiveType ar_type) override;
+    /**
+     * @brief Constructor that initializes the dataset for intake
+     * @param data_path Path to the data directory where the dataset is located
+     * @param meta_path Path to the meta file of the dataset
+     */
+    MtsDataset(const str &data_path, const str &meta_path);
 
     str get_meta_path() const override;
 
@@ -58,20 +66,6 @@ class MtsDataset : public MetaArtifact {
      * @return The size of the dataset on disk in bytes
      */
     size_t get_size_on_disk() const;
-
-    /**
-     * @brief Set the output stream of the dataset
-     * @param ostream The output stream
-     * @throws std::runtime_error if the stream cannot be opened
-     */
-    void set_ostream(uptr<std::ostream> ostream);
-
-    /**
-     * @brief Set the input stream of the dataset
-     * @param istream The input stream
-     * @throws std::runtime_error if the stream cannot be opened
-     */
-    void set_istream(uptr<std::istream> istream);
 
     /**
      * @brief Generate the random walk dataset

@@ -7,7 +7,7 @@
 
 RandomEnvConfigGenerator::RandomEnvConfigGenerator(RandomEnvConfigGeneratorParams params) : m_params(params) {}
 
-vec<EnvelopeParams> RandomEnvConfigGenerator::generate_configurations(const EnvelopeIndexParams *env_index_params,
+vec<EnvelopeParams> RandomEnvConfigGenerator::generate_configurations(const EnvelopeIndexProperties *env_index_params,
                                                                       SearchMethodType index_type,
                                                                       Real index_size_limit) {
     auto &RS = RunSettings::get_instance();

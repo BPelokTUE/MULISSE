@@ -13,7 +13,9 @@ namespace fs = std::filesystem;
 
 // Enums for statistics
 
-using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
+using Duration = std::chrono::duration<double>;
+using Clock = std::chrono::high_resolution_clock;
+using TimePoint = std::chrono::time_point<Clock>;
 
 class Logger {
    public:

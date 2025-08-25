@@ -15,7 +15,7 @@ IndexingSubcommand::IndexingSubcommand(CLI::App &app) {
     m_sax_params = std::make_unique<SaxParams>();
     m_isax_trie_params = std::make_unique<iSaxTrieParams>();
     m_env_grouping_params = std::make_unique<EnvelopeGroupingParams>();
-    m_merger_params = std::make_unique<MergerParams>();
+    m_merger_params = std::make_unique<MergerProperties>();
 
     index_subcommand->add_option("-i,--index", m_index_path, "Output index path")
         ->required()

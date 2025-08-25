@@ -15,7 +15,7 @@
 #include "Modules/Indexing/InitializeBreakpoints.hpp"
 #include "Modules/Indexing/StrategyFactory/GetLGSegmentationStrategy.hpp"
 
-int create_index(IndexOptions &opts, Real index_sample_frac, bool log_num_seg_per_ch, bool log_num_seg_all) {
+int create_index(GeneralIndexProperties &opts, Real index_sample_frac, bool log_num_seg_per_ch, bool log_num_seg_all) {
     auto &RS = RunSettings::get_instance();
     str dataset_path = RS.get_dataset_path();
     str index_path = RS.get_index_path();

@@ -2,8 +2,9 @@
 #define MODULES_CALCFFTS_HPP
 
 class MtsDataset;
-class MtsFfts;
+class MtsDatasetFfts;
 struct RunContext;
+class FftsLogger;
 
 /**
  * @brief Calculate the FFTs of the dataset
@@ -11,9 +12,8 @@ struct RunContext;
  * This function calculates the FFTs of a dataset
  *
  * @param ffts The MtsFfts object to calculate
- * @param dataset The MtsDataset to calculate the FFTs for
- * @param run_context Generic run context
+ * @param logger The FftsLogger to use for logging
  */
-void calculate_ffts(MtsFfts &ffts, const MtsDataset &dataset, const RunContext &run_context);
+void calculate_ffts(MtsDatasetFfts &ffts, FftsLogger &logger);
 
 #endif  // MODULES_CALCFFTS_HPP

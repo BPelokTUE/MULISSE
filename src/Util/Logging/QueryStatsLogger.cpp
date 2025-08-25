@@ -6,8 +6,6 @@
 #include "Util/Stats/QueryStats.hpp"
 #include "Util/Types/MtsQuery.hpp"
 
-const str QueryStatsLogger::QUERY_STATS_FILE = "query_stats.csv";
-
 using QSTC = QueryStatsColumn;
 
 QueryStatsLogger::QueryStatsLogger(const str &logs_path) {
@@ -28,7 +26,7 @@ uint QueryStatsLogger::write_entry(const MtsQuerySet &query_set, const MtsQuery 
     write_row(m_query_stats_path,
               {
                   {QSTC::ID, to_string(m_base_id)},
-                  {QSTC::DATASET_FILE, query_set.get_source_dataset().get_properties().m_dataset_path},
+                  {QSTC::QUERY_SET_ID, to_string(query_set.get_log_id())},
                   {QSTC::QUERY_FILE, query_set.get_properties().m_query_set_path},
                   {QSTC::QUERY_LENGTH, to_string(query.get_query_len())},
                   {QSTC::QUERY_CHANNELS, query_channels_str},

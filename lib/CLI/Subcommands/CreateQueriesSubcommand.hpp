@@ -21,7 +21,6 @@ class CreateQueriesSubcommand : public ISubcommand {
 
    private:
     str m_dataset_meta_path, m_query_set_path;
-    MtsDataset m_dataset;
     MtsQuerySetProperties m_query_set_props;
     QuerySetGenOptions m_query_gen_opts;
 };
