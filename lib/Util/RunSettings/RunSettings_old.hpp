@@ -4,7 +4,7 @@
 #include <fstream>
 
 #include "Enums/CommandType.hpp"
-#include "Enums/SearchMethodType.hpp"
+#include "Enums/IndexType.hpp"
 #include "Index/EnvelopeIndex/EnvelopeParams.hpp"
 #include "Util/RunSettings/BreakpointProperties.hpp"
 #include "Util/RunSettings/DatasetProperties.hpp"
@@ -41,7 +41,7 @@ class RunSettings {
      * */
     static void initialize(CommandType command_type, DatasetProperties dataset_props, LengthProperties length_props,
                            uint pos_per_env, const str& index_path, const str& ffts_path, const str& query_path,
-                           SearchMethodType method_type, bool raw, const str& logs_dir, const str& data_dir);
+                           IndexType method_type, bool raw, const str& logs_dir, const str& data_dir);
 
     static inline RunSettings& get_instance() {
         assert(initialized);

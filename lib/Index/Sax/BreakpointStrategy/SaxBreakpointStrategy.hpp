@@ -5,6 +5,8 @@
 #include "Util/Types/Pointers.hpp"
 #include "Util/Types/Vec.hpp"
 
+class SaxBreakpoints;
+
 /**
  * @brief Interface for breakpoints strategies
  *
@@ -21,9 +23,9 @@ class ISaxBreakpointStrategy {
     /**
      * @brief Get the breakpoints for the given alphabet size
      * @param alphabet_size The size of the alphabet; assumed to be a power of two
-     * @return Vector of breakpoints
+     * @return Breakpoints
      */
-    virtual vec<Real> get_breakpoints(SaxSymbolT alphabet_size) const = 0;
+    virtual SaxBreakpoints get_breakpoints(SaxSymbolT alphabet_size) const = 0;
 
     /**
      * @brief Adapt the breakpoints based on dataset statistics

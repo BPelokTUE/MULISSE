@@ -10,7 +10,7 @@
 
 std::pair<size_t, EnvelopeParams> IEnvelopeConfigGenerator::get_envelope_params_and_size(
     const EnvelopeIndexProperties *env_index_params, SaxSegIndT num_segments, Real l_per_group_ratio,
-    SearchMethodType index_type, Real index_size_limit) const {
+    IndexType index_type, Real index_size_limit) const {
     auto &RS = RunSettings::get_instance();
     uint l_min = RS.get_length_props().m_l_min, l_max = RS.get_length_props().m_l_max;
     uint l_per_group = U(std::ceil(R(l_max - l_min + 1) * l_per_group_ratio));
@@ -36,7 +36,7 @@ std::pair<size_t, EnvelopeParams> IEnvelopeConfigGenerator::get_envelope_params_
         lg_segmentation_strategy = get_lg_segmentation_strategy(act_index_opts);
     }
     IndexSizeEstimator size_estimator(index_type, length_props, lg_segmentation_strategy.get(), num_segments);
-    uint pos_per_env = size_estimator.get_max_pos_per_env(index_size_limit);
+    uint pos_per_env = size_estimator.get_min_pos_per_env(index_size_limit);
     size_t estimated_size = size_estimator.get_estimated_flat_envelope_size(pos_per_env);
     return {estimated_size, EnvelopeParams{
                                 .m_num_segments = num_segments,

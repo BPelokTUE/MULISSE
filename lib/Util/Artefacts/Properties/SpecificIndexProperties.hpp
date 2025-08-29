@@ -4,9 +4,9 @@
 #include "Enums/ChannelSegmentationStrategyType.hpp"
 #include "Enums/EntryMergerType.hpp"
 #include "Enums/EnvelopeScoresTypes.hpp"
+#include "Enums/IndexType.hpp"
 #include "Enums/LengthGroupSegmentationStrategyType.hpp"
 #include "Enums/SaxBreakpointStrategyType.hpp"
-#include "Enums/SearchMethodType.hpp"
 #include "Enums/SegmentationStrategyType.hpp"
 #include "Enums/iSaxSplitStrategyType.hpp"
 #include "Index/EnvelopeIndex/EnvelopeParams.hpp"
@@ -22,7 +22,7 @@ struct ISpecificIndexProperties {
      * @brief Get the type of the index
      * @return The type of the index
      */
-    virtual SearchMethodType get_type() const = 0;
+    virtual IndexType get_type() const = 0;
 };
 
 /** @brief Segmentation properties of indexes */
@@ -38,7 +38,7 @@ struct SegmentationProperties {
     /** @brief File containing the proportions of segments  */
     str m_ch_num_seg_props_file = "";
     /** @brief Parameters of ScoreBasedChSegmentationStrategy */
-    ScoreBasedChSSParams *m_score_based_chss_params = nullptr;
+    const ScoreBasedChSSParams *m_score_based_chss_params = nullptr;
 };
 
 /** @brief SAX representation properties of indexes */
@@ -56,7 +56,7 @@ struct MergerProperties {
     /** @brief Type of entry merger to use */
     EntryMergerType m_entry_merger_type;
     /** @brief SAX parameters for SAX-based mergers, nullptr for non-SAX-based mergers */
-    SaxProperties *m_merger_sax_params;
+    SaxProperties *m_merger_sax_props;
 };
 
 /** @brief iSAX trie properties of indexes */
@@ -110,7 +110,7 @@ struct SaxIndexProperties : virtual PaaIndexProperties {
 
 /** @brief Parameters for indexes that use envelopes */
 struct EnvelopeIndexProperties : virtual PaaIndexProperties {
-    SearchMethodType get_type() const override { return ENVELOPE; }
+    IndexType get_type() const override { return ENVELOPE; }
 
     /** @brief Size of the starting position groups */
     uint m_pos_per_env;
@@ -137,7 +137,7 @@ struct EnvelopeIndexProperties : virtual PaaIndexProperties {
 
 /** @brief Parameters for SAX + Envelope indexes */
 struct SaxEnvelopeIndexProperties : virtual EnvelopeIndexProperties, virtual SaxIndexProperties {
-    SearchMethodType get_type() const override { return SAX_ENVELOPE; }
+    IndexType get_type() const override { return SAX_ENVELOPE; }
 
     /**
      * @brief Constructor
@@ -158,7 +158,7 @@ struct iSaxIndexProperties : virtual PaaIndexProperties, virtual SaxIndexPropert
     /** @brief iSAX trie parameters */
     iSaxTrieProperties m_isax_trie_params;
 
-    SearchMethodType get_type() const override { return ISAX; }
+    IndexType get_type() const override { return ISAX; }
 
     /**
      * @brief Constructor
@@ -176,7 +176,7 @@ struct iSaxIndexProperties : virtual PaaIndexProperties, virtual SaxIndexPropert
 
 /** @brief Parameters for iSAX + Envelope indexes */
 struct iSaxEnvelopeIndexProperties : virtual EnvelopeIndexProperties, virtual iSaxIndexProperties {
-    SearchMethodType get_type() const override { return ISAX_ENVELOPE; }
+    IndexType get_type() const override { return ISAX_ENVELOPE; }
 
     /**
      * @brief Constructor
@@ -206,7 +206,7 @@ struct EnvelopeGroupingProperties {
     /** @brief The size of each bucket for BucketingEnvelopeMerger */
     size_t m_bucket_size;
     /** @brief Type of search method used (TREE_ENVELOPE or VL_ENVELOPE) */
-    SearchMethodType m_type;
+    IndexType m_type;
 };
 
 /** @brief Parameters for indexes that group envelopes into trees */
@@ -214,7 +214,7 @@ struct TreeEnvelopeIndexProperties : virtual EnvelopeIndexProperties, virtual Sa
     /** @brief Params for envelope grouping */
     EnvelopeGroupingProperties m_env_grouping_params;
 
-    SearchMethodType get_type() const override { return m_env_grouping_params.m_type; }
+    IndexType get_type() const override { return m_env_grouping_params.m_type; }
 
     /**
      * @brief Constructor

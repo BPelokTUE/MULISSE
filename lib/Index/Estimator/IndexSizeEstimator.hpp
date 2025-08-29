@@ -1,7 +1,7 @@
 #ifndef INDEX_ESTIMATOR_INDEXSIZEESTIMATOR_HPP
 #define INDEX_ESTIMATOR_INDEXSIZEESTIMATOR_HPP
 
-#include "Enums/SearchMethodType.hpp"
+#include "Enums/IndexType.hpp"
 #include "Util/RunSettings/LengthProperties.hpp"
 #include "Util/Types/Numbers.hpp"
 
@@ -16,7 +16,7 @@ class IndexSizeEstimator {
      * @param lg_segmentation_strategy The length group segmentation strategy used
      * @param num_segments The number of segments per channel, used if lg_segmentation_strategy is nullptr
      * */
-    IndexSizeEstimator(SearchMethodType index_type, LengthProperties length_props,
+    IndexSizeEstimator(IndexType index_type, LengthProperties length_props,
                        const ILengthGroupSegmentationStrategy *lg_segmentation_strategy = nullptr,
                        SaxSegIndT num_segments = 0);
 
@@ -33,7 +33,7 @@ class IndexSizeEstimator {
      * @param index_size_limit The maximum size of the index as a ratio of the dataset size
      * @return Maximum number of positions per envelope
      */
-    uint get_max_pos_per_env(Real index_size_limit);
+    uint get_min_pos_per_env(Real index_size_limit);
 
    private:
     /**

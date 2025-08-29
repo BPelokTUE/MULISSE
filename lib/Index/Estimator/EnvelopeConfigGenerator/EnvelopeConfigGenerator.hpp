@@ -1,7 +1,7 @@
 #ifndef INDEX_ESTIMATOR_ENVELOPECONFIGGENERATOR_ENVELOPECONFIGGENERATOR_HPP
 #define INDEX_ESTIMATOR_ENVELOPECONFIGGENERATOR_ENVELOPECONFIGGENERATOR_HPP
 
-#include "Enums/SearchMethodType.hpp"
+#include "Enums/IndexType.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Vec.hpp"
 
@@ -22,7 +22,7 @@ class IEnvelopeConfigGenerator {
      * @return A vector of EnvelopeParams configurations.
      */
     virtual vec<EnvelopeParams> generate_configurations(const EnvelopeIndexProperties *env_index_params,
-                                                        SearchMethodType index_type, Real index_size_limit) = 0;
+                                                        IndexType index_type, Real index_size_limit) = 0;
 
    protected:
     /**
@@ -37,8 +37,7 @@ class IEnvelopeConfigGenerator {
      */
     std::pair<size_t, EnvelopeParams> get_envelope_params_and_size(const EnvelopeIndexProperties *env_index_params,
                                                                    SaxSegIndT num_segments, Real l_per_group_ratio,
-                                                                   SearchMethodType index_type,
-                                                                   Real index_size_limit) const;
+                                                                   IndexType index_type, Real index_size_limit) const;
 
     /**
      * @brief Get the size limit in bytes for the index.

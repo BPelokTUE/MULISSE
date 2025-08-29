@@ -14,13 +14,12 @@ class EquiprobableBreakpointStrategy : public ISaxBreakpointStrategy {
    public:
     /**
      * @brief Constructor
-     *
      * @param mean Mean of the normal distribution
      * @param standard_deviation Standard deviation of the normal distribution
      */
     EquiprobableBreakpointStrategy(Real mean = 0.0, Real standard_deviation = 1.0);
 
-    vec<Real> get_breakpoints(SaxSymbolT alphabet_size) const override;
+    SaxBreakpoints get_breakpoints(SaxSymbolT alphabet_size) const override;
 
     void adapt_to_dataset(Real mu, Real sigma) override;
 

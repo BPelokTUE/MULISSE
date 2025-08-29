@@ -4,11 +4,10 @@
 #include "Util/HelperFuncs/Enums.hpp"
 
 /** @brief Types of EnvelopeParamEstimator */
-enum EnvelopeParamEstimatorType { THEORETICAL, MIN_DIST, QUERY_TIME, NO_EST };
+enum EnvelopeParamEstimatorType { THEORETICAL, MIN_DIST, QUERY_TIME };
 
 DEFINE_ENUM_CONSTS(EnvelopeParamEstimatorType, ENV_PARAM_ESTIMATOR_TYPE, false,
-                   (umap<str, EnvelopeParamEstimatorType>{
-                       {"theo", THEORETICAL}, {"time", QUERY_TIME}, {"none", NO_EST}}));
+                   (umap<str, EnvelopeParamEstimatorType>{{"theo", THEORETICAL}, {"time", QUERY_TIME}}));
 
 constexpr std::array SAMPLING_ESTIMATOR_TYPES{MIN_DIST, QUERY_TIME};
 

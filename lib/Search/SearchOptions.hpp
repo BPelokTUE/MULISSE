@@ -3,7 +3,7 @@
 
 #include "Enums/ArchiveType.hpp"
 #include "Enums/DistanceType.hpp"
-#include "Enums/SearchMethodType.hpp"
+#include "Enums/IndexType.hpp"
 #include "Enums/SearchType.hpp"
 #include "Index/IndexParams.hpp"
 #include "Util/Types/Numbers.hpp"
@@ -23,7 +23,7 @@ struct SearchOptions {
     /** @brief Whether a priority queue is used for FlatEnvelopeIndexSearch */
     bool m_use_priority_queue = true;
     /** @brief Type of search method to use */
-    SearchMethodType m_search_method_type;
+    IndexType m_search_method_type;
     /** @brief Archive type of the index */
     ArchiveType m_index_format;
     /** @brief Type of search to execute (kNN or r-range) */

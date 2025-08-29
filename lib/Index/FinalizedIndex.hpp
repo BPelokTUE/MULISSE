@@ -5,7 +5,7 @@
 
 #include "Enums/ArchiveType.hpp"
 #include "Index/Traits/EntryTags.hpp"
-#include "Util/Artefacts/IArtifact.hpp"
+#include "Util/Artefacts/Artifact.hpp"
 #include "Util/Types/String.hpp"
 
 namespace fs = std::filesystem;
@@ -15,7 +15,6 @@ namespace fs = std::filesystem;
  * @tparam T Traits of the entries in the index
  * */
 template <typename FTag>
-    requires ValidEntryTraitsTag<FTag>
 class IFinalizedIndex : public IArtifact {
    public:
     virtual ~IFinalizedIndex() = default;

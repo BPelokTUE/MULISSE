@@ -10,7 +10,7 @@
 
 using CHSS = ChannelSegmentationStrategyType;
 
-IndexSizeEstimator::IndexSizeEstimator(SearchMethodType method_type, LengthProperties length_props,
+IndexSizeEstimator::IndexSizeEstimator(IndexType method_type, LengthProperties length_props,
                                        const ILengthGroupSegmentationStrategy *lg_segmentation_strategy,
                                        SaxSegIndT num_segments)
     : m_lg_segmentation_strategy(lg_segmentation_strategy),
@@ -63,7 +63,7 @@ size_t IndexSizeEstimator::get_estimated_flat_envelope_size(uint pos_per_env, bo
     return estimated_size;
 }
 
-uint IndexSizeEstimator::get_max_pos_per_env(Real index_size_limit) {
+uint IndexSizeEstimator::get_min_pos_per_env(Real index_size_limit) {
     auto &RS = RunSettings::get_instance();
 
     uint series_len = RS.get_dataset_props().m_series_len;

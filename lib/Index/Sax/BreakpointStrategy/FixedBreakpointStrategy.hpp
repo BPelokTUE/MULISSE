@@ -9,17 +9,16 @@
  * Use fixed breakpoints loaded from an external file.
  */
 class FixedBreakpointStrategy : public ISaxBreakpointStrategy {
+    str m_breakpoints_file;
+
    public:
     /**
      * @brief Constructor
-     * @param file Path to plain text file containing the breakpoints
+     * @param file Path to the file containing the breakpoints
      */
-    FixedBreakpointStrategy(const str& file);
+    FixedBreakpointStrategy(const str &file);
 
-    vec<Real> get_breakpoints(SaxSymbolT alphabet_size) const override;
-
-   private:
-    vec<Real> m_breakpoints;
+    SaxBreakpoints get_breakpoints(SaxSymbolT alphabet_size) const override;
 };
 
 #endif  // INDEX_SAX_BREAKPOINTSTRATEGY_FIXEDBREAKPOINTSTRATEGY_HPP

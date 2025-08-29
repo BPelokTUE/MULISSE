@@ -1,12 +1,12 @@
-#ifndef ENUMS_SEARCHMETHODTYPE_HPP
-#define ENUMS_SEARCHMETHODTYPE_HPP
+#ifndef ENUMS_INDEXTYPE_HPP
+#define ENUMS_INDEXTYPE_HPP
 
 #include <array>
 
 #include "Util/HelperFuncs/Enums.hpp"
 
-/** @brief Enumeration type for search methods */
-enum SearchMethodType {
+/** @brief Enumeration type for index types */
+enum IndexType {
     ISAX,
     ISAX_ENVELOPE,
     ENVELOPE,
@@ -16,14 +16,11 @@ enum SearchMethodType {
     TREE_ENVELOPE,
     BUCKETING_ENVELOPE,
     VL_ENVELOPE,
-    SEQUENTIAL_SCAN,
 };
 
-DEFINE_ENUM_CONSTS(SearchMethodType, SEARCH_METHOD_TYPE, false,
-                   (umap<str, SearchMethodType>{
+DEFINE_ENUM_CONSTS(IndexType, SEARCH_METHOD_TYPE, false,
+                   (umap<str, IndexType>{
                        {"mulisse", ISAX_ENVELOPE},
-                       {"scan", SEQUENTIAL_SCAN},
-                       {"sequential", SEQUENTIAL_SCAN},
                        {"variance_limiting", VL_ENVELOPE},
                        {"bucketing", BUCKETING_ENVELOPE},
                        {"bucketing_env", BUCKETING_ENVELOPE},
@@ -47,4 +44,6 @@ constexpr std::array METHODS_W_ENV_GROUPING{TREE_ENVELOPE, BUCKETING_ENVELOPE, V
 
 constexpr std::array METHODS_W_ESTIMABLE_SIZE{ENVELOPE, SAX_ENVELOPE};
 
-#endif  // ENUMS_SEARCHMETHODTYPE_HPP
+constexpr std::array FLAT_ENVELOPE_METHODS{ENVELOPE, SAX_ENVELOPE};
+
+#endif  // ENUMS_INDEXTYPE_HPP

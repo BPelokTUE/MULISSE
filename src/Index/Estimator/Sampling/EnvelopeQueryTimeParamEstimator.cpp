@@ -1,6 +1,6 @@
 #include "Index/Estimator/Sampling/EnvelopeQueryTimeParamEstimator.hpp"
 
-#include "Enums/SearchMethodType.hpp"
+#include "Enums/IndexType.hpp"
 #include "Index/Entry/SaxEnvelope.hpp"
 #include "Index/EnvelopeIndex/Flat/FinalizedFlatEnvelopeIndex.hpp"
 #include "Index/Estimator/EnvelopeConfigGenerator/EnvelopeConfigGenerator.hpp"

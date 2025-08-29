@@ -8,7 +8,7 @@
 
 // Main
 
-int calculate_index_stats(SearchMethodType method_type, uint num_l_groups, ArchiveType index_format,
+int calculate_index_stats(IndexType method_type, uint num_l_groups, ArchiveType index_format,
                           bool separate_segment_stats) {
     switch (method_type) {
         case ISAX: {

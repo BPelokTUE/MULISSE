@@ -3,13 +3,13 @@
 
 #include "Enums/ArchiveType.hpp"
 #include "Enums/EntryInserterType.hpp"
-#include "Enums/SearchMethodType.hpp"
+#include "Enums/IndexType.hpp"
 #include "Index/Estimator/EstimatorParams.hpp"
 #include "Util/Types/Numbers.hpp"
 #include "Util/Types/Pointers.hpp"
 
 /** @brief Options for creating an index */
-struct GeneralIndexProperties {
+struct IndexGenOptions {
     /** @brief Whether to adapt the index properties to the dataset entries */
     bool m_adapt = false;
     /** @brief Type of inserter to use */

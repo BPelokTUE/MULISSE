@@ -15,7 +15,7 @@ IndexStatsSubcommand::IndexStatsSubcommand(CLI::App &app) {
 void IndexStatsSubcommand::execute() {
     // Set up run setting properties
     // Get data from meta file
-    SearchMethodType index_type = ENVELOPE;
+    IndexType index_type = ENVELOPE;
     ArchiveType index_format = BINARY;
     uint num_l_groups = 1;
     calculate_index_stats(index_type, num_l_groups, index_format, m_separate_segment_stats);

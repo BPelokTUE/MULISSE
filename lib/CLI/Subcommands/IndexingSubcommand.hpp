@@ -4,8 +4,10 @@
 #include "CLI/Subcommands/Subcommand.hpp"
 #include "CLI11/CLI11.hpp"
 #include "Enums/ArchiveType.hpp"
-#include "Enums/SearchMethodType.hpp"
-#include "Index/IndexOptions.hpp"
+#include "Enums/IndexType.hpp"
+#include "Util/Artefacts/Options/IndexGenOptions.hpp"
+#include "Util/Artefacts/Properties/GeneralIndexProperties.hpp"
+#include "Util/Artefacts/Properties/SpecificIndexProperties.hpp"
 #include "Util/Constants/Sax.hpp"
 #include "Util/Types/String.hpp"
 
@@ -17,13 +19,28 @@ class IndexingSubcommand : public ISubcommand {
      */
     IndexingSubcommand(CLI::App &app);
 
-    void set_up_execution(const RunContext *run_context) override;
-
-    void validate_arguments() override;
-
-    void execute() override;
+    void execute(const RunContext &run_context) override;
 
    private:
+    /**
+     * @brief Parse specific index properties
+     * @param dataset The dataset to index
+     * @param run_context Context for the run
+     */
+    void parse_specific_index_props(const MtsDataset &dataset, const RunContext &run_context);
+
+    /**
+     * @brief Get the specific index properties
+     * @return The specific index properties
+     */
+    uptr<ISpecificIndexProperties> get_specific_index_props();
+
+    /**
+     * @brief Parse the estimator parameters
+     * @param run_context Context for the run
+     */
+    void parse_index_gen_options(const RunContext &run_context);
+
     bool m_pe_qt_examine_whole = false, m_log_num_seg_per_ch = false, m_log_num_seg_all = false;
 
     SaxNumBitsT m_merger_num_bits = MAX_NUM_BITS_LIMIT;
@@ -35,19 +52,18 @@ class IndexingSubcommand : public ISubcommand {
     // paths
     str m_index_path, m_dataset_meta_path;
 
-    // index options and parameters
-    IndexOptions m_index_options{
-        .m_index_method = SearchMethodType::SAX_ENVELOPE,
-        .m_index_format = ArchiveType::BINARY,
-        .m_inserter_type = EntryInserterType::PARALLEL,
-    };
+    // index properties and gen options
+    IndexGenOptions m_index_gen_opts;
 
-    uptr<SegmentationParams> m_segmentation_params = nullptr;
-    uptr<SaxParams> m_sax_params = nullptr;
-    uptr<iSaxTrieParams> m_isax_trie_params = nullptr;
-    uptr<EnvelopeGroupingParams> m_env_grouping_params = nullptr;
-    uptr<ScoreBasedChSSParams> m_score_based_chss_params = nullptr;
-    uptr<MergerProperties> m_merger_params = nullptr;
+    GeneralIndexProperties m_general_index_props;
+
+    // specific index property components
+    SegmentationProperties m_segmentation_props;
+    SaxProperties m_sax_props;
+    iSaxTrieProperties m_isax_trie_props;
+    EnvelopeGroupingProperties m_env_grouping_props;
+    ScoreBasedChSSParams m_score_based_chss_params;
+    MergerProperties m_merger_props;
 
     EnvelopeScoresType m_env_score_func_type = EnvelopeScoresType::WIDTH;
     str m_env_stats_weights_file = "";
@@ -55,7 +71,7 @@ class IndexingSubcommand : public ISubcommand {
     EntryMergerType m_entry_merger_type = EntryMergerType::DUMMY;
 
     // parameter estimation
-    EnvelopeParamEstimatorType m_param_estimator_type = EnvelopeParamEstimatorType::NO_EST;
+    EnvelopeParamEstimatorType m_param_estimator_type = EnvelopeParamEstimatorType::ONLY_GAMMA;
     EnvelopeConfigGeneratorType m_env_config_gen_type = EnvelopeConfigGeneratorType::RANDOM;
     DistanceType m_pe_qt_distance_type = DistanceType::ED;
 

@@ -3,7 +3,7 @@
 
 #include "Enums/ArchiveType.hpp"
 #include "Enums/EntryInserterType.hpp"
-#include "Enums/SearchMethodType.hpp"
+#include "Enums/IndexType.hpp"
 #include "Index/Estimator/EstimatorParams.hpp"
 #include "Util/Types/LengthRange.hpp"
 #include "Util/Types/Numbers.hpp"
@@ -20,7 +20,7 @@ struct GeneralIndexProperties {
     /** @brief Lengths per group */
     uint m_l_per_group;
     /** @brief The type of the index method to use */
-    SearchMethodType m_index_method;
+    IndexType m_index_method;
     /** @brief Format to save the index in */
     ArchiveType m_index_format;
 

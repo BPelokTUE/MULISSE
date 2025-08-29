@@ -4,7 +4,7 @@
 #include <type_traits>
 
 #include "Enums/ArchiveType.hpp"
-#include "Enums/SearchMethodType.hpp"
+#include "Enums/IndexType.hpp"
 #include "Index/FinalizedIndex.hpp"
 #include "Index/LengthGroupingIndex/LengthGroupingIndex.hpp"
 #include "Index/Segmentation/LengthGroupSegmentationStrategy/LengthGroupSegmentationStrategy.hpp"
@@ -20,7 +20,7 @@
  * @param index_format The format of the index
  * @param separate_segment_stats Whether to calculate segment statistics for each segment separately
  */
-int calculate_index_stats(SearchMethodType method_type, uint num_l_groups, ArchiveType index_format,
+int calculate_index_stats(IndexType method_type, uint num_l_groups, ArchiveType index_format,
                           bool separate_segment_stats = false);
 
 #endif  // MODULES_INDEXSTATS_HPP
